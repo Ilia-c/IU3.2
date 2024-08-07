@@ -129,12 +129,12 @@ static void MX_USART1_UART_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_USART3_UART_Init(void);
 void StartDefaultTask(void *argument);
-void Display_I2C(void *argument);
-void ADC_read(void *argument);
-void RS485_data(void *argument);
-void SIM800_data(void *argument);
-void Main(void *argument);
-void Keyboard_task(void *argument);
+void StartTask02(void *argument);
+void StartTask03(void *argument);
+void StartTask04(void *argument);
+void StartTask05(void *argument);
+void StartTask06(void *argument);
+void StartTask07(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -217,22 +217,22 @@ int main(void)
   SD_cardHandle = osThreadNew(StartDefaultTask, NULL, &SD_card_attributes);
 
   /* creation of Display_I2C */
-  Display_I2CHandle = osThreadNew(Display_I2C, NULL, &Display_I2C_attributes);
+  Display_I2CHandle = osThreadNew(StartTask02, NULL, &Display_I2C_attributes);
 
   /* creation of ADC_read */
-  ADC_readHandle = osThreadNew(ADC_read, NULL, &ADC_read_attributes);
+  ADC_readHandle = osThreadNew(StartTask03, NULL, &ADC_read_attributes);
 
   /* creation of RS485_data */
-  RS485_dataHandle = osThreadNew(RS485_data, NULL, &RS485_data_attributes);
+  RS485_dataHandle = osThreadNew(StartTask04, NULL, &RS485_data_attributes);
 
   /* creation of SIM800_data */
-  SIM800_dataHandle = osThreadNew(SIM800_data, NULL, &SIM800_data_attributes);
+  SIM800_dataHandle = osThreadNew(StartTask05, NULL, &SIM800_data_attributes);
 
   /* creation of Main */
-  MainHandle = osThreadNew(Main, NULL, &Main_attributes);
+  MainHandle = osThreadNew(StartTask06, NULL, &Main_attributes);
 
   /* creation of Keyboard_task */
-  Keyboard_taskHandle = osThreadNew(Keyboard_task, NULL, &Keyboard_task_attributes);
+  Keyboard_taskHandle = osThreadNew(StartTask07, NULL, &Keyboard_task_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -920,7 +920,7 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN Header_StartDefaultTask */
 /**
-  * @brief  Function implementing the defaultTask thread.
+  * @brief  Function implementing the SD_card thread.
   * @param  argument: Not used
   * @retval None
   */
@@ -945,14 +945,12 @@ void StartDefaultTask(void *argument)
 * @retval None
 */
 /* USER CODE END Header_StartTask02 */
-void Display_I2C(void *argument)
+void StartTask02(void *argument)
 {
   /* USER CODE BEGIN StartTask02 */
   /* Infinite loop */
   for(;;)
   {
-    HAL_GPIO_WritePin(Display_ON_OFF_GPIO_Port, Display_ON_OFF_Pin, 1);
-    
     osDelay(1);
   }
   /* USER CODE END StartTask02 */
@@ -965,7 +963,7 @@ void Display_I2C(void *argument)
 * @retval None
 */
 /* USER CODE END Header_StartTask03 */
-void ADC_read(void *argument)
+void StartTask03(void *argument)
 {
   /* USER CODE BEGIN StartTask03 */
   /* Infinite loop */
@@ -976,76 +974,76 @@ void ADC_read(void *argument)
   /* USER CODE END StartTask03 */
 }
 
-/* USER CODE BEGIN Header_RS485_data */
+/* USER CODE BEGIN Header_StartTask04 */
 /**
 * @brief Function implementing the RS485_data thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_RS485_data */
-void RS485_data(void *argument)
+/* USER CODE END Header_StartTask04 */
+void StartTask04(void *argument)
 {
-  /* USER CODE BEGIN RS485_data */
+  /* USER CODE BEGIN StartTask04 */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1);
   }
-  /* USER CODE END RS485_data */
+  /* USER CODE END StartTask04 */
 }
 
-/* USER CODE BEGIN Header_SIM800_data */
+/* USER CODE BEGIN Header_StartTask05 */
 /**
 * @brief Function implementing the SIM800_data thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_SIM800_data */
-void SIM800_data(void *argument)
+/* USER CODE END Header_StartTask05 */
+void StartTask05(void *argument)
 {
-  /* USER CODE BEGIN SIM800_data */
+  /* USER CODE BEGIN StartTask05 */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1);
   }
-  /* USER CODE END SIM800_data */
+  /* USER CODE END StartTask05 */
 }
 
-/* USER CODE BEGIN Header_Main */
+/* USER CODE BEGIN Header_StartTask06 */
 /**
 * @brief Function implementing the Main thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_Main */
-void Main(void *argument)
+/* USER CODE END Header_StartTask06 */
+void StartTask06(void *argument)
 {
-  /* USER CODE BEGIN Main */
+  /* USER CODE BEGIN StartTask06 */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1);
   }
-  /* USER CODE END Main */
+  /* USER CODE END StartTask06 */
 }
 
-/* USER CODE BEGIN Header_Keyboard_task */
+/* USER CODE BEGIN Header_StartTask07 */
 /**
 * @brief Function implementing the Keyboard_task thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_Keyboard_task */
-void Keyboard_task(void *argument)
+/* USER CODE END Header_StartTask07 */
+void StartTask07(void *argument)
 {
-  /* USER CODE BEGIN Keyboard_task */
+  /* USER CODE BEGIN StartTask07 */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1);
   }
-  /* USER CODE END Keyboard_task */
+  /* USER CODE END StartTask07 */
 }
 
 /**

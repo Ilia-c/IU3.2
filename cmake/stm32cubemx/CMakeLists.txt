@@ -28,7 +28,6 @@ target_include_directories(stm32cubemx INTERFACE
     ../../Middlewares/ST/STM32_USB_Device_Library/Class/MSC/Inc
     ../../Drivers/CMSIS/Device/ST/STM32L4xx/Include
     ../../Drivers/CMSIS/Include
-    ../../Display
 )
 
 target_sources(stm32cubemx INTERFACE
