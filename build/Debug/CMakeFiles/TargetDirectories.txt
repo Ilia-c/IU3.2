@@ -1,0 +1,5 @@
+C:/Projects/IU3.2/build/Debug/CMakeFiles/CubeMX.dir
+C:/Projects/IU3.2/build/Debug/CMakeFiles/edit_cache.dir
+C:/Projects/IU3.2/build/Debug/CMakeFiles/rebuild_cache.dir
+C:/Projects/IU3.2/build/Debug/cmake/stm32cubemx/CMakeFiles/edit_cache.dir
+C:/Projects/IU3.2/build/Debug/cmake/stm32cubemx/CMakeFiles/rebuild_cache.dir
