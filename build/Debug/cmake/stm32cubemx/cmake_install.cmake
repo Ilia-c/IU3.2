@@ -1,4 +1,4 @@
-# Install script for directory: C:/Projects/IU3.2/cmake/stm32cubemx
+# Install script for directory: B:/Проекты/Проекты рабочие/IU3.2/cmake/stm32cubemx
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

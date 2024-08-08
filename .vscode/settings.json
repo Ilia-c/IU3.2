@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "compare": "c",
+        "stdint.h": "c",
+        "oled.h": "c",
+        "oled_fonts.h": "c",
+        "oled_icons.h": "c"
+    }
+}
