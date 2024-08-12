@@ -179,7 +179,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "b:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/build/Debug"
+			"value" : "c:/Projects/IU3.2/build/Debug"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -619,7 +619,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/build/Debug/CMakeFiles/pkgRedirects"
+			"value" : "C:/Projects/IU3.2/build/Debug/CMakeFiles/pkgRedirects"
 		},
 		{
 			"name" : "CMAKE_GENERATOR",
@@ -679,7 +679,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2"
+			"value" : "C:/Projects/IU3.2"
 		},
 		{
 			"name" : "CMAKE_INSTALL_PREFIX",
@@ -1159,7 +1159,7 @@
 				}
 			],
 			"type" : "UNINITIALIZED",
-			"value" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/gcc-arm-none-eabi.cmake"
+			"value" : "C:/Projects/IU3.2/cmake/gcc-arm-none-eabi.cmake"
 		},
 		{
 			"name" : "CMAKE_VERBOSE_MAKEFILE",
@@ -1187,7 +1187,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/build/Debug"
+			"value" : "C:/Projects/IU3.2/build/Debug"
 		},
 		{
 			"name" : "CubeMX_IS_TOP_LEVEL",
@@ -1211,7 +1211,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2"
+			"value" : "C:/Projects/IU3.2"
 		},
 		{
 			"name" : "stm32cubemx_BINARY_DIR",
@@ -1223,7 +1223,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/build/Debug/cmake/stm32cubemx"
+			"value" : "C:/Projects/IU3.2/build/Debug/cmake/stm32cubemx"
 		},
 		{
 			"name" : "stm32cubemx_IS_TOP_LEVEL",
@@ -1247,7 +1247,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx"
+			"value" : "C:/Projects/IU3.2/cmake/stm32cubemx"
 		}
 	],
 	"kind" : "cache",

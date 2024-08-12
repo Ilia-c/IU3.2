@@ -64,75 +64,75 @@
 			[
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../Core/Inc"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../Core/Inc"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../FATFS/Target"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../FATFS/Target"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../FATFS/App"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../FATFS/App"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../USB_DEVICE/App"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../USB_DEVICE/App"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../USB_DEVICE/Target"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../USB_DEVICE/Target"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../Drivers/STM32L4xx_HAL_Driver/Inc"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../Drivers/STM32L4xx_HAL_Driver/Inc"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../Middlewares/Third_Party/FreeRTOS/Source/include"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../Middlewares/Third_Party/FreeRTOS/Source/include"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../Middlewares/Third_Party/FatFs/src"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../Middlewares/Third_Party/FatFs/src"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../Middlewares/ST/STM32_USB_Device_Library/Class/MSC/Inc"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../Middlewares/ST/STM32_USB_Device_Library/Class/MSC/Inc"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32L4xx/Include"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32L4xx/Include"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../Drivers/CMSIS/Include"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../Drivers/CMSIS/Include"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../Library/Settings"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../Library/Settings"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../Library/Display_i2c"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../Library/Display_i2c"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../Library/Display_i2c/hardware"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../Library/Display_i2c/hardware"
 				}
 			],
 			"language" : "C",
@@ -245,75 +245,75 @@
 			[
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../Core/Inc"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../Core/Inc"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../FATFS/Target"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../FATFS/Target"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../FATFS/App"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../FATFS/App"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../USB_DEVICE/App"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../USB_DEVICE/App"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../USB_DEVICE/Target"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../USB_DEVICE/Target"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../Drivers/STM32L4xx_HAL_Driver/Inc"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../Drivers/STM32L4xx_HAL_Driver/Inc"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../Middlewares/Third_Party/FreeRTOS/Source/include"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../Middlewares/Third_Party/FreeRTOS/Source/include"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../Middlewares/Third_Party/FatFs/src"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../Middlewares/Third_Party/FatFs/src"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../Middlewares/ST/STM32_USB_Device_Library/Class/MSC/Inc"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../Middlewares/ST/STM32_USB_Device_Library/Class/MSC/Inc"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32L4xx/Include"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32L4xx/Include"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../Drivers/CMSIS/Include"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../Drivers/CMSIS/Include"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../Library/Settings"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../Library/Settings"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../Library/Display_i2c"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../Library/Display_i2c"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/stm32cubemx/../../Library/Display_i2c/hardware"
+					"path" : "C:/Projects/IU3.2/cmake/stm32cubemx/../../Library/Display_i2c/hardware"
 				}
 			],
 			"language" : "ASM",
