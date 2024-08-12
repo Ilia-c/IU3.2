@@ -183,9 +183,15 @@ int main(void)
 
     HAL_GPIO_WritePin(GPIOA,GPIO_PIN_0, GPIO_PIN_SET);
     HAL_Delay(1000);
+
     OLED_Init(&hi2c1);
-    FontSet(Segoe_UI_Rus_12);
-    OLED_DrawStr("Ghbdtn vbh!", 0, 15, 1);
+    FontSet(Arial_Rus_7);
+    OLED_DrawStr("Wbrk", 0, 5, 1);
+    FontSet(System5x7C_rus);
+    OLED_DrawStr("W b r k", 0, 15, 1);
+
+    //OLED_SetContrast(5);  ./0123456789
+    //OLED_UpdateOnePage(1);
     OLED_UpdateScreen();
 
 

@@ -38,6 +38,8 @@ extern fontdatatype Segoe_UI_Rus_8[];
 extern fontdatatype Arial_Rus_7[];
 extern fontdatatype Segoe_UI_Eng_12[];
 extern fontdatatype Segoe_UI_Eng_10[];
+extern fontdatatype System5x7C_rus[];
+extern fontdatatype U8glib_rus[];
 
 void FontSet(const uint8_t* font);
 
