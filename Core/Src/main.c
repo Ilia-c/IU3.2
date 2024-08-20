@@ -23,11 +23,16 @@
 #include "usb_device.h"
 
 #include "OLED.h"
+#include "Display.h"
 #include "OLED_Fonts.h"
 #include "OLED_Icons.h"
+#include "Keyboard.h"
+#include "Settings.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+
+extern char Keyboard_press_code;
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -181,18 +186,15 @@ int main(void)
   MX_USART3_UART_Init();
   MX_FATFS_Init();
 
-    HAL_GPIO_WritePin(GPIOA,GPIO_PIN_0, GPIO_PIN_SET);
-    HAL_Delay(1000);
+  
+  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_0, GPIO_PIN_SET);
+  HAL_Delay(200);
+  
 
-    OLED_Init(&hi2c1);
-    FontSet(Arial_Rus_7);
-    OLED_DrawStr("Wbrk", 0, 5, 1);
-    FontSet(System5x7C_rus);
-    OLED_DrawStr("W b r k", 0, 15, 1);
+  OLED_Init(&hi2c1);
+  HAL_Delay(10);
+  OLED_UpdateScreen();
 
-    //OLED_SetContrast(5);  ./0123456789
-    //OLED_UpdateOnePage(1);
-    OLED_UpdateScreen();
 
 
   osKernelInitialize();
@@ -983,40 +985,23 @@ void SIM800_data(void *argument)
   /* USER CODE END SIM800_data */
 }
 
-/* USER CODE BEGIN Header_Main */
-/**
-* @brief Function implementing the Main thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_Main */
 void Main(void *argument)
 {
-  /* USER CODE BEGIN Main */
-  /* Infinite loop */
   for(;;)
   {
-    osDelay(1000);
-  }
-  /* USER CODE END Main */
-}
-
-/* USER CODE BEGIN Header_Keyboard_task */
-/**
-* @brief Function implementing the Keyboard_task thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_Keyboard_task */
-void Keyboard_task(void *argument)
-{
-  /* USER CODE BEGIN Keyboard_task */
-  /* Infinite loop */
-  for(;;)
-  {
+    Keyboard_select();
+    Display_all_menu();
     osDelay(1);
   }
-  /* USER CODE END Keyboard_task */
+}
+
+void Keyboard_task(void *argument)
+{
+  for(;;)
+  {
+    ScanKeypad();
+    osDelay(1);
+  }
 }
 
 /**

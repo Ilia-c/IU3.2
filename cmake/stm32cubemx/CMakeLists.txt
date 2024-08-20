@@ -29,8 +29,9 @@ target_include_directories(stm32cubemx INTERFACE
     ../../Drivers/CMSIS/Device/ST/STM32L4xx/Include
     ../../Drivers/CMSIS/Include
     ../../Library/Settings
-    ../../Library/Display_i2c
+    ../../Library/Display_i2c/
     ../../Library/Display_i2c/hardware
+    ../../Library/Keyboard/
 )
 
 target_sources(stm32cubemx INTERFACE
@@ -103,9 +104,13 @@ target_sources(stm32cubemx INTERFACE
     ../../Core/Src/sysmem.c
     ../../Core/Src/syscalls.c
     ../../startup_stm32l476xx.s
+    ../../Library/Display_i2c/Display.c
     ../../Library/Display_i2c/hardware/OLED_Fonst.c
     ../../Library/Display_i2c/hardware/OLED_Icons.c
     ../../Library/Display_i2c/hardware/OLED.c
+    ../../Library/Keyboard/Keyboard.c
+    ../../Library/Settings/Settings.c
+
 )
 
 target_link_directories(stm32cubemx INTERFACE

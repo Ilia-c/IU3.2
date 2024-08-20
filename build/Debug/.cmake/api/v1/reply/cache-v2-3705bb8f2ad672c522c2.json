@@ -1155,10 +1155,10 @@
 			[
 				{
 					"name" : "HELPSTRING",
-					"value" : "The CMake toolchain file"
+					"value" : "No help, variable specified on the command line."
 				}
 			],
-			"type" : "FILEPATH",
+			"type" : "UNINITIALIZED",
 			"value" : "B:/\u041f\u0440\u043e\u0435\u043a\u0442\u044b/\u041f\u0440\u043e\u0435\u043a\u0442\u044b \u0440\u0430\u0431\u043e\u0447\u0438\u0435/IU3.2/cmake/gcc-arm-none-eabi.cmake"
 		},
 		{

@@ -4,6 +4,13 @@
         "stdint.h": "c",
         "oled.h": "c",
         "oled_fonts.h": "c",
-        "oled_icons.h": "c"
+        "oled_icons.h": "c",
+        "fatfs.h": "c",
+        "display.h": "c",
+        "stm32l4xx_hal.h": "c",
+        "string.h": "c",
+        "settings.h": "c",
+        "usb_device.h": "c",
+        "cmsis_os.h": "c"
     }
 }
