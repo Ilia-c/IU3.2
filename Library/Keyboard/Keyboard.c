@@ -37,7 +37,7 @@ const char keyMap[4][4] = {
 };
 
 void ScanKeypad() {
-    osDelay(200);
+    osDelay(100);
     
     HAL_GPIO_WritePin(COL_B1_PORT, COL_B1_PIN, 1);
     osDelay(10);

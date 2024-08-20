@@ -7,5 +7,6 @@
 
 /* Icon in XBM */
 extern const uint8_t icon_clock[];
+extern const uint8_t image_bits[];
 
 #endif /* ICONS_H_ */

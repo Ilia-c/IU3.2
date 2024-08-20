@@ -193,6 +193,7 @@ int main(void)
 
   OLED_Init(&hi2c1);
   HAL_Delay(10);
+
   OLED_UpdateScreen();
 
 

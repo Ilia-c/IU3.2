@@ -370,6 +370,8 @@ void OLED_DrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1)
 	}
 }
 
+
+
 uint8_t OLED_GetWidthStr(const char* str)
 {
 	uint8_t stl = strlen(str);
@@ -390,6 +392,7 @@ uint8_t OLED_GetWidthNum(int16_t num)
 
 	return OLED_GetWidthStr(buf);
 }
+
 
 void OLED_DrawChar(char c, uint8_t ix, uint8_t iy, uint8_t mode)
 {
@@ -431,6 +434,9 @@ void OLED_DrawStr(const char *str, uint8_t x, uint8_t y, uint8_t mode)
 		pos += fontbyte(Font.numchars * (*str - Font.offset) + 4);
 	}
 }
+
+
+
 
 /**********************************************************************************/
 /*                           U P D A T E   S C R E E N                            */

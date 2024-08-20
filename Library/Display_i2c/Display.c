@@ -83,7 +83,11 @@ void Display_all_menu()
     if (Display_update == 1)
     {
         OLED_Clear(0);
+
         menuItem *menu_s = (menuItem *)(selectedMenuItem);
+        Display_TopBar();
+
+
         Display_punkt_menu(menu_s, select_menu_in_page);
         int pos_cursor = select_menu_in_page * dist_y + height_up_munu+2;
         OLED_DrawTriangleFill(0, pos_cursor - 2, 0, pos_cursor + 2, 2, pos_cursor);
@@ -95,7 +99,7 @@ void Display_all_menu()
         }
 
         menu_s = (menuItem *)(selectedMenuItem);
-
+        
         for (int i = select_menu_in_page+1; i < max_munu_in_page+1; i++)
         {
             menu_s = (menuItem *)(menu_s->Next);
@@ -109,6 +113,8 @@ void Display_all_menu()
 
 void Display_punkt_menu(menuItem *menu, int pos_y) // отображение одного пункта меню
 {
+    //FontSet(my5x7rus);
+    //OLED_DrawStr(" !\"#$%&\'()*+,-./0123456789", 0, 0, 1);
     FontSet(len[0] == "r" ? fonts_en : fonts_rus);
     OLED_DrawStr(len[0] == "r" ? menu->Name_en : menu->Name_rus, pos_x_menu, pos_y*dist_y+height_up_munu, 1);
 }
@@ -118,6 +124,11 @@ void menuChange(menuItem *NewMenu)
     if ((void *)NewMenu == (void *)&NULL_ENTRY)
         return;
     selectedMenuItem = (menuItem *)(NewMenu);
+}
+
+void Display_TopBar(){
+    OLED_DrawXBM(1, 1, image_bits);
+
 }
 
 void Keyboard_select()
