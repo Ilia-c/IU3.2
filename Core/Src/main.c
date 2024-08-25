@@ -990,7 +990,7 @@ void Main(void *argument)
 {
   for(;;)
   {
-    Keyboard_select();
+    Display_Keyboard_select();
     Display_all_menu();
     osDelay(1);
   }
