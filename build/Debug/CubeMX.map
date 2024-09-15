@@ -13271,7 +13271,7 @@ LOAD C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/
  .debug_frame   0x0000cb88       0x34 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/thumb/v7e-m+fp/hard\libgcc.a(_udivmoddi4.o)
  .debug_frame   0x0000cbbc       0x28 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memcpy-stub.o)
 
-.debug_info     0x00000000    0x38133
+.debug_info     0x00000000    0x38127
  .debug_info    0x00000000     0x2dbb CMakeFiles/CubeMX.dir/Core/Src/main.c.obj
  .debug_info    0x00002dbb      0xc46 CMakeFiles/CubeMX.dir/Core/Src/stm32l4xx_it.c.obj
  .debug_info    0x00003a01     0x23fb CMakeFiles/CubeMX.dir/Core/Src/stm32l4xx_hal_msp.c.obj
@@ -13323,14 +13323,14 @@ LOAD C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/
  .debug_info    0x00034800      0x12f CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Device_Library/Class/MSC/Src/usbd_msc_data.c.obj
  .debug_info    0x0003492f     0x11cb CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Device_Library/Class/MSC/Src/usbd_msc_scsi.c.obj
  .debug_info    0x00035afa       0x30 CMakeFiles/CubeMX.dir/startup_stm32l476xx.s.obj
- .debug_info    0x00035b2a      0x83f CMakeFiles/CubeMX.dir/Library/Display_i2c/Display.c.obj
- .debug_info    0x00036369      0x34c CMakeFiles/CubeMX.dir/Library/Display_i2c/hardware/OLED_Fonst.c.obj
- .debug_info    0x000366b5      0x176 CMakeFiles/CubeMX.dir/Library/Display_i2c/hardware/OLED_Icons.c.obj
- .debug_info    0x0003682b     0x1268 CMakeFiles/CubeMX.dir/Library/Display_i2c/hardware/OLED.c.obj
- .debug_info    0x00037a93      0x23c CMakeFiles/CubeMX.dir/Library/Keyboard/Keyboard.c.obj
- .debug_info    0x00037ccf      0x312 CMakeFiles/CubeMX.dir/Library/Settings/Settings.c.obj
- .debug_info    0x00037fe1      0x121 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memcpy-stub.o)
- .debug_info    0x00038102       0x31 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strlen.o)
+ .debug_info    0x00035b2a      0x833 CMakeFiles/CubeMX.dir/Library/Display_i2c/Display.c.obj
+ .debug_info    0x0003635d      0x34c CMakeFiles/CubeMX.dir/Library/Display_i2c/hardware/OLED_Fonst.c.obj
+ .debug_info    0x000366a9      0x176 CMakeFiles/CubeMX.dir/Library/Display_i2c/hardware/OLED_Icons.c.obj
+ .debug_info    0x0003681f     0x1268 CMakeFiles/CubeMX.dir/Library/Display_i2c/hardware/OLED.c.obj
+ .debug_info    0x00037a87      0x23c CMakeFiles/CubeMX.dir/Library/Keyboard/Keyboard.c.obj
+ .debug_info    0x00037cc3      0x312 CMakeFiles/CubeMX.dir/Library/Settings/Settings.c.obj
+ .debug_info    0x00037fd5      0x121 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memcpy-stub.o)
+ .debug_info    0x000380f6       0x31 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strlen.o)
 
 .debug_abbrev   0x00000000     0x7f2e
  .debug_abbrev  0x00000000      0x33f CMakeFiles/CubeMX.dir/Core/Src/main.c.obj
@@ -13869,7 +13869,7 @@ LOAD C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/
  .debug_line    0x0003f5a7      0x202 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memcpy-stub.o)
  .debug_line    0x0003f7a9       0x4f C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strlen.o)
 
-.debug_str      0x00000000   0x128ab0
+.debug_str      0x00000000   0x128aa9
  .debug_str     0x00000000   0x1164cb CMakeFiles/CubeMX.dir/Core/Src/main.c.obj
                              0x116d71 (size before relaxing)
  .debug_str     0x001164cb      0x4df CMakeFiles/CubeMX.dir/Core/Src/stm32l4xx_it.c.obj
@@ -13972,21 +13972,21 @@ LOAD C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/
                              0x110686 (size before relaxing)
  .debug_str     0x00127005       0x68 CMakeFiles/CubeMX.dir/startup_stm32l476xx.s.obj
                                  0xaa (size before relaxing)
- .debug_str     0x0012706d      0x60c CMakeFiles/CubeMX.dir/Library/Display_i2c/Display.c.obj
-                             0x10f56e (size before relaxing)
- .debug_str     0x00127679      0x110 CMakeFiles/CubeMX.dir/Library/Display_i2c/hardware/OLED_Fonst.c.obj
+ .debug_str     0x0012706d      0x605 CMakeFiles/CubeMX.dir/Library/Display_i2c/Display.c.obj
+                             0x10f567 (size before relaxing)
+ .debug_str     0x00127672      0x110 CMakeFiles/CubeMX.dir/Library/Display_i2c/hardware/OLED_Fonst.c.obj
                                0x3ea6 (size before relaxing)
- .debug_str     0x00127789       0xb2 CMakeFiles/CubeMX.dir/Library/Display_i2c/hardware/OLED_Icons.c.obj
+ .debug_str     0x00127782       0xb2 CMakeFiles/CubeMX.dir/Library/Display_i2c/hardware/OLED_Icons.c.obj
                                0x3df7 (size before relaxing)
- .debug_str     0x0012783b      0x370 CMakeFiles/CubeMX.dir/Library/Display_i2c/hardware/OLED.c.obj
+ .debug_str     0x00127834      0x370 CMakeFiles/CubeMX.dir/Library/Display_i2c/hardware/OLED.c.obj
                              0x10f071 (size before relaxing)
- .debug_str     0x00127bab      0x19d CMakeFiles/CubeMX.dir/Library/Keyboard/Keyboard.c.obj
+ .debug_str     0x00127ba4      0x19d CMakeFiles/CubeMX.dir/Library/Keyboard/Keyboard.c.obj
                              0x10b587 (size before relaxing)
- .debug_str     0x00127d48      0xb73 CMakeFiles/CubeMX.dir/Library/Settings/Settings.c.obj
+ .debug_str     0x00127d41      0xb73 CMakeFiles/CubeMX.dir/Library/Settings/Settings.c.obj
                                0x6e4f (size before relaxing)
- .debug_str     0x001288bb      0x18c C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memcpy-stub.o)
+ .debug_str     0x001288b4      0x18c C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-memcpy-stub.o)
                                 0x22f (size before relaxing)
- .debug_str     0x00128a47       0x69 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strlen.o)
+ .debug_str     0x00128a40       0x69 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strlen.o)
                                  0xf3 (size before relaxing)
 
 .comment        0x00000000       0x43

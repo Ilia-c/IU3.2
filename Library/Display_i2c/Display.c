@@ -63,7 +63,6 @@ MAKE_MENU(Menu_1, "Режимы", "Modes",                    {0x40}, 0, "", Menu_2,  
         MAKE_MENU(Menu_1_3_1, "Тепература", "Data",     {0x08}, 0, "", Menu_1_3_2,     NULL_ENTRY,     Menu_1_3, NULL_ENTRY, NULL_ENTRY, char_ADC_in_temp);
         MAKE_MENU(Menu_1_3_2, "Глубина", "Data",        {0x08}, 0, "", Menu_1_3_3,     Menu_1_3_1,     Menu_1_3, NULL_ENTRY, NULL_ENTRY, char_ADC_Height);
         MAKE_MENU(Menu_1_3_3, "Кор. глуб.", "Data",     {0x08}, 0, "", NULL_ENTRY,     Menu_1_3_2,     Menu_1_3, NULL_ENTRY, NULL_ENTRY, char_ADC_Height_correct);
-
 MAKE_MENU(Menu_2, "Настройки", "Settings",              {0x40}, 0, "", Menu_3,         Menu_1,         NULL_ENTRY, Menu_2_1, NULL_ENTRY, NULL_ENTRY);
     MAKE_MENU(Menu_2_1, "Дата", "Modes",                {0x02}, 0, "", Menu_2_2,       NULL_ENTRY,     Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
     MAKE_MENU(Menu_2_2, "Время", "Modes",               {0x04}, 0, "", Menu_2_3,       Menu_2_1,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
@@ -90,7 +89,7 @@ MAKE_MENU(Menu_3, "Сведения", "Info",                   {0x40}, 0, "", Menu_4,  
     MAKE_MENU(Menu_3_1, "ID устр.", "ID Device",        {0x08}, 0, "", Menu_3_2,       NULL_ENTRY,     Menu_3, NULL_ENTRY, NULL_ENTRY, ID_board);    
     MAKE_MENU(Menu_3_2, "Вер. платы.", "Modes",         {0x08}, 0, "", Menu_3_3,       Menu_3_1,       Menu_3, NULL_ENTRY, NULL_ENTRY, ver_board);
     MAKE_MENU(Menu_3_3, "Вер. ПО", "Modes",             {0x08}, 0, "", NULL_ENTRY,     Menu_3_2,       Menu_3, NULL_ENTRY, NULL_ENTRY, ver_programm);
-MAKE_MENU(Menu_4, "Инструкция", "Instruction",          {0x01}, 0, "", Menu_5,     Menu_3,         NULL_ENTRY, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
+MAKE_MENU(Menu_4, "Инструкция", "Instruction",          {0x01}, 0, "", NULL_ENTRY,     Menu_3,         NULL_ENTRY, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
 
 ////////////////////////////////////////////////////
 //                Обработка меню                  //
