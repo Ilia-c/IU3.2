@@ -394,6 +394,7 @@ uint8_t OLED_GetWidthNum(int16_t num)
 }
 
 
+/*
 void OLED_DrawChar(char c, uint8_t ix, uint8_t iy, uint8_t mode)
 {
 	const uint8_t* symbol = &fontbyte(Font.numchars * (c - Font.offset) + 4);
@@ -409,6 +410,7 @@ void OLED_DrawChar(char c, uint8_t ix, uint8_t iy, uint8_t mode)
 		}
 	}
 }
+*/
 
 void OLED_DrawNum(int16_t num, uint8_t x, uint8_t y, uint8_t mode)
 {
@@ -418,6 +420,8 @@ void OLED_DrawNum(int16_t num, uint8_t x, uint8_t y, uint8_t mode)
 	OLED_DrawStr(buf, x, y, mode);
 }
 
+
+/*
 void OLED_DrawStr(const char *str, uint8_t x, uint8_t y, uint8_t mode)
 {	
 	
@@ -434,6 +438,45 @@ void OLED_DrawStr(const char *str, uint8_t x, uint8_t y, uint8_t mode)
 		pos += fontbyte(Font.numchars * (*str - Font.offset) + 4);
 	}
 }
+*/
+void OLED_DrawChar(char c, uint8_t ix, uint8_t iy, uint8_t mode)
+{
+    // Проверяем, что символ находится в допустимом диапазоне
+    if ((unsigned char)c < 32 || (unsigned char)c > 255)
+        return; // Пропускаем символы вне диапазона
+	
+	
+    // Получаем символ из таблицы шрифтов
+    const uint8_t* symbol = &fontbyte(Font.numchars * (c - 32) + 4);
+
+    for (uint8_t x = 0; x < symbol[0]; x++)
+    {
+        for (uint8_t y = 0; y < Font.height; y++)
+        {
+            if (symbol[1 + y / 8 + x * (Font.numchars - 1) / Font.width] & (0x01 << (y % 8)))
+                OLED_DrawPixelStatus(ix + x, iy + y, (mode) ? 1 : 0);
+            else
+                OLED_DrawPixelStatus(ix + x, iy + y, (mode) ? 0 : 1);
+        }
+    }
+}
+
+void OLED_DrawStr(const char *str, uint8_t x, uint8_t y, uint8_t mode)
+{   
+    uint8_t stl = strlen(str);
+    uint8_t pos = x;
+
+    if (pos == RIGHT) pos = OLED_WIDTH - OLED_GetWidthStr(str) - 1;
+    if (pos == CENTER) pos = (OLED_WIDTH - OLED_GetWidthStr(str) - 1) / 2;
+    if (y == CENTER) y = (OLED_HEIGHT - Font.height) / 2;
+
+    for (uint8_t cnt = 0; cnt < stl; cnt++, str++)
+    {
+        OLED_DrawChar(*str, pos, y, mode);
+        pos += fontbyte(Font.numchars * (*str - 32) + 4);
+    }
+}
+
 
 
 

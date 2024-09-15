@@ -27,84 +27,84 @@ menuItem Null_Menu = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
     menuItem Id = {Name_rus, Name_en, Type_menu, 0, add_signat, (void *)&Next, (void *)&Previous, (void *)&Parent, (void *)&Child, (void *)&data_in, (void *)&Data_out}
 
 
-// Ð’Ñ‹Ð±Ð¸Ñ€Ð°ÐµÐ¼Ñ‹Ðµ Ð·Ð½Ð°Ñ‡ÐµÐ½Ð¸Ñ Ð¸ ÑÑ‚Ð°Ñ‚ÑƒÑ
-menuSelect_item GSM_MODE[2] = {&GSM_mode, {"Ð’ÐºÐ».", "On"}, {"Ð’Ñ‹ÐºÐ»", "Off"}};    // Ð’ÐºÐ» Ð¾Ñ‚ÐºÐ» GSM
-menuSelect_item RS485_MODE[2] = {&RS485_prot, {"Ð’Ñ‹ÐºÐ».", "Off"}, "Modbus", "Modbus"};             // 
-menuSelect_item UNITS_MODE[2] = {&units_mes, {"Ð¼Ð¸Ð»Ð»Ð¸Ð¼ÐµÑ‚Ñ€Ñ‹", "millimeters"}, "Ð¼ÐµÑ‚Ñ€Ñ‹", "meters"};
+// Âûáèðàåìûå çíà÷åíèÿ è ñòàòóñ
+menuSelect_item GSM_MODE[2] = {&GSM_mode, {"Âêë.", "On"}, {"Âûêë", "Off"}};    // Âêë îòêë GSM
+menuSelect_item RS485_MODE[2] = {&RS485_prot, {"Âûêë.", "Off"}, "Modbus", "Modbus"};             // 
+menuSelect_item UNITS_MODE[2] = {&units_mes, {"ìèëëèìåòðû", "millimeters"}, "ìåòðû", "meters"};
 ////////////////////////////////////////////////////
-//                  ÐŸÑƒÐ½ÐºÑ‚Ñ‹ Ð¼ÐµÐ½ÑŽ                   //
+//                  Ïóíêòû ìåíþ                   //
 ////////////////////////////////////////////////////
-const int max_munu_in_page = 5; // Ð¼Ð°ÐºÑÐ¸Ð¼Ð°Ð»ÑŒÐ½Ð¾Ðµ ÐºÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð¾ Ð¿ÑƒÐ½ÐºÑ‚Ð¾Ð² Ð¼ÐµÐ½ÑŽ Ð½Ð° ÑÑ‚Ñ€Ð°Ð½Ð¸Ñ†Ðµ
-int select_menu_in_page = 0;        // Ð¼ÐµÑ‚ÑƒÑ‰Ð¸Ð¹ Ð¿ÑƒÐ½ÐºÑ‚ Ð¼ÐµÐ½ÑŽc
-char len = 'r';                 //  r - Ñ€ÑƒÑÑÐºÐ¸Ð¹ ÑÐ·Ñ‹Ðº;  e -  Ð°Ð½Ð³Ð»Ð¸Ð¹ÑÐºÐ¸Ð¹
+const int max_munu_in_page = 5; // ìàêñèìàëüíîå êîëè÷åñòâî ïóíêòîâ ìåíþ íà ñòðàíèöå
+int select_menu_in_page = 0;        // ìåòóùèé ïóíêò ìåíþc
+char len = 'r';                 //  r - ðóññêèé ÿçûê;  e -  àíãëèéñêèé
 
-#define height_up_munu 10                                            // Ð²Ñ‹ÑÑ‚Ð° Ð²ÐµÑ€Ñ…Ð½ÐµÐ³Ð¾ Ð¿ÑƒÐ½ÐºÑ‚Ð° Ð¼ÐµÐ½ÑŽ
-#define dist_y (int)((64 - height_up_munu) / (max_munu_in_page)) // Ñ€Ð°ÑÑÑ‚Ð¾ÑÐ½Ð¸Ðµ Ð¼ÐµÐ¶Ð´Ñƒ Ð¿ÑƒÐ½ÐºÑ‚Ð°Ð¼Ð¸ Ð¼ÐµÐ½ÑŽ
-#define pos_x_menu 4                                                // Ð¾Ñ‚ÑÑ‚ÑƒÐ¿ Ð¾Ñ‚ ÐºÑ€Ð°Ñ Ð´Ð»Ñ Ð½Ð°Ð·Ð²Ð°Ð½Ð¸Ð¹ Ð¿ÑƒÐ½ÐºÑ‚Ð¾Ð² Ð¼ÐµÐ½ÑŽ
-#define pos_x_menu_data 100                                             // Ð¾Ñ‚ÑÑ‚ÑƒÐ¿ Ð¾Ñ‚ ÐºÑ€Ð°Ñ Ð´Ð»Ñ Ð²Ñ‹Ð²Ð¾Ð´Ð° Ð·Ð½Ð°Ñ‡ÐµÐ½Ð¸Ð¹
+#define height_up_munu 10                                            // âûñòà âåðõíåãî ïóíêòà ìåíþ
+#define dist_y (int)((64 - height_up_munu) / (max_munu_in_page)) // ðàññòîÿíèå ìåæäó ïóíêòàìè ìåíþ
+#define pos_x_menu 4                                                // îòñòóï îò êðàÿ äëÿ íàçâàíèé ïóíêòîâ ìåíþ
+#define pos_x_menu_data 100                                             // îòñòóï îò êðàÿ äëÿ âûâîäà çíà÷åíèé
 
-#define fonts_rus my5x7rus
-#define fonts_en my5x7en
+#define font my5x7fonts
 
-/*  Ñ‚Ð¸Ð¿ Ð¼ÐµÐ½ÑŽ (char)0b543210
-    6 - Ð²ÐºÐ»Ð°Ð´ÐºÐ°                                             0x40
-    5 - Ð²Ð²Ð¾Ð´ Ñ‡Ð¸ÑÐ»Ð°                                          0x20
-    4 - Ð¸Ð·Ð¼ÐµÐ½ÑÐµÐ¼Ñ‹Ðµ Ð¿ÑƒÐ½ÐºÑ‚Ñ‹ (Ñ‚Ñ€ÑƒÐ±ÑƒÐµÑ‚ÑÑ ÑÑÑ‹Ð»ÐºÐ° Ð½Ð° ÑÑ‚Ñ€ÑƒÐºÑ‚ÑƒÑ€Ñƒ)   0x10
-    3 - Ð²Ñ‹Ð²Ð¾Ð´ Ð½ÐµÐ·Ð¼ÐµÐ½ÑÐµÐ¼Ð¾Ð³Ð¾ Ð·Ð½Ð°Ñ‡Ð²ÐµÐ½Ð¸Ñ char[]                 0x08
-    2 - Ð’Ð²Ð¾Ð´ Ð²Ñ€ÐµÐ¼ÐµÐ½Ð¸                                        0x04
-    1 - Ð’Ð²Ð¾Ð´ Ð´Ð°Ñ‚Ñ‹                                           0x02
-    0 - Ð¿Ð¾ Ð½Ð°Ð¶Ð°Ñ‚Ð¸ÑŽ - Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸Ðµ                               0x01
+
+/*  òèï ìåíþ (char)0b543210
+    6 - âêëàäêà                                             0x40
+    5 - ââîä ÷èñëà                                          0x20
+    4 - èçìåíÿåìûå ïóíêòû (òðóáóåòñÿ ññûëêà íà ñòðóêòóðó)   0x10
+    3 - âûâîä íåçìåíÿåìîãî çíà÷âåíèÿ char[]                 0x08
+    2 - Ââîä âðåìåíè                                        0x04
+    1 - Ââîä äàòû                                           0x02
+    0 - ïî íàæàòèþ - äåéñòâèå                               0x01
 */
 
-MAKE_MENU(Menu_1, "Ð ÐµÐ¶Ð¸Ð¼Ñ‹", "Modes",                    {0x40}, 0, "", Menu_2,         NULL_ENTRY,     NULL_ENTRY, Menu_1_1, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_1_1, "Ð¦Ð¸ÐºÐ»", "Cycle",                {0x01}, 0, "", Menu_1_2,       NULL_ENTRY,     Menu_1, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_1_2, "Ð¢ÐµÑÑ‚", "Test",                 {0x01}, 0, "", Menu_1_3,       Menu_1_1,       Menu_1, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_1_3, "ÐŸÐ¾ÐºÐ°Ð·Ð°Ð½Ð¸Ñ", "Data",            {0x40}, 0, "", NULL_ENTRY,     Menu_1_2,       Menu_1, Menu_1_3_1, NULL_ENTRY, NULL_ENTRY);
-        MAKE_MENU(Menu_1_3_1, "Ð¢ÐµÐ¿ÐµÑ€Ð°Ñ‚ÑƒÑ€Ð°", "Data",     {0x08}, 0, "", Menu_1_3_2,     NULL_ENTRY,     Menu_1_3, NULL_ENTRY, NULL_ENTRY, char_ADC_in_temp);
-        MAKE_MENU(Menu_1_3_2, "Ð“Ð»ÑƒÐ±Ð¸Ð½Ð°", "Data",        {0x08}, 0, "", Menu_1_3_3,     Menu_1_3_1,     Menu_1_3, NULL_ENTRY, NULL_ENTRY, char_ADC_Height);
-        MAKE_MENU(Menu_1_3_3, "ÐšÐ¾Ñ€. Ð³Ð»ÑƒÐ±.", "Data",     {0x08}, 0, "", NULL_ENTRY,     Menu_1_3_2,     Menu_1_3, NULL_ENTRY, NULL_ENTRY, char_ADC_Height_correct);
-MAKE_MENU(Menu_2, "ÐÐ°ÑÑ‚Ñ€Ð¾Ð¹ÐºÐ¸", "Settings",              {0x40}, 0, "", Menu_3,         Menu_1,         NULL_ENTRY, Menu_2_1, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_2_1, "Ð”Ð°Ñ‚Ð°", "Modes",                {0x02}, 0, "", Menu_2_2,       NULL_ENTRY,     Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_2_2, "Ð’Ñ€ÐµÐ¼Ñ", "Modes",               {0x04}, 0, "", Menu_2_3,       Menu_2_1,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_2_3, "Ð’Ñ€ÐµÐ¼Ñ ÑÐ½Ð°", "Modes",           {0x20}, 0, "", Menu_2_4,       Menu_2_2,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_2_4, "ÐÑƒÐ». ÑƒÑ€.", "Modes",            {0x20}, 0, "", Menu_2_5,       Menu_2_3,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_2_5, "Ð£Ñ€Ð¾Ð². Ð´Ð°Ñ‚.", "Modes",          {0x20}, 0, "", Menu_2_6,       Menu_2_4,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_2_6, "Ð¡Ð²ÑÐ·ÑŒ", "GSM",                 {0x10}, 0, "", Menu_2_7,       Menu_2_5,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_2_7, "Ð¢Ð¾Ðº. Ð¿ÐµÑ‚Ð»Ñ", "Modes",          {0x10}, 0, "", Menu_2_8,       Menu_2_6,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
+MAKE_MENU(Menu_1, "Ðåæèìû", "Modes",                    {0x40}, 0, "", Menu_2,         NULL_ENTRY,     NULL_ENTRY, Menu_1_1, NULL_ENTRY, NULL_ENTRY);
+    MAKE_MENU(Menu_1_1, "Öèêë", "Cycle",                {0x01}, 0, "", Menu_1_2,       NULL_ENTRY,     Menu_1, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
+    MAKE_MENU(Menu_1_2, "Òåñò", "Test",                 {0x01}, 0, "", Menu_1_3,       Menu_1_1,       Menu_1, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
+    MAKE_MENU(Menu_1_3, "Ïîêàçàíèÿ", "Data",            {0x40}, 0, "", NULL_ENTRY,     Menu_1_2,       Menu_1, Menu_1_3_1, NULL_ENTRY, NULL_ENTRY);
+        MAKE_MENU(Menu_1_3_1, "Òåïåðàòóðà", "Data",     {0x08}, 0, "", Menu_1_3_2,     NULL_ENTRY,     Menu_1_3, NULL_ENTRY, NULL_ENTRY, char_ADC_in_temp);
+        MAKE_MENU(Menu_1_3_2, "Ãëóáèíà", "Data",        {0x08}, 0, "", Menu_1_3_3,     Menu_1_3_1,     Menu_1_3, NULL_ENTRY, NULL_ENTRY, char_ADC_Height);
+        MAKE_MENU(Menu_1_3_3, "Êîð. ãëóá.", "Data",     {0x08}, 0, "", NULL_ENTRY,     Menu_1_3_2,     Menu_1_3, NULL_ENTRY, NULL_ENTRY, char_ADC_Height_correct);
+
+MAKE_MENU(Menu_2, "Íàñòðîéêè", "Settings",              {0x40}, 0, "", Menu_3,         Menu_1,         NULL_ENTRY, Menu_2_1, NULL_ENTRY, NULL_ENTRY);
+    MAKE_MENU(Menu_2_1, "Äàòà", "Modes",                {0x02}, 0, "", Menu_2_2,       NULL_ENTRY,     Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
+    MAKE_MENU(Menu_2_2, "Âðåìÿ", "Modes",               {0x04}, 0, "", Menu_2_3,       Menu_2_1,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
+    MAKE_MENU(Menu_2_3, "Âðåìÿ ñíà", "Modes",           {0x20}, 0, "", Menu_2_4,       Menu_2_2,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
+    MAKE_MENU(Menu_2_4, "Íóë. óð.", "Modes",            {0x20}, 0, "", Menu_2_5,       Menu_2_3,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
+    MAKE_MENU(Menu_2_5, "Óðîâ. äàò.", "Modes",          {0x20}, 0, "", Menu_2_6,       Menu_2_4,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
+    MAKE_MENU(Menu_2_6, "Ñâÿçü", "GSM",                 {0x10}, 0, "", Menu_2_7,       Menu_2_5,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
+    MAKE_MENU(Menu_2_7, "Òîê. ïåòëÿ", "Modes",          {0x10}, 0, "", Menu_2_8,       Menu_2_6,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
     MAKE_MENU(Menu_2_8, "RS485", "RS485",               {0x10}, 0, "", Menu_2_9,       Menu_2_7,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_2_9, "Ð•Ð´. Ð¸Ð·Ð¼.", "Modes",            {0x10}, 0, "", Menu_2_10,      Menu_2_8,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_2_10, "Ð˜Ð½Ð¶ÐµÐ½. Ð¼ÐµÐ½ÑŽ", "Modes",        {0x01}, 0, "", Menu_2_11,      Menu_2_9,       Menu_2, Menu_2_10_1, NULL_ENTRY, NULL_ENTRY);
-        MAKE_MENU(Menu_2_10_1, "ÐÐ²Ñ‚. ÐšÐ°Ð»Ð¸Ð±.", "Modes",  {0x01}, 0, "", Menu_2_10_2,    NULL_ENTRY,     Menu_2_10, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-        MAKE_MENU(Menu_2_10_2, "ÐÐ¾Ð¼. Ð¿Ð»Ð°Ñ‚Ñ‹", "Modes",   {0x20}, 0, "", Menu_2_10_3,    Menu_2_10_1,    Menu_2_10, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-        MAKE_MENU(Menu_2_10_3, "Ð“Ð»ÑƒÐ±Ð¸Ð½Ð°", "Modes",      {0x08}, 0, "", Menu_2_10_4,    Menu_2_10_2,    Menu_2_10, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-        MAKE_MENU(Menu_2_10_4, "Ð¢Ð¾Ðº", "Modes",          {0x08}, 0, "", Menu_2_10_5,    Menu_2_10_3,    Menu_2_10, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-        MAKE_MENU(Menu_2_10_5, "Ð¢ÐµÐ¼Ð¿. 1", "Modes",      {0x08}, 0, "", Menu_2_10_6,    Menu_2_10_4,    Menu_2_10, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-        MAKE_MENU(Menu_2_10_6, "Ð¢ÐµÐ¼Ð¿. 2", "Modes",      {0x08}, 0, "", Menu_2_10_7,    Menu_2_10_5,    Menu_2_10, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-        MAKE_MENU(Menu_2_10_7, "Ð¢ÐµÐ¼Ð¿. 3", "Modes",      {0x08}, 0, "", Menu_2_10_8,    Menu_2_10_6,    Menu_2_10, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-        MAKE_MENU(Menu_2_10_8, "Ð”Ð°Ð²Ð»ÐµÐ½Ð¸Ðµ", "Modes",     {0x08}, 0, "", Menu_2_10_9,    Menu_2_10_7,    Menu_2_10, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-        MAKE_MENU(Menu_2_10_9, "Ð’Ð»Ð°Ð¶Ð½Ð¾ÑÑ‚ÑŒ", "Modes",    {0x08}, 0, "", NULL_ENTRY,     Menu_2_10_8,    Menu_2_10, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_2_11, "Ð¡Ð±Ñ€Ð¾Ñ", "Modes",              {0x01}, 0, "", Menu_2_12,      Menu_2_10,      Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_2_12, "Ð¤Ð¾Ñ€Ð¼Ð°Ñ‚. SD", "Modes",         {0x01}, 0, "", NULL_ENTRY,     Menu_2_11,      Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-MAKE_MENU(Menu_3, "Ð¡Ð²ÐµÐ´ÐµÐ½Ð¸Ñ", "Info",                   {0x40}, 0, "", Menu_4,         Menu_2,         NULL_ENTRY, Menu_3_1, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_3_1, "ID ÑƒÑÑ‚Ñ€.", "ID Device",        {0x08}, 0, "", Menu_3_2,       NULL_ENTRY,     Menu_3, NULL_ENTRY, NULL_ENTRY, ID_board);    
-    MAKE_MENU(Menu_3_2, "Ð’ÐµÑ€. Ð¿Ð»Ð°Ñ‚Ñ‹.", "Modes",         {0x08}, 0, "", Menu_3_3,       Menu_3_1,       Menu_3, NULL_ENTRY, NULL_ENTRY, ver_board);
-    MAKE_MENU(Menu_3_3, "Ð’ÐµÑ€. ÐŸÐž", "Modes",             {0x08}, 0, "", NULL_ENTRY,     Menu_3_2,       Menu_3, NULL_ENTRY, NULL_ENTRY, ver_programm);
-MAKE_MENU(Menu_4, "Ð˜Ð½ÑÑ‚Ñ€ÑƒÐºÑ†Ð¸Ñ", "Instruction",          {0x01}, 0, "", NULL_ENTRY,     Menu_3,         NULL_ENTRY, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
+    MAKE_MENU(Menu_2_9, "Åä. èçì.", "Modes",            {0x10}, 0, "", Menu_2_10,      Menu_2_8,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
+    MAKE_MENU(Menu_2_10, "Èíæåí. ìåíþ", "Modes",        {0x01}, 0, "", Menu_2_11,      Menu_2_9,       Menu_2, Menu_2_10_1, NULL_ENTRY, NULL_ENTRY);
+        MAKE_MENU(Menu_2_10_1, "Àâò. Êàëèá.", "Modes",  {0x01}, 0, "", Menu_2_10_2,    NULL_ENTRY,     Menu_2_10, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
+        MAKE_MENU(Menu_2_10_2, "Íîì. ïëàòû", "Modes",   {0x20}, 0, "", Menu_2_10_3,    Menu_2_10_1,    Menu_2_10, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
+        MAKE_MENU(Menu_2_10_3, "Ãëóáèíà", "Modes",      {0x08}, 0, "", Menu_2_10_4,    Menu_2_10_2,    Menu_2_10, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
+        MAKE_MENU(Menu_2_10_4, "Òîê", "Modes",          {0x08}, 0, "", Menu_2_10_5,    Menu_2_10_3,    Menu_2_10, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
+        MAKE_MENU(Menu_2_10_5, "Òåìï. 1", "Modes",      {0x08}, 0, "", Menu_2_10_6,    Menu_2_10_4,    Menu_2_10, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
+        MAKE_MENU(Menu_2_10_6, "Òåìï. 2", "Modes",      {0x08}, 0, "", Menu_2_10_7,    Menu_2_10_5,    Menu_2_10, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
+        MAKE_MENU(Menu_2_10_7, "Òåìï. 3", "Modes",      {0x08}, 0, "", Menu_2_10_8,    Menu_2_10_6,    Menu_2_10, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
+        MAKE_MENU(Menu_2_10_8, "Äàâëåíèå", "Modes",     {0x08}, 0, "", Menu_2_10_9,    Menu_2_10_7,    Menu_2_10, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
+        MAKE_MENU(Menu_2_10_9, "Âëàæíîñòü", "Modes",    {0x08}, 0, "", NULL_ENTRY,     Menu_2_10_8,    Menu_2_10, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
+    MAKE_MENU(Menu_2_11, "Ñáðîñ", "Modes",              {0x01}, 0, "", Menu_2_12,      Menu_2_10,      Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
+    MAKE_MENU(Menu_2_12, "Ôîðìàò. SD", "Modes",         {0x01}, 0, "", NULL_ENTRY,     Menu_2_11,      Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
+MAKE_MENU(Menu_3, "Ñâåäåíèÿ", "Info",                   {0x40}, 0, "", Menu_4,         Menu_2,         NULL_ENTRY, Menu_3_1, NULL_ENTRY, NULL_ENTRY);
+    MAKE_MENU(Menu_3_1, "ID óñòð.", "ID Device",        {0x08}, 0, "", Menu_3_2,       NULL_ENTRY,     Menu_3, NULL_ENTRY, NULL_ENTRY, ID_board);    
+    MAKE_MENU(Menu_3_2, "Âåð. ïëàòû.", "Modes",         {0x08}, 0, "", Menu_3_3,       Menu_3_1,       Menu_3, NULL_ENTRY, NULL_ENTRY, ver_board);
+    MAKE_MENU(Menu_3_3, "Âåð. ÏÎ", "Modes",             {0x08}, 0, "", NULL_ENTRY,     Menu_3_2,       Menu_3, NULL_ENTRY, NULL_ENTRY, ver_programm);
+MAKE_MENU(Menu_4, "Èíñòðóêöèÿ", "Instruction",          {0x01}, 0, "", Menu_5,     Menu_3,         NULL_ENTRY, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
 
 ////////////////////////////////////////////////////
-//                ÐžÐ±Ñ€Ð°Ð±Ð¾Ñ‚ÐºÐ° Ð¼ÐµÐ½ÑŽ                  //
+//                Îáðàáîòêà ìåíþ                  //
 ////////////////////////////////////////////////////
 menuItem *selectedMenuItem = &Menu_1;
 
 void Display_all_menu()
-{ // Ð¾Ñ‚Ð¾Ð±Ñ€Ð°Ð¶ÐµÐ½Ð¸Ðµ Ð²ÑÐµÑ… Ð¿ÑƒÐ½ÐºÑ‚Ð¾Ð² Ð¼ÐµÐ½ÑŽ Ð½Ð° ÑÑ‚Ñ€Ð°Ð½Ð¸Ñ†Ðµ
+{ // îòîáðàæåíèå âñåõ ïóíêòîâ ìåíþ íà ñòðàíèöå
     if (Display_update == 1)
     {
         OLED_Clear(0);
 
         menuItem *menu_s = (menuItem *)(selectedMenuItem);
         Display_TopBar();
-
 
         Display_punkt_menu(menu_s, select_menu_in_page);
         int pos_cursor = select_menu_in_page * dist_y + height_up_munu+2;
@@ -129,114 +129,25 @@ void Display_all_menu()
     }
 }
 
-char convert_to_ascii(unsigned char c) {
-    switch (c) {
-        case 0xD0: case 0xD1:
-            return c - 0x20;
-        case 0x90: return 'F'; // Ð
-        case 0x91: return ','; // Ð‘
-        case 0x92: return 'D'; // Ð’
-        case 0x93: return 'U'; // Ð“
-        case 0x94: return 'L'; // Ð”
-        case 0x95: return 'T'; // Ð•
-        case 0x96: return ':'; // Ð–
-        case 0x97: return 'P'; // Ð—
-        case 0x98: return 'B'; // Ð˜
-        case 0x99: return 'Q'; // Ð™
-        case 0x9A: return 'R'; // Ðš
-        case 0x9B: return 'K'; // Ð›
-        case 0x9C: return 'V'; // Ðœ
-        case 0x9D: return 'Y'; // Ð
-        case 0x9E: return 'J'; // Ðž
-        case 0x9F: return 'G'; // ÐŸ
-        case 0xA0: return 'H'; // Ð 
-        case 0xA1: return 'C'; // Ð¡
-        case 0xA2: return 'N'; // Ð¢
-        case 0xA3: return 'E'; // Ð£
-        case 0xA4: return 'A'; // Ð¤
-        case 0xA5: return '{'; // Ð¥
-        case 0xA6: return 'W'; // Ð¦
-        case 0xA7: return 'X'; // Ð§
-        case 0xA8: return 'I'; // Ð¨
-        case 0xA9: return 'O'; // Ð©
-        case 0xAA: return ']'; // Ðª
-        case 0xAB: return 'S'; // Ð«
-        case 0xAC: return 'M'; // Ð¬
-        case 0xAD: return '\"'; // Ð­
-        case 0xAE: return '>'; // Ð®
-        case 0xAF: return 'Z'; // Ð¯
-        case 0xB0: return 'f'; // Ð°
-        case 0xB1: return ','; // Ð±
-        case 0xB2: return 'd'; // Ð²
-        case 0xB3: return 'u'; // Ð³
-        case 0xB4: return 'l'; // Ð´
-        case 0xB5: return 't'; // Ðµ
-        case 0xB6: return ';'; // Ð¶
-        case 0xB7: return 'p'; // Ð·
-        case 0xB8: return 'b'; // Ð¸
-        case 0xB9: return 'q'; // Ð¹
-        case 0xBA: return 'r'; // Ðº
-        case 0xBB: return 'k'; // Ð»
-        case 0xBC: return 'v'; // Ð¼
-        case 0xBD: return 'y'; // Ð½
-        case 0xBE: return 'j'; // Ð¾
-        case 0xBF: return 'g'; // Ð¿
-        case 0x80: return 'h'; // Ñ€
-        case 0x81: return 'c'; // Ñ
-        case 0x82: return 'n'; // Ñ‚
-        case 0x83: return 'e'; // Ñƒ
-        case 0x84: return 'a'; // Ñ„
-        case 0x85: return '['; // Ñ…
-        case 0x86: return 'w'; // Ñ†
-        case 0x87: return 'x'; // Ñ‡
-        case 0x88: return 'i'; // Ñˆ
-        case 0x89: return 'o'; // Ñ‰
-        case 0x8A: return ']'; // ÑŠ
-        case 0x8B: return 's'; // Ñ‹
-        case 0x8C: return 'm'; // ÑŒ
-        case 0x8D: return '\''; // Ñ
-        case 0x8E: return '.'; // ÑŽ
-        case 0x8F: return 'z'; // Ñ
-        default: return c;
-    }
-}
 
-void convert_string_to_ascii(const char *input, char *output) {
-    int i = 0, j = 0;
-
-    while (input[i] != '\0') {
-        if ((unsigned char)input[i] == 0xD0 || (unsigned char)input[i] == 0xD1) {
-            output[j] = convert_to_ascii((unsigned char)input[i + 1]);
-            i += 2;
-        } else {
-            output[j] = input[i];
-            i++;
-        }
-        j++;
-    }
-    output[j] = '\0';
-}
-
-void Display_punkt_menu(menuItem *menu, int pos_y) // Ð¾Ñ‚Ð¾Ð±Ñ€Ð°Ð¶ÐµÐ½Ð¸Ðµ Ð¾Ð´Ð½Ð¾Ð³Ð¾ Ð¿ÑƒÐ½ÐºÑ‚Ð° Ð¼ÐµÐ½ÑŽ
+void Display_punkt_menu(menuItem *menu, int pos_y) // îòîáðàæåíèå îäíîãî ïóíêòà ìåíþ
 {
-    FontSet(len == 'r' ? fonts_rus : fonts_en);
+    FontSet(font);
     if (len == 'r'){
-        char output[20];
-        convert_string_to_ascii(menu->Name_rus, output);
-        OLED_DrawStr(output, pos_x_menu, pos_y*dist_y+height_up_munu, 1);
+        OLED_DrawStr(menu->Name_rus, pos_x_menu, pos_y*dist_y+height_up_munu, 1);
     }
     else{
         OLED_DrawStr(menu->Name_en, pos_x_menu, pos_y*dist_y+height_up_munu, 1);
     }
 
-/*  Ñ‚Ð¸Ð¿ Ð¼ÐµÐ½ÑŽ (char)0b543210
-    6 - Ð²ÐºÐ»Ð°Ð´ÐºÐ°                                             0x40
-    5 - Ð²Ð²Ð¾Ð´ Ñ‡Ð¸ÑÐ»Ð°                                          0x20
-    4 - Ð¸Ð·Ð¼ÐµÐ½ÑÐµÐ¼Ñ‹Ðµ Ð¿ÑƒÐ½ÐºÑ‚Ñ‹ (Ñ‚Ñ€ÑƒÐ±ÑƒÐµÑ‚ÑÑ ÑÑÑ‹Ð»ÐºÐ° Ð½Ð° ÑÑ‚Ñ€ÑƒÐºÑ‚ÑƒÑ€Ñƒ)   0x10
-    3 - Ð²Ñ‹Ð²Ð¾Ð´ Ð½ÐµÐ·Ð¼ÐµÐ½ÑÐµÐ¼Ð¾Ð³Ð¾ Ð·Ð½Ð°Ñ‡Ð²ÐµÐ½Ð¸Ñ char[]                 0x08
-    2 - Ð’Ð²Ð¾Ð´ Ð²Ñ€ÐµÐ¼ÐµÐ½Ð¸                                        0x04
-    1 - Ð’Ð²Ð¾Ð´ Ð´Ð°Ñ‚Ñ‹                                           0x02
-    0 - Ð¿Ð¾ Ð½Ð°Ð¶Ð°Ñ‚Ð¸ÑŽ - Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸Ðµ                               0x01
+/*  òèï ìåíþ (char)0b543210
+    6 - âêëàäêà                                             0x40
+    5 - ââîä ÷èñëà                                          0x20
+    4 - èçìåíÿåìûå ïóíêòû (òðóáóåòñÿ ññûëêà íà ñòðóêòóðó)   0x10
+    3 - âûâîä íåçìåíÿåìîãî çíà÷âåíèÿ char[]                 0x08
+    2 - Ââîä âðåìåíè                                        0x04
+    1 - Ââîä äàòû                                           0x02
+    0 - ïî íàæàòèþ - äåéñòâèå                               0x01
 */
     if (menu->Type_menu & 0x08){
         OLED_DrawStr(menu->data_out, pos_x_menu_data, pos_y*dist_y+height_up_munu, 1);

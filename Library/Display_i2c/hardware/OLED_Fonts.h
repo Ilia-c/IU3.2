@@ -40,6 +40,7 @@ extern fontdatatype Segoe_UI_Eng_12[];
 extern fontdatatype Segoe_UI_Eng_10[];
 extern fontdatatype my5x7en[];
 extern fontdatatype my5x7rus[];
+extern fontdatatype my5x7fonts[];
 
 void FontSet(const uint8_t* font);
 
