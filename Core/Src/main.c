@@ -239,8 +239,16 @@ int main(void)
   * @brief System Clock Configuration
   * @retval None
   */
-
- 
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  if(GPIO_Pin == Str_b1_Pin | Str_b2_Pin | Str_b3_Pin | Str_b4_Pin) // если прерывание поступило от ножки PA9
+  {
+    static portBASE_TYPE xTaskWoken;
+    xSemaphoreGiveFromISR(Keyboard_semapfore, &xTaskWoken); // перемекстить в блок прерываний
+  }
+    
+    
+}
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
@@ -466,7 +474,7 @@ static void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.Timing = 0x00D09BE3;
+  hi2c1.Init.Timing = 0x0070133F;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -877,17 +885,30 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : Reset_key_Pin Str_b1_Pin SD_detect_Pin RS_485_Data_det_Pin */
-  GPIO_InitStruct.Pin = Reset_key_Pin|Str_b1_Pin|SD_detect_Pin|RS_485_Data_det_Pin;
+  /*Configure GPIO pins : Reset_key_Pin SD_detect_Pin RS_485_Data_det_Pin */
+  GPIO_InitStruct.Pin = Reset_key_Pin|SD_detect_Pin|RS_485_Data_det_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : Str_b1_Pin */
+  GPIO_InitStruct.Pin = Str_b1_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(Str_b1_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pins : Str_b2_Pin Str_b3_Pin Str_b4_Pin */
   GPIO_InitStruct.Pin = Str_b2_Pin|Str_b3_Pin|Str_b4_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
@@ -908,7 +929,8 @@ void StartDefaultTask(void *argument)
 {
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
-  Keyboard_semapfore = xSemaphoreCreateCounting( 1, 0 );
+  
+  vSemaphoreCreateBinary(Keyboard_semapfore);
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
   for(;;)
@@ -997,7 +1019,7 @@ void Main(void *argument)
   {
     Display_Keyboard_select();
     Display_all_menu();
-    osDelay(1);
+    osDelay(100);
   }
 }
 
@@ -1005,10 +1027,9 @@ void Keyboard_task(void *argument)
 {
   for(;;)
   {
-    xSemaphoreGive(Keyboard_semapfore); // перемекстить в блок прерываний
     xSemaphoreTake(Keyboard_semapfore, portMAX_DELAY); 
     ScanKeypad();
-    osDelay(200);
+    osDelay(300);
   }
 }
 
