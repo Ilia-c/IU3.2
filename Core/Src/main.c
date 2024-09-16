@@ -28,11 +28,15 @@
 #include "OLED_Icons.h"
 #include "Keyboard.h"
 #include "Settings.h"
+#include "FreeRTOS.h"
+#include "semphr.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
 
 extern char Keyboard_press_code;
+
+xSemaphoreHandle Keyboard_semapfore;
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -195,9 +199,6 @@ int main(void)
   HAL_Delay(10);
 
   OLED_UpdateScreen();
-
-
-
   osKernelInitialize();
 
   SD_cardHandle = osThreadNew(StartDefaultTask, NULL, &SD_card_attributes);
@@ -211,6 +212,8 @@ int main(void)
 
   /* Start scheduler */
   osKernelStart();
+  
+  
 
   /* We should never get here as control is now taken by the scheduler */
   
@@ -905,6 +908,7 @@ void StartDefaultTask(void *argument)
 {
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
+  Keyboard_semapfore = xSemaphoreCreateCounting( 1, 0 );
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
   for(;;)
@@ -913,6 +917,7 @@ void StartDefaultTask(void *argument)
   }
   /* USER CODE END 5 */
 }
+
 
 /* USER CODE BEGIN Header_Display_I2C */
 /**
@@ -1000,8 +1005,10 @@ void Keyboard_task(void *argument)
 {
   for(;;)
   {
+    xSemaphoreGive(Keyboard_semapfore); // перемекстить в блок прерываний
+    xSemaphoreTake(Keyboard_semapfore, portMAX_DELAY); 
     ScanKeypad();
-    osDelay(1);
+    osDelay(200);
   }
 }
 

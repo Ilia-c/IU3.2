@@ -1,5 +1,8 @@
 #include "stm32l4xx_hal.h"
 #include "Settings.h"
+#include "FreeRTOS.h"
+#include "main.h"
+#include "semphr.h"
 extern int Display_update;
 extern char Keyboard_press_code;
 
@@ -37,10 +40,11 @@ const char keyMap[4][4] = {
 };
 
 void ScanKeypad() {
-    osDelay(100);
+    //osDelay(100);
+    
     
     HAL_GPIO_WritePin(COL_B1_PORT, COL_B1_PIN, 1);
-    osDelay(10);
+    osDelay(3);
     if (HAL_GPIO_ReadPin(STR_B1_PORT, STR_B1_PIN) == 1) {
         HAL_GPIO_WritePin(COL_B1_PORT, COL_B1_PIN, 0);
         Keyboard_press_code = keyMap[0][0];
@@ -66,7 +70,7 @@ void ScanKeypad() {
     ////
 
     HAL_GPIO_WritePin(COL_B2_PORT, COL_B2_PIN, 1);
-    osDelay(10);
+    osDelay(3);
     if (HAL_GPIO_ReadPin(STR_B1_PORT, STR_B1_PIN) == 1) {
         HAL_GPIO_WritePin(COL_B2_PORT, COL_B2_PIN, 0);
         Keyboard_press_code = keyMap[1][0];
@@ -92,7 +96,7 @@ void ScanKeypad() {
     ////
 
     HAL_GPIO_WritePin(COL_B3_PORT, COL_B3_PIN, 1);
-    osDelay(10);
+    osDelay(3);
     if (HAL_GPIO_ReadPin(STR_B1_PORT, STR_B1_PIN) == 1) {
         HAL_GPIO_WritePin(COL_B3_PORT, COL_B3_PIN, 0);
         Keyboard_press_code = keyMap[2][0];
@@ -118,7 +122,7 @@ void ScanKeypad() {
     ///
 
     HAL_GPIO_WritePin(COL_B4_PORT, COL_B4_PIN, 1);
-    osDelay(10);
+    osDelay(3);
     if (HAL_GPIO_ReadPin(STR_B1_PORT, STR_B1_PIN) == 1) {
         HAL_GPIO_WritePin(COL_B4_PORT, COL_B4_PIN, 0);
         Keyboard_press_code = keyMap[3][0];
@@ -141,4 +145,8 @@ void ScanKeypad() {
     }
     HAL_GPIO_WritePin(COL_B4_PORT, COL_B4_PIN, 0);
     
+    //HAL_GPIO_WritePin(COL_B1_PORT, COL_B1_PIN, 1);
+    //HAL_GPIO_WritePin(COL_B2_PORT, COL_B2_PIN, 1);
+    //HAL_GPIO_WritePin(COL_B3_PORT, COL_B3_PIN, 1);
+    //HAL_GPIO_WritePin(COL_B4_PORT, COL_B4_PIN, 1);
 }

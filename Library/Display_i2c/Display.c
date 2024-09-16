@@ -67,7 +67,7 @@ MAKE_MENU(Menu_2, "Настройки", "Settings",              {0x40}, 0, "", Menu_3,  
     MAKE_MENU(Menu_2_1, "Дата", "Modes",                {0x02}, 0, "", Menu_2_2,       NULL_ENTRY,     Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
     MAKE_MENU(Menu_2_2, "Время", "Modes",               {0x04}, 0, "", Menu_2_3,       Menu_2_1,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
     MAKE_MENU(Menu_2_3, "Время сна", "Modes",           {0x20}, 0, "", Menu_2_4,       Menu_2_2,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_2_4, "Нул. ур.", "Modes",            {0x20}, 0, "", Menu_2_5,       Menu_2_3,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
+    MAKE_MENU(Menu_2_4, "Нул. ур.", "Modes",            {0x20}, 0, "мм", Menu_2_5,       Menu_2_3,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
     MAKE_MENU(Menu_2_5, "Уров. дат.", "Modes",          {0x20}, 0, "", Menu_2_6,       Menu_2_4,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
     MAKE_MENU(Menu_2_6, "Связь", "GSM",                 {0x10}, 0, "", Menu_2_7,       Menu_2_5,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
     MAKE_MENU(Menu_2_7, "Ток. петля", "Modes",          {0x10}, 0, "", Menu_2_8,       Menu_2_6,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
@@ -77,7 +77,7 @@ MAKE_MENU(Menu_2, "Настройки", "Settings",              {0x40}, 0, "", Menu_3,  
         MAKE_MENU(Menu_2_10_1, "Авт. Калиб.", "Modes",  {0x01}, 0, "", Menu_2_10_2,    NULL_ENTRY,     Menu_2_10, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
         MAKE_MENU(Menu_2_10_2, "Ном. платы", "Modes",   {0x20}, 0, "", Menu_2_10_3,    Menu_2_10_1,    Menu_2_10, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
         MAKE_MENU(Menu_2_10_3, "Глубина", "Modes",      {0x08}, 0, "", Menu_2_10_4,    Menu_2_10_2,    Menu_2_10, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-        MAKE_MENU(Menu_2_10_4, "Ток", "Modes",          {0x08}, 0, "", Menu_2_10_5,    Menu_2_10_3,    Menu_2_10, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
+        MAKE_MENU(Menu_2_10_4, "Ток", "Modes",          {0x08}, 0, "мА", Menu_2_10_5,    Menu_2_10_3,    Menu_2_10, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
         MAKE_MENU(Menu_2_10_5, "Темп. 1", "Modes",      {0x08}, 0, "", Menu_2_10_6,    Menu_2_10_4,    Menu_2_10, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
         MAKE_MENU(Menu_2_10_6, "Темп. 2", "Modes",      {0x08}, 0, "", Menu_2_10_7,    Menu_2_10_5,    Menu_2_10, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
         MAKE_MENU(Menu_2_10_7, "Темп. 3", "Modes",      {0x08}, 0, "", Menu_2_10_8,    Menu_2_10_6,    Menu_2_10, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
@@ -216,6 +216,6 @@ void Display_Keyboard_select()
         }
 
         Keyboard_press_code = 0xFF;
-        osDelay(200);
+        //osDelay(200);
     }
 }
