@@ -37,6 +37,8 @@
 extern char Keyboard_press_code;
 
 xSemaphoreHandle Keyboard_semapfore;
+xSemaphoreHandle Display_semaphore;
+xSemaphoreHandle TIM6_semaphore_100us;
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -67,6 +69,8 @@ SD_HandleTypeDef hsd1;
 
 SPI_HandleTypeDef hspi1;
 SPI_HandleTypeDef hspi2;
+
+TIM_HandleTypeDef htim6;
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
@@ -140,6 +144,7 @@ static void MX_SPI2_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_USART3_UART_Init(void);
+static void MX_TIM6_Init(void);
 void StartDefaultTask(void *argument);
 void Display_I2C(void *argument);
 void ADC_read(void *argument);
@@ -189,16 +194,22 @@ int main(void)
   MX_USART2_UART_Init();
   MX_USART3_UART_Init();
   MX_FATFS_Init();
-
+  //MX_TIM6_Init();
   
   HAL_GPIO_WritePin(GPIOA,GPIO_PIN_0, GPIO_PIN_SET);
-  HAL_Delay(200);
+
+  //NVIC_SetPriority(TIM6_IRQn,6);
+  //NVIC_EnableIRQ(TIM6_DAC_IRQn);
+  //TIM6->DIER|=TIM_DIER_UIE;
+  // https://easyelectronics.ru/realizaciya-funkcii-zaderzhki-menshe-1ms-na-freertos-s-pomoshhyu-tajmera-i-task-notification.html?ysclid=m16udaxden17209319
+
+
+  HAL_Delay(5);
   
 
   OLED_Init(&hi2c1);
-  HAL_Delay(10);
-
   OLED_UpdateScreen();
+
   osKernelInitialize();
 
   SD_cardHandle = osThreadNew(StartDefaultTask, NULL, &SD_card_attributes);
@@ -239,16 +250,18 @@ int main(void)
   * @brief System Clock Configuration
   * @retval None
   */
+extern uint16_t PORT_NUM;
+
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
   if(GPIO_Pin == Str_b1_Pin | Str_b2_Pin | Str_b3_Pin | Str_b4_Pin) // если прерывание поступило от ножки PA9
   {
     static portBASE_TYPE xTaskWoken;
-    xSemaphoreGiveFromISR(Keyboard_semapfore, &xTaskWoken); // перемекстить в блок прерываний
-  }
-    
-    
+    xSemaphoreGiveFromISR(Keyboard_semapfore, &xTaskWoken); // включить поток
+  }  
 }
+
+
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
@@ -405,6 +418,32 @@ static void MX_ADC1_Init(void)
   * @param None
   * @retval None
   */
+static void MX_TIM6_Init(void)
+{
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM6_Init 1 */
+
+  /* USER CODE END TIM6_Init 1 */
+  htim6.Instance = TIM6;
+  htim6.Init.Prescaler = 40-1;
+  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim6.Init.Period = 100-1;
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+
 static void MX_ADC3_Init(void)
 {
 
@@ -904,10 +943,10 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 5, 0);
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 6, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 6, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
@@ -931,6 +970,8 @@ void StartDefaultTask(void *argument)
   MX_USB_DEVICE_Init();
   
   vSemaphoreCreateBinary(Keyboard_semapfore);
+  vSemaphoreCreateBinary(Display_semaphore);
+  vSemaphoreCreateBinary(TIM6_semaphore_100us);
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
   for(;;)
@@ -1017,9 +1058,10 @@ void Main(void *argument)
 {
   for(;;)
   {
+    xSemaphoreTake(Display_semaphore, portMAX_DELAY); 
     Display_Keyboard_select();
     Display_all_menu();
-    osDelay(100);
+    //osDelay(100);
   }
 }
 
@@ -1029,7 +1071,7 @@ void Keyboard_task(void *argument)
   {
     xSemaphoreTake(Keyboard_semapfore, portMAX_DELAY); 
     ScanKeypad();
-    osDelay(300);
+    osDelay(200);
   }
 }
 
@@ -1041,13 +1083,30 @@ void Keyboard_task(void *argument)
   * @param  htim : TIM handle
   * @retval None
   */
+
+int a = 0;
+
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   /* USER CODE BEGIN Callback 0 */
 
   /* USER CODE END Callback 0 */
-  if (htim->Instance == TIM2) {
+  if (htim->Instance == TIM2)
+  {
     HAL_IncTick();
+  }
+  if (htim->Instance == TIM6)
+  {
+
+    //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, 0);
+    HAL_TIM_Base_Stop(&htim6);
+    TIM6->CNT = 0;
+
+    //BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    //static portBASE_TYPE xHigherPriorityTaskWoken;
+    //xHigherPriorityTaskWoken  = pdFALSE;
+    //xSemaphoreGiveFromISR( TIM6_semaphore_100us, &xHigherPriorityTaskWoken ); 
+    //vTaskNotifyGiveFromISR(delays100us[index].Message,&xHigherPriorityTaskWoken);
   }
   /* USER CODE BEGIN Callback 1 */
 

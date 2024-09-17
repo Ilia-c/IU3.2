@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-extern int Display_update;
 extern char Keyboard_press_code;
 
 extern int Mode;
@@ -98,8 +97,7 @@ menuItem *selectedMenuItem = &Menu_1;
 
 void Display_all_menu()
 { // отображение всех пунктов меню на странице
-    if (Display_update == 1)
-    {
+
         OLED_Clear(0);
 
         menuItem *menu_s = (menuItem *)(selectedMenuItem);
@@ -123,9 +121,8 @@ void Display_all_menu()
             Display_punkt_menu(menu_s, i);
         }
 
-        Display_update = 0;
         OLED_UpdateScreen();
-    }
+    
 }
 
 
@@ -161,7 +158,7 @@ void menuChange(menuItem *NewMenu)
         return;
     selectedMenuItem = (menuItem *)(NewMenu);
 }
-
+extern int a;
 void Display_TopBar(){
     OLED_DrawXBM(1, 1, signal_low_1);
 }
@@ -170,7 +167,6 @@ void Display_Keyboard_select()
 {
     if (Keyboard_press_code != 0xFF)
     {
-        Display_update = 1;
         /*
         FontSet(fonts_en);
         char t[3] = "   ";

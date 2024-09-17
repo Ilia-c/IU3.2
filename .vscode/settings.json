@@ -11,6 +11,8 @@
         "string.h": "c",
         "settings.h": "c",
         "usb_device.h": "c",
-        "cmsis_os.h": "c"
+        "cmsis_os.h": "c",
+        "keyboard.h": "c",
+        "main.h": "c"
     }
 }
