@@ -37,7 +37,7 @@ const int max_munu_in_page = 5; // максимальное количество пунктов меню на стран
 int select_menu_in_page = 0;        // метущий пункт менюc
 char len = 'r';                 //  r - русский язык;  e -  английский
 
-#define height_up_munu 10                                            // выста верхнего пункта меню
+#define height_up_munu 15                                            // выста верхнего пункта меню
 #define dist_y (int)((64 - height_up_munu) / (max_munu_in_page)) // расстояние между пунктами меню
 #define pos_x_menu 4                                                // отступ от края для названий пунктов меню
 #define pos_x_menu_data 100                                             // отступ от края для вывода значений
@@ -101,7 +101,8 @@ void Display_all_menu()
         OLED_Clear(0);
 
         menuItem *menu_s = (menuItem *)(selectedMenuItem);
-        Display_TopBar();
+        FontSet(font);
+        Display_TopBar(menu_s);
 
         Display_punkt_menu(menu_s, select_menu_in_page);
         int pos_cursor = select_menu_in_page * dist_y + height_up_munu+2;
@@ -158,9 +159,71 @@ void menuChange(menuItem *NewMenu)
         return;
     selectedMenuItem = (menuItem *)(NewMenu);
 }
-extern int a;
-void Display_TopBar(){
-    OLED_DrawXBM(1, 1, signal_low_1);
+
+#define line_indentation 2 //  отступы верхней линии слева и справа
+#define end_line 128-2*line_indentation //  отступы верхней линии слева и справа
+#define line_ind_top 11 // оттуп линии сверху
+#define back_pic_pos_x 0    // начало иконки предыдущий пункт меню x
+#define back_pic_pos_y 4    // начало иконки предыдущий пункт меню y
+#define size_back_pic_x 3   // размер треугольника по x
+#define size_back_pic_y 3   // размер треугольника по y
+#define top_pic_last_munu 1 // отступ сверху до названия предыдущего пункта меню
+#define left_pic_last_munu 7 // отступ слева до названия предыдущего пункта меню
+#define top_GSM_status 2    // отступ сверху до статуса связи
+#define width_GSM_status 15  //  ширина одного значка статуса связи
+#define top_akb_status 1    // отступ сверху до уровня заряда
+#define width_akb_status 7  //  ширина одного уровня заряда
+extern int GSM_Signal_Level;
+extern int ADC_AKB_Proc;
+char str[4];
+int right_ot = 128-12-2;    // Ширина экрана минус 2 символа - процент заряда (0-9%) и - 2 отступ справа
+
+void Display_TopBar(menuItem *CurrentMenu){
+
+    OLED_DrawHLine(line_indentation, line_ind_top, end_line, 1);
+    if ((void *)CurrentMenu->Parent != (void *)&NULL_ENTRY){
+        OLED_DrawTriangleFill(back_pic_pos_x, back_pic_pos_y, back_pic_pos_x+size_back_pic_x, back_pic_pos_y+size_back_pic_y, back_pic_pos_x+size_back_pic_x, back_pic_pos_y-size_back_pic_y);
+        OLED_DrawPixel(back_pic_pos_x+1, back_pic_pos_y);
+        OLED_DrawStr(CurrentMenu->Parent, left_pic_last_munu, top_pic_last_munu, 1);
+    }
+
+    sprintf(str, "%d", ADC_AKB_Proc);
+    if (ADC_AKB_Proc<10) str[1] = '%';
+    else if (ADC_AKB_Proc<100){ str[2] = '%'; right_ot-=6;}
+    else {str[3] = '%'; right_ot-=12;}
+
+    
+    OLED_DrawStr(str, right_ot, top_akb_status+1, 1);
+    right_ot -= width_akb_status;
+
+    float c = ADC_AKB_Proc*5/100+1;
+    if (ADC_AKB_Proc == 0) c = 0;
+    //OLED_DrawRectangle(right_ot+2, top_akb_status+7-c, right_ot+3, top_akb_status+2+c);
+    for (c; c>0;c--){
+        OLED_DrawHLine(right_ot+2,  top_akb_status+8-c, 2, 1);
+    }
+    OLED_DrawXBM(right_ot, top_akb_status, akb);
+    right_ot -= width_GSM_status;
+    
+
+    if (GSM_Signal_Level<0){
+        right_ot+=3;
+        OLED_DrawXBM(right_ot, top_GSM_status, no_signal);
+    }
+    if (GSM_Signal_Level==0){
+        OLED_DrawXBM(right_ot, top_GSM_status, signal_0);
+    }
+    if (GSM_Signal_Level==1){
+        OLED_DrawXBM(right_ot, top_GSM_status, signal_1);
+    }
+    if (GSM_Signal_Level==2){
+        OLED_DrawXBM(right_ot, top_GSM_status, signal_2);
+    }
+    if (GSM_Signal_Level==3){
+        OLED_DrawXBM(right_ot, top_GSM_status, signal_3);
+    }
+    right_ot = 128-12-2; // Ширина экрана минус 2 символа - процент заряда (0-9%) и - 2 отступ справа
+
 }
 
 void Display_Keyboard_select()
