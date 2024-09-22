@@ -8,7 +8,8 @@ typedef struct MAKE_MENU
     const char Name_en[25];   // Название пункта меню на английском
     const char Type_menu;     // тип меню 0b543210
     int Num_menu;             // Номер вкладки сверху при переходе
-    const char add_signat[5]; // дополнительная надпись справа (еденицы измерения)
+    const char add_signat_ru[5]; // дополнительная надпись справа (еденицы измерения)
+    const char add_signat_en[5]; // дополнительная надпись справа (еденицы измерения)
 
     /*  тип меню (char)0b543210
         6 - вкладка                                             0x40
@@ -26,7 +27,7 @@ typedef struct MAKE_MENU
     void *Child;  // На какой пункт меню ссылается
 
     void *data_in;
-    void *data_out;
+    char *data_out;
 } menuItem;
 
 typedef struct Menu_item
@@ -39,6 +40,6 @@ void Display_all_menu();
 void Display_punkt_menu(menuItem *menu, int pos_y);
 void Display_TopBar();
 void menuChange(menuItem *NewMenu);
-void Display_Keyboard_select();
+void Keyboard_processing();
 void convert_string_to_ascii(const char *input, char *output);
 char convert_to_ascii(unsigned char c);

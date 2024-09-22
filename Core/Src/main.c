@@ -21,7 +21,7 @@
 #include "cmsis_os.h"
 #include "fatfs.h"
 #include "usb_device.h"
-
+#include "RTC_data.h"
 #include "OLED.h"
 #include "Display.h"
 #include "OLED_Fonts.h"
@@ -63,7 +63,7 @@ ADC_HandleTypeDef hadc3;
 I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c2;
 
-RTC_HandleTypeDef hrtc;
+
 
 SD_HandleTypeDef hsd1;
 
@@ -87,7 +87,7 @@ const osThreadAttr_t SD_card_attributes = {
 osThreadId_t Display_I2CHandle;
 const osThreadAttr_t Display_I2C_attributes = {
   .name = "Display_I2C",
-  .stack_size = 1024 * 4,
+  .stack_size = 1024 * 5,
   .priority = (osPriority_t) osPriorityLow5,
 };
 /* Definitions for ADC_read */
@@ -137,7 +137,6 @@ static void MX_ADC1_Init(void);
 static void MX_ADC3_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_I2C2_Init(void);
-static void MX_RTC_Init(void);
 static void MX_SDMMC1_SD_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_SPI2_Init(void);
@@ -186,7 +185,6 @@ int main(void)
   MX_ADC3_Init();
   MX_I2C1_Init();
   MX_I2C2_Init();
-  MX_RTC_Init();
   MX_SDMMC1_SD_Init();
   MX_SPI1_Init();
   MX_SPI2_Init();
@@ -194,7 +192,8 @@ int main(void)
   MX_USART2_UART_Init();
   MX_USART3_UART_Init();
   MX_FATFS_Init();
-  //MX_TIM6_Init();
+
+  RTC_Init();
   
   HAL_GPIO_WritePin(GPIOA,GPIO_PIN_0, GPIO_PIN_SET);
 
@@ -413,11 +412,6 @@ static void MX_ADC1_Init(void)
 
 }
 
-/**
-  * @brief ADC3 Initialization Function
-  * @param None
-  * @retval None
-  */
 static void MX_TIM6_Init(void)
 {
 
@@ -590,78 +584,8 @@ static void MX_I2C2_Init(void)
   /* USER CODE BEGIN I2C2_Init 2 */
 
   /* USER CODE END I2C2_Init 2 */
-
 }
 
-/**
-  * @brief RTC Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_RTC_Init(void)
-{
-
-  /* USER CODE BEGIN RTC_Init 0 */
-
-  /* USER CODE END RTC_Init 0 */
-
-  RTC_TimeTypeDef sTime = {0};
-  RTC_DateTypeDef sDate = {0};
-
-  /* USER CODE BEGIN RTC_Init 1 */
-
-  /* USER CODE END RTC_Init 1 */
-
-  /** Initialize RTC Only
-  */
-  hrtc.Instance = RTC;
-  hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
-  hrtc.Init.AsynchPrediv = 127;
-  hrtc.Init.SynchPrediv = 255;
-  hrtc.Init.OutPut = RTC_OUTPUT_DISABLE;
-  hrtc.Init.OutPutRemap = RTC_OUTPUT_REMAP_NONE;
-  hrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
-  hrtc.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
-  if (HAL_RTC_Init(&hrtc) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /* USER CODE BEGIN Check_RTC_BKUP */
-
-  /* USER CODE END Check_RTC_BKUP */
-
-  /** Initialize RTC and set the Time and Date
-  */
-  sTime.Hours = 12;
-  sTime.Minutes = 0;
-  sTime.Seconds = 0;
-  sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
-  sTime.StoreOperation = RTC_STOREOPERATION_RESET;
-  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sDate.WeekDay = RTC_WEEKDAY_THURSDAY;
-  sDate.Month = RTC_MONTH_AUGUST;
-  sDate.Date = 1;
-  sDate.Year = 24;
-
-  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN RTC_Init 2 */
-
-  /* USER CODE END RTC_Init 2 */
-
-}
-
-/**
-  * @brief SDMMC1 Initialization Function
-  * @param None
-  * @retval None
-  */
 static void MX_SDMMC1_SD_Init(void)
 {
 
@@ -682,7 +606,6 @@ static void MX_SDMMC1_SD_Init(void)
   /* USER CODE BEGIN SDMMC1_Init 2 */
 
   /* USER CODE END SDMMC1_Init 2 */
-
 }
 
 /**
@@ -995,7 +918,9 @@ void Display_I2C(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    xSemaphoreTake(Display_semaphore, portMAX_DELAY); 
+    Keyboard_processing();
+    Display_all_menu();
   }
   /* USER CODE END Display_I2C */
 }
@@ -1031,7 +956,7 @@ void RS485_data(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    osDelay(1000);
   }
   /* USER CODE END RS485_data */
 }
@@ -1049,7 +974,7 @@ void SIM800_data(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    osDelay(1000);
   }
   /* USER CODE END SIM800_data */
 }
@@ -1058,10 +983,9 @@ void Main(void *argument)
 {
   for(;;)
   {
-    xSemaphoreTake(Display_semaphore, portMAX_DELAY); 
-    Display_Keyboard_select();
-    Display_all_menu();
-    //osDelay(100);
+    RTC_get_time();
+    xSemaphoreGive(Display_semaphore);
+    osDelay(20000);
   }
 }
 
@@ -1075,14 +999,6 @@ void Keyboard_task(void *argument)
   }
 }
 
-/**
-  * @brief  Period elapsed callback in non blocking mode
-  * @note   This function is called  when TIM2 interrupt took place, inside
-  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
-  * a global variable "uwTick" used as application time base.
-  * @param  htim : TIM handle
-  * @retval None
-  */
 
 int a = 0;
 

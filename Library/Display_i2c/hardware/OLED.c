@@ -163,11 +163,11 @@ void OLED_DrawPixel(uint8_t pos_x, uint8_t pos_y)
 	oled_buffer[pos_x + (pos_y / 8) * OLED_WIDTH] |= (1 << (pos_y & 7));
 }
 
-void OLED_DrawVLine(uint8_t x, uint8_t y, uint8_t length)
+void OLED_DrawVLine(uint8_t x, uint8_t y, uint8_t length, uint8_t mode)
 {
 	for (uint8_t i = 0; i < length; ++i)
 	{
-		OLED_DrawPixel(x, i + y);
+		OLED_DrawPixelStatus(x, i + y, mode);
 	}
 }
 
@@ -186,8 +186,8 @@ void OLED_DrawRectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2)
 
 	OLED_DrawHLine(x1, y1, length, 1);
 	OLED_DrawHLine(x1, y2, length, 1);
-	OLED_DrawVLine(x1, y1, height);
-	OLED_DrawVLine(x2, y1, height);
+	OLED_DrawVLine(x1, y1, height, 1);
+	OLED_DrawVLine(x2, y1, height, 1);
 }
 
 void OLED_DrawRectangleFill(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t mode)

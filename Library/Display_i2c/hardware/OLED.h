@@ -68,7 +68,7 @@ void OLED_DrawXBM(int16_t xMove, int16_t yMove,  const uint8_t *xbm);
 void OLED_DrawBuffer(const uint8_t *progmem_buffer);
 void OLED_DrawPixelStatus(uint8_t pos_x, uint8_t pos_y, uint8_t pixel_status);
 void OLED_DrawPixel(uint8_t pos_x, uint8_t pos_y);
-void OLED_DrawVLine(uint8_t x, uint8_t y, uint8_t length);
+void OLED_DrawVLine(uint8_t x, uint8_t y, uint8_t length, uint8_t mode);
 void OLED_DrawHLine(uint8_t x, uint8_t y, uint8_t length, uint8_t mode);
 void OLED_DrawRectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2);
 void OLED_DrawRectangleFill(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t mode);

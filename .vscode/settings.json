@@ -13,6 +13,8 @@
         "usb_device.h": "c",
         "cmsis_os.h": "c",
         "keyboard.h": "c",
-        "main.h": "c"
+        "main.h": "c",
+        "rtc_data.h": "c",
+        "stdlib.h": "c"
     }
 }
