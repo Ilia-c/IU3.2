@@ -259,7 +259,7 @@ void menuChange(menuItem *NewMenu)
 }
 
 
-
+extern unsigned int id;
 void Display_TopBar(menuItem *CurrentMenu){
 
     OLED_DrawHLine(line_indentation, line_ind_top, end_line, 1);
@@ -273,7 +273,9 @@ void Display_TopBar(menuItem *CurrentMenu){
     if (ADC_AKB_Proc<10) str[1] = '%';
     else if (ADC_AKB_Proc<100){ str[2] = '%'; right_ot-=6;}
     else {str[3] = '%'; right_ot-=12;}
-
+    
+    sprintf(str,"ID:0x%X\r\n",id);
+    OLED_DrawStr(str, 1, 1, 1);
     
     OLED_DrawStr(str, right_ot, top_akb_status+1, 1);
     right_ot -= width_akb_status;

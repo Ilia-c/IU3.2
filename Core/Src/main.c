@@ -30,6 +30,7 @@
 #include "Settings.h"
 #include "FreeRTOS.h"
 #include "semphr.h"
+#include "w25q128.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -152,19 +153,9 @@ void SIM800_data(void *argument);
 void Main(void *argument);
 void Keyboard_task(void *argument);
 
-/* USER CODE BEGIN PFP */
 
-/* USER CODE END PFP */
+unsigned int id = 0x01;
 
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
-
-/**
-  * @brief  The application entry point.
-  * @retval int
-  */
 int main(void)
 {
 
@@ -196,6 +187,8 @@ int main(void)
   RTC_Init();
   
   HAL_GPIO_WritePin(GPIOA,GPIO_PIN_0, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(Data_FES_ON_OFF_GPIO_Port,Data_FES_ON_OFF_Pin, GPIO_PIN_SET);
+
 
   //NVIC_SetPriority(TIM6_IRQn,6);
   //NVIC_EnableIRQ(TIM6_DAC_IRQn);
@@ -203,7 +196,12 @@ int main(void)
   // https://easyelectronics.ru/realizaciya-funkcii-zaderzhki-menshe-1ms-na-freertos-s-pomoshhyu-tajmera-i-task-notification.html?ysclid=m16udaxden17209319
 
 
-  HAL_Delay(5);
+  HAL_Delay(200);
+
+  W25_Ini();
+  W25_Read_ID();
+
+
   
 
   OLED_Init(&hi2c1);

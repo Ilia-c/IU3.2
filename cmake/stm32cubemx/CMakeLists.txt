@@ -33,6 +33,7 @@ target_include_directories(stm32cubemx INTERFACE
     ../../Library/Display_i2c/hardware
     ../../Library/Keyboard/
     ../../Library/Internal_per
+    ../../Library/w25q128
 )
 
 target_sources(stm32cubemx INTERFACE
@@ -112,6 +113,7 @@ target_sources(stm32cubemx INTERFACE
     ../../Library/Keyboard/Keyboard.c
     ../../Library/Settings/Settings.c
     ../../Library/Internal_per/RTC_data.c
+    ../../Library/w25q128/w25q128.c
 )
 
 target_link_directories(stm32cubemx INTERFACE
