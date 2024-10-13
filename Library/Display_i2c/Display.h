@@ -26,7 +26,7 @@ typedef struct MAKE_MENU
     void *Parent; // Родительский пункт меню
     void *Child;  // На какой пункт меню ссылается
 
-    void *data_in;
+    char *data_in;
     char *data_out;
 } menuItem;
 

@@ -28,19 +28,28 @@
 
 #define width_symbol 6  //  ширина текста даты 01.01.2000
 
+/// |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+/// Редактирование данных
+int mode_redact = 0; // 1 - режим редактирования данных, 0 - режим переключения страниц
+int pos_redact = 0; // позиция для редактирования
+#define end_symbol ";"
+extern char c_Time[]; // из settings
+extern char c_Date[]; // из settings
+/// |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+/// |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 
 extern int GSM_Signal_Level;
 extern int ADC_AKB_Proc;
-extern RTC_TimeTypeDef Time;
-extern RTC_DateTypeDef Date;
+
 
 extern int Mode;
 extern int GSM_mode;
 extern int RS485_prot;
 extern int units_mes;
-extern int time_sleep_h;
-extern int time_sleep_m;
+
+extern char c_time_sleep_h;
+extern char c_time_sleep_m;
 
 char str[4];
 int right_ot = winth_display-12-2;    // Ширина экрана минус 2 символа - процент заряда (0-9%) и - 2 отступ справа
@@ -67,7 +76,7 @@ menuItem Null_Menu = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
     extern menuItem Data_out;                                                                                      \
     extern menuItem Data_int;                                                                                      \
     extern menuItem Data_float;                                                                                    \
-    menuItem Id = {Name_rus, Name_en, Type_menu, 0, add_signat_ru, add_signat_en, (void *)&Next, (void *)&Previous, (void *)&Parent, (void *)&Child, (void *)&data_in, (void *)&Data_out}
+    menuItem Id = {Name_rus, Name_en, Type_menu, 0, add_signat_ru, add_signat_en, (void *)&Next, (void *)&Previous, (void *)&Parent, (void *)&Child, (char *)&data_in, (void *)&Data_out}
 
 
 // Выбираемые значения и статус
@@ -91,15 +100,11 @@ char len = 'r';                 //  r - русский язык;  e -  английский
 
 /*  тип меню (char)0b543210
     6 - вкладка                                             0x40
-    5 - ввод числа                                          0x20
+    5 - ввод значения                                       0x20
     4 - изменяемые пункты (трубуется ссылка на структуру)   0x10
     3 - вывод незменяемого значвения char[]                 0x08
-    2 - Ввод времени                                        0x04
-    1 - Ввод даты                                           0x02
     0 - по нажатию - действие                               0x01
 */
-
-
 
 
 MAKE_MENU(Menu_1, "Режимы", "Modes",                    {0x40}, 0, "","", Menu_2,         NULL_ENTRY,     NULL_ENTRY, Menu_1_1, NULL_ENTRY, NULL_ENTRY);
@@ -110,10 +115,10 @@ MAKE_MENU(Menu_1, "Режимы", "Modes",                    {0x40}, 0, "","", Menu_2
         MAKE_MENU(Menu_1_3_2, "Глубина", "Data",        {0x08}, 0, "м.","", Menu_1_3_3,     Menu_1_3_1,     Menu_1_3, NULL_ENTRY, NULL_ENTRY, char_ADC_Height);
         MAKE_MENU(Menu_1_3_3, "Кор. глуб.", "Data",     {0x08}, 0, "м.","", NULL_ENTRY,     Menu_1_3_2,     Menu_1_3, NULL_ENTRY, NULL_ENTRY, char_ADC_Height_correct);
 MAKE_MENU(Menu_2, "Настройки", "Settings",              {0x40}, 0, "","", Menu_3,         Menu_1,         NULL_ENTRY, Menu_2_1, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_2_1, "Дата", "Modes",                {0x02}, 0, "","", Menu_2_2,       NULL_ENTRY,     Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_2_2, "Время", "Modes",               {0x04}, 0, "","", Menu_2_3,       Menu_2_1,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_2_3, "Время сна", "time sleep",      {0x20}, 0, "ч","h", Menu_2_4,       Menu_2_2,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_2_4, "Время сна", "time sleep",      {0x20}, 0, "м","m", Menu_2_5,       Menu_2_3,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
+    MAKE_MENU(Menu_2_1, "Дата", "Modes",                {0x20}, 0, "","", Menu_2_2,       NULL_ENTRY,     Menu_2, NULL_ENTRY, c_Date, NULL_ENTRY);
+    MAKE_MENU(Menu_2_2, "Время", "Modes",               {0x20}, 0, "","", Menu_2_3,       Menu_2_1,       Menu_2, NULL_ENTRY, c_Time, NULL_ENTRY);
+    MAKE_MENU(Menu_2_3, "Время сна", "time sleep",      {0x20}, 0, "ч","h", Menu_2_4,       Menu_2_2,       Menu_2, NULL_ENTRY, c_time_sleep_h, NULL_ENTRY);
+    MAKE_MENU(Menu_2_4, "Время сна", "time sleep",      {0x20}, 0, "м","m", Menu_2_5,       Menu_2_3,       Menu_2, NULL_ENTRY, c_time_sleep_m, NULL_ENTRY);
     MAKE_MENU(Menu_2_5, "Нул. ур.", "Modes",            {0x20}, 0, "м","", Menu_2_6,     Menu_2_4,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
     MAKE_MENU(Menu_2_6, "Уров. дат.", "Modes",          {0x20}, 0, "м","", Menu_2_7,       Menu_2_5,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
     MAKE_MENU(Menu_2_7, "Связь", "GSM",                 {0x10}, 0, "","", Menu_2_8,       Menu_2_6,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
@@ -143,46 +148,6 @@ MAKE_MENU(Menu_4, "Инструкция", "Instruction",          {0x01}, 0, "","", NULL_E
 ////////////////////////////////////////////////////
 menuItem *selectedMenuItem = &Menu_1;
 
-void Display_all_menu()
-{ // отображение всех пунктов меню на странице
-
-        OLED_Clear(0);
-
-        menuItem *menu_s = (menuItem *)(selectedMenuItem);
-        FontSet(font);
-        Display_TopBar(menu_s);
-
-        Display_punkt_menu(menu_s, select_menu_in_page);
-        Select_diplay_functions(menu_s, select_menu_in_page);
-
-        int pos_cursor = select_menu_in_page * dist_y + height_up_munu+2;
-        OLED_DrawTriangleFill(0, pos_cursor - 2, 0, pos_cursor + 2, 2, pos_cursor);
-
-        
-
-        for (int i = select_menu_in_page-1; i >= 0; i--)
-        {
-            menu_s = (menuItem *)(menu_s->Previous);
-            Display_punkt_menu(menu_s, i);
-            Select_diplay_functions(menu_s, i);
-        }
-
-        menu_s = (menuItem *)(selectedMenuItem);
-        
-        for (int i = select_menu_in_page+1; i < max_munu_in_page; i++)
-        {
-            menu_s = (menuItem *)(menu_s->Next);
-            Display_punkt_menu(menu_s, i);
-            Select_diplay_functions(menu_s, i);
-        }
-
-
-
-        OLED_UpdateScreen();
-    
-}
-
-
 /*  тип меню (char)0b543210
     6 - вкладка                                             0x40
     5 - ввод числа                                          0x20
@@ -192,65 +157,46 @@ void Display_all_menu()
     1 - Ввод даты                                           0x02
     0 - по нажатию - действие                               0x01
 */
-void Select_diplay_functions(menuItem *menu, int pos_y){
-    if (menu->Type_menu == 0x04){
-        Display_time(pos_y);
+void Select_diplay_functions(menuItem *menu, int pos_y)
+{
+    int len_end_symbol = 0;
+    if (len == 'r'){
+        OLED_DrawStr(menu->add_signat_ru, winth_display-10, pos_y*dist_y+height_up_munu, 1);
+        len_end_symbol = OLED_GetWidthStr(menu->add_signat_ru) + 2;
     }
-    if (menu->Type_menu == 0x02){
-        Display_data(pos_y);
-    }    
+    else{
+        OLED_DrawStr(menu->add_signat_en,  winth_display-10, pos_y*dist_y+height_up_munu, 1);
+        len_end_symbol = OLED_GetWidthStr(menu->add_signat_en) + 2;
+    }
+
+
+    if (menu->data_in != (void *)&NULL_ENTRY)
+    {
+        if (menu->Type_menu == 0x20)
+        {
+            int counter = OLED_GetWidthStr(menu->data_in) + 2 + len_end_symbol;
+            OLED_DrawStr(menu->data_in, winth_display - counter, pos_y * dist_y + height_up_munu, 1);
+        }
+    }
 }
-
-
-char time_h[4];
-char time_m[4];
-
-void Display_data(int pos_y){
-
-    snprintf(trans_str, 11, "%02d", Date.Date);
-    OLED_DrawStr(trans_str, winth_display-width_symbol*9+2, pos_y*dist_y+height_up_munu, 1);
-    OLED_DrawStr(".", winth_display-width_symbol*7+1, pos_y*dist_y+height_up_munu, 1);
-
-    snprintf(trans_str, 11, "%02d", Date.Month);
-    OLED_DrawStr(trans_str, winth_display-width_symbol*7+3, pos_y*dist_y+height_up_munu, 1);
-    OLED_DrawStr(".", winth_display-width_symbol*5+2, pos_y*dist_y+height_up_munu, 1);
-
-    snprintf(trans_str, 11, "20%02d", Date.Year);
-    OLED_DrawStr(trans_str, winth_display-width_symbol*4-2, pos_y*dist_y+height_up_munu, 1);
-
-}
-
-void Display_time(int pos_y){
-    snprintf(time_h, 4, "%02d", Time.Hours);
-    
-    OLED_DrawStr(time_h, winth_display-width_symbol*5+2, pos_y*dist_y+height_up_munu, 1);
-    OLED_DrawStr(":", winth_display-width_symbol*3+2, pos_y*dist_y+height_up_munu, 1);
-    
-    snprintf(time_m, 4, "%02d", Time.Minutes);
-    OLED_DrawStr(time_m, winth_display-width_symbol*3+4, pos_y*dist_y+height_up_munu, 1);
-
-}
-
-
-
 
 void Display_punkt_menu(menuItem *menu, int pos_y) // отображение одного пункта меню
 {
     FontSet(font);
-    if (len == 'r'){
-        OLED_DrawStr(menu->Name_rus, pos_x_menu, pos_y*dist_y+height_up_munu, 1);
-        OLED_DrawStr(menu->add_signat_ru, winth_display-10, pos_y*dist_y+height_up_munu, 1);
+    if (len == 'r')
+    {
+        OLED_DrawStr(menu->Name_rus, pos_x_menu, pos_y * dist_y + height_up_munu, 1);
     }
-    else{
-        OLED_DrawStr(menu->Name_en, pos_x_menu, pos_y*dist_y+height_up_munu, 1);
-        OLED_DrawStr(menu->add_signat_en,  winth_display-10, pos_y*dist_y+height_up_munu, 1);
+    else
+    {
+        OLED_DrawStr(menu->Name_en, pos_x_menu, pos_y * dist_y + height_up_munu, 1);
     }
 
-    if (menu->Type_menu & 0x08){
-        OLED_DrawStr(menu->data_out,  winth_display-60, pos_y*dist_y+height_up_munu, 1);
+    if (menu->Type_menu & 0x08)
+    {
+        OLED_DrawStr(menu->data_out, winth_display - 60, pos_y * dist_y + height_up_munu, 1);
     }
 }
-
 void menuChange(menuItem *NewMenu)
 {
     if ((void *)NewMenu == (void *)&NULL_ENTRY)
@@ -274,8 +220,8 @@ void Display_TopBar(menuItem *CurrentMenu){
     else if (ADC_AKB_Proc<100){ str[2] = '%'; right_ot-=6;}
     else {str[3] = '%'; right_ot-=12;}
     
-    sprintf(str,"ID:0x%X\r\n",id);
-    OLED_DrawStr(str, 1, 1, 1);
+    //sprintf(str,"ID:0x%X\r\n",id);
+    //OLED_DrawStr(str, 1, 1, 1);
     
     OLED_DrawStr(str, right_ot, top_akb_status+1, 1);
     right_ot -= width_akb_status;
@@ -307,95 +253,193 @@ void Display_TopBar(menuItem *CurrentMenu){
         OLED_DrawXBM(right_ot, top_GSM_status, signal_3);
     }
     right_ot = winth_display-12-2; // Ширина экрана минус 2 символа - процент заряда (0-9%) и - 2 отступ справа
-
-
 }
 
-/*  тип меню (char)0b543210
-    6 - вкладка                                             0x40
-    5 - ввод числа                                          0x20
-    4 - изменяемые пункты (трубуется ссылка на структуру)   0x10
-    3 - вывод незменяемого значвения char[]                 0x08
-    2 - Ввод времени                                        0x04
-    1 - Ввод даты                                           0x02
-    0 - по нажатию - действие                               0x01
-*/
+void Display_all_menu()
+{ // отображение всех пунктов меню на странице
 
-void Keyboard_processing()
-{   
-    up_down();
-    
-    if (selectedMenuItem->Type_menu == 0x40)
-        right();    //6 - вкладка                                       0x40
-    if (selectedMenuItem->Type_menu == 0x20)
-        return;    //5 - ввод числа                                          0x20
-    if (selectedMenuItem->Type_menu == 0x10)
-        return;    //4 - изменяемые пункты (трубуется ссылка на структуру)   0x10  
-    if (selectedMenuItem->Type_menu == 0x08)
-        left();    //3 - вывод незменяемого значвения char[]                 0x08
-    if (selectedMenuItem->Type_menu == 0x04)
-        return;    //2 - Ввод времени                                        0x04
-    if (selectedMenuItem->Type_menu == 0x02)
-        return;    //1 - Ввод даты                                           0x02  
-    if (selectedMenuItem->Type_menu == 0x01)
-        left();    //0 - по нажатию - действие                               0x01  
+    OLED_Clear(0);
 
-    Keyboard_press_code = 0xFF;
-}
+    menuItem *menu_s = (menuItem *)(selectedMenuItem);
+    FontSet(font);
+    Display_TopBar(menu_s);
 
-void up_down(){
-    if (Keyboard_press_code != 0xFF)
+    Display_punkt_menu(menu_s, select_menu_in_page);
+    Select_diplay_functions(menu_s, select_menu_in_page);
+
+    int pos_cursor = select_menu_in_page * dist_y + height_up_munu + 2;
+    OLED_DrawTriangleFill(0, pos_cursor - 2, 0, pos_cursor + 2, 2, pos_cursor);
+
+    for (int i = select_menu_in_page - 1; i >= 0; i--)
     {
-        if (Keyboard_press_code == 'D')
-        {
-            if (selectedMenuItem->Next != (void *)&NULL_ENTRY)
-            {
-                menuChange(selectedMenuItem->Next);
-                if (select_menu_in_page + 1 < max_munu_in_page)
-                    select_menu_in_page += 1;
-            }
-        }
-        if (Keyboard_press_code == 'U')
-        {
-            if (selectedMenuItem->Previous != (void *)&NULL_ENTRY)
-            {
-                if (select_menu_in_page > 0)
-                    select_menu_in_page -= 1;
-                menuChange(selectedMenuItem->Previous);
-            }
-        }
+        menu_s = (menuItem *)(menu_s->Previous);
+        Display_punkt_menu(menu_s, i);
+        Select_diplay_functions(menu_s, i);
+    }
+
+    menu_s = (menuItem *)(selectedMenuItem);
+
+    for (int i = select_menu_in_page + 1; i < max_munu_in_page; i++)
+    {
+        menu_s = (menuItem *)(menu_s->Next);
+        Display_punkt_menu(menu_s, i);
+        Select_diplay_functions(menu_s, i);
+    }
+    OLED_UpdateScreen();
+}
+
+void up()
+{
+    if (selectedMenuItem->Previous != (void *)&NULL_ENTRY)
+    {
+        if (select_menu_in_page > 0)
+            select_menu_in_page -= 1;
+        menuChange(selectedMenuItem->Previous);
+    }
+}
+
+void down()
+{
+    if (selectedMenuItem->Next != (void *)&NULL_ENTRY)
+    {
+        menuChange(selectedMenuItem->Next);
+        if (select_menu_in_page + 1 < max_munu_in_page)
+            select_menu_in_page += 1;
     }
 }
 void left()
 {
-    if (Keyboard_press_code != 0xFF)
+    if (selectedMenuItem->Parent != (void *)&NULL_ENTRY)
     {
-        if (Keyboard_press_code == 'L')
-        {
-            if (selectedMenuItem->Parent != (void *)&NULL_ENTRY)
-            {
-                menuChange(selectedMenuItem->Parent);
-                select_menu_in_page = selectedMenuItem->Num_menu;
-            }
-        }
+        menuChange(selectedMenuItem->Parent);
+        select_menu_in_page = selectedMenuItem->Num_menu;
     }
 }
 
 void right()
 {
+    if (selectedMenuItem->Child != (void *)&NULL_ENTRY)
+    {
+        selectedMenuItem->Num_menu = select_menu_in_page;
+        select_menu_in_page = 0;
+        menuChange(selectedMenuItem->Child);
+    }
+}
+void null_fun(){
+
+}
+
+/*  тип меню (char)0b543210
+    6 - вкладка                                             0x40
+    5 - ввод значения                                       0x20
+    4 - изменяемые пункты (трубуется ссылка на структуру)   0x10
+    3 - вывод незменяемого значвения char[]                 0x08
+    0 - по нажатию - действие                               0x01
+*/
+void select_code_procces(void (*action)(void))
+{
+    // up_down();
+    if (selectedMenuItem->Type_menu == 0x40)
+        action(); // 6 - вкладка                                             0x40
+    if (selectedMenuItem->Type_menu == 0x20)
+        action(); // 5 - ввод числа                                          0x20
+    if (selectedMenuItem->Type_menu == 0x10)
+        action(); // 4 - изменяемые пункты (трубуется ссылка на структуру)   0x10
+    if (selectedMenuItem->Type_menu == 0x08)
+        action(); // 3 - вывод незменяемого значвения char[]                 0x08
+    if (selectedMenuItem->Type_menu == 0x04)
+        action(); // 2 - Ввод времени                                        0x04
+    if (selectedMenuItem->Type_menu == 0x02)
+        action(); // 1 - Ввод даты                                           0x02
+    if (selectedMenuItem->Type_menu == 0x01)
+        action(); // 0 - по нажатию - действие                               0x01
+}
+
+void Keyboard_processing(){
     if (Keyboard_press_code != 0xFF)
     {
+        // Стрелки
+        if (Keyboard_press_code == 'L')
+        {
+            select_code_procces(left);
+            return;
+        }
         if (Keyboard_press_code == 'R')
         {
-            if (selectedMenuItem->Type_menu & 0x40)
-            {
-                if (selectedMenuItem->Child != (void *)&NULL_ENTRY)
-                {
-                    selectedMenuItem->Num_menu = select_menu_in_page;
-                    select_menu_in_page = 0;
-                    menuChange(selectedMenuItem->Child);
-                }
-            }
+            select_code_procces(right);
+            return;
+        }
+        if (Keyboard_press_code == 'U')
+        {
+            select_code_procces(up);
+            return;
+        }
+        if (Keyboard_press_code == 'D')
+        {
+            select_code_procces(down);
+            return;
+        }
+
+        // Левая часть панели
+        if (Keyboard_press_code == '0')
+        {
+            select_code_procces(null_fun);
+            return;
+        }
+        if (Keyboard_press_code == '1')
+        {
+            select_code_procces(null_fun);
+            return;
+        }
+        if (Keyboard_press_code == '2')
+        {
+            select_code_procces(null_fun);
+            return;
+        }
+        if (Keyboard_press_code == '3')
+        {
+            select_code_procces(null_fun);
+            return;
+        }
+        if (Keyboard_press_code == '4')
+        {
+            select_code_procces(null_fun);
+            return;
+        }
+        if (Keyboard_press_code == '5')
+        {
+            select_code_procces(null_fun);
+            return;
+        }
+        if (Keyboard_press_code == '6')
+        {
+            select_code_procces(null_fun);
+            return;
+        }
+        if (Keyboard_press_code == '7')
+        {
+            select_code_procces(null_fun);
+            return;
+        }
+        if (Keyboard_press_code == '8')
+        {
+            select_code_procces(null_fun);
+            return;
+        }
+        if (Keyboard_press_code == '9')
+        {
+            select_code_procces(null_fun);
+            return;
+        }
+        if (Keyboard_press_code == 'O')
+        {
+            select_code_procces(null_fun);
+            return;
+        }
+        if (Keyboard_press_code == 'P')
+        {
+            select_code_procces(null_fun);
+            return;
         }
     }
 }

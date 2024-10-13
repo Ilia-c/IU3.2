@@ -198,8 +198,8 @@ int main(void)
 
   HAL_Delay(200);
 
-  W25_Ini();
-  W25_Read_ID();
+  //W25_Ini();
+  //W25_Read_ID();
 
 
   
@@ -889,7 +889,7 @@ void StartDefaultTask(void *argument)
 {
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
-  
+  RTC_get_time();
   vSemaphoreCreateBinary(Keyboard_semapfore);
   vSemaphoreCreateBinary(Display_semaphore);
   vSemaphoreCreateBinary(TIM6_semaphore_100us);
@@ -981,8 +981,8 @@ void Main(void *argument)
 {
   for(;;)
   {
-    RTC_get_time();
     xSemaphoreGive(Display_semaphore);
+    RTC_get_time();
     osDelay(20000);
   }
 }

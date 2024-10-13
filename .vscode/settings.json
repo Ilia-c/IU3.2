@@ -15,6 +15,7 @@
         "keyboard.h": "c",
         "main.h": "c",
         "rtc_data.h": "c",
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "typeinfo": "c"
     }
 }
