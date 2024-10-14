@@ -15,6 +15,7 @@ typedef struct
 } _type_datetime;
 
 
+int time_update_display = 20000; // Время обновления экрана (для обновления времени и курсора)
 
 // Температура, давление и влажность
 float ADC_in_temp = 0;                  // Внутренняя температура микроконтроллера
@@ -71,8 +72,8 @@ int ADC_AKB_cell = 0;                   //  Ячейки заряда (0-3)
 ////////////////////////////////////////////////////
 
 // Дата и время
-char c_Time[5];
-char c_Date[5];
+char c_Time[10]={};
+char c_Date[10]={};
 
 char ID_board[5] = "TEST";
 char ver_board[5] = "v3.25";
@@ -88,8 +89,9 @@ int units_mes = 0; // еденицы измерения 0-мм, 1 -метры
 int time_sleep_h = 0; // время сна - часы
 int time_sleep_m = 0; // время сна - минуты
 
-char c_time_sleep_h[2] = "1";
-char c_time_sleep_m[2] = "2";
+char c_time_sleep_h[10] = "1";
+char c_time_sleep_m[10] = "2";
+
 
 
 

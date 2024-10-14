@@ -36,9 +36,11 @@
 
 
 extern char Keyboard_press_code;
+extern int time_update_display;
 
 xSemaphoreHandle Keyboard_semapfore;
 xSemaphoreHandle Display_semaphore;
+xSemaphoreHandle Display_cursor_semaphore;
 xSemaphoreHandle TIM6_semaphore_100us;
 /* USER CODE END Includes */
 
@@ -112,6 +114,13 @@ const osThreadAttr_t SIM800_data_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
+/* Definitions for SIM800_data */
+osThreadId_t Monitor_taskHandle;
+const osThreadAttr_t Monitor_task_attributes = {
+  .name = "Monitor_task",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
 /* Definitions for Main */
 osThreadId_t MainHandle;
 const osThreadAttr_t Main_attributes = {
@@ -150,6 +159,7 @@ void Display_I2C(void *argument);
 void ADC_read(void *argument);
 void RS485_data(void *argument);
 void SIM800_data(void *argument);
+void Monitor_task(void *argument);
 void Main(void *argument);
 void Keyboard_task(void *argument);
 
@@ -200,10 +210,7 @@ int main(void)
 
   //W25_Ini();
   //W25_Read_ID();
-
-
   
-
   OLED_Init(&hi2c1);
   OLED_UpdateScreen();
 
@@ -214,6 +221,7 @@ int main(void)
   ADC_readHandle = osThreadNew(ADC_read, NULL, &ADC_read_attributes);
   RS485_dataHandle = osThreadNew(RS485_data, NULL, &RS485_data_attributes);
   SIM800_dataHandle = osThreadNew(SIM800_data, NULL, &SIM800_data_attributes);
+  Monitor_taskHandle = osThreadNew(Monitor_task, NULL, &Monitor_task_attributes);
   MainHandle = osThreadNew(Main, NULL, &Main_attributes);
   Keyboard_taskHandle = osThreadNew(Keyboard_task, NULL, &Keyboard_task_attributes);
 
@@ -892,6 +900,7 @@ void StartDefaultTask(void *argument)
   RTC_get_time();
   vSemaphoreCreateBinary(Keyboard_semapfore);
   vSemaphoreCreateBinary(Display_semaphore);
+  vSemaphoreCreateBinary(Display_cursor_semaphore);
   vSemaphoreCreateBinary(TIM6_semaphore_100us);
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
@@ -981,9 +990,18 @@ void Main(void *argument)
 {
   for(;;)
   {
-    xSemaphoreGive(Display_semaphore);
     RTC_get_time();
-    osDelay(20000);
+    xSemaphoreGive(Display_semaphore); // вклюбчить поток отображения на экране
+    for (int i=0; i<25; i++)
+    osDelay(time_update_display/25);
+  }
+}
+
+void Monitor_task(void *argument)
+{
+  for(;;)
+  {
+    osDelay(60000);
   }
 }
 

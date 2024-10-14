@@ -76,5 +76,4 @@ void RTC_get_time()
 	for (int i = 0; i<2; i++){
 		c_Date[i+6] = date_y[i];
 	}	
-	
 }

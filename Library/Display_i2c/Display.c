@@ -23,18 +23,18 @@
 #define top_akb_status 1    // отступ сверху до уровня заряда
 #define width_akb_status 7  //  ширина одного уровня заряда
 
-
-// RTC
-
-#define width_symbol 6  //  ширина текста даты 01.01.2000
+#define time_led_cursor 500 // Время обновления индикации курсоора при вводе данных
+#define time_updateDisplay 20000 // Время обновления экрана вне ввода данных
 
 /// |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 /// Редактирование данных
 int mode_redact = 0; // 1 - режим редактирования данных, 0 - режим переключения страниц
 int pos_redact = 0; // позиция для редактирования
-#define end_symbol ";"
 extern char c_Time[]; // из settings
 extern char c_Date[]; // из settings
+int led_cursor = 1;
+extern int time_update_display;
+extern xSemaphoreHandle Display_semaphore;
 /// |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 /// |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
@@ -65,10 +65,19 @@ extern int ADC_AKB_Proc;
 extern RTC_TimeTypeDef s_Time;
 
 
-menuItem Null_Menu = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+menuItem Null_Menu = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+#define NEXT_MENU Null_Menu
+#define PREVISION_MENU Null_Menu
+#define PARENT_MENU Null_Menu
+#define CHULD_MENU Null_Menu
+#define ACTION_MENU Null_Menu
+#define SELECT_BAR_MENU Null_Menu
+#define DATA_IN_MENU Null_Menu
+#define DATA_OUT_MENU Null_Menu
 #define NULL_ENTRY Null_Menu
 
-#define MAKE_MENU(Id, Name_rus, Name_en, Type_menu, Num_menu, add_signat_ru, add_signat_en, Next, Previous, Parent, Child, data_in, Data_out) \
+
+#define MAKE_MENU(Id, Name_rus, Name_en, Num_menu, add_signat_ru, add_signat_en, Next, Previous, Parent, Child, action, select_bar, data_in, Data_out) \
     extern menuItem Next;                                                                                          \
     extern menuItem Previous;                                                                                      \
     extern menuItem Parent;                                                                                        \
@@ -76,7 +85,7 @@ menuItem Null_Menu = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
     extern menuItem Data_out;                                                                                      \
     extern menuItem Data_int;                                                                                      \
     extern menuItem Data_float;                                                                                    \
-    menuItem Id = {Name_rus, Name_en, Type_menu, 0, add_signat_ru, add_signat_en, (void *)&Next, (void *)&Previous, (void *)&Parent, (void *)&Child, (char *)&data_in, (void *)&Data_out}
+    menuItem Id = {Name_rus, Name_en, 0, add_signat_ru, add_signat_en, (void *)&Next, (void *)&Previous, (void *)&Parent, (void *)&Child, (void *)&action, (menuSelect_item *)&select_bar, (char *)&data_in, (void *)&Data_out}
 
 
 // Выбираемые значения и статус
@@ -90,8 +99,8 @@ const int max_munu_in_page = 5; // максимальное количество пунктов меню на стран
 int select_menu_in_page = 0;        // метущий пункт менюc
 char len = 'r';                 //  r - русский язык;  e -  английский
 
-#define height_up_munu 15                                            // выста верхнего пункта меню
-#define dist_y (int)((64 - height_up_munu) / (max_munu_in_page)) // расстояние между пунктами меню
+#define height_up_munu 14                                            // выста верхнего пункта меню
+#define dist_y (int)((64 - height_up_munu) / (max_munu_in_page))+2 // расстояние между пунктами меню
 #define pos_x_menu 4                                                // отступ от края для названий пунктов меню
 #define pos_x_menu_data 100                                             // отступ от края для вывода значений
 
@@ -107,54 +116,65 @@ char len = 'r';                 //  r - русский язык;  e -  английский
 */
 
 
-MAKE_MENU(Menu_1, "Режимы", "Modes",                    {0x40}, 0, "","", Menu_2,         NULL_ENTRY,     NULL_ENTRY, Menu_1_1, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_1_1, "Цикл", "Cycle",                {0x01}, 0, "","", Menu_1_2,       NULL_ENTRY,     Menu_1, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_1_2, "Тест", "Test",                 {0x01}, 0, "","", Menu_1_3,       Menu_1_1,       Menu_1, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_1_3, "Показания", "Data",            {0x40}, 0, "","", NULL_ENTRY,     Menu_1_2,       Menu_1, Menu_1_3_1, NULL_ENTRY, NULL_ENTRY);
-        MAKE_MENU(Menu_1_3_1, "Тепература", "Data",     {0x08}, 0, "гр.","", Menu_1_3_2,     NULL_ENTRY,     Menu_1_3, NULL_ENTRY, NULL_ENTRY, char_ADC_in_temp);
-        MAKE_MENU(Menu_1_3_2, "Глубина", "Data",        {0x08}, 0, "м.","", Menu_1_3_3,     Menu_1_3_1,     Menu_1_3, NULL_ENTRY, NULL_ENTRY, char_ADC_Height);
-        MAKE_MENU(Menu_1_3_3, "Кор. глуб.", "Data",     {0x08}, 0, "м.","", NULL_ENTRY,     Menu_1_3_2,     Menu_1_3, NULL_ENTRY, NULL_ENTRY, char_ADC_Height_correct);
-MAKE_MENU(Menu_2, "Настройки", "Settings",              {0x40}, 0, "","", Menu_3,         Menu_1,         NULL_ENTRY, Menu_2_1, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_2_1, "Дата", "Modes",                {0x20}, 0, "","", Menu_2_2,       NULL_ENTRY,     Menu_2, NULL_ENTRY, c_Date, NULL_ENTRY);
-    MAKE_MENU(Menu_2_2, "Время", "Modes",               {0x20}, 0, "","", Menu_2_3,       Menu_2_1,       Menu_2, NULL_ENTRY, c_Time, NULL_ENTRY);
-    MAKE_MENU(Menu_2_3, "Время сна", "time sleep",      {0x20}, 0, "ч","h", Menu_2_4,       Menu_2_2,       Menu_2, NULL_ENTRY, c_time_sleep_h, NULL_ENTRY);
-    MAKE_MENU(Menu_2_4, "Время сна", "time sleep",      {0x20}, 0, "м","m", Menu_2_5,       Menu_2_3,       Menu_2, NULL_ENTRY, c_time_sleep_m, NULL_ENTRY);
-    MAKE_MENU(Menu_2_5, "Нул. ур.", "Modes",            {0x20}, 0, "м","", Menu_2_6,     Menu_2_4,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_2_6, "Уров. дат.", "Modes",          {0x20}, 0, "м","", Menu_2_7,       Menu_2_5,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_2_7, "Связь", "GSM",                 {0x10}, 0, "","", Menu_2_8,       Menu_2_6,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_2_8, "Ток. петля", "Modes",          {0x10}, 0, "","", Menu_2_9,       Menu_2_7,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_2_9, "RS485", "RS485",               {0x10}, 0, "","", Menu_2_10,       Menu_2_8,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_2_10, "Ед. изм.", "Modes",           {0x10}, 0, "","", Menu_2_11,      Menu_2_9,       Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_2_11, "Инжен. меню", "Modes",        {0x01}, 0, "","", Menu_2_12,      Menu_2_10,       Menu_2, Menu_2_11_1, NULL_ENTRY, NULL_ENTRY);
-        MAKE_MENU(Menu_2_11_1, "Авт. Калиб.", "Modes",  {0x01}, 0, "","", Menu_2_11_2,    NULL_ENTRY,     Menu_2_11, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-        MAKE_MENU(Menu_2_11_2, "Ном. платы", "Modes",   {0x20}, 0, "","", Menu_2_11_3,    Menu_2_11_1,    Menu_2_11, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-        MAKE_MENU(Menu_2_11_3, "Глубина", "Modes",      {0x08}, 0, "","", Menu_2_11_4,    Menu_2_11_2,    Menu_2_11, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-        MAKE_MENU(Menu_2_11_4, "Ток", "Modes",          {0x08}, 0, "","", Menu_2_11_5,  Menu_2_11_3,    Menu_2_11, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-        MAKE_MENU(Menu_2_11_5, "Темп. 1", "Modes",      {0x08}, 0, "","", Menu_2_11_6,    Menu_2_11_4,    Menu_2_11, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-        MAKE_MENU(Menu_2_11_6, "Темп. 2", "Modes",      {0x08}, 0, "","", Menu_2_11_7,    Menu_2_11_5,    Menu_2_11, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-        MAKE_MENU(Menu_2_11_7, "Темп. 3", "Modes",      {0x08}, 0, "","", Menu_2_11_8,    Menu_2_11_6,    Menu_2_11, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-        MAKE_MENU(Menu_2_11_8, "Давление", "Modes",     {0x08}, 0, "","", Menu_2_11_9,    Menu_2_11_7,    Menu_2_11, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-        MAKE_MENU(Menu_2_11_9, "Влажность", "Modes",    {0x08}, 0, "","", NULL_ENTRY,     Menu_2_11_8,    Menu_2_11, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_2_12, "Сброс", "Modes",              {0x01}, 0, "","", Menu_2_13,      Menu_2_11,      Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_2_13, "Формат. SD", "Modes",         {0x01}, 0, "","", NULL_ENTRY,     Menu_2_12,      Menu_2, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
-MAKE_MENU(Menu_3, "Сведения", "Info",                   {0x40}, 0, "","", Menu_4,         Menu_2,         NULL_ENTRY, Menu_3_1, NULL_ENTRY, NULL_ENTRY);
-    MAKE_MENU(Menu_3_1, "ID устр.", "ID Device",        {0x08}, 0, "","", Menu_3_2,       NULL_ENTRY,     Menu_3, NULL_ENTRY, NULL_ENTRY, ID_board);    
-    MAKE_MENU(Menu_3_2, "Вер. платы.", "Modes",         {0x08}, 0, "","", Menu_3_3,       Menu_3_1,       Menu_3, NULL_ENTRY, NULL_ENTRY, ver_board);
-    MAKE_MENU(Menu_3_3, "Вер. ПО", "Modes",             {0x08}, 0, "","", NULL_ENTRY,     Menu_3_2,       Menu_3, NULL_ENTRY, NULL_ENTRY, ver_programm);
-MAKE_MENU(Menu_4, "Инструкция", "Instruction",          {0x01}, 0, "","", NULL_ENTRY,     Menu_3,         NULL_ENTRY, NULL_ENTRY, NULL_ENTRY, NULL_ENTRY);
+MAKE_MENU(Menu_1, "Режимы", "Modes",                     0, "","", Menu_2,         PREVISION_MENU,     PARENT_MENU, Menu_1_1, ACTION_MENU, SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
+    MAKE_MENU(Menu_1_1, "Цикл", "Cycle",                 0, "","", Menu_1_2,       PREVISION_MENU,     Menu_1, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
+    MAKE_MENU(Menu_1_2, "Тест", "Test",                  0, "","", Menu_1_3,       Menu_1_1,       Menu_1, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
+    MAKE_MENU(Menu_1_3, "Показания", "Data",             0, "","", NEXT_MENU,     Menu_1_2,       Menu_1, Menu_1_3_1, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
+        MAKE_MENU(Menu_1_3_1, "Тепература", "Data",      0, "гр.","", Menu_1_3_2,     PREVISION_MENU,     Menu_1_3, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, char_ADC_in_temp);
+        MAKE_MENU(Menu_1_3_2, "Глубина", "Data",         0, "м.","", Menu_1_3_3,     Menu_1_3_1,     Menu_1_3, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, char_ADC_Height);
+        MAKE_MENU(Menu_1_3_3, "Кор. глуб.", "Data",      0, "м.","", NEXT_MENU,     Menu_1_3_2,     Menu_1_3, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, char_ADC_Height_correct);
+MAKE_MENU(Menu_2, "Настройки", "Settings",               0, "","", Menu_3,         Menu_1,         PARENT_MENU, Menu_2_1, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
+    MAKE_MENU(Menu_2_1, "Дата", "Modes",                 0, "","", Menu_2_2,       PREVISION_MENU,     Menu_2, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, c_Date, DATA_OUT_MENU);
+    MAKE_MENU(Menu_2_2, "Время", "Modes",                0, "","", Menu_2_3,       Menu_2_1,       Menu_2, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, c_Time, DATA_OUT_MENU);
+    MAKE_MENU(Menu_2_3, "Время сна", "time sleep",       0, "ч","h", Menu_2_4,       Menu_2_2,       Menu_2, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, c_time_sleep_h, DATA_OUT_MENU);
+    MAKE_MENU(Menu_2_4, "Время сна", "time sleep",       0, "м","m", Menu_2_5,       Menu_2_3,       Menu_2, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, c_time_sleep_m, DATA_OUT_MENU);
+    MAKE_MENU(Menu_2_5, "Нул. ур.", "Modes",             0, "м","", Menu_2_6,     Menu_2_4,       Menu_2, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
+    MAKE_MENU(Menu_2_6, "Уров. дат.", "Modes",           0, "м","", Menu_2_7,       Menu_2_5,       Menu_2, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
+    MAKE_MENU(Menu_2_7, "Связь", "GSM",                  0, "","", Menu_2_8,       Menu_2_6,       Menu_2, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
+    MAKE_MENU(Menu_2_8, "Ток. петля", "Modes",           0, "","", Menu_2_9,       Menu_2_7,       Menu_2, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
+    MAKE_MENU(Menu_2_9, "RS485", "RS485",                0, "","", Menu_2_10,       Menu_2_8,       Menu_2, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
+    MAKE_MENU(Menu_2_10, "Ед. изм.", "Modes",            0, "","", Menu_2_11,      Menu_2_9,       Menu_2, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
+    MAKE_MENU(Menu_2_11, "Инжен. меню", "Modes",         0, "","", Menu_2_12,      Menu_2_10,       Menu_2, Menu_2_11_1, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
+        MAKE_MENU(Menu_2_11_1, "Авт. Калиб.", "Modes",   0, "","", Menu_2_11_2,    PREVISION_MENU,     Menu_2_11, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
+        MAKE_MENU(Menu_2_11_2, "Ном. платы", "Modes",    0, "","", Menu_2_11_3,    Menu_2_11_1,    Menu_2_11, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
+        MAKE_MENU(Menu_2_11_3, "Глубина", "Modes",       0, "","", Menu_2_11_4,    Menu_2_11_2,    Menu_2_11, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
+        MAKE_MENU(Menu_2_11_4, "Ток", "Modes",           0, "","", Menu_2_11_5,  Menu_2_11_3,    Menu_2_11, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
+        MAKE_MENU(Menu_2_11_5, "Темп. 1", "Modes",       0, "","", Menu_2_11_6,    Menu_2_11_4,    Menu_2_11, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
+        MAKE_MENU(Menu_2_11_6, "Темп. 2", "Modes",       0, "","", Menu_2_11_7,    Menu_2_11_5,    Menu_2_11, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
+        MAKE_MENU(Menu_2_11_7, "Темп. 3", "Modes",       0, "","", Menu_2_11_8,    Menu_2_11_6,    Menu_2_11, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
+        MAKE_MENU(Menu_2_11_8, "Давление", "Modes",      0, "","", Menu_2_11_9,    Menu_2_11_7,    Menu_2_11, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
+        MAKE_MENU(Menu_2_11_9, "Влажность", "Modes",     0, "","", NEXT_MENU,     Menu_2_11_8,    Menu_2_11, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
+    MAKE_MENU(Menu_2_12, "Сброс", "Modes",               0, "","", Menu_2_13,      Menu_2_11,      Menu_2, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
+    MAKE_MENU(Menu_2_13, "Формат. SD", "Modes",          0, "","", NEXT_MENU,     Menu_2_12,      Menu_2, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
+MAKE_MENU(Menu_3, "Сведения", "Info",                    0, "","", Menu_4,         Menu_2,         PARENT_MENU, Menu_3_1, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
+    MAKE_MENU(Menu_3_1, "ID устр.", "ID Device",         0, "","", Menu_3_2,       PREVISION_MENU,     Menu_3, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, ID_board);    
+    MAKE_MENU(Menu_3_2, "Вер. платы.", "Modes",          0, "","", Menu_3_3,       Menu_3_1,       Menu_3, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, ver_board);
+    MAKE_MENU(Menu_3_3, "Вер. ПО", "Modes",              0, "","", NEXT_MENU,     Menu_3_2,       Menu_3, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, ver_programm);
+MAKE_MENU(Menu_4, "Инструкция", "Instruction",           0, "","", NEXT_MENU,     Menu_3,         PARENT_MENU, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
 
 ////////////////////////////////////////////////////
 //                Обработка меню                  //
 ////////////////////////////////////////////////////
 menuItem *selectedMenuItem = &Menu_1;
 
+
+/// Возвращает длину строки без учета точек и двоеточий 
+int search_len_mass(char *string){
+    int counter = 0; //
+    for (int i = 0; i<11;i++){
+        if ((string[i] != '.') && (string[i] != ':')) counter++;
+        if (string[i] == 0){
+            return counter-1;
+        }
+    }
+    return -1;
+}
+
 /*  тип меню (char)0b543210
     6 - вкладка                                             0x40
     5 - ввод числа                                          0x20
     4 - изменяемые пункты (трубуется ссылка на структуру)   0x10
     3 - вывод незменяемого значвения char[]                 0x08
-    2 - Ввод времени                                        0x04
-    1 - Ввод даты                                           0x02
     0 - по нажатию - действие                               0x01
 */
 void Select_diplay_functions(menuItem *menu, int pos_y)
@@ -169,14 +189,35 @@ void Select_diplay_functions(menuItem *menu, int pos_y)
         len_end_symbol = OLED_GetWidthStr(menu->add_signat_en) + 2;
     }
 
-
     if (menu->data_in != (void *)&NULL_ENTRY)
     {
-        if (menu->Type_menu == 0x20)
+        int counter = OLED_GetWidthStr(menu->data_in) + 2 + len_end_symbol;
+        OLED_DrawStr(menu->data_in, winth_display - counter, pos_y * dist_y + height_up_munu, 1);
+
+        /// индикация ввода
+        if ((mode_redact == 1) && (selectedMenuItem == menu))
         {
-            int counter = OLED_GetWidthStr(menu->data_in) + 2 + len_end_symbol;
-            OLED_DrawStr(menu->data_in, winth_display - counter, pos_y * dist_y + height_up_munu, 1);
-        }
+            //  Нужно найти ширину символа. pos_redact - текущий символ
+            // int len = search_len_mass(selectedMenuItem->data_in); // длина массива
+
+            char string_pos_line[10] = {};
+            int pos_x_line = 0;
+            int i = 0;
+            for (;((pos_x_line < pos_redact+1) || (i>10)); i++)
+            {
+                string_pos_line[i] = selectedMenuItem->data_in[i];
+                if ((selectedMenuItem->data_in[i] != '.') && (selectedMenuItem->data_in[i] != ':'))
+                {
+                    pos_x_line++;
+                }
+            }
+            int len_to_char = OLED_GetWidthStr(string_pos_line);
+            char array[2] = {};
+            array[0] = selectedMenuItem->data_in[i-1];
+            int len_select_char = OLED_GetWidthStr(array)-1;
+            OLED_DrawHLine(winth_display - counter + len_to_char-len_select_char-1, select_menu_in_page * dist_y + height_up_munu + 8, len_select_char, led_cursor=!led_cursor);
+        }   
+        ///
     }
 }
 
@@ -192,7 +233,7 @@ void Display_punkt_menu(menuItem *menu, int pos_y) // отображение одного пункта 
         OLED_DrawStr(menu->Name_en, pos_x_menu, pos_y * dist_y + height_up_munu, 1);
     }
 
-    if (menu->Type_menu & 0x08)
+    if (selectedMenuItem->data_out != (void *)&NULL_ENTRY)
     {
         OLED_DrawStr(menu->data_out, winth_display - 60, pos_y * dist_y + height_up_munu, 1);
     }
@@ -226,7 +267,7 @@ void Display_TopBar(menuItem *CurrentMenu){
     OLED_DrawStr(str, right_ot, top_akb_status+1, 1);
     right_ot -= width_akb_status;
 
-    float c = ADC_AKB_Proc*5/100+1;
+    int c = ADC_AKB_Proc*5/100+1;
     if (ADC_AKB_Proc == 0) c = 0;
     //OLED_DrawRectangle(right_ot+2, top_akb_status+7-c, right_ot+3, top_akb_status+2+c);
     for (c; c>0;c--){
@@ -288,8 +329,26 @@ void Display_all_menu()
     OLED_UpdateScreen();
 }
 
+void mode_check()
+{
+    if ((selectedMenuItem->data_in != (void *)&NULL_ENTRY) || (selectedMenuItem->select_bar != (void *)&NULL_ENTRY))
+    {
+        // ввод значений
+        mode_redact = 1;
+        pos_redact = 0;
+        time_update_display = time_led_cursor;
+        xSemaphoreGive(Display_semaphore);
+    }
+}
+
+void up_redact(){
+    if (selectedMenuItem->data_in != (void *)&NULL_ENTRY){
+        // действия при вводе. Нажатие вверх
+    }
+}
 void up()
 {
+    if (!(mode_redact == 0)){ up_redact(); return;}
     if (selectedMenuItem->Previous != (void *)&NULL_ENTRY)
     {
         if (select_menu_in_page > 0)
@@ -298,8 +357,15 @@ void up()
     }
 }
 
+
+void down_redact(){
+    if (selectedMenuItem->data_in != (void *)&NULL_ENTRY){
+        // действия при вводе. Нажатие вниз
+    }
+}
 void down()
 {
+    if (!(mode_redact == 0)){ down_redact(); return;}
     if (selectedMenuItem->Next != (void *)&NULL_ENTRY)
     {
         menuChange(selectedMenuItem->Next);
@@ -307,8 +373,27 @@ void down()
             select_menu_in_page += 1;
     }
 }
+
+
+void left_redact(){
+    if (selectedMenuItem->data_in != (void *)&NULL_ENTRY){
+        pos_redact--;
+        led_cursor = 0;
+        if (pos_redact<0) {
+            mode_redact = 0;
+            led_cursor = 1;
+            time_update_display = time_updateDisplay;
+        }
+        // действия при вводе. Нажатие вправо
+    }
+    
+    if (selectedMenuItem->select_bar != (void *)&NULL_ENTRY){
+        // действие при прокрутке
+    }
+}
 void left()
 {
+    if (!(mode_redact == 0)){ left_redact(); return;}
     if (selectedMenuItem->Parent != (void *)&NULL_ENTRY)
     {
         menuChange(selectedMenuItem->Parent);
@@ -316,14 +401,54 @@ void left()
     }
 }
 
+
+void right_redact(){
+    if (selectedMenuItem->data_in != (void *)&NULL_ENTRY){
+        int len = search_len_mass(selectedMenuItem->data_in);
+        pos_redact++;
+        led_cursor = 0; // нужно что бы курсор сразу загорелся при переклбчении 
+        if (pos_redact>=len){
+            pos_redact = len-1;
+            mode_redact = 0;
+            led_cursor = 1;
+            time_update_display = time_updateDisplay;
+        }
+        
+        // действия при вводе. Нажатие вправо
+    }
+    
+    if (selectedMenuItem->select_bar != (void *)&NULL_ENTRY){
+        // действие при прокрутке
+    }
+}
+
 void right()
 {
+    if (mode_redact == 1){ right_redact(); return;}
+
+    if (selectedMenuItem->action != (void *)&NULL_ENTRY)
+    {
+        selectedMenuItem->action(); //  ссылка на функцию при действии
+        return;
+    }
+    mode_check(); // выставление режима
+
     if (selectedMenuItem->Child != (void *)&NULL_ENTRY)
     {
         selectedMenuItem->Num_menu = select_menu_in_page;
         select_menu_in_page = 0;
         menuChange(selectedMenuItem->Child);
     }
+}
+void ok(){
+    if (mode_redact == 1)
+    {
+        mode_redact = 0;
+        led_cursor = 1;
+        time_update_display = time_updateDisplay;
+        return;
+    }
+    mode_check();
 }
 void null_fun(){
 
@@ -336,110 +461,107 @@ void null_fun(){
     3 - вывод незменяемого значвения char[]                 0x08
     0 - по нажатию - действие                               0x01
 */
-void select_code_procces(void (*action)(void))
+void key_press_data_write(char data)
 {
-    // up_down();
-    if (selectedMenuItem->Type_menu == 0x40)
-        action(); // 6 - вкладка                                             0x40
-    if (selectedMenuItem->Type_menu == 0x20)
-        action(); // 5 - ввод числа                                          0x20
-    if (selectedMenuItem->Type_menu == 0x10)
-        action(); // 4 - изменяемые пункты (трубуется ссылка на структуру)   0x10
-    if (selectedMenuItem->Type_menu == 0x08)
-        action(); // 3 - вывод незменяемого значвения char[]                 0x08
-    if (selectedMenuItem->Type_menu == 0x04)
-        action(); // 2 - Ввод времени                                        0x04
-    if (selectedMenuItem->Type_menu == 0x02)
-        action(); // 1 - Ввод даты                                           0x02
-    if (selectedMenuItem->Type_menu == 0x01)
-        action(); // 0 - по нажатию - действие                               0x01
+    int pos_x_line = 0;
+    for (int i = 0; i < 10; i++)
+    {
+        if (pos_x_line == pos_redact){
+            selectedMenuItem->data_in[pos_x_line] = data;
+            int len = search_len_mass(selectedMenuItem->data_in);
+            pos_redact++;
+            led_cursor = 0; // нужно что бы курсор сразу загорелся при переклбчении 
+            if (pos_redact>=len){
+                pos_redact = len-1;
+                //mode_redact = 0;
+                //led_cursor = 1;
+                //time_update_display = time_updateDisplay;
+            }
+            return;
+        }
+        if ((selectedMenuItem->data_in[i] != '.') && (selectedMenuItem->data_in[i] != ':'))
+        {
+            pos_x_line++;
+        }
+    }
 }
 
-void Keyboard_processing(){
+void Keyboard_processing()
+{
     if (Keyboard_press_code != 0xFF)
     {
         // Стрелки
         if (Keyboard_press_code == 'L')
         {
-            select_code_procces(left);
-            return;
+            left();
         }
         if (Keyboard_press_code == 'R')
         {
-            select_code_procces(right);
-            return;
+            right();
         }
         if (Keyboard_press_code == 'U')
         {
-            select_code_procces(up);
-            return;
+            up();
         }
         if (Keyboard_press_code == 'D')
         {
-            select_code_procces(down);
-            return;
-        }
-
-        // Левая часть панели
-        if (Keyboard_press_code == '0')
-        {
-            select_code_procces(null_fun);
-            return;
-        }
-        if (Keyboard_press_code == '1')
-        {
-            select_code_procces(null_fun);
-            return;
-        }
-        if (Keyboard_press_code == '2')
-        {
-            select_code_procces(null_fun);
-            return;
-        }
-        if (Keyboard_press_code == '3')
-        {
-            select_code_procces(null_fun);
-            return;
-        }
-        if (Keyboard_press_code == '4')
-        {
-            select_code_procces(null_fun);
-            return;
-        }
-        if (Keyboard_press_code == '5')
-        {
-            select_code_procces(null_fun);
-            return;
-        }
-        if (Keyboard_press_code == '6')
-        {
-            select_code_procces(null_fun);
-            return;
-        }
-        if (Keyboard_press_code == '7')
-        {
-            select_code_procces(null_fun);
-            return;
-        }
-        if (Keyboard_press_code == '8')
-        {
-            select_code_procces(null_fun);
-            return;
-        }
-        if (Keyboard_press_code == '9')
-        {
-            select_code_procces(null_fun);
-            return;
+            down();
         }
         if (Keyboard_press_code == 'O')
         {
-            select_code_procces(null_fun);
-            return;
+            ok();
         }
-        if (Keyboard_press_code == 'P')
-        {
-            select_code_procces(null_fun);
-            return;
+        if (mode_redact == 1)
+        {   
+            if (Keyboard_press_code == 'P')
+            {
+                null_fun();
+            }
+            
+            // Левая часть панели
+            
+            if (Keyboard_press_code == '0')
+            {
+                key_press_data_write(Keyboard_press_code);
+            }
+            if (Keyboard_press_code == '1')
+            {
+                key_press_data_write(Keyboard_press_code);
+            }
+            if (Keyboard_press_code == '2')
+            {
+                key_press_data_write(Keyboard_press_code);
+            }
+            if (Keyboard_press_code == '3')
+            {
+                key_press_data_write(Keyboard_press_code);
+            }
+            if (Keyboard_press_code == '4')
+            {
+                key_press_data_write(Keyboard_press_code);
+            }
+            if (Keyboard_press_code == '5')
+            {
+                key_press_data_write(Keyboard_press_code);
+            }
+            if (Keyboard_press_code == '6')
+            {
+                key_press_data_write(Keyboard_press_code);
+            }
+            if (Keyboard_press_code == '7')
+            {
+                key_press_data_write(Keyboard_press_code);
+            }
+            if (Keyboard_press_code == '8')
+            {
+                key_press_data_write(Keyboard_press_code);
+            }
+            if (Keyboard_press_code == '9')
+            {
+                key_press_data_write(Keyboard_press_code);
+            }
+            
         }
+        Keyboard_press_code = 0xFF;
     }
 }

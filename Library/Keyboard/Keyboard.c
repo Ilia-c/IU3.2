@@ -43,6 +43,13 @@ const char keyMap[4][4] = {
     {'3', '6', '9', 'O'},
     {'U', 'D', 'L', 'R'}
 };
+void ret_keyboard(){
+    xSemaphoreGive(Display_semaphore);
+    HAL_GPIO_WritePin(COL_B1_PORT, COL_B1_PIN, 1);
+    HAL_GPIO_WritePin(COL_B2_PORT, COL_B2_PIN, 1);
+    HAL_GPIO_WritePin(COL_B3_PORT, COL_B3_PIN, 1);
+    HAL_GPIO_WritePin(COL_B4_PORT, COL_B4_PIN, 1);
+}
 
 void ScanKeypad() {
     // Переписать под пин, который пришел
@@ -159,10 +166,4 @@ void ScanKeypad() {
     HAL_GPIO_WritePin(COL_B4_PORT, COL_B4_PIN, 1);
 }
 
-void ret_keyboard(){
-    xSemaphoreGive(Display_semaphore);
-    HAL_GPIO_WritePin(COL_B1_PORT, COL_B1_PIN, 1);
-    HAL_GPIO_WritePin(COL_B2_PORT, COL_B2_PIN, 1);
-    HAL_GPIO_WritePin(COL_B3_PORT, COL_B3_PIN, 1);
-    HAL_GPIO_WritePin(COL_B4_PORT, COL_B4_PIN, 1);
-}
+
