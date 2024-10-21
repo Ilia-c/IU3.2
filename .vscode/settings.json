@@ -17,6 +17,7 @@
         "rtc_data.h": "c",
         "stdlib.h": "c",
         "typeinfo": "c",
-        "w25q128.h": "c"
+        "w25q128.h": "c",
+        "limits": "c"
     }
 }

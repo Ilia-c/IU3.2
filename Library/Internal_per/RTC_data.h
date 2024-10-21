@@ -2,5 +2,8 @@
 #include <string.h>
 
 void RTC_Init(void);
-void set_time(uint8_t hr, uint8_t min, uint8_t sec);
+void set_time_init(uint8_t hr, uint8_t min, uint8_t sec);
 void RTC_get_time();
+void RTC_read();
+void RTC_set_time();
+void RTC_set_date();

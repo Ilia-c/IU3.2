@@ -990,7 +990,7 @@ void Main(void *argument)
 {
   for(;;)
   {
-    RTC_get_time();
+    RTC_read();
     xSemaphoreGive(Display_semaphore); // вклюбчить поток отображения на экране
     for (int i=0; i<25; i++)
     osDelay(time_update_display/25);

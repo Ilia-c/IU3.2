@@ -69,11 +69,11 @@ menuItem Null_Menu = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 #define NEXT_MENU Null_Menu
 #define PREVISION_MENU Null_Menu
 #define PARENT_MENU Null_Menu
-#define CHULD_MENU Null_Menu
+#define CHILD_MENU Null_Menu
 #define ACTION_MENU Null_Menu
-#define SELECT_BAR_MENU Null_Menu
-#define DATA_IN_MENU Null_Menu
-#define DATA_OUT_MENU Null_Menu
+#define SELECT_BAR Null_Menu
+#define DATA_IN Null_Menu
+#define DATA_OUT Null_Menu
 #define NULL_ENTRY Null_Menu
 
 
@@ -82,10 +82,7 @@ menuItem Null_Menu = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
     extern menuItem Previous;                                                                                      \
     extern menuItem Parent;                                                                                        \
     extern menuItem Child;                                                                                         \
-    extern menuItem Data_out;                                                                                      \
-    extern menuItem Data_int;                                                                                      \
-    extern menuItem Data_float;                                                                                    \
-    menuItem Id = {Name_rus, Name_en, 0, add_signat_ru, add_signat_en, (void *)&Next, (void *)&Previous, (void *)&Parent, (void *)&Child, (void *)&action, (menuSelect_item *)&select_bar, (char *)&data_in, (void *)&Data_out}
+    menuItem Id = {Name_rus, Name_en, 0, add_signat_ru, add_signat_en, (void *)&Next, (void *)&Previous, (void *)&Parent, (void *)&Child, (void *)&action, (menuSelect_item *)&select_bar, (char *)&data_in, (char *)&Data_out}
 
 
 // Выбираемые значения и статус
@@ -114,43 +111,51 @@ char len = 'r';                 //  r - русский язык;  e -  английский
     3 - вывод незменяемого значвения char[]                 0x08
     0 - по нажатию - действие                               0x01
 */
+char Time_char[1] = {0x01}; // нужны для записи времени, после окончания редактирования, вставляется в поле DATA_OUT
+char Data_char[1] = {0x02}; // нужны для записи даты, после окончания редактирования, вставляется в поле DATA_OUT
+extern char char_ADC_in_temp[];
+extern char char_ADC_Height[];
+extern char char_ADC_Height_correct[];
+extern char ID_board[];
+extern char ver_board[];
+extern char ver_programm[];
 
 
-MAKE_MENU(Menu_1, "Режимы", "Modes",                     0, "","", Menu_2,         PREVISION_MENU,     PARENT_MENU, Menu_1_1, ACTION_MENU, SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
-    MAKE_MENU(Menu_1_1, "Цикл", "Cycle",                 0, "","", Menu_1_2,       PREVISION_MENU,     Menu_1, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
-    MAKE_MENU(Menu_1_2, "Тест", "Test",                  0, "","", Menu_1_3,       Menu_1_1,       Menu_1, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
-    MAKE_MENU(Menu_1_3, "Показания", "Data",             0, "","", NEXT_MENU,     Menu_1_2,       Menu_1, Menu_1_3_1, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
-        MAKE_MENU(Menu_1_3_1, "Тепература", "Data",      0, "гр.","", Menu_1_3_2,     PREVISION_MENU,     Menu_1_3, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, char_ADC_in_temp);
-        MAKE_MENU(Menu_1_3_2, "Глубина", "Data",         0, "м.","", Menu_1_3_3,     Menu_1_3_1,     Menu_1_3, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, char_ADC_Height);
-        MAKE_MENU(Menu_1_3_3, "Кор. глуб.", "Data",      0, "м.","", NEXT_MENU,     Menu_1_3_2,     Menu_1_3, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, char_ADC_Height_correct);
-MAKE_MENU(Menu_2, "Настройки", "Settings",               0, "","", Menu_3,         Menu_1,         PARENT_MENU, Menu_2_1, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
-    MAKE_MENU(Menu_2_1, "Дата", "Modes",                 0, "","", Menu_2_2,       PREVISION_MENU,     Menu_2, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, c_Date, DATA_OUT_MENU);
-    MAKE_MENU(Menu_2_2, "Время", "Modes",                0, "","", Menu_2_3,       Menu_2_1,       Menu_2, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, c_Time, DATA_OUT_MENU);
-    MAKE_MENU(Menu_2_3, "Время сна", "time sleep",       0, "ч","h", Menu_2_4,       Menu_2_2,       Menu_2, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, c_time_sleep_h, DATA_OUT_MENU);
-    MAKE_MENU(Menu_2_4, "Время сна", "time sleep",       0, "м","m", Menu_2_5,       Menu_2_3,       Menu_2, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, c_time_sleep_m, DATA_OUT_MENU);
-    MAKE_MENU(Menu_2_5, "Нул. ур.", "Modes",             0, "м","", Menu_2_6,     Menu_2_4,       Menu_2, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
-    MAKE_MENU(Menu_2_6, "Уров. дат.", "Modes",           0, "м","", Menu_2_7,       Menu_2_5,       Menu_2, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
-    MAKE_MENU(Menu_2_7, "Связь", "GSM",                  0, "","", Menu_2_8,       Menu_2_6,       Menu_2, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
-    MAKE_MENU(Menu_2_8, "Ток. петля", "Modes",           0, "","", Menu_2_9,       Menu_2_7,       Menu_2, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
-    MAKE_MENU(Menu_2_9, "RS485", "RS485",                0, "","", Menu_2_10,       Menu_2_8,       Menu_2, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
-    MAKE_MENU(Menu_2_10, "Ед. изм.", "Modes",            0, "","", Menu_2_11,      Menu_2_9,       Menu_2, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
-    MAKE_MENU(Menu_2_11, "Инжен. меню", "Modes",         0, "","", Menu_2_12,      Menu_2_10,       Menu_2, Menu_2_11_1, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
-        MAKE_MENU(Menu_2_11_1, "Авт. Калиб.", "Modes",   0, "","", Menu_2_11_2,    PREVISION_MENU,     Menu_2_11, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
-        MAKE_MENU(Menu_2_11_2, "Ном. платы", "Modes",    0, "","", Menu_2_11_3,    Menu_2_11_1,    Menu_2_11, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
-        MAKE_MENU(Menu_2_11_3, "Глубина", "Modes",       0, "","", Menu_2_11_4,    Menu_2_11_2,    Menu_2_11, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
-        MAKE_MENU(Menu_2_11_4, "Ток", "Modes",           0, "","", Menu_2_11_5,  Menu_2_11_3,    Menu_2_11, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
-        MAKE_MENU(Menu_2_11_5, "Темп. 1", "Modes",       0, "","", Menu_2_11_6,    Menu_2_11_4,    Menu_2_11, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
-        MAKE_MENU(Menu_2_11_6, "Темп. 2", "Modes",       0, "","", Menu_2_11_7,    Menu_2_11_5,    Menu_2_11, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
-        MAKE_MENU(Menu_2_11_7, "Темп. 3", "Modes",       0, "","", Menu_2_11_8,    Menu_2_11_6,    Menu_2_11, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
-        MAKE_MENU(Menu_2_11_8, "Давление", "Modes",      0, "","", Menu_2_11_9,    Menu_2_11_7,    Menu_2_11, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
-        MAKE_MENU(Menu_2_11_9, "Влажность", "Modes",     0, "","", NEXT_MENU,     Menu_2_11_8,    Menu_2_11, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
-    MAKE_MENU(Menu_2_12, "Сброс", "Modes",               0, "","", Menu_2_13,      Menu_2_11,      Menu_2, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
-    MAKE_MENU(Menu_2_13, "Формат. SD", "Modes",          0, "","", NEXT_MENU,     Menu_2_12,      Menu_2, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
-MAKE_MENU(Menu_3, "Сведения", "Info",                    0, "","", Menu_4,         Menu_2,         PARENT_MENU, Menu_3_1, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
-    MAKE_MENU(Menu_3_1, "ID устр.", "ID Device",         0, "","", Menu_3_2,       PREVISION_MENU,     Menu_3, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, ID_board);    
-    MAKE_MENU(Menu_3_2, "Вер. платы.", "Modes",          0, "","", Menu_3_3,       Menu_3_1,       Menu_3, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, ver_board);
-    MAKE_MENU(Menu_3_3, "Вер. ПО", "Modes",              0, "","", NEXT_MENU,     Menu_3_2,       Menu_3, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, ver_programm);
-MAKE_MENU(Menu_4, "Инструкция", "Instruction",           0, "","", NEXT_MENU,     Menu_3,         PARENT_MENU, CHULD_MENU, ACTION_MENU,SELECT_BAR_MENU, DATA_IN_MENU, DATA_OUT_MENU);
+MAKE_MENU(Menu_1, "Режимы", "Modes",                     0, "","", Menu_2,         PREVISION_MENU,     PARENT_MENU, Menu_1_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+    MAKE_MENU(Menu_1_1, "Цикл", "Cycle",                 0, "","", Menu_1_2,       PREVISION_MENU,     Menu_1, CHILD_MENU, ACTION_MENU,SELECT_BAR, DATA_IN, DATA_OUT);
+    MAKE_MENU(Menu_1_2, "Тест", "Test",                  0, "","", Menu_1_3,       Menu_1_1,       Menu_1, CHILD_MENU, ACTION_MENU,SELECT_BAR, DATA_IN, DATA_OUT);
+    MAKE_MENU(Menu_1_3, "Показания", "Data",             0, "","", NEXT_MENU,     Menu_1_2,       Menu_1, Menu_1_3_1, ACTION_MENU,SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_1_3_1, "Тепература", "Data",      0, "°","°", Menu_1_3_2,     PREVISION_MENU,     Menu_1_3, CHILD_MENU, ACTION_MENU,SELECT_BAR, DATA_IN, char_ADC_in_temp);
+        MAKE_MENU(Menu_1_3_2, "Глубина", "Data",         0, "м.","", Menu_1_3_3,     Menu_1_3_1,     Menu_1_3, CHILD_MENU, ACTION_MENU,SELECT_BAR, DATA_IN, char_ADC_Height);
+        MAKE_MENU(Menu_1_3_3, "Кор. глуб.", "Data",      0, "м.","", NEXT_MENU,     Menu_1_3_2,     Menu_1_3, CHILD_MENU, ACTION_MENU,SELECT_BAR, DATA_IN, char_ADC_Height_correct);
+MAKE_MENU(Menu_2, "Настройки", "Settings",               0, "","", Menu_3,         Menu_1,         PARENT_MENU, Menu_2_1, ACTION_MENU,SELECT_BAR, DATA_IN, DATA_OUT);
+    MAKE_MENU(Menu_2_1, "Дата", "Data",                 0, "","", Menu_2_2,       PREVISION_MENU,     Menu_2, CHILD_MENU, ACTION_MENU,SELECT_BAR, c_Date, Time_char);
+    MAKE_MENU(Menu_2_2, "Время", "Time",                0, "","", Menu_2_3,       Menu_2_1,       Menu_2, CHILD_MENU, ACTION_MENU,SELECT_BAR, c_Time, Data_char);
+    MAKE_MENU(Menu_2_3, "Время сна", "time sleep",       0, "ч","h", Menu_2_4,       Menu_2_2,       Menu_2, CHILD_MENU, ACTION_MENU,SELECT_BAR, c_time_sleep_h, DATA_OUT);
+    MAKE_MENU(Menu_2_4, "Время сна", "time sleep",       0, "м","m", Menu_2_5,       Menu_2_3,       Menu_2, CHILD_MENU, ACTION_MENU,SELECT_BAR, c_time_sleep_m, DATA_OUT);
+    MAKE_MENU(Menu_2_5, "Нул. ур.", "Modes",             0, "м","m", Menu_2_6,     Menu_2_4,       Menu_2, CHILD_MENU, ACTION_MENU,SELECT_BAR, DATA_IN, DATA_OUT);
+    MAKE_MENU(Menu_2_6, "Уров. дат.", "Modes",           0, "м","m", Menu_2_7,       Menu_2_5,       Menu_2, CHILD_MENU, ACTION_MENU,SELECT_BAR, DATA_IN, DATA_OUT);
+    MAKE_MENU(Menu_2_7, "Связь", "GSM",                  0, "","", Menu_2_8,       Menu_2_6,       Menu_2, CHILD_MENU, ACTION_MENU,SELECT_BAR, DATA_IN, DATA_OUT);
+    MAKE_MENU(Menu_2_8, "Ток. петля", "Modes",           0, "","", Menu_2_9,       Menu_2_7,       Menu_2, CHILD_MENU, ACTION_MENU,SELECT_BAR, DATA_IN, DATA_OUT);
+    MAKE_MENU(Menu_2_9, "RS485", "RS485",                0, "","", Menu_2_10,       Menu_2_8,       Menu_2, CHILD_MENU, ACTION_MENU,SELECT_BAR, DATA_IN, DATA_OUT);
+    MAKE_MENU(Menu_2_10, "Ед. изм.", "Modes",            0, "","", Menu_2_11,      Menu_2_9,       Menu_2, CHILD_MENU, ACTION_MENU,SELECT_BAR, DATA_IN, DATA_OUT);
+    MAKE_MENU(Menu_2_11, "Инжен. меню", "Modes",         0, "","", Menu_2_12,      Menu_2_10,       Menu_2, Menu_2_11_1, ACTION_MENU,SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_11_1, "Авт. Калиб.", "Modes",   0, "","", Menu_2_11_2,    PREVISION_MENU,     Menu_2_11, CHILD_MENU, ACTION_MENU,SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_11_2, "Ном. платы", "Modes",    0, "","", Menu_2_11_3,    Menu_2_11_1,    Menu_2_11, CHILD_MENU, ACTION_MENU,SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_11_3, "Глубина", "Modes",       0, "","", Menu_2_11_4,    Menu_2_11_2,    Menu_2_11, CHILD_MENU, ACTION_MENU,SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_11_4, "Ток", "Modes",           0, "","", Menu_2_11_5,  Menu_2_11_3,    Menu_2_11, CHILD_MENU, ACTION_MENU,SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_11_5, "Темп. 1", "Modes",       0, "","", Menu_2_11_6,    Menu_2_11_4,    Menu_2_11, CHILD_MENU, ACTION_MENU,SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_11_6, "Темп. 2", "Modes",       0, "","", Menu_2_11_7,    Menu_2_11_5,    Menu_2_11, CHILD_MENU, ACTION_MENU,SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_11_7, "Темп. 3", "Modes",       0, "","", Menu_2_11_8,    Menu_2_11_6,    Menu_2_11, CHILD_MENU, ACTION_MENU,SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_11_8, "Давление", "Modes",      0, "","", Menu_2_11_9,    Menu_2_11_7,    Menu_2_11, CHILD_MENU, ACTION_MENU,SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_11_9, "Влажность", "Modes",     0, "","", NEXT_MENU,     Menu_2_11_8,    Menu_2_11, CHILD_MENU, ACTION_MENU,SELECT_BAR, DATA_IN, DATA_OUT);
+    MAKE_MENU(Menu_2_12, "Сброс", "Modes",               0, "","", Menu_2_13,      Menu_2_11,      Menu_2, CHILD_MENU, ACTION_MENU,SELECT_BAR, DATA_IN, DATA_OUT);
+    MAKE_MENU(Menu_2_13, "Формат. SD", "Modes",          0, "","", NEXT_MENU,     Menu_2_12,      Menu_2, CHILD_MENU, ACTION_MENU,SELECT_BAR, DATA_IN, DATA_OUT);
+MAKE_MENU(Menu_3, "Сведения", "Info",                    0, "","", Menu_4,         Menu_2,         PARENT_MENU, Menu_3_1, ACTION_MENU,SELECT_BAR, DATA_IN, DATA_OUT);
+    MAKE_MENU(Menu_3_1, "ID устр.", "ID Device",         0, "","", Menu_3_2,       PREVISION_MENU,     Menu_3, CHILD_MENU, ACTION_MENU,SELECT_BAR, DATA_IN, ID_board);    
+    MAKE_MENU(Menu_3_2, "Вер. платы.", "Modes",          0, "","", Menu_3_3,       Menu_3_1,       Menu_3, CHILD_MENU, ACTION_MENU,SELECT_BAR, DATA_IN, ver_board);
+    MAKE_MENU(Menu_3_3, "Вер. ПО", "Modes",              0, "","", NEXT_MENU,     Menu_3_2,       Menu_3, CHILD_MENU, ACTION_MENU,SELECT_BAR, DATA_IN, ver_programm);
+MAKE_MENU(Menu_4, "Инструкция", "Instruction",           0, "","", NEXT_MENU,     Menu_3,         PARENT_MENU, CHILD_MENU, ACTION_MENU,SELECT_BAR, DATA_IN, DATA_OUT);
 
 ////////////////////////////////////////////////////
 //                Обработка меню                  //
@@ -329,6 +334,7 @@ void Display_all_menu()
     OLED_UpdateScreen();
 }
 
+// вход в режим редактирования, если есть соответствующее поле
 void mode_check()
 {
     if ((selectedMenuItem->data_in != (void *)&NULL_ENTRY) || (selectedMenuItem->select_bar != (void *)&NULL_ENTRY))
@@ -339,6 +345,19 @@ void mode_check()
         time_update_display = time_led_cursor;
         xSemaphoreGive(Display_semaphore);
     }
+}
+void redact_end(){
+	if ((mode_redact == 1) && (selectedMenuItem->data_in==c_Date)){
+		RTC_set_date();
+	}
+	if ((mode_redact == 1) && (selectedMenuItem->data_in==c_Time)){
+		RTC_set_time();
+	}
+
+    pos_redact = len-1;
+    mode_redact = 0;
+    led_cursor = 1;
+    time_update_display = time_updateDisplay;
 }
 
 void up_redact(){
@@ -408,10 +427,7 @@ void right_redact(){
         pos_redact++;
         led_cursor = 0; // нужно что бы курсор сразу загорелся при переклбчении 
         if (pos_redact>=len){
-            pos_redact = len-1;
-            mode_redact = 0;
-            led_cursor = 1;
-            time_update_display = time_updateDisplay;
+            redact_end();
         }
         
         // действия при вводе. Нажатие вправо
@@ -443,9 +459,7 @@ void right()
 void ok(){
     if (mode_redact == 1)
     {
-        mode_redact = 0;
-        led_cursor = 1;
-        time_update_display = time_updateDisplay;
+        redact_end();
         return;
     }
     mode_check();
@@ -461,31 +475,36 @@ void null_fun(){
     3 - вывод незменяемого значвения char[]                 0x08
     0 - по нажатию - действие                               0x01
 */
-void key_press_data_write(char data)
-{
-    int pos_x_line = 0;
-    for (int i = 0; i < 10; i++)
-    {
-        if (pos_x_line == pos_redact){
-            selectedMenuItem->data_in[pos_x_line] = data;
-            int len = search_len_mass(selectedMenuItem->data_in);
-            pos_redact++;
-            led_cursor = 0; // нужно что бы курсор сразу загорелся при переклбчении 
-            if (pos_redact>=len){
-                pos_redact = len-1;
-                //mode_redact = 0;
-                //led_cursor = 1;
-                //time_update_display = time_updateDisplay;
-            }
+
+// редактирование позиции с учетом  :  и .
+void data_redact_pos(int position, char data, int len){
+    int counter_pos = 0;
+    for (int i = 0; i<10; i++){
+        char Test = selectedMenuItem->data_in[i];
+        if (counter_pos == position){
+            selectedMenuItem->data_in[i] = data;
+            led_cursor = 0;
             return;
         }
-        if ((selectedMenuItem->data_in[i] != '.') && (selectedMenuItem->data_in[i] != ':'))
-        {
-            pos_x_line++;
-        }
+        if ((selectedMenuItem->data_in[i+1] != '.') && (selectedMenuItem->data_in[i+1] != ':'))
+            counter_pos++;
     }
+
 }
 
+
+void key_press_data_write(char data)
+{
+    int len = search_len_mass(selectedMenuItem->data_in);
+    data_redact_pos(pos_redact, data, len);
+    pos_redact++;
+    led_cursor = 0; // нужно что бы курсор сразу загорелся при переклбчении 
+    if (pos_redact>=len)
+        pos_redact = len-1;
+}
+
+
+// события по нажатию кнопки на клавиатуре
 void Keyboard_processing()
 {
     if (Keyboard_press_code != 0xFF)

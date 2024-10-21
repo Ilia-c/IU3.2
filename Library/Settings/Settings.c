@@ -75,9 +75,9 @@ int ADC_AKB_cell = 0;                   //  Ячейки заряда (0-3)
 char c_Time[10]={};
 char c_Date[10]={};
 
-char ID_board[5] = "TEST";
-char ver_board[5] = "v3.25";
-char ver_programm[5] = "0.2";
+char ID_board[10] = "TEST";
+char ver_board[10] = "v3.25";
+char ver_programm[10] = "0.2";
 
 // изменяемые через выбор значения
 int Mode = 0; // режим работы устройства  
