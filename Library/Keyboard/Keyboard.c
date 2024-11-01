@@ -4,78 +4,100 @@
 #include "main.h"
 #include "semphr.h"
 extern int Display_update;
-extern char Keyboard_press_code;
 extern xSemaphoreHandle Display_semaphore;
+extern char Keyboard_press_code;
 
 // Определение пинов для строк
-#define STR_B1_PIN    GPIO_PIN_12
-#define STR_B2_PIN    GPIO_PIN_8
-#define STR_B3_PIN    GPIO_PIN_9
-#define STR_B4_PIN    GPIO_PIN_10
+#define STR_B1_PIN GPIO_PIN_12
+#define STR_B2_PIN GPIO_PIN_8
+#define STR_B3_PIN GPIO_PIN_9
+#define STR_B4_PIN GPIO_PIN_10
 
 // Определение пинов для колонок
-#define COL_B1_PIN    GPIO_PIN_7
-#define COL_B2_PIN    GPIO_PIN_6
-#define COL_B3_PIN    GPIO_PIN_15
-#define COL_B4_PIN    GPIO_PIN_14
+#define COL_B1_PIN GPIO_PIN_7
+#define COL_B2_PIN GPIO_PIN_6
+#define COL_B3_PIN GPIO_PIN_15
+#define COL_B4_PIN GPIO_PIN_14
 
 // Порты, к которым подключены строки
-#define STR_B1_PORT   GPIOB
-#define STR_B2_PORT   GPIOA
-#define STR_B3_PORT   GPIOA
-#define STR_B4_PORT   GPIOA
+#define STR_B1_PORT GPIOB
+#define STR_B2_PORT GPIOA
+#define STR_B3_PORT GPIOA
+#define STR_B4_PORT GPIOA
 
 // Порты, к которым подключены колонки
-#define COL_B1_PORT   GPIOC
-#define COL_B2_PORT   GPIOC
-#define COL_B3_PORT   GPIOB
-#define COL_B4_PORT   GPIOB
+#define COL_B1_PORT GPIOC
+#define COL_B2_PORT GPIOC
+#define COL_B3_PORT GPIOB
+#define COL_B4_PORT GPIOB
 
 extern xSemaphoreHandle TIM6_semaphore_100us;
 extern TIM_HandleTypeDef htim6;
-#define delay osDelay(1);//HAL_TIM_Base_Start(&htim6); xSemaphoreTake(TIM6_semaphore_100us, 10)
+int interrupt = 0; // разрешить или запретить прерывания на время проверки клавиш
 
+#define delay osDelay(1); // HAL_TIM_Base_Start(&htim6); xSemaphoreTake(TIM6_semaphore_100us, 10)
 
 // Карта клавиш матрицы
 const char keyMap[4][4] = {
     {'1', '4', '7', '0'},
     {'2', '5', '8', 'P'},
     {'3', '6', '9', 'O'},
-    {'U', 'D', 'L', 'R'}
-};
-void ret_keyboard(){
+    {'U', 'D', 'L', 'R'}};
+void ret_keyboard()
+{
     xSemaphoreGive(Display_semaphore);
     HAL_GPIO_WritePin(COL_B1_PORT, COL_B1_PIN, 1);
     HAL_GPIO_WritePin(COL_B2_PORT, COL_B2_PIN, 1);
     HAL_GPIO_WritePin(COL_B3_PORT, COL_B3_PIN, 1);
     HAL_GPIO_WritePin(COL_B4_PORT, COL_B4_PIN, 1);
+
+    delay;
+
+    __HAL_GPIO_EXTI_CLEAR_IT(STR_B1_PIN);
+    __HAL_GPIO_EXTI_CLEAR_IT(STR_B2_PIN);
+    __HAL_GPIO_EXTI_CLEAR_IT(STR_B3_PIN);
+    __HAL_GPIO_EXTI_CLEAR_IT(STR_B4_PIN);
+    HAL_NVIC_ClearPendingIRQ(EXTI15_10_IRQn);
+    HAL_NVIC_ClearPendingIRQ(EXTI9_5_IRQn);
+    HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+    HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+    interrupt = 0;
 }
 
-void ScanKeypad() {
+void ScanKeypad()
+{
     // Переписать под пин, который пришел
-    //osDelay(100);
+    // osDelay(100);
+    interrupt = 0;
+    HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
+    HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
+
     HAL_GPIO_WritePin(COL_B1_PORT, COL_B1_PIN, 1);
     HAL_GPIO_WritePin(COL_B2_PORT, COL_B2_PIN, 0);
     HAL_GPIO_WritePin(COL_B3_PORT, COL_B3_PIN, 0);
-    HAL_GPIO_WritePin(COL_B4_PORT, COL_B4_PIN, 0);    
-    
+    HAL_GPIO_WritePin(COL_B4_PORT, COL_B4_PIN, 0);
+
     delay;
-    if (HAL_GPIO_ReadPin(STR_B1_PORT, STR_B1_PIN) == 1) {
+    if (HAL_GPIO_ReadPin(STR_B1_PORT, STR_B1_PIN) == 1)
+    {
         Keyboard_press_code = keyMap[0][0];
         ret_keyboard();
         return;
     }
-    if (HAL_GPIO_ReadPin(STR_B2_PORT, STR_B2_PIN) == 1) {
+    if (HAL_GPIO_ReadPin(STR_B2_PORT, STR_B2_PIN) == 1)
+    {
         Keyboard_press_code = keyMap[0][1];
         ret_keyboard();
         return;
     }
-    if (HAL_GPIO_ReadPin(STR_B3_PORT, STR_B3_PIN) == 1) {
+    if (HAL_GPIO_ReadPin(STR_B3_PORT, STR_B3_PIN) == 1)
+    {
         Keyboard_press_code = keyMap[0][2];
         ret_keyboard();
         return;
     }
-    if (HAL_GPIO_ReadPin(STR_B4_PORT, STR_B4_PIN) == 1) {
+    if (HAL_GPIO_ReadPin(STR_B4_PORT, STR_B4_PIN) == 1)
+    {
         Keyboard_press_code = keyMap[0][3];
         ret_keyboard();
         return;
@@ -86,22 +108,26 @@ void ScanKeypad() {
 
     HAL_GPIO_WritePin(COL_B2_PORT, COL_B2_PIN, 1);
     delay;
-    if (HAL_GPIO_ReadPin(STR_B1_PORT, STR_B1_PIN) == 1) {
+    if (HAL_GPIO_ReadPin(STR_B1_PORT, STR_B1_PIN) == 1)
+    {
         Keyboard_press_code = keyMap[1][0];
         ret_keyboard();
         return;
     }
-    if (HAL_GPIO_ReadPin(STR_B2_PORT, STR_B2_PIN) == 1) {
+    if (HAL_GPIO_ReadPin(STR_B2_PORT, STR_B2_PIN) == 1)
+    {
         Keyboard_press_code = keyMap[1][1];
         ret_keyboard();
         return;
     }
-    if (HAL_GPIO_ReadPin(STR_B3_PORT, STR_B3_PIN) == 1) {
+    if (HAL_GPIO_ReadPin(STR_B3_PORT, STR_B3_PIN) == 1)
+    {
         Keyboard_press_code = keyMap[1][2];
         ret_keyboard();
         return;
     }
-    if (HAL_GPIO_ReadPin(STR_B4_PORT, STR_B4_PIN) == 1) {
+    if (HAL_GPIO_ReadPin(STR_B4_PORT, STR_B4_PIN) == 1)
+    {
         Keyboard_press_code = keyMap[1][3];
         ret_keyboard();
         return;
@@ -112,22 +138,26 @@ void ScanKeypad() {
 
     HAL_GPIO_WritePin(COL_B3_PORT, COL_B3_PIN, 1);
     delay;
-    if (HAL_GPIO_ReadPin(STR_B1_PORT, STR_B1_PIN) == 1) {
+    if (HAL_GPIO_ReadPin(STR_B1_PORT, STR_B1_PIN) == 1)
+    {
         Keyboard_press_code = keyMap[2][0];
         ret_keyboard();
         return;
     }
-    if (HAL_GPIO_ReadPin(STR_B2_PORT, STR_B2_PIN) == 1) {
+    if (HAL_GPIO_ReadPin(STR_B2_PORT, STR_B2_PIN) == 1)
+    {
         Keyboard_press_code = keyMap[2][1];
         ret_keyboard();
         return;
     }
-    if (HAL_GPIO_ReadPin(STR_B3_PORT, STR_B3_PIN) == 1) {
+    if (HAL_GPIO_ReadPin(STR_B3_PORT, STR_B3_PIN) == 1)
+    {
         Keyboard_press_code = keyMap[2][2];
         ret_keyboard();
         return;
     }
-    if (HAL_GPIO_ReadPin(STR_B4_PORT, STR_B4_PIN) == 1) {
+    if (HAL_GPIO_ReadPin(STR_B4_PORT, STR_B4_PIN) == 1)
+    {
         Keyboard_press_code = keyMap[2][3];
         ret_keyboard();
         return;
@@ -138,23 +168,26 @@ void ScanKeypad() {
 
     HAL_GPIO_WritePin(COL_B4_PORT, COL_B4_PIN, 1);
     delay;
-    if (HAL_GPIO_ReadPin(STR_B1_PORT, STR_B1_PIN) == 1) {
+    if (HAL_GPIO_ReadPin(STR_B1_PORT, STR_B1_PIN) == 1)
+    {
         Keyboard_press_code = keyMap[3][0];
         ret_keyboard();
         return;
-        
     }
-    if (HAL_GPIO_ReadPin(STR_B2_PORT, STR_B2_PIN) == 1) {
+    if (HAL_GPIO_ReadPin(STR_B2_PORT, STR_B2_PIN) == 1)
+    {
         Keyboard_press_code = keyMap[3][1];
         ret_keyboard();
         return;
     }
-    if (HAL_GPIO_ReadPin(STR_B3_PORT, STR_B3_PIN) == 1) {
+    if (HAL_GPIO_ReadPin(STR_B3_PORT, STR_B3_PIN) == 1)
+    {
         Keyboard_press_code = keyMap[3][2];
         ret_keyboard();
         return;
     }
-    if (HAL_GPIO_ReadPin(STR_B4_PORT, STR_B4_PIN) == 1) {
+    if (HAL_GPIO_ReadPin(STR_B4_PORT, STR_B4_PIN) == 1)
+    {
         Keyboard_press_code = keyMap[3][3];
         ret_keyboard();
         return;
@@ -164,6 +197,15 @@ void ScanKeypad() {
     HAL_GPIO_WritePin(COL_B2_PORT, COL_B2_PIN, 1);
     HAL_GPIO_WritePin(COL_B3_PORT, COL_B3_PIN, 1);
     HAL_GPIO_WritePin(COL_B4_PORT, COL_B4_PIN, 1);
+
+    delay;
+
+    __HAL_GPIO_EXTI_CLEAR_IT(STR_B1_PIN);
+    __HAL_GPIO_EXTI_CLEAR_IT(STR_B2_PIN);
+    __HAL_GPIO_EXTI_CLEAR_IT(STR_B3_PIN);
+    __HAL_GPIO_EXTI_CLEAR_IT(STR_B4_PIN);
+    HAL_NVIC_ClearPendingIRQ(EXTI15_10_IRQn);
+    HAL_NVIC_ClearPendingIRQ(EXTI9_5_IRQn);
+    HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+    HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 }
-
-

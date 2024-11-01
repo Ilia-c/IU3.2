@@ -11,17 +11,16 @@
     "tasks": [
         {
             "type": "shell",
-            "label": "CubeProg: Flash project (SWD)",
+            "label": "|Прошить|",
             "command": "STM32_Programmer_CLI",
             "args": [
                 "--connect",
                 "port=swd",
                 "--download",
                 "${command:cmake.launchTargetPath}",
-                // Let CMake extension decide executable: "${command:cmake.launchTargetPath}",
-                "-hardRst", // Hardware reset - if rst pin is connected
-                "-rst", // Software reset (backup)
-                "--start" // Start execution
+                "-hardRst",
+                "-rst",
+                "--start"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
@@ -29,16 +28,16 @@
             "problemMatcher": []
         },
         {
-            "label": "Build + Flash",
+            "label": "Сбор&Залив",
             "dependsOrder": "sequence",
             "dependsOn": [
-                "CMake: clean rebuild",
-                "CubeProg: Flash project (SWD)",
+                "Удалить прошивку",
+                "|Прошить|"
             ]
         },
-                {
+        {
             "type": "cmake",
-            "label": "CMake: clean rebuild",
+            "label": "Удалить прошивку",
             "command": "cleanRebuild",
             "targets": [
                 "all"
@@ -50,13 +49,23 @@
         },
         {
             "type": "shell",
-            "label": "CubeProg: List all available communication interfaces",
+            "label": "Список UART",
             "command": "STM32_Programmer_CLI",
-            "args": ["--list"],
+            "args": [
+                "--list"
+            ],
             "options": {
                 "cwd": "${workspaceFolder}"
             },
             "problemMatcher": []
+        },
+        {
+            "type": "cmake",
+            "label": "CMake: настроить",
+            "command": "configure",
+            "preset": "${command:cmake.activeConfigurePresetName}",
+            "problemMatcher": [],
+            "detail": "Задача шаблона CMake настроить"
         }
     ]
 }

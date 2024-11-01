@@ -166,6 +166,7 @@ void Keyboard_task(void *argument);
 
 unsigned int id = 0x01;
 
+
 int main(void)
 {
 
@@ -197,9 +198,35 @@ int main(void)
   RTC_Init();
   
   HAL_GPIO_WritePin(GPIOA,GPIO_PIN_0, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(Data_FES_ON_OFF_GPIO_Port,Data_FES_ON_OFF_Pin, GPIO_PIN_SET);
+  //HAL_GPIO_WritePin(Data_FES_ON_OFF_GPIO_Port,Data_FES_ON_OFF_Pin, GPIO_PIN_SET);
 
 
+#define STR_B1_PIN GPIO_PIN_12
+#define STR_B2_PIN GPIO_PIN_8
+#define STR_B3_PIN GPIO_PIN_9
+#define STR_B4_PIN GPIO_PIN_10
+
+// Определение пинов для колонок
+#define COL_B1_PIN GPIO_PIN_7
+#define COL_B2_PIN GPIO_PIN_6
+#define COL_B3_PIN GPIO_PIN_15
+#define COL_B4_PIN GPIO_PIN_14
+
+// Порты, к которым подключены строки
+#define STR_B1_PORT GPIOB
+#define STR_B2_PORT GPIOA
+#define STR_B3_PORT GPIOA
+#define STR_B4_PORT GPIOA
+
+// Порты, к которым подключены колонки
+#define COL_B1_PORT GPIOC
+#define COL_B2_PORT GPIOC
+#define COL_B3_PORT GPIOB
+#define COL_B4_PORT GPIOB
+  HAL_GPIO_WritePin(COL_B1_PORT, COL_B1_PIN, 1);
+  HAL_GPIO_WritePin(COL_B2_PORT, COL_B2_PIN, 1);
+  HAL_GPIO_WritePin(COL_B3_PORT, COL_B3_PIN, 1);
+  HAL_GPIO_WritePin(COL_B4_PORT, COL_B4_PIN, 1);
   //NVIC_SetPriority(TIM6_IRQn,6);
   //NVIC_EnableIRQ(TIM6_DAC_IRQn);
   //TIM6->DIER|=TIM_DIER_UIE;
@@ -256,13 +283,13 @@ int main(void)
   * @retval None
   */
 extern uint16_t PORT_NUM;
-
+extern int interrupt;
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-  if(GPIO_Pin == Str_b1_Pin | Str_b2_Pin | Str_b3_Pin | Str_b4_Pin) // если прерывание поступило от ножки PA9
+  if((GPIO_Pin == Str_b1_Pin | Str_b2_Pin | Str_b3_Pin | Str_b4_Pin) && (interrupt == 0)) // если прерывание поступило от ножки PA9
   {
     static portBASE_TYPE xTaskWoken;
-    xSemaphoreGiveFromISR(Keyboard_semapfore, &xTaskWoken); // включить поток
+    xSemaphoreGiveFromISR(Keyboard_semapfore, &xTaskWoken); // включить поток клавиатуры
   }  
 }
 
@@ -862,21 +889,22 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : Str_b1_Pin */
   GPIO_InitStruct.Pin = Str_b1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(Str_b1_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : Str_b2_Pin Str_b3_Pin Str_b4_Pin */
   GPIO_InitStruct.Pin = Str_b2_Pin|Str_b3_Pin|Str_b4_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 6, 0);
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 6, 0);
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
