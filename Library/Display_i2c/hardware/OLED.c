@@ -173,7 +173,7 @@ void OLED_DrawVLine(uint8_t x, uint8_t y, uint8_t length, uint8_t mode)
 
 void OLED_DrawHLine(uint8_t x, uint8_t y, uint8_t length, uint8_t mode)
 {
-	for (uint8_t i = 0; i < length; ++i)
+	for (uint8_t i = 0; i < length; i++)
 	{
 		OLED_DrawPixelStatus(i + x, y, mode);
 	}
