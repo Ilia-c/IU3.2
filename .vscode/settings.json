@@ -20,5 +20,6 @@
         "w25q128.h": "c",
         "limits": "c",
         "semphr.h": "c"
-    }
+    },
+    "cortex-debug.variableUseNaturalFormat": false
 }

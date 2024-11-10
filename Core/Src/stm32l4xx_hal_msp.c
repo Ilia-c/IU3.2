@@ -500,6 +500,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi)
   }
 
 }
+
 /**
 * @brief SPI MSP De-Initialization
 * This function freeze the hardware resources used in this example

@@ -5,6 +5,8 @@
 #define W25_READ 0x03
 #define W25_GET_JEDEC_ID 0x9f
 
+#define cs_set() HAL_GPIO_WritePin(SPI1_HOLD_GPIO_Port,SPI1_HOLD_Pin, 0)
+#define cs_reset() HAL_GPIO_WritePin(SPI1_HOLD_GPIO_Port,SPI1_HOLD_Pin, 1)
 uint8_t rx_buf[1025];
 uint8_t tx_buf[10];
 
@@ -22,19 +24,23 @@ void SPI1_Recv(uint8_t *dt, uint16_t cnt)
 
 void W25_Reset(void)
 {
+    cs_set();
     tx_buf[0] = W25_ENABLE_RESET;
     tx_buf[1] = W25_RESET;
     SPI1_Send(tx_buf, 2);
+    cs_reset();
 }
 
 void W25_Read_Data(uint32_t addr, uint8_t *data, uint32_t sz)
 {
+    cs_set();
     tx_buf[0] = W25_READ;
     tx_buf[1] = (addr >> 16) & 0xFF;
     tx_buf[2] = (addr >> 8) & 0xFF;
     tx_buf[3] = addr & 0xFF;
     SPI1_Send(tx_buf, 4);
     SPI1_Recv(data, sz);
+    cs_reset();
 }
 
 void W25_Ini(void)
@@ -49,7 +55,9 @@ uint32_t W25_Read_ID(void)
 {
     uint8_t dt[4];
     tx_buf[0] = W25_GET_JEDEC_ID;
+    cs_set();
     SPI1_Send(tx_buf, 1);
     SPI1_Recv(dt, 3);
+    cs_reset();
     return (dt[0] << 16) | (dt[1] << 8) | dt[2];
 }

@@ -178,22 +178,25 @@ int main(void)
   MX_GPIO_Init();
   HAL_GPIO_WritePin(EN_3P8_GPIO_Port, EN_3P8_Pin, 1);
   HAL_GPIO_WritePin(EN_3P3_GPIO_Port, EN_3P3_Pin, 1);
-
+  HAL_GPIO_WritePin(ON_N25_GPIO_Port, ON_N25_Pin, 0);
+  HAL_GPIO_WritePin(ON_ROM_GPIO_Port,ON_ROM_Pin, 1);
+  HAL_GPIO_WritePin(SPI1_HOLD_GPIO_Port,SPI1_HOLD_Pin, 1);
+  
+  
   //MX_ADC1_Init();
   //MX_ADC3_Init();
   MX_I2C1_Init();
   MX_I2C2_Init();
   //MX_SDMMC1_SD_Init();
-  //MX_SPI1_Init();
+  MX_SPI1_Init();
   //MX_SPI2_Init();
   //MX_USART1_UART_Init();
   //MX_UART4_Init();
   MX_FATFS_Init();
-
   RTC_Init();
 
   // HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_SET);
-  //  HAL_GPIO_WritePin(Data_FES_ON_OFF_GPIO_Port,Data_FES_ON_OFF_Pin, GPIO_PIN_SET);
+  // HAL_GPIO_WritePin(Data_FES_ON_OFF_GPIO_Port,Data_FES_ON_OFF_Pin, GPIO_PIN_SET);
 
   HAL_GPIO_WritePin(COL_B1_GPIO_Port, COL_B1_Pin, 1);
   HAL_GPIO_WritePin(COL_B2_GPIO_Port, COL_B2_Pin, 1);
@@ -207,12 +210,10 @@ int main(void)
   //NVIC_EnableIRQ(TIM6_DAC_IRQn);
   //TIM6->DIER|=TIM_DIER_UIE;
   //  https://easyelectronics.ru/realizaciya-funkcii-zaderzhki-menshe-1ms-na-freertos-s-pomoshhyu-tajmera-i-task-notification.html?ysclid=m16udaxden17209319
-
-
   HAL_Delay(1000);
   HAL_GPIO_WritePin(RESERVED_GPIO_Port, RESERVED_Pin, 1);
-  // W25_Ini();
-  // W25_Read_ID();
+
+  W25_Ini();
 
   OLED_Init(&hi2c2);
   OLED_UpdateScreen();
@@ -229,27 +230,13 @@ int main(void)
   MainHandle = osThreadNew(Main, NULL, &Main_attributes);
   Keyboard_taskHandle = osThreadNew(Keyboard_task, NULL, &Keyboard_task_attributes);
 
-  /* Start scheduler */
   osKernelStart();
 
-  /* We should never get here as control is now taken by the scheduler */
 
-  // OLED_Init(&hi2c1);
-  // FontSet(Segoe_UI_Rus_12);
-  // OLED_DrawStr("Ghbdtn vbh!", 0, 15, 1);
-
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* USER CODE END WHILE */
-    // HAL_GPIO_WritePin(Display_ON_OFF_GPIO_Port, Display_ON_OFF_Pin, GPIO_PIN_SET);
-    // HAL_GPIO_WritePin(GPIOA,GPIO_PIN_0, GPIO_PIN_SET);
-    // FontSet(Segoe_UI_Rus_12);
-    // OLED_DrawStr("Ghbdtn vbh!", 0, 15, 1);		// "Привет мир!"
-    /* USER CODE BEGIN 3 */
   }
-  /* USER CODE END 3 */
+
 }
 
 /**
@@ -627,11 +614,11 @@ static void MX_SPI1_Init(void)
   hspi1.Instance = SPI1;
   hspi1.Init.Mode = SPI_MODE_MASTER;
   hspi1.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi1.Init.DataSize = SPI_DATASIZE_4BIT;
+  hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -667,11 +654,11 @@ static void MX_SPI2_Init(void)
   hspi2.Instance = SPI2;
   hspi2.Init.Mode = SPI_MODE_MASTER;
   hspi2.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi2.Init.DataSize = SPI_DATASIZE_4BIT;
+  hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -687,7 +674,6 @@ static void MX_SPI2_Init(void)
   /* USER CODE END SPI2_Init 2 */
 
 }
-
 
 
 
@@ -818,13 +804,23 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(STR_B4_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : COL_B3_Pin COL_B2_Pin COL_B1_Pin One_Wire_Pin
-                           SPI1_HOLD_Pin ON_ROM_Pin */
+                           ON_ROM_Pin */
   GPIO_InitStruct.Pin = COL_B3_Pin|COL_B2_Pin|COL_B1_Pin|One_Wire_Pin
-                          |SPI1_HOLD_Pin|ON_ROM_Pin;
+                          |ON_ROM_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : SPI1_HOLD_Pin */
+  GPIO_InitStruct.Pin = SPI1_HOLD_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  HAL_GPIO_Init(SPI1_HOLD_GPIO_Port, &GPIO_InitStruct);
+
+  /**/
+  __HAL_SYSCFG_FASTMODEPLUS_ENABLE(SYSCFG_FASTMODEPLUS_PB6);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI4_IRQn, 5, 0);
@@ -836,6 +832,7 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
 }
+
 
 /* USER CODE BEGIN 4 */
 

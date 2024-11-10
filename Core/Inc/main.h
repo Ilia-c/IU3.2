@@ -68,7 +68,6 @@ void Error_Handler(void);
 #define EN_3P8_GPIO_Port GPIOC
 #define ON_N25_Pin GPIO_PIN_3
 #define ON_N25_GPIO_Port GPIOC
-#define ON_N25_EXTI_IRQn EXTI3_IRQn
 #define UART4_WU_Pin GPIO_PIN_2
 #define UART4_WU_GPIO_Port GPIOA
 #define ON_OWEN_Pin GPIO_PIN_3
@@ -109,6 +108,7 @@ void Error_Handler(void);
 #define SPI1_HOLD_GPIO_Port GPIOB
 #define ON_ROM_Pin GPIO_PIN_7
 #define ON_ROM_GPIO_Port GPIOB
+
 
 /* USER CODE BEGIN Private defines */
 

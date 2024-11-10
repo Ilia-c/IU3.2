@@ -259,6 +259,9 @@ void Display_TopBar(menuItem *CurrentMenu)
         OLED_DrawPixel(back_pic_pos_x + 1, back_pic_pos_y);
         OLED_DrawStr(CurrentMenu->Parent, left_pic_last_munu, top_pic_last_munu, 1);
     }
+    unsigned int id = W25_Read_ID();
+    sprintf(str,"ID:0x%X\r\n",id);
+    OLED_DrawStr(str, 1, 1, 1);
 
     sprintf(str, "%d", ADC_AKB_Proc);
     if (ADC_AKB_Proc < 10)
@@ -274,8 +277,6 @@ void Display_TopBar(menuItem *CurrentMenu)
         right_ot -= 12;
     }
 
-    // sprintf(str,"ID:0x%X\r\n",id);
-    // OLED_DrawStr(str, 1, 1, 1);
 
     OLED_DrawStr(str, right_ot, top_akb_status + 1, 1);
     right_ot -= width_akb_status;
