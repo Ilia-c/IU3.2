@@ -159,7 +159,7 @@ void Monitor_task(void *argument);
 void Main(void *argument);
 void Keyboard_task(void *argument);
 
-unsigned int id = 0x01;
+unsigned int id = 0x00;
 
 int main(void)
 {
@@ -179,8 +179,8 @@ int main(void)
   HAL_GPIO_WritePin(EN_3P8_GPIO_Port, EN_3P8_Pin, 1);
   HAL_GPIO_WritePin(EN_3P3_GPIO_Port, EN_3P3_Pin, 1);
   HAL_GPIO_WritePin(ON_N25_GPIO_Port, ON_N25_Pin, 0);
-  HAL_GPIO_WritePin(ON_ROM_GPIO_Port,ON_ROM_Pin, 1);
   HAL_GPIO_WritePin(SPI1_HOLD_GPIO_Port,SPI1_HOLD_Pin, 1);
+  HAL_GPIO_WritePin(ON_ROM_GPIO_Port,ON_ROM_Pin, 1);
   
   
   //MX_ADC1_Init();
@@ -189,7 +189,7 @@ int main(void)
   MX_I2C2_Init();
   //MX_SDMMC1_SD_Init();
   MX_SPI1_Init();
-  //MX_SPI2_Init();
+  MX_SPI2_Init();
   //MX_USART1_UART_Init();
   //MX_UART4_Init();
   MX_FATFS_Init();
@@ -211,9 +211,9 @@ int main(void)
   //TIM6->DIER|=TIM_DIER_UIE;
   //  https://easyelectronics.ru/realizaciya-funkcii-zaderzhki-menshe-1ms-na-freertos-s-pomoshhyu-tajmera-i-task-notification.html?ysclid=m16udaxden17209319
   HAL_Delay(1000);
-  HAL_GPIO_WritePin(RESERVED_GPIO_Port, RESERVED_Pin, 1);
 
   W25_Ini();
+  unsigned int id = W25_Read_ID();
 
   OLED_Init(&hi2c2);
   OLED_UpdateScreen();
@@ -618,7 +618,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -759,8 +759,11 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, RESERVED_Pin|EN_5_Pin|EN_3P3_Pin|EN_3P8_Pin
-                          |ON_N25_Pin|COL_B4_Pin|ON_ADC_Pin|ON_t_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(RESERVED_GPIO_Port, RESERVED_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOC, EN_5_Pin|EN_3P3_Pin|EN_3P8_Pin|ON_N25_Pin
+                          |COL_B4_Pin|ON_ADC_Pin|ON_t_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, UART4_WU_Pin|ON_OWEN_Pin, GPIO_PIN_RESET);
@@ -832,6 +835,7 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
 }
+
 
 
 /* USER CODE BEGIN 4 */

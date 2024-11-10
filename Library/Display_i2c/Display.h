@@ -3,6 +3,7 @@
 #include "OLED_Icons.h"
 #include "FreeRTOS.h"
 #include "semphr.h"
+#include "main.h"
 
 typedef struct Menu_item
 {
