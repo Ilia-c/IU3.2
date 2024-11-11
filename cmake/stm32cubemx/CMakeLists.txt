@@ -34,6 +34,7 @@ target_include_directories(stm32cubemx INTERFACE
     ../../Library/Keyboard/
     ../../Library/Internal_per
     ../../Library/w25q128
+    ../../Library/ADC
 )
 
 target_sources(stm32cubemx INTERFACE
@@ -114,6 +115,7 @@ target_sources(stm32cubemx INTERFACE
     ../../Library/Settings/Settings.c
     ../../Library/Internal_per/RTC_data.c
     ../../Library/w25q128/w25q128.c
+    ../../Library/ADC/MS5193T.c
 )
 
 target_link_directories(stm32cubemx INTERFACE

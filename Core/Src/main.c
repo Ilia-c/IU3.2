@@ -31,6 +31,7 @@
 #include "FreeRTOS.h"
 #include "semphr.h"
 #include "w25q128.h"
+#include "MS5193T.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -146,7 +147,6 @@ static void MX_I2C2_Init(void);        //
 static void MX_SDMMC1_SD_Init(void);   //
 static void MX_SPI1_Init(void);        //
 static void MX_SPI2_Init(void);        //
-static void MX_USART1_UART_Init(void); //
 static void MX_UART4_Init(void);       //
 static void MX_TIM6_Init(void);
 
@@ -160,6 +160,48 @@ void Main(void *argument);
 void Keyboard_task(void *argument);
 
 unsigned int id = 0x00;
+
+
+void WriteToSDCard(void)
+{
+    FATFS fs;            // Файловая система
+    FIL file;            // Файловая переменная
+    FRESULT res;         // Результат операции
+    UINT bytesWritten;   // Количество записанных байтов
+    const char *testMessage = "Hello, SD Card!";
+
+    // 1. Монтируем файловую систему
+    res = f_mount(&fs, "", 1);
+    if (res != FR_OK) {
+        // Обработка ошибки
+        //printf("Failed to mount SD card (Error %d)\n", res);
+        return;
+    }
+
+    // 2. Открываем или создаем файл на запись
+    res = f_open(&file, "test.txt", FA_WRITE | FA_CREATE_ALWAYS);
+    if (res != FR_OK) {
+        // Обработка ошибки
+        //printf("Failed to open file (Error %d)\n", res);
+        f_mount(NULL, "", 1); // Отмонтируем файловую систему
+        return;
+    }
+
+    // 3. Записываем данные
+    res = f_write(&file, testMessage, strlen(testMessage), &bytesWritten);
+    if (res != FR_OK || bytesWritten < strlen(testMessage)) {
+        // Обработка ошибки записи
+        //printf("Failed to write data to file (Error %d)\n", res);
+    } else {
+        //printf("Data written successfully!\n");
+    }
+
+    // 4. Закрываем файл
+    f_close(&file);
+
+    // 5. Отмонтируем файловую систему
+    f_mount(NULL, "", 1);
+}
 
 int main(void)
 {
@@ -181,17 +223,18 @@ int main(void)
   HAL_GPIO_WritePin(ON_N25_GPIO_Port, ON_N25_Pin, 0);
   HAL_GPIO_WritePin(SPI1_HOLD_GPIO_Port,SPI1_HOLD_Pin, 1);
   HAL_GPIO_WritePin(ON_ROM_GPIO_Port,ON_ROM_Pin, 1);
+  HAL_GPIO_WritePin(ON_ADC_GPIO_Port,ON_ADC_Pin, 1);
+  HAL_GPIO_WritePin(ON_t_GPIO_Port,ON_t_Pin, 1);
   
   
-  //MX_ADC1_Init();
-  //MX_ADC3_Init();
+  MX_ADC1_Init();
+  MX_ADC3_Init();
   MX_I2C1_Init();
   MX_I2C2_Init();
-  //MX_SDMMC1_SD_Init();
+  MX_SDMMC1_SD_Init();
   MX_SPI1_Init();
   MX_SPI2_Init();
-  //MX_USART1_UART_Init();
-  //MX_UART4_Init();
+  MX_UART4_Init();
   MX_FATFS_Init();
   RTC_Init();
 
@@ -214,11 +257,14 @@ int main(void)
 
   W25_Ini();
   unsigned int id = W25_Read_ID();
+  ADC_Init();
+  WriteToSDCard();
 
   OLED_Init(&hi2c2);
   OLED_UpdateScreen();
   HAL_Delay(1000);
-  
+
+
   osKernelInitialize();
 
   SD_cardHandle = osThreadNew(StartDefaultTask, NULL, &SD_card_attributes);
@@ -575,24 +621,14 @@ static void MX_I2C2_Init(void)
 
 static void MX_SDMMC1_SD_Init(void)
 {
-
-  /* USER CODE BEGIN SDMMC1_Init 0 */
-
-  /* USER CODE END SDMMC1_Init 0 */
-
-  /* USER CODE BEGIN SDMMC1_Init 1 */
-
-  /* USER CODE END SDMMC1_Init 1 */
   hsd1.Instance = SDMMC1;
   hsd1.Init.ClockEdge = SDMMC_CLOCK_EDGE_RISING;
   hsd1.Init.ClockBypass = SDMMC_CLOCK_BYPASS_DISABLE;
   hsd1.Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE;
   hsd1.Init.BusWide = SDMMC_BUS_WIDE_4B;
   hsd1.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
-  hsd1.Init.ClockDiv = 3;
-  /* USER CODE BEGIN SDMMC1_Init 2 */
+  hsd1.Init.ClockDiv = 32;
 
-  /* USER CODE END SDMMC1_Init 2 */
 }
 
 /**
@@ -656,7 +692,7 @@ static void MX_SPI2_Init(void)
   hspi2.Init.Direction = SPI_DIRECTION_2LINES;
   hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
-  hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi2.Init.CLKPhase = SPI_PHASE_2EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
   hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
@@ -676,40 +712,6 @@ static void MX_SPI2_Init(void)
 }
 
 
-
-/**
- * @brief USART1 Initialization Function
- * @param None
- * @retval None
- */
-static void MX_USART1_UART_Init(void)
-{
-
-  /* USER CODE BEGIN USART1_Init 0 */
-
-  /* USER CODE END USART1_Init 0 */
-
-  /* USER CODE BEGIN USART1_Init 1 */
-
-  /* USER CODE END USART1_Init 1 */
-  huart1.Instance = USART1;
-  huart1.Init.BaudRate = 115200;
-  huart1.Init.WordLength = UART_WORDLENGTH_8B;
-  huart1.Init.StopBits = UART_STOPBITS_1;
-  huart1.Init.Parity = UART_PARITY_NONE;
-  huart1.Init.Mode = UART_MODE_TX_RX;
-  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
-  huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN USART1_Init 2 */
-
-  /* USER CODE END USART1_Init 2 */
-}
 
 static void MX_UART4_Init(void)
 {

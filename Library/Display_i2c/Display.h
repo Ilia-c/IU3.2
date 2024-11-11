@@ -4,6 +4,11 @@
 #include "FreeRTOS.h"
 #include "semphr.h"
 #include "main.h"
+#include "MS5193T.h"
+#include "Settings.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 typedef struct Menu_item
 {
@@ -49,3 +54,4 @@ void menuChange(menuItem *NewMenu);
 void Keyboard_processing();
 void convert_string_to_ascii(const char *input, char *output);
 char convert_to_ascii(unsigned char c);
+void ADC_Init();
