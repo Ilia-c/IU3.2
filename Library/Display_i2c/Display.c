@@ -255,16 +255,11 @@ void Display_TopBar(menuItem *CurrentMenu)
         OLED_DrawPixel(back_pic_pos_x + 1, back_pic_pos_y);
         OLED_DrawStr(CurrentMenu->Parent, left_pic_last_munu, top_pic_last_munu, 1);
     }
-
-    /*
-    uint8_t status = ADC_ReadStatus();
-    if (status & 0x80) { // Проверка RDY-бита
-        uint32_t adcValue = ADC_ReadData();
-        sprintf(str,"ADC Value: %lu\n",adcValue);
-        OLED_DrawStr(str, 1, 1, 1);
-    } else {
-        //OLED_DrawStr("Данные не готовы\n", 1, 1, 1);
-    }*/
+    uint8_t id = SPI2_Read_OneByte(0x60);
+    //uint32_t adcValue = MS5193T_ReadADC();
+     //sprintf(str, "ADC Value: %lu\n", adcValue);
+    sprintf(str, "ID Value: 0x%X\n", id);
+    OLED_DrawStr(str, 1, 1, 1);
     //sprintf(str,"ID:0x%X\r\n",id);
     //OLED_DrawStr(str, 1, 1, 1);
     /*

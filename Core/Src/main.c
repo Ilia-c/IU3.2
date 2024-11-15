@@ -225,7 +225,7 @@ int main(void)
   HAL_GPIO_WritePin(ON_ROM_GPIO_Port,ON_ROM_Pin, 1);
   HAL_GPIO_WritePin(ON_ADC_GPIO_Port,ON_ADC_Pin, 1);
   HAL_GPIO_WritePin(ON_t_GPIO_Port,ON_t_Pin, 1);
-  
+  HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 1); // CS LOW
   
   MX_ADC1_Init();
   MX_ADC3_Init();
@@ -234,7 +234,7 @@ int main(void)
   MX_SDMMC1_SD_Init();
   MX_SPI1_Init();
   MX_SPI2_Init();
-  MX_UART4_Init();
+  //MX_UART4_Init();
   MX_FATFS_Init();
   RTC_Init();
 
@@ -246,7 +246,7 @@ int main(void)
   HAL_GPIO_WritePin(COL_B3_GPIO_Port, COL_B3_Pin, 1);
   HAL_GPIO_WritePin(COL_B4_GPIO_Port, COL_B4_Pin, 1);
   
-
+  
   //while(1){}
   // добавить задачу считывания клавишь 
   //NVIC_SetPriority(TIM6_IRQn,6);
@@ -257,9 +257,13 @@ int main(void)
 
   W25_Ini();
   unsigned int id = W25_Read_ID();
-  ADC_Init();
-  WriteToSDCard();
-
+  // Настройка режима одиночного преобразования
+  //MS5193T_Reset();
+  //MS5193T_WriteRegister(0x08, 0x2001); 
+  //MS5193T_WriteRegister(0x10, 0x0000); 
+  //WriteToSDCard();
+  AD7793_Init();
+  
   OLED_Init(&hi2c2);
   OLED_UpdateScreen();
   HAL_Delay(1000);
@@ -691,7 +695,7 @@ static void MX_SPI2_Init(void)
   hspi2.Init.Mode = SPI_MODE_MASTER;
   hspi2.Init.Direction = SPI_DIRECTION_2LINES;
   hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
-  hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi2.Init.CLKPolarity = SPI_POLARITY_HIGH;
   hspi2.Init.CLKPhase = SPI_PHASE_2EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
   hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
@@ -700,7 +704,7 @@ static void MX_SPI2_Init(void)
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
   hspi2.Init.CRCPolynomial = 7;
   hspi2.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
-  hspi2.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
+  hspi2.Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
   if (HAL_SPI_Init(&hspi2) != HAL_OK)
   {
     Error_Handler();
@@ -710,6 +714,7 @@ static void MX_SPI2_Init(void)
   /* USER CODE END SPI2_Init 2 */
 
 }
+
 
 
 
@@ -761,11 +766,8 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(RESERVED_GPIO_Port, RESERVED_Pin, GPIO_PIN_SET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, EN_5_Pin|EN_3P3_Pin|EN_3P8_Pin|ON_N25_Pin
-                          |COL_B4_Pin|ON_ADC_Pin|ON_t_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, RESERVED_Pin|EN_5_Pin|EN_3P3_Pin|EN_3P8_Pin
+                          |ON_N25_Pin|COL_B4_Pin|ON_ADC_Pin|ON_t_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, UART4_WU_Pin|ON_OWEN_Pin, GPIO_PIN_RESET);

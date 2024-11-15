@@ -19,7 +19,8 @@
         "typeinfo": "c",
         "w25q128.h": "c",
         "limits": "c",
-        "semphr.h": "c"
+        "semphr.h": "c",
+        "ms5193t.h": "c"
     },
     "cortex-debug.variableUseNaturalFormat": false
 }
