@@ -21,6 +21,7 @@ target_include_directories(stm32cubemx INTERFACE
     ../../Drivers/STM32L4xx_HAL_Driver/Inc
     ../../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy
     ../../Middlewares/Third_Party/FreeRTOS/Source/include
+    ../../Middlewares/Third_Party/FatFs/src
     ../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2
     ../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F
     ../../Middlewares/Third_Party/FatFs/src
@@ -35,6 +36,7 @@ target_include_directories(stm32cubemx INTERFACE
     ../../Library/Internal_per
     ../../Library/w25q128
     ../../Library/ADC
+    ../../Library/SD_card
 )
 
 target_sources(stm32cubemx INTERFACE
@@ -116,6 +118,7 @@ target_sources(stm32cubemx INTERFACE
     ../../Library/Internal_per/RTC_data.c
     ../../Library/w25q128/w25q128.c
     ../../Library/ADC/MS5193T.c
+    ../../Library/SD_card/SD.c
 )
 
 target_link_directories(stm32cubemx INTERFACE

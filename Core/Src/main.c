@@ -32,6 +32,7 @@
 #include "semphr.h"
 #include "w25q128.h"
 #include "MS5193T.h"
+#include "SD.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -67,6 +68,8 @@ I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c2;
 
 SD_HandleTypeDef hsd1;
+DMA_HandleTypeDef hdma_sdmmc1_rx;
+DMA_HandleTypeDef hdma_sdmmc1_tx;
 
 SPI_HandleTypeDef hspi1;
 SPI_HandleTypeDef hspi2;
@@ -140,6 +143,7 @@ const osThreadAttr_t Keyboard_task_attributes = {
 void SystemClock_Config(void);
 void PeriphCommonClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_ADC3_Init(void);
 static void MX_I2C1_Init(void);        //
@@ -161,47 +165,6 @@ void Keyboard_task(void *argument);
 
 unsigned int id = 0x00;
 
-
-void WriteToSDCard(void)
-{
-    FATFS fs;            // Файловая система
-    FIL file;            // Файловая переменная
-    FRESULT res;         // Результат операции
-    UINT bytesWritten;   // Количество записанных байтов
-    const char *testMessage = "Hello, SD Card!";
-
-    // 1. Монтируем файловую систему
-    res = f_mount(&fs, "", 1);
-    if (res != FR_OK) {
-        // Обработка ошибки
-        //printf("Failed to mount SD card (Error %d)\n", res);
-        return;
-    }
-
-    // 2. Открываем или создаем файл на запись
-    res = f_open(&file, "test.txt", FA_WRITE | FA_CREATE_ALWAYS);
-    if (res != FR_OK) {
-        // Обработка ошибки
-        //printf("Failed to open file (Error %d)\n", res);
-        f_mount(NULL, "", 1); // Отмонтируем файловую систему
-        return;
-    }
-
-    // 3. Записываем данные
-    res = f_write(&file, testMessage, strlen(testMessage), &bytesWritten);
-    if (res != FR_OK || bytesWritten < strlen(testMessage)) {
-        // Обработка ошибки записи
-        //printf("Failed to write data to file (Error %d)\n", res);
-    } else {
-        //printf("Data written successfully!\n");
-    }
-
-    // 4. Закрываем файл
-    f_close(&file);
-
-    // 5. Отмонтируем файловую систему
-    f_mount(NULL, "", 1);
-}
 
 int main(void)
 {
@@ -227,15 +190,16 @@ int main(void)
   HAL_GPIO_WritePin(ON_t_GPIO_Port,ON_t_Pin, 1);
   HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 1); // CS LOW
   
+  MX_DMA_Init();
   MX_ADC1_Init();
   MX_ADC3_Init();
   MX_I2C1_Init();
   MX_I2C2_Init();
-  MX_SDMMC1_SD_Init();
+  //MX_SDMMC1_SD_Init();
   MX_SPI1_Init();
   MX_SPI2_Init();
   //MX_UART4_Init();
-  MX_FATFS_Init();
+  //MX_FATFS_Init();
   RTC_Init();
 
   // HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_SET);
@@ -255,15 +219,17 @@ int main(void)
   //  https://easyelectronics.ru/realizaciya-funkcii-zaderzhki-menshe-1ms-na-freertos-s-pomoshhyu-tajmera-i-task-notification.html?ysclid=m16udaxden17209319
   HAL_Delay(1000);
 
-  W25_Ini();
-  unsigned int id = W25_Read_ID();
+  //W25_Ini();
+  //unsigned int id = W25_Read_ID();
   // Настройка режима одиночного преобразования
   //MS5193T_Reset();
   //MS5193T_WriteRegister(0x08, 0x2001); 
   //MS5193T_WriteRegister(0x10, 0x0000); 
   //WriteToSDCard();
-  AD7793_Init();
-  
+  //AD7793_Init();
+
+
+
   OLED_Init(&hi2c2);
   OLED_UpdateScreen();
   HAL_Delay(1000);
@@ -310,21 +276,21 @@ void SystemClock_Config(void)
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
   /** Configure the main internal regulator output voltage
-   */
+  */
   if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1) != HAL_OK)
   {
     Error_Handler();
   }
 
   /** Configure LSE Drive Capability
-   */
+  */
   HAL_PWR_EnableBkUpAccess();
   __HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_LOW);
 
   /** Initializes the RCC Oscillators according to the specified parameters
-   * in the RCC_OscInitTypeDef structure.
-   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSE | RCC_OSCILLATORTYPE_MSI;
+  * in the RCC_OscInitTypeDef structure.
+  */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSE|RCC_OSCILLATORTYPE_MSI;
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
   RCC_OscInitStruct.MSICalibrationValue = 0;
@@ -334,7 +300,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLM = 1;
   RCC_OscInitStruct.PLL.PLLN = 20;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV7;
-  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV4;
+  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
   RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
@@ -342,20 +308,21 @@ void SystemClock_Config(void)
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
-   */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
   {
     Error_Handler();
   }
 
   /** Enable MSI Auto calibration
-   */
+  */
   HAL_RCCEx_EnableMSIPLLMode();
 }
 
@@ -368,8 +335,9 @@ void PeriphCommonClock_Config(void)
   RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Initializes the peripherals clock
-   */
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB | RCC_PERIPHCLK_SDMMC1 | RCC_PERIPHCLK_ADC;
+  */
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB|RCC_PERIPHCLK_SDMMC1
+                              |RCC_PERIPHCLK_ADC;
   PeriphClkInit.AdcClockSelection = RCC_ADCCLKSOURCE_PLLSAI1;
   PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLLSAI1;
   PeriphClkInit.Sdmmc1ClockSelection = RCC_SDMMC1CLKSOURCE_PLLSAI1;
@@ -379,7 +347,7 @@ void PeriphCommonClock_Config(void)
   PeriphClkInit.PLLSAI1.PLLSAI1P = RCC_PLLP_DIV7;
   PeriphClkInit.PLLSAI1.PLLSAI1Q = RCC_PLLQ_DIV2;
   PeriphClkInit.PLLSAI1.PLLSAI1R = RCC_PLLR_DIV2;
-  PeriphClkInit.PLLSAI1.PLLSAI1ClockOut = RCC_PLLSAI1_48M2CLK | RCC_PLLSAI1_ADC1CLK;
+  PeriphClkInit.PLLSAI1.PLLSAI1ClockOut = RCC_PLLSAI1_48M2CLK|RCC_PLLSAI1_ADC1CLK;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
@@ -631,8 +599,7 @@ static void MX_SDMMC1_SD_Init(void)
   hsd1.Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE;
   hsd1.Init.BusWide = SDMMC_BUS_WIDE_4B;
   hsd1.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
-  hsd1.Init.ClockDiv = 32;
-
+  hsd1.Init.ClockDiv = 3;
 }
 
 /**
@@ -748,6 +715,24 @@ static void MX_UART4_Init(void)
 }
 
 /**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA2_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA2_Channel4_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Channel4_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Channel4_IRQn);
+  /* DMA2_Channel5_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Channel5_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Channel5_IRQn);
+
+}
+/**
  * @brief GPIO Initialization Function
  * @param None
  * @retval None
@@ -765,9 +750,14 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
+  
+
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, RESERVED_Pin|EN_5_Pin|EN_3P3_Pin|EN_3P8_Pin
-                          |ON_N25_Pin|COL_B4_Pin|ON_ADC_Pin|ON_t_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(RESERVED_GPIO_Port, RESERVED_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOC, EN_5_Pin|EN_3P3_Pin|EN_3P8_Pin|ON_N25_Pin
+                          |COL_B4_Pin|ON_ADC_Pin|ON_t_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, UART4_WU_Pin|ON_OWEN_Pin, GPIO_PIN_RESET);
@@ -792,8 +782,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : NUM_RES_Pin USART1_DATA_DETECT_Pin SDMMC1_DET_Pin */
-  GPIO_InitStruct.Pin = NUM_RES_Pin|USART1_DATA_DETECT_Pin|SDMMC1_DET_Pin;
+  /*Configure GPIO pins : NUM_RES_Pin SDMMC1_DET_Pin */
+  GPIO_InitStruct.Pin = NUM_RES_Pin|SDMMC1_DET_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -819,6 +809,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : USART1_DATA_DETECT_Pin */
+  GPIO_InitStruct.Pin = USART1_DATA_DETECT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(USART1_DATA_DETECT_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pin : SPI1_HOLD_Pin */
   GPIO_InitStruct.Pin = SPI1_HOLD_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -836,6 +832,17 @@ static void MX_GPIO_Init(void)
   HAL_NVIC_SetPriority(EXTI9_5_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
+
+  GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL; // Или GPIO_PULLUP в зависимости от вашей схемы
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF12_SDMMC1;
+    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+    /* SDMMC1_CMD - PD2 */
+    GPIO_InitStruct.Pin = GPIO_PIN_2;
+    HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
 }
@@ -858,6 +865,13 @@ void StartDefaultTask(void *argument)
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
   RTC_get_time();
+
+  MX_SDMMC1_SD_Init();
+  BSP_SD_Init();
+  HAL_Delay(200);
+  MX_FATFS_Init();
+  WriteToSDCard();
+
   vSemaphoreCreateBinary(Keyboard_semapfore);
   vSemaphoreCreateBinary(Display_semaphore);
   vSemaphoreCreateBinary(Display_cursor_semaphore);
