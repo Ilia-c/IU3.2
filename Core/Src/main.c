@@ -71,7 +71,6 @@ SD_HandleTypeDef hsd1;
 DMA_HandleTypeDef hdma_sdmmc1_rx;
 DMA_HandleTypeDef hdma_sdmmc1_tx;
 
-SPI_HandleTypeDef hspi1;
 SPI_HandleTypeDef hspi2;
 
 TIM_HandleTypeDef htim6;
@@ -149,7 +148,7 @@ static void MX_ADC3_Init(void);
 static void MX_I2C1_Init(void);        //
 static void MX_I2C2_Init(void);        //
 static void MX_SDMMC1_SD_Init(void);   //
-static void MX_SPI1_Init(void);        //
+//static void MX_SPI1_Init(void);        //
 static void MX_SPI2_Init(void);        //
 static void MX_UART4_Init(void);       //
 static void MX_TIM6_Init(void);
@@ -165,10 +164,57 @@ void Keyboard_task(void *argument);
 
 unsigned int id = 0x00;
 
+void GPIO_AnalogConfig(void) {
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+    // Отключаем все GPIO (примеры для портов A и B, добавьте другие порты, если нужно)
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    __HAL_RCC_GPIOC_CLK_ENABLE();
+
+    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+
+    GPIO_InitStruct.Pin = GPIO_PIN_All; // Все пины порта A
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = GPIO_PIN_All; // Все пины порта B
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = GPIO_PIN_All; // Все пины порта B
+    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+    // Отключаем тактирование портов после настройки
+    __HAL_RCC_GPIOA_CLK_DISABLE();
+    __HAL_RCC_GPIOB_CLK_DISABLE();
+    __HAL_RCC_GPIOC_CLK_DISABLE();
+}
+void Enter_StandbyMode(void) {
+    // Отключаем ненужные периферийные устройства
+    HAL_RCC_DeInit();   // Деинициализация тактов
+    HAL_SuspendTick();  // Отключаем системный таймер
+
+    // Настраиваем GPIO в аналоговый режим
+    GPIO_AnalogConfig();
+
+    // Настройка пробуждения по Wakeup Pin (если нужно)
+    HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN1); // Включаем Wakeup Pin 1 (PA0)
+    __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);       // Очищаем флаги пробуждения
+
+    // Настраиваем RTC для пробуждения (опционально)
+    //RTC_WakeupConfig();
+
+    // Включаем режим Standby
+    HAL_PWR_EnterSTANDBYMode();
+}
 
 int main(void)
 {
+  //HAL_Init(); // Инициализация HAL
+  //Enter_StandbyMode();
+  //while (1){}
 
+  
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -178,25 +224,26 @@ int main(void)
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
   SystemClock_Config();
-
   PeriphCommonClock_Config();
   MX_GPIO_Init();
-  HAL_GPIO_WritePin(EN_3P8_GPIO_Port, EN_3P8_Pin, 1);
-  HAL_GPIO_WritePin(EN_3P3_GPIO_Port, EN_3P3_Pin, 1);
-  HAL_GPIO_WritePin(ON_N25_GPIO_Port, ON_N25_Pin, 0);
-  HAL_GPIO_WritePin(SPI1_HOLD_GPIO_Port,SPI1_HOLD_Pin, 1);
-  HAL_GPIO_WritePin(ON_ROM_GPIO_Port,ON_ROM_Pin, 1);
-  HAL_GPIO_WritePin(ON_ADC_GPIO_Port,ON_ADC_Pin, 1);
-  HAL_GPIO_WritePin(ON_t_GPIO_Port,ON_t_Pin, 1);
-  HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 1); // CS LOW
+  HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);
+  HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);
   
-  MX_DMA_Init();
+  HAL_Delay(100);
+  HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 1);
+  //HAL_GPIO_WritePin(SPI1_HOLD_GPIO_Port,SPI1_HOLD_Pin, 1);
+  //HAL_GPIO_WritePin(ON_ROM_GPIO_Port,ON_ROM_Pin, 1);
+  //HAL_GPIO_WritePin(ON_ADC_GPIO_Port,ON_ADC_Pin, 1);
+  //HAL_GPIO_WritePin(ON_t_GPIO_Port,ON_t_Pin, 1);
+  //HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 1); // CS LOW
+  
+  //MX_DMA_Init();
   MX_ADC1_Init();
   MX_ADC3_Init();
   MX_I2C1_Init();
   MX_I2C2_Init();
   //MX_SDMMC1_SD_Init();
-  MX_SPI1_Init();
+  //MX_SPI1_Init();
   MX_SPI2_Init();
   //MX_UART4_Init();
   //MX_FATFS_Init();
@@ -217,8 +264,6 @@ int main(void)
   //NVIC_EnableIRQ(TIM6_DAC_IRQn);
   //TIM6->DIER|=TIM_DIER_UIE;
   //  https://easyelectronics.ru/realizaciya-funkcii-zaderzhki-menshe-1ms-na-freertos-s-pomoshhyu-tajmera-i-task-notification.html?ysclid=m16udaxden17209319
-  HAL_Delay(1000);
-
   //W25_Ini();
   //unsigned int id = W25_Read_ID();
   // Настройка режима одиночного преобразования
@@ -602,45 +647,6 @@ static void MX_SDMMC1_SD_Init(void)
   hsd1.Init.ClockDiv = 255;
 }
 
-/**
- * @brief SPI1 Initialization Function
- * @param None
- * @retval None
- */
-static void MX_SPI1_Init(void)
-{
-
-  /* USER CODE BEGIN SPI1_Init 0 */
-
-  /* USER CODE END SPI1_Init 0 */
-
-  /* USER CODE BEGIN SPI1_Init 1 */
-
-  /* USER CODE END SPI1_Init 1 */
-  /* SPI1 parameter configuration*/
-  hspi1.Instance = SPI1;
-  hspi1.Init.Mode = SPI_MODE_MASTER;
-  hspi1.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
-  hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
-  hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
-  hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
-  hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
-  hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
-  hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
-  hspi1.Init.CRCPolynomial = 7;
-  hspi1.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
-  hspi1.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
-  if (HAL_SPI_Init(&hspi1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN SPI1_Init 2 */
-
-  /* USER CODE END SPI1_Init 2 */
-
-}
 
 /**
   * @brief SPI2 Initialization Function
@@ -750,26 +756,21 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
-  
-
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(RESERVED_GPIO_Port, RESERVED_Pin, GPIO_PIN_SET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, EN_5_Pin|EN_3P3_Pin|EN_3P8_Pin|ON_N25_Pin
-                          |COL_B4_Pin|ON_ADC_Pin|ON_t_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, RESERVED_Pin|EN_5V_Pin|EN_3P3V_Pin|ON_N25_Pin
+                          |COL_B4_Pin|SPI2_CS_ADC_Pin|One_Wire_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, UART4_WU_Pin|ON_OWEN_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, COL_B3_Pin|COL_B2_Pin|COL_B1_Pin|One_Wire_Pin
-                          |SPI1_HOLD_Pin|ON_ROM_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, COL_B3_Pin|COL_B2_Pin|COL_B1_Pin|ON_DISP_Pin
+                          |ON_RS_Pin|SPI2_CS_ROM_Pin|ON_ROM_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : RESERVED_Pin EN_5_Pin EN_3P3_Pin EN_3P8_Pin
-                           ON_N25_Pin COL_B4_Pin ON_ADC_Pin ON_t_Pin */
-  GPIO_InitStruct.Pin = RESERVED_Pin|EN_5_Pin|EN_3P3_Pin|EN_3P8_Pin
-                          |ON_N25_Pin|COL_B4_Pin|ON_ADC_Pin|ON_t_Pin;
+  /*Configure GPIO pins : RESERVED_Pin EN_5V_Pin EN_3P3V_Pin ON_N25_Pin
+                           COL_B4_Pin SPI2_CS_ADC_Pin One_Wire_Pin */
+  GPIO_InitStruct.Pin = RESERVED_Pin|EN_5V_Pin|EN_3P3V_Pin|ON_N25_Pin
+                          |COL_B4_Pin|SPI2_CS_ADC_Pin|One_Wire_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -782,8 +783,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : NUM_RES_Pin SDMMC1_DET_Pin */
-  GPIO_InitStruct.Pin = NUM_RES_Pin|SDMMC1_DET_Pin;
+  /*Configure GPIO pins : NUM_RES_Pin USART1_DATA_DETECT_Pin */
+  GPIO_InitStruct.Pin = NUM_RES_Pin|USART1_DATA_DETECT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -800,27 +801,27 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(STR_B4_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : COL_B3_Pin COL_B2_Pin COL_B1_Pin One_Wire_Pin
-                           ON_ROM_Pin */
-  GPIO_InitStruct.Pin = COL_B3_Pin|COL_B2_Pin|COL_B1_Pin|One_Wire_Pin
-                          |ON_ROM_Pin;
+  /*Configure GPIO pins : COL_B3_Pin COL_B2_Pin COL_B1_Pin ON_DISP_Pin
+                           ON_RS_Pin ON_ROM_Pin */
+  GPIO_InitStruct.Pin = COL_B3_Pin|COL_B2_Pin|COL_B1_Pin|ON_DISP_Pin
+                          |ON_RS_Pin|ON_ROM_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : USART1_DATA_DETECT_Pin */
-  GPIO_InitStruct.Pin = USART1_DATA_DETECT_Pin;
+  /*Configure GPIO pin : SDMMC1_DET_Pin */
+  GPIO_InitStruct.Pin = SDMMC1_DET_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(USART1_DATA_DETECT_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(SDMMC1_DET_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : SPI1_HOLD_Pin */
-  GPIO_InitStruct.Pin = SPI1_HOLD_Pin;
+  /*Configure GPIO pin : SPI2_CS_ROM_Pin */
+  GPIO_InitStruct.Pin = SPI2_CS_ROM_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  HAL_GPIO_Init(SPI1_HOLD_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(SPI2_CS_ROM_GPIO_Port, &GPIO_InitStruct);
 
   /**/
   __HAL_SYSCFG_FASTMODEPLUS_ENABLE(SYSCFG_FASTMODEPLUS_PB6);
@@ -832,17 +833,6 @@ static void MX_GPIO_Init(void)
   HAL_NVIC_SetPriority(EXTI9_5_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
-
-  GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL; // Или GPIO_PULLUP в зависимости от вашей схемы
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-    GPIO_InitStruct.Alternate = GPIO_AF12_SDMMC1;
-    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
-    /* SDMMC1_CMD - PD2 */
-    GPIO_InitStruct.Pin = GPIO_PIN_2;
-    HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
 }
@@ -866,11 +856,11 @@ void StartDefaultTask(void *argument)
   MX_USB_DEVICE_Init();
   RTC_get_time();
 
-  MX_SDMMC1_SD_Init();
-  BSP_SD_Init();
-  HAL_Delay(200);
-  MX_FATFS_Init();
-  WriteToSDCard();
+  //MX_SDMMC1_SD_Init();
+  //BSP_SD_Init();
+  //HAL_Delay(200);
+  //MX_FATFS_Init();
+  //WriteToSDCard();
 
   vSemaphoreCreateBinary(Keyboard_semapfore);
   vSemaphoreCreateBinary(Display_semaphore);
