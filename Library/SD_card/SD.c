@@ -26,15 +26,15 @@ void WriteToSDCard(void)
     }
 
     // 2. Открываем или создаем файл на запись
-    char path[13] = "t.txt";
+    char path[13] = "test.txt";
     path[12] = '\0';
     res = f_open(&SDFile, (char*)path, FA_WRITE | FA_CREATE_ALWAYS);
-    //if (res != FR_OK) {
+    if (res != FR_OK) {
         // Обработка ошибки
         //printf("Failed to open file (Error %d)\n", res);
-    //    f_mount(NULL, "", 1); // Отмонтируем файловую систему
-    //    return;
-    //}
+        f_mount(NULL, "", 1); // Отмонтируем файловую систему
+        return;
+    }
 
     // 3. Записываем данные
     res = f_write(&SDFile, testMessage, strlen(testMessage), &bytesWritten);

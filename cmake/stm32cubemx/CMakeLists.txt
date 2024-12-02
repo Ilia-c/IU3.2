@@ -21,7 +21,6 @@ target_include_directories(stm32cubemx INTERFACE
     ../../Drivers/STM32L4xx_HAL_Driver/Inc
     ../../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy
     ../../Middlewares/Third_Party/FreeRTOS/Source/include
-    ../../Middlewares/Third_Party/FatFs/src
     ../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2
     ../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F
     ../../Middlewares/Third_Party/FatFs/src
