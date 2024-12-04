@@ -226,8 +226,16 @@ int main(void)
   SystemClock_Config();
   PeriphCommonClock_Config();
   MX_GPIO_Init();
+  HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, 1);
+  HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ADC_Pin, 1);
+
+  HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
+  HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);
+
+
   HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);
   HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);
+  HAL_GPIO_WritePin(ON_N25_GPIO_Port, ON_N25_Pin, 0);
   
   HAL_Delay(100);
   HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 1);
@@ -264,15 +272,28 @@ int main(void)
   //NVIC_EnableIRQ(TIM6_DAC_IRQn);
   //TIM6->DIER|=TIM_DIER_UIE;
   //  https://easyelectronics.ru/realizaciya-funkcii-zaderzhki-menshe-1ms-na-freertos-s-pomoshhyu-tajmera-i-task-notification.html?ysclid=m16udaxden17209319
-  //W25_Ini();
-  //unsigned int id = W25_Read_ID();
-  // Настройка режима одиночного преобразования
-  //MS5193T_Reset();
-  //MS5193T_WriteRegister(0x08, 0x2001); 
-  //MS5193T_WriteRegister(0x10, 0x0000); 
-  //WriteToSDCard();
-  //AD7793_Init();
+  W25_Ini();
+  id = W25_Read_ID();
 
+  //WriteToSDCard();
+  MS5193T_Init();
+
+
+  const char wmsg[] = "Some data";
+  char rmsg[sizeof(wmsg)];
+  uint16_t devAddr = (0x50 << 1);
+  uint16_t memAddr = 0x0100;
+  HAL_StatusTypeDef status;
+
+  HAL_I2C_Mem_Write(&hi2c1, devAddr, memAddr, I2C_MEMADD_SIZE_16BIT, (uint8_t*)wmsg, sizeof(wmsg), HAL_MAX_DELAY);
+
+  for(;;) {
+        status = HAL_I2C_IsDeviceReady(&hi2c1, devAddr, 1, HAL_MAX_DELAY);
+        if(status == HAL_OK)
+            break;
+    }
+
+  HAL_I2C_Mem_Read(&hi2c1, devAddr, memAddr, I2C_MEMADD_SIZE_16BIT, (uint8_t*)rmsg, sizeof(rmsg), HAL_MAX_DELAY);
 
 
   OLED_Init(&hi2c2);
@@ -668,16 +689,16 @@ static void MX_SPI2_Init(void)
   hspi2.Init.Mode = SPI_MODE_MASTER;
   hspi2.Init.Direction = SPI_DIRECTION_2LINES;
   hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
-  hspi2.Init.CLKPolarity = SPI_POLARITY_HIGH;
-  hspi2.Init.CLKPhase = SPI_PHASE_2EDGE;
+  hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
   hspi2.Init.CRCPolynomial = 7;
   hspi2.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
-  hspi2.Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
+  hspi2.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
   if (HAL_SPI_Init(&hspi2) != HAL_OK)
   {
     Error_Handler();

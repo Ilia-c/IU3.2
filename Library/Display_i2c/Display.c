@@ -255,26 +255,14 @@ void Display_TopBar(menuItem *CurrentMenu)
         OLED_DrawPixel(back_pic_pos_x + 1, back_pic_pos_y);
         OLED_DrawStr(CurrentMenu->Parent, left_pic_last_munu, top_pic_last_munu, 1);
     }
-    
-    //uint8_t id = SPI2_Read_OneByte(0x60);
-    //uint32_t adcValue = MS5193T_ReadADC();
-     //sprintf(str, "ADC Value: %lu\n", adcValue);
-    //sprintf(str, "ID Value: 0x%X\n", id);
-    //OLED_DrawStr(str, 1, 1, 1);
-    //sprintf(str,"ID:0x%X\r\n",id);
-    //OLED_DrawStr(str, 1, 1, 1);
-    /*
-    HAL_GPIO_WritePin(RESERVED_GPIO_Port, RESERVED_Pin, GPIO_PIN_RESET); // CS LOW
-    uint8_t cmd = 0x9f;
-    uint8_t response[3] = {0};
-    HAL_SPI_Transmit(&hspi1, &cmd, 1, 100);
-    HAL_SPI_Receive(&hspi1, response, 3, 100);
-    HAL_GPIO_WritePin(RESERVED_GPIO_Port, RESERVED_Pin, GPIO_PIN_SET); // CS HIGH
 
-    // Проверьте значения response[0], response[1] и response[2]
-    sprintf(str, "ID: 0x%02X%02X%02X\r\n", response[0], response[1], response[2]);
+/*
+    W25_Ini();
+    unsigned int id = W25_Read_ID();
+    sprintf(str, "ID Value: 0x%X\n", id);
     OLED_DrawStr(str, 1, 1, 1);
-    */
+*/
+
 
     sprintf(str, "%d", ADC_AKB_Proc);
     if (ADC_AKB_Proc < 10)

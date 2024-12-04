@@ -2,16 +2,10 @@
 
 extern SPI_HandleTypeDef hspi2;
 
-#define ADC_CS_PIN UART4_WU_Pin // Укажите реальный пин CS
-#define ADC_CS_PORT UART4_WU_GPIO_Port // Укажите реальный порт CS
-
-extern SPI_HandleTypeDef hspi2;
-
-
 
 // Функции для управления CS
-#define SPI_CS_Enable()  HAL_GPIO_WritePin(ADC_CS_PORT, ADC_CS_PIN, GPIO_PIN_RESET)
-#define SPI_CS_Disable() HAL_GPIO_WritePin(ADC_CS_PORT, ADC_CS_PIN, GPIO_PIN_SET)
+#define SPI_CS_Enable()  HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ROM_Pin, GPIO_PIN_RESET)
+#define SPI_CS_Disable() HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ROM_Pin, GPIO_PIN_SET)
 
 // Функция для отправки и получения данных по SPI2
 uint8_t SPI2_TransmitByte(uint8_t TxData)
@@ -60,28 +54,28 @@ void SPI2_Write_buf(uint8_t reg, uint8_t *pbuf, uint8_t len)
     SPI_CS_Disable();
 }
 
-// Функция сброса AD7793
-void AD7793_Reset(void)
+// Функция сброса MS5193T
+void MS5193T_Reset(void)
 {
     uint8_t resetCommand[3] = {0xFF, 0xFF, 0xFF};
     SPI2_Write_buf(0xFF, resetCommand, 3); // Сброс
     HAL_Delay(1); // Небольшая задержка после сброса
 }
 
-// Функция инициализации AD7793
-void AD7793_Init(void)
+// Функция инициализации MS5193T
+void MS5193T_Init(void)
 {
     uint8_t ModeRegisterMsg[2] = {0x00, 0x07};  // Непрерывный режим, частота 33.2 Гц
     uint8_t ConfigRegisterMsg[2] = {0x06, 0x91}; // Установка конфигурации: Gain = 64, внутренняя ссылка
     uint8_t IoRegisterMsg[1] = {0x00};           // Ток возбуждения выключен
 
     // Сброс устройства
-    AD7793_Reset();
+    MS5193T_Reset();
     
     HAL_Delay(1);
     
     // Чтение ID регистра
-    uint8_t deviceID = SPI2_Read_OneByte(0x60); // Ожидается 0x0B для AD7793
+    uint8_t deviceID = SPI2_Read_OneByte(0x60); // Ожидается 0x0B для MS5193T
 
     // Проверка ID
     if ((deviceID & 0x0F) == 0x0B) {
@@ -95,8 +89,8 @@ void AD7793_Init(void)
     }
 }
 
-// Функция чтения данных из регистра данных AD7793 (24-битные данные)
-int32_t Read_AD7793_Data(void)
+// Функция чтения данных из регистра данных MS5193T (24-битные данные)
+int32_t Read_MS5193T_Data(void)
 {
     uint8_t xtemp[3];
     int32_t adValue = 0;
