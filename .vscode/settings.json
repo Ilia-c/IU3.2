@@ -21,7 +21,8 @@
         "limits": "c",
         "semphr.h": "c",
         "ms5193t.h": "c",
-        "ff.h": "c"
+        "ff.h": "c",
+        "diskio.h": "c"
     },
     "cortex-debug.variableUseNaturalFormat": false
 }

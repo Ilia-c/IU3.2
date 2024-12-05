@@ -877,11 +877,11 @@ void StartDefaultTask(void *argument)
   MX_USB_DEVICE_Init();
   RTC_get_time();
 
-  //MX_SDMMC1_SD_Init();
-  //BSP_SD_Init();
-  //HAL_Delay(200);
-  //MX_FATFS_Init();
-  //WriteToSDCard();
+  MX_SDMMC1_SD_Init();
+  BSP_SD_Init();
+  HAL_Delay(200);
+  MX_FATFS_Init();
+  WriteToSDCard();
 
   vSemaphoreCreateBinary(Keyboard_semapfore);
   vSemaphoreCreateBinary(Display_semaphore);
@@ -1059,3 +1059,5 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
+
+

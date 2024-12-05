@@ -51,3 +51,5 @@ void WriteToSDCard(void)
     // 5. Отмонтируем файловую систему
     f_mount(NULL, "", 1);
 }
+
+
