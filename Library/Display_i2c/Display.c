@@ -248,6 +248,7 @@ extern SPI_HandleTypeDef hspi1;
 void Display_TopBar(menuItem *CurrentMenu)
 {
 
+
     OLED_DrawHLine(line_indentation, line_ind_top, end_line, 1);
     if ((void *)CurrentMenu->Parent != (void *)&NULL_ENTRY)
     {
@@ -262,7 +263,20 @@ void Display_TopBar(menuItem *CurrentMenu)
     sprintf(str, "ID Value: 0x%X\n", id);
     OLED_DrawStr(str, 1, 1, 1);
 */
-
+/*
+    uint32_t data = Read_MS5193T_Data();
+    double koeff = 0.0000000697; 
+    koeff = data*koeff-0.4;
+    koeff *= 9.375; 
+    gcvt(koeff, 4, str);
+    OLED_DrawStr(str, 1, 1, 1);
+*/
+    uint32_t data = Read_MS5193T_Data();
+    double koeff = 0.0000000697; 
+    koeff = data*koeff-0.5;
+    koeff /= 0.01; 
+    gcvt(koeff, 4, str);
+    OLED_DrawStr(str, 1, 1, 1);
 
     sprintf(str, "%d", ADC_AKB_Proc);
     if (ADC_AKB_Proc < 10)
