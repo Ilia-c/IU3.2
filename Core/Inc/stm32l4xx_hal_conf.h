@@ -50,7 +50,7 @@
 /*#define HAL_DSI_MODULE_ENABLED   */
 /*#define HAL_FIREWALL_MODULE_ENABLED   */
 /*#define HAL_GFXMMU_MODULE_ENABLED   */
-/*#define HAL_HCD_MODULE_ENABLED   */
+#define HAL_HCD_MODULE_ENABLED   
 /*#define HAL_HASH_MODULE_ENABLED   */
 /*#define HAL_I2S_MODULE_ENABLED   */
 /*#define HAL_IRDA_MODULE_ENABLED   */

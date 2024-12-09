@@ -5,6 +5,7 @@
 #include "OLED_Fonts.h"
 #include "OLED_Icons.h"
 #include <string.h>
+#include <stdio.h>
 
 
 #define OLED_ADDRESS		0x78	//0x3C

@@ -24,7 +24,8 @@
         "ff.h": "c",
         "diskio.h": "c",
         "type_traits": "c",
-        "usbh_core.h": "c"
+        "usbh_core.h": "c",
+        "stm32l4xx_hal_flash_ex.h": "c"
     },
     "cortex-debug.variableUseNaturalFormat": false
 }

@@ -32,6 +32,8 @@
 #include "w25q128.h"
 #include "MS5193T.h"
 #include "SD.h"
+#include "usb_host.h"
+#include <stdio.h>
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -203,6 +205,11 @@ void Enter_StandbyMode(void) {
     HAL_PWR_EnterSTANDBYMode();
 }
 
+
+
+
+
+
 int main(void)
 {
   //HAL_Init();
@@ -235,6 +242,7 @@ int main(void)
   HAL_Delay(100);
   HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 1);
 
+  
   MX_ADC1_Init();
   MX_ADC3_Init();
   MX_I2C1_Init();
@@ -242,6 +250,7 @@ int main(void)
   MX_SPI2_Init();
   //MX_UART4_Init();
   RTC_Init();
+  MX_USB_HOST_Init();
 
   HAL_GPIO_WritePin(COL_B1_GPIO_Port, COL_B1_Pin, 1);
   HAL_GPIO_WritePin(COL_B2_GPIO_Port, COL_B2_Pin, 1);
@@ -262,6 +271,13 @@ int main(void)
   
   MS5193T_Init();
   
+
+  FIL myFile;
+  FRESULT res;
+  UINT byteswritten, bytesread;
+  char wtext[] = "Hello USB Flash!"; // Данные для записи
+  char rtext[100]; // Буфер для чтения
+  extern ApplicationTypeDef Appli_state;
   
 
 
@@ -857,12 +873,12 @@ static void MX_GPIO_Init(void)
  * @retval None
  */
 /* USER CODE END Header_StartDefaultTask */
+
+
 void StartDefaultTask(void *argument)
 {
-  /* init code for USB_DEVICE */
-  //MX_USB_HOST_Init();
   RTC_get_time();
-
+  
 
   MX_DMA_Init();
   MX_SDMMC1_SD_Init();
@@ -875,6 +891,10 @@ void StartDefaultTask(void *argument)
   HAL_Delay(200);
   MX_FATFS_Init();
   WriteToSDCard();
+
+
+
+  
 
   vSemaphoreCreateBinary(Keyboard_semapfore);
   vSemaphoreCreateBinary(Display_semaphore);

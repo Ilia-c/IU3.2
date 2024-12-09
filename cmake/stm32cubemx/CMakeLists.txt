@@ -79,6 +79,7 @@ target_sources(stm32cubemx INTERFACE
     ../../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_tim_ex.c
     ../../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart.c
     ../../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart_ex.c
+    ../../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_hcd.c
     ../../Core/Src/system_stm32l4xx.c
     ../../Middlewares/Third_Party/FatFs/src/diskio.c
     ../../Middlewares/Third_Party/FatFs/src/ff.c
@@ -114,6 +115,7 @@ target_sources(stm32cubemx INTERFACE
     ../../Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc.c
     ../../Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc_bot.c
     ../../Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc_scsi.c
+    
     ../../USB_HOST/App/usb_host.c
     ../../USB_HOST/Target/usbh_conf.c
 )

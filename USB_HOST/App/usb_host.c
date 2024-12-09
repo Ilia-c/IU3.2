@@ -41,7 +41,7 @@
 /* USB Host core handle declaration */
 USBH_HandleTypeDef hUsbHostFS;
 ApplicationTypeDef Appli_state = APPLICATION_IDLE;
-
+char USBHPath[4]; 
 /*
  * -- Insert your variables declaration here --
  */
