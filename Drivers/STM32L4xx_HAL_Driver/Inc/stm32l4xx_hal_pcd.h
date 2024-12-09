@@ -864,17 +864,20 @@ PCD_StateTypeDef HAL_PCD_GetState(PCD_HandleTypeDef const *hpcd);
     \
     *(pdwReg) &= 0x3FFU; \
     \
-    if ((wCount) == 0U) \
+    if ((wCount) > 62U) \
     { \
-      *(pdwReg) |= USB_CNTRX_BLSIZE; \
-    } \
-    else if ((wCount) <= 62U) \
-    { \
-      PCD_CALC_BLK2((pdwReg), (wCount), wNBlocks); \
+      PCD_CALC_BLK32((pdwReg), (wCount), wNBlocks); \
     } \
     else \
     { \
-      PCD_CALC_BLK32((pdwReg), (wCount), wNBlocks); \
+      if ((wCount) == 0U) \
+      { \
+        *(pdwReg) |= USB_CNTRX_BLSIZE; \
+      } \
+      else \
+      { \
+        PCD_CALC_BLK2((pdwReg), (wCount), wNBlocks); \
+      } \
     } \
   } while(0) /* PCD_SET_EP_CNT_RX_REG */
 

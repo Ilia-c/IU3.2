@@ -20,7 +20,6 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "fatfs.h"
-#include "usb_device.h"
 #include "RTC_data.h"
 #include "OLED.h"
 #include "Display.h"
@@ -148,7 +147,6 @@ static void MX_ADC3_Init(void);
 static void MX_I2C1_Init(void);        //
 static void MX_I2C2_Init(void);        //
 static void MX_SDMMC1_SD_Init(void);   //
-//static void MX_SPI1_Init(void);        //
 static void MX_SPI2_Init(void);        //
 static void MX_UART4_Init(void);       //
 static void MX_TIM6_Init(void);
@@ -167,7 +165,7 @@ unsigned int id = 0x00;
 void GPIO_AnalogConfig(void) {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-    // ????????? ??? GPIO (??????? ??? ?????? A ? B, ???????? ?????? ?????, ???? ?????)
+
     __HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_GPIOB_CLK_ENABLE();
     __HAL_RCC_GPIOC_CLK_ENABLE();
@@ -175,42 +173,39 @@ void GPIO_AnalogConfig(void) {
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
 
-    GPIO_InitStruct.Pin = GPIO_PIN_All; // ??? ???? ????? A
+    GPIO_InitStruct.Pin = GPIO_PIN_All;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = GPIO_PIN_All; // ??? ???? ????? B
+    GPIO_InitStruct.Pin = GPIO_PIN_All; 
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = GPIO_PIN_All; // ??? ???? ????? B
+    GPIO_InitStruct.Pin = GPIO_PIN_All; 
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-    // ????????? ???????????? ?????? ????? ?????????
     __HAL_RCC_GPIOA_CLK_DISABLE();
     __HAL_RCC_GPIOB_CLK_DISABLE();
     __HAL_RCC_GPIOC_CLK_DISABLE();
 }
 void Enter_StandbyMode(void) {
-    // ????????? ???????? ???????????? ??????????
-    HAL_RCC_DeInit();   // ??????????????? ??????
-    HAL_SuspendTick();  // ????????? ????????? ??????
 
-    // ??????????? GPIO ? ?????????? ?????
+    HAL_RCC_DeInit(); 
+    HAL_SuspendTick();  
+
     GPIO_AnalogConfig();
 
-    // ????????? ??????????? ?? Wakeup Pin (???? ?????)
-    HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN1); // ???????? Wakeup Pin 1 (PA0)
-    __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);       // ??????? ????? ???????????
+    HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN1); 
+    __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);     
 
-    // ??????????? RTC ??? ??????????? (???????????)
+
     //RTC_WakeupConfig();
 
-    // ???????? ????? Standby
+
     HAL_PWR_EnterSTANDBYMode();
 }
 
 int main(void)
 {
-  //HAL_Init(); // ????????????? HAL
+  //HAL_Init();
   //Enter_StandbyMode();
   //while (1){}
 
@@ -239,26 +234,14 @@ int main(void)
   
   HAL_Delay(100);
   HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 1);
-  //HAL_GPIO_WritePin(SPI1_HOLD_GPIO_Port,SPI1_HOLD_Pin, 1);
-  //HAL_GPIO_WritePin(ON_ROM_GPIO_Port,ON_ROM_Pin, 1);
-  //HAL_GPIO_WritePin(ON_ADC_GPIO_Port,ON_ADC_Pin, 1);
-  //HAL_GPIO_WritePin(ON_t_GPIO_Port,ON_t_Pin, 1);
-  //HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 1); // CS LOW
-  
-  //MX_DMA_Init();
+
   MX_ADC1_Init();
   MX_ADC3_Init();
   MX_I2C1_Init();
   MX_I2C2_Init();
-  //MX_SDMMC1_SD_Init();
-  //MX_SPI1_Init();
   MX_SPI2_Init();
   //MX_UART4_Init();
-  //MX_FATFS_Init();
   RTC_Init();
-
-  // HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_SET);
-  // HAL_GPIO_WritePin(Data_FES_ON_OFF_GPIO_Port,Data_FES_ON_OFF_Pin, GPIO_PIN_SET);
 
   HAL_GPIO_WritePin(COL_B1_GPIO_Port, COL_B1_Pin, 1);
   HAL_GPIO_WritePin(COL_B2_GPIO_Port, COL_B2_Pin, 1);
@@ -267,7 +250,6 @@ int main(void)
   
   
   //while(1){}
-  // ???????? ?????? ?????????? ??????? 
   //NVIC_SetPriority(TIM6_IRQn,6);
   //NVIC_EnableIRQ(TIM6_DAC_IRQn);
   //TIM6->DIER|=TIM_DIER_UIE;
@@ -333,10 +315,10 @@ extern uint16_t PORT_NUM;
 extern int interrupt;
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-  if ((GPIO_Pin == STR_B1_Pin | STR_B2_Pin | STR_B3_Pin | STR_B4_Pin)) // ???? ?????????? ????????? ?? ????? PA9
+  if ((GPIO_Pin == STR_B1_Pin | STR_B2_Pin | STR_B3_Pin | STR_B4_Pin))
   {
     static portBASE_TYPE xTaskWoken;
-    xSemaphoreGiveFromISR(Keyboard_semapfore, &xTaskWoken); // ???????? ????? ??????????
+    xSemaphoreGiveFromISR(Keyboard_semapfore, &xTaskWoken); 
   }
 }
 
@@ -669,7 +651,7 @@ static void MX_SDMMC1_SD_Init(void)
   hsd1.Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE;
   hsd1.Init.BusWide = SDMMC_BUS_WIDE_1B;
   hsd1.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
-  hsd1.Init.ClockDiv = 255;
+  hsd1.Init.ClockDiv = 16;
 }
 
 
@@ -878,11 +860,18 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void *argument)
 {
   /* init code for USB_DEVICE */
-  MX_USB_DEVICE_Init();
+  //MX_USB_HOST_Init();
   RTC_get_time();
 
+
+  MX_DMA_Init();
   MX_SDMMC1_SD_Init();
-  BSP_SD_Init();
+  HAL_StatusTypeDef res = HAL_SD_Init(&hsd1);
+  HAL_SD_CardInfoTypeDef CardInfo;
+  FRESULT res_2 = HAL_SD_GetCardInfo(&hsd1, &CardInfo);
+  HAL_SD_CardStateTypeDef res_1 = HAL_SD_GetCardState(&hsd1);
+  res = HAL_SD_ConfigWideBusOperation(&hsd1, SDMMC_BUS_WIDE_4B);
+  res_1 = HAL_SD_GetCardState(&hsd1);
   HAL_Delay(200);
   MX_FATFS_Init();
   WriteToSDCard();
@@ -979,7 +968,7 @@ void Main(void *argument)
   for (;;)
   {
     RTC_read();
-    xSemaphoreGive(Display_semaphore); // ????????? ????? ??????????? ?? ??????
+    xSemaphoreGive(Display_semaphore);
     for (int i = 0; i < 25; i++)
       osDelay(time_update_display / 25);
   }

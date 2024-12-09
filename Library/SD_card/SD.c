@@ -1,6 +1,4 @@
 #include "SD.h"
-#include "main.h"
-#include "diskio.h"
 
 extern FATFS SDFatFS;
 extern SD_HandleTypeDef hsd1;
@@ -11,12 +9,15 @@ void WriteToSDCard(void)
     FRESULT res;         // Результат операции
     UINT bytesWritten;   // Количество записанных байтов
     const char *testMessage = "Hello, SD Card!";
-
-    if (HAL_SD_ConfigWideBusOperation(&hsd1, SDMMC_BUS_WIDE_4B) != HAL_OK) {
-    // Обработка ошибки
-    return;
-    }
-    
+    //if (HAL_SD_ConfigWideBusOperation(&hsd1, SDMMC_BUS_WIDE_4B) != HAL_OK) {
+    //    // Если ошибка, проверьте линии, подтяжки и понизьте частоту
+    //}
+    uint8_t buffer[512];
+if (HAL_SD_ReadBlocks(&hsd1, buffer, 0, 1, HAL_MAX_DELAY) == HAL_OK) {
+    // Прочитан первый сектор (MBR)
+} else {
+    // Здесь зависание или ошибка
+}
     // 1. Монтируем файловую систему
     res = f_mount(&SDFatFS, (TCHAR const*)SDPath, 0);
     if (res != FR_OK) {
@@ -28,7 +29,9 @@ void WriteToSDCard(void)
     // 2. Открываем или создаем файл на запись
     char path[13] = "test.txt";
     path[12] = '\0';
-    res = f_open(&SDFile, (char*)path, FA_WRITE | FA_CREATE_ALWAYS);
+    res = BSP_SD_GetCardState();
+    res = disk_status(0);
+    res = f_open(&SDFile, "0:/test.txt", FA_CREATE_ALWAYS | FA_WRITE);
     if (res != FR_OK) {
         // Обработка ошибки
         //printf("Failed to open file (Error %d)\n", res);
@@ -46,7 +49,7 @@ void WriteToSDCard(void)
     }
 
     // 4. Закрываем файл
-    f_close(&SDFatFS);
+    f_close(&SDFile);
 
     // 5. Отмонтируем файловую систему
     f_mount(NULL, "", 1);

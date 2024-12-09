@@ -16,16 +16,12 @@ target_include_directories(stm32cubemx INTERFACE
     ../../Core/Inc
     ../../FATFS/Target
     ../../FATFS/App
-    ../../USB_DEVICE/App
-    ../../USB_DEVICE/Target
     ../../Drivers/STM32L4xx_HAL_Driver/Inc
     ../../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy
     ../../Middlewares/Third_Party/FreeRTOS/Source/include
     ../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2
     ../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F
     ../../Middlewares/Third_Party/FatFs/src
-    ../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc
-    ../../Middlewares/ST/STM32_USB_Device_Library/Class/MSC/Inc
     ../../Drivers/CMSIS/Device/ST/STM32L4xx/Include
     ../../Drivers/CMSIS/Include
     ../../Library/Settings
@@ -36,6 +32,10 @@ target_include_directories(stm32cubemx INTERFACE
     ../../Library/w25q128
     ../../Library/ADC
     ../../Library/SD_card
+    ../../Middlewares/ST/STM32_USB_Host_Library/Core/Inc
+    ../../Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Inc
+    ../../USB_HOST/App
+    ../../USB_HOST/Target
 )
 
 target_sources(stm32cubemx INTERFACE
@@ -48,10 +48,6 @@ target_sources(stm32cubemx INTERFACE
     ../../FATFS/Target/sd_diskio.c
     ../../FATFS/Target/fatfs_platform.c
     ../../FATFS/App/fatfs.c
-    ../../USB_DEVICE/App/usb_device.c
-    ../../USB_DEVICE/App/usbd_desc.c
-    ../../USB_DEVICE/App/usbd_storage_if.c
-    ../../USB_DEVICE/Target/usbd_conf.c
     ../../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pcd.c
     ../../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pcd_ex.c
     ../../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_usb.c
@@ -98,13 +94,6 @@ target_sources(stm32cubemx INTERFACE
     ../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.c
     ../../Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c
     ../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c
-    ../../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.c
-    ../../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c
-    ../../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.c
-    ../../Middlewares/ST/STM32_USB_Device_Library/Class/MSC/Src/usbd_msc.c
-    ../../Middlewares/ST/STM32_USB_Device_Library/Class/MSC/Src/usbd_msc_bot.c
-    ../../Middlewares/ST/STM32_USB_Device_Library/Class/MSC/Src/usbd_msc_data.c
-    ../../Middlewares/ST/STM32_USB_Device_Library/Class/MSC/Src/usbd_msc_scsi.c
     ../../Core/Src/sysmem.c
     ../../Core/Src/syscalls.c
     ../../startup_stm32l476xx.s
@@ -118,6 +107,15 @@ target_sources(stm32cubemx INTERFACE
     ../../Library/w25q128/w25q128.c
     ../../Library/ADC/MS5193T.c
     ../../Library/SD_card/SD.c
+    ../../Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_core.c
+    ../../Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ctlreq.c
+    ../../Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ioreq.c
+    ../../Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_pipes.c
+    ../../Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc.c
+    ../../Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc_bot.c
+    ../../Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc_scsi.c
+    ../../USB_HOST/App/usb_host.c
+    ../../USB_HOST/Target/usbh_conf.c
 )
 
 target_link_directories(stm32cubemx INTERFACE

@@ -214,8 +214,8 @@ CMAKE_STRIP:FILEPATH=C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/arm-none-
 //Path to a program.
 CMAKE_TAPI:FILEPATH=CMAKE_TAPI-NOTFOUND
 
-//The CMake toolchain file
-CMAKE_TOOLCHAIN_FILE:FILEPATH=C:/Users/39611/Desktop/Projects/IU3.2/cmake/gcc-arm-none-eabi.cmake
+//No help, variable specified on the command line.
+CMAKE_TOOLCHAIN_FILE:UNINITIALIZED=C:/Users/39611/Desktop/Projects/IU3.2/cmake/gcc-arm-none-eabi.cmake
 
 //If this value is on, makefiles will be generated without the
 // .SILENT directive, and all commands will be echoed to the console
@@ -231,6 +231,15 @@ CubeMX_IS_TOP_LEVEL:STATIC=ON
 
 //Value Computed by CMake
 CubeMX_SOURCE_DIR:STATIC=C:/Users/39611/Desktop/Projects/IU3.2
+
+//Value Computed by CMake
+CubeMX_testIU3_BINARY_DIR:STATIC=C:/Users/39611/Desktop/Projects/IU3.2/build/Debug
+
+//Value Computed by CMake
+CubeMX_testIU3_IS_TOP_LEVEL:STATIC=ON
+
+//Value Computed by CMake
+CubeMX_testIU3_SOURCE_DIR:STATIC=C:/Users/39611/Desktop/Projects/IU3.2
 
 //Value Computed by CMake
 stm32cubemx_BINARY_DIR:STATIC=C:/Users/39611/Desktop/Projects/IU3.2/build/Debug/cmake/stm32cubemx

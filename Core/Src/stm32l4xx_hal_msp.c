@@ -375,7 +375,7 @@ void HAL_SD_MspInit(SD_HandleTypeDef* hsd)
     hdma_sdmmc1_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
     hdma_sdmmc1_rx.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
     hdma_sdmmc1_rx.Init.Mode = DMA_NORMAL;
-    hdma_sdmmc1_rx.Init.Priority = DMA_PRIORITY_HIGH;
+    hdma_sdmmc1_rx.Init.Priority = DMA_PRIORITY_LOW;
     if (HAL_DMA_Init(&hdma_sdmmc1_rx) != HAL_OK)
     {
       Error_Handler();
@@ -392,7 +392,7 @@ void HAL_SD_MspInit(SD_HandleTypeDef* hsd)
     hdma_sdmmc1_tx.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
     hdma_sdmmc1_tx.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
     hdma_sdmmc1_tx.Init.Mode = DMA_NORMAL;
-    hdma_sdmmc1_tx.Init.Priority = DMA_PRIORITY_HIGH;
+    hdma_sdmmc1_tx.Init.Priority = DMA_PRIORITY_LOW;
     if (HAL_DMA_Init(&hdma_sdmmc1_tx) != HAL_OK)
     {
       Error_Handler();
@@ -401,7 +401,7 @@ void HAL_SD_MspInit(SD_HandleTypeDef* hsd)
     __HAL_LINKDMA(hsd,hdmatx,hdma_sdmmc1_tx);
 
     /* SDMMC1 interrupt Init */
-    HAL_NVIC_SetPriority(SDMMC1_IRQn, 5, 0);
+    HAL_NVIC_SetPriority(SDMMC1_IRQn, 6, 0);
     HAL_NVIC_EnableIRQ(SDMMC1_IRQn);
   /* USER CODE BEGIN SDMMC1_MspInit 1 */
 
@@ -410,6 +410,7 @@ void HAL_SD_MspInit(SD_HandleTypeDef* hsd)
   }
 
 }
+
 /**
 * @brief SD MSP De-Initialization
 * This function freeze the hardware resources used in this example

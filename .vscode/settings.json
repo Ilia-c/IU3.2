@@ -23,7 +23,8 @@
         "ms5193t.h": "c",
         "ff.h": "c",
         "diskio.h": "c",
-        "type_traits": "c"
+        "type_traits": "c",
+        "usbh_core.h": "c"
     },
     "cortex-debug.variableUseNaturalFormat": false
 }
