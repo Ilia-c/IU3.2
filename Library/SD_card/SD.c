@@ -27,8 +27,8 @@ if (HAL_SD_ReadBlocks(&hsd1, buffer, 0, 1, HAL_MAX_DELAY) == HAL_OK) {
     }
 
     // 2. Открываем или создаем файл на запись
-    char path[13] = "test.txt";
-    path[12] = '\0';
+    //char path_to_file[13] = "test.txt";
+    //path_to_file[12] = '\0';
     res = BSP_SD_GetCardState();
     res = disk_status(0);
     res = f_open(&SDFile, "0:/test.txt", FA_CREATE_ALWAYS | FA_WRITE);

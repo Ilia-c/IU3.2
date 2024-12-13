@@ -8,3 +8,4 @@ void RTC_get_time();
 void RTC_read();
 void RTC_set_time();
 void RTC_set_date();
+void RTC_get_date();

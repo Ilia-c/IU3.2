@@ -55,7 +55,7 @@ extern int ADC_AKB_Proc;
 
 extern RTC_TimeTypeDef s_Time;
 
-menuItem Null_Menu = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+menuItem Null_Menu = {{0}, {0}, 0, {0}, {0}, '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0'};
 #define NEXT_MENU Null_Menu
 #define PREVISION_MENU Null_Menu
 #define PARENT_MENU Null_Menu
@@ -76,9 +76,27 @@ menuItem Null_Menu = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
     menuItem Id = {Name_rus, Name_en, 0, add_signat_ru, add_signat_en, (void *)&Next, (void *)&Previous, (void *)&Parent, (void *)&Child, (void *)&action, (menuSelect_item *)&select_bar, (char *)&data_in, (char *)&Data_out}
 
 // Выбираемые значения и статус
-menuSelect_item GSM_MODE[2] = {&GSM_mode, {"Вкл.", "On"}, {"Выкл", "Off"}};          // Вкл откл GSM
-menuSelect_item RS485_MODE[2] = {&RS485_prot, {"Выкл.", "Off"}, "Modbus", "Modbus"}; //
-menuSelect_item UNITS_MODE[2] = {&units_mes, {"миллиметры", "millimeters"}, "метры", "meters"};
+menuSelect_item GSM_MODE_DATA = { 
+    &GSM_mode,
+    {
+        {"Вкл.", "On"},
+        {"Выкл", "Off"}
+    }
+}; 
+menuSelect_item RS485_MODE_DATA = {
+    &RS485_prot,
+    {
+        {"Выкл.", "Off"},
+        {"Modbus", "Modbus"}
+    }
+};
+menuSelect_item UNITS_MODE_DATA = {
+    &units_mes,
+    {
+        {"миллиметры", "millimeters"},
+        {"метры", "meters"}
+    }
+};
 ////////////////////////////////////////////////////
 //                  Пункты меню                   //
 ////////////////////////////////////////////////////
@@ -123,7 +141,7 @@ MAKE_MENU(Menu_2, "Настройки", "Settings", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu
     MAKE_MENU(Menu_2_4, "Время сна", "time sleep", 0, "м", "m", Menu_2_5, Menu_2_3, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, c_time_sleep_m, DATA_OUT);
     MAKE_MENU(Menu_2_5, "Нул. ур.", "Modes", 0, "м", "m", Menu_2_6, Menu_2_4, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
     MAKE_MENU(Menu_2_6, "Уров. дат.", "Modes", 0, "м", "m", Menu_2_7, Menu_2_5, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-    MAKE_MENU(Menu_2_7, "Связь", "GSM", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_8, Menu_2_6, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+    MAKE_MENU(Menu_2_7, "Связь", "GSM", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_8, Menu_2_6, Menu_2, CHILD_MENU, ACTION_MENU, GSM_MODE_DATA, DATA_IN, DATA_OUT);
     MAKE_MENU(Menu_2_8, "Ток. петля", "Modes", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_9, Menu_2_7, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
     MAKE_MENU(Menu_2_9, "RS485", "RS485", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_10, Menu_2_8, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
     MAKE_MENU(Menu_2_10, "Ед. изм.", "Modes", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_11, Menu_2_9, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
@@ -176,7 +194,6 @@ int search_len_mass(char *string)
 void Select_diplay_functions(menuItem *menu, int pos_y)
 {
     int len_end_symbol = 0;
-
     if (len == 'r')
     {
         OLED_DrawStr(menu->add_signat_ru, winth_display - 10, pos_y * dist_y + height_up_menu, 1);
@@ -186,6 +203,11 @@ void Select_diplay_functions(menuItem *menu, int pos_y)
     {
         OLED_DrawStr(menu->add_signat_en, winth_display - 10, pos_y * dist_y + height_up_menu, 1);
         len_end_symbol = OLED_GetWidthStr(menu->add_signat_en) + 2;
+    }
+    
+    if (selectedMenuItem->select_bar != (void *)&NULL_ENTRY)
+    {
+        OLED_DrawStr(menu->select_bar->Name[0][0], winth_display - 60, pos_y * dist_y + height_up_menu, 1);
     }
 
     if (menu->data_in != (void *)&NULL_ENTRY)
@@ -199,7 +221,7 @@ void Select_diplay_functions(menuItem *menu, int pos_y)
             //  Нужно найти ширину символа. pos_redact - текущий символ
             // int len = search_len_mass(selectedMenuItem->data_in); // длина массива
 
-            char string_pos_line[10] = {};
+            char string_pos_line[10] = {0};
             int pos_x_line = 0;
             int i = 0;
             for (; ((pos_x_line < pos_redact + 1) || (i > 10)); i++)
@@ -211,7 +233,7 @@ void Select_diplay_functions(menuItem *menu, int pos_y)
                 }
             }
             int len_to_char = OLED_GetWidthStr(string_pos_line);
-            char array[2] = {};
+            char array[2] = {0};
             array[0] = selectedMenuItem->data_in[i - 1];
             int len_select_char = OLED_GetWidthStr(array) - 1;
             OLED_DrawHLine(winth_display - counter + len_to_char - len_select_char - 1, select_menu_in_page * dist_y + height_up_menu + 8, len_select_char, led_cursor = !led_cursor);
@@ -235,6 +257,7 @@ void Display_punkt_menu(menuItem *menu, int pos_y) // отображение одного пункта 
     {
         OLED_DrawStr(menu->data_out, winth_display - 60, pos_y * dist_y + height_up_menu, 1);
     }
+    
 }
 void menuChange(menuItem *NewMenu)
 {
@@ -271,12 +294,14 @@ void Display_TopBar(menuItem *CurrentMenu)
     gcvt(koeff, 4, str);
     OLED_DrawStr(str, 1, 1, 1);
 */
+/*
     uint32_t data = Read_MS5193T_Data();
     double koeff = 0.0000000697; 
     koeff = data*koeff-0.5;
     koeff /= 0.01; 
     gcvt(koeff, 4, str);
     OLED_DrawStr(str, 1, 1, 1);
+*/
 
     sprintf(str, "%d", ADC_AKB_Proc);
     if (ADC_AKB_Proc < 10)
@@ -300,7 +325,7 @@ void Display_TopBar(menuItem *CurrentMenu)
     if (ADC_AKB_Proc == 0)
         c = 0;
     // OLED_DrawRectangle(right_ot+2, top_akb_status+7-c, right_ot+3, top_akb_status+2+c);
-    for (c; c > 0; c--)
+    for (; c > 0; c--)
     {
         OLED_DrawHLine(right_ot + 2, top_akb_status + 8 - c, 2, 1);
     }
@@ -697,3 +722,11 @@ void Keyboard_processing()
         Keyboard_press_code = 0xFF;
     }
 }
+/*
+void Start_video(){
+    for (int i = 0; i<sizeof(frames)/sizeof(frames[0]) ;i++){
+
+    }
+    OLED_DrawXBM(right_ot, top_akb_status, akb);
+}
+*/

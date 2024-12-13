@@ -196,7 +196,7 @@ void TIM2_IRQHandler(void)
 extern int a;
 void TIM6_DAC_IRQHandler(void)
 {
-  HAL_TIM_IRQHandler(&htim6);
+  HAL_TIM6_Callback();
 }
 
 /******************************************************************************/

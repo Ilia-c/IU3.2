@@ -233,15 +233,6 @@ CubeMX_IS_TOP_LEVEL:STATIC=ON
 CubeMX_SOURCE_DIR:STATIC=C:/Users/39611/Desktop/Projects/IU3.2
 
 //Value Computed by CMake
-CubeMX_testIU3_BINARY_DIR:STATIC=C:/Users/39611/Desktop/Projects/IU3.2/build/Debug
-
-//Value Computed by CMake
-CubeMX_testIU3_IS_TOP_LEVEL:STATIC=ON
-
-//Value Computed by CMake
-CubeMX_testIU3_SOURCE_DIR:STATIC=C:/Users/39611/Desktop/Projects/IU3.2
-
-//Value Computed by CMake
 stm32cubemx_BINARY_DIR:STATIC=C:/Users/39611/Desktop/Projects/IU3.2/build/Debug/cmake/stm32cubemx
 
 //Value Computed by CMake

@@ -103,7 +103,7 @@ void RTC_read()
 
 void set_time_init(uint8_t hr, uint8_t min, uint8_t sec)
 {
-	/*RTC_TimeTypeDef sTime = {0};
+	RTC_TimeTypeDef sTime = {0};
 	sTime.Hours = hr;
 	sTime.Minutes = min;
 	sTime.Seconds = sec;
@@ -112,7 +112,7 @@ void set_time_init(uint8_t hr, uint8_t min, uint8_t sec)
 	if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
 	{
 		Error_Handler();
-	}*/
+	}
 }
 
 void RTC_get_time()
@@ -122,8 +122,8 @@ void RTC_get_time()
 
 	char time_h[2];
 	char time_m[2];
-	snprintf(time_h, 3, "%02d", Time.Hours);
-	snprintf(time_m, 3, "%02d", Time.Minutes);
+	snprintf(time_h, 4, "%02d", Time.Hours);
+	snprintf(time_m, 4, "%02d", Time.Minutes);
 	for (int i = 0; i < 2; i++)
 	{
 		c_Time[i] = time_h[i];
@@ -143,9 +143,9 @@ void RTC_get_date()
 	char date_d[2];
 	char date_m[2];
 	char date_y[2];
-	snprintf(date_d, 3, "%02d", Date.Date);
-	snprintf(date_m, 3, "%02d", Date.Month);
-	snprintf(date_y, 3, "%02d", Date.Year);
+	snprintf(date_d, 4, "%02d", Date.Date);
+	snprintf(date_m, 4, "%02d", Date.Month);
+	snprintf(date_y, 4, "%02d", Date.Year);
 	for (int i = 0; i < 2; i++)
 	{
 		c_Date[i] = date_d[i];

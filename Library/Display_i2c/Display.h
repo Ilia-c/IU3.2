@@ -9,11 +9,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "RTC_data.h"
 
 typedef struct Menu_item
 {
     int *data;              // привязанное значение
-    const char Name[2][10]; // Название пункта меню на русском и английском
+    const char Name[10][2][15]; // Название пункта меню на русском и английском
 } menuSelect_item;
 
 typedef struct MAKE_MENU
@@ -55,3 +56,4 @@ void Keyboard_processing();
 void convert_string_to_ascii(const char *input, char *output);
 char convert_to_ascii(unsigned char c);
 void ADC_Init();
+void data_redact_pos(int position, char data);

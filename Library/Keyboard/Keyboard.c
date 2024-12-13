@@ -1,4 +1,6 @@
 #include "keyboard.h"
+extern xSemaphoreHandle Keyboard_semapfore;
+
 extern int Display_update;
 extern xSemaphoreHandle Display_semaphore;
 extern char Keyboard_press_code;
@@ -37,14 +39,22 @@ void ret_keyboard()
     HAL_NVIC_ClearPendingIRQ(EXTI9_5_IRQn);
     HAL_NVIC_EnableIRQ(EXTI4_IRQn);
     HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
+    
+    HAL_TIM_Base_Start_IT(&htim6);
+    TIM6->CNT = 0;
     interrupt = 0;
 }
+
 
 void ScanKeypad()
 {
     // osDelay(100);
+    
     HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
     HAL_NVIC_DisableIRQ(EXTI4_IRQn);
+    //HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);
+    //TIM6->CNT = 0;
 
     HAL_GPIO_WritePin(COL_B1_GPIO_Port, COL_B1_Pin, 1);
     HAL_GPIO_WritePin(COL_B2_GPIO_Port, COL_B2_Pin, 0);
@@ -179,4 +189,7 @@ void ScanKeypad()
     HAL_NVIC_ClearPendingIRQ(EXTI9_5_IRQn);
     HAL_NVIC_EnableIRQ(EXTI4_IRQn);
     HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
+    HAL_TIM_Base_Stop_IT(&htim6);
+    TIM6->CNT = 0;
 }

@@ -72,8 +72,8 @@ int ADC_AKB_cell = 0;                   //  Ячейки заряда (0-3)
 ////////////////////////////////////////////////////
 
 // Дата и время
-char c_Time[10]={};
-char c_Date[10]={};
+char c_Time[10]={0};
+char c_Date[10]={0};
 
 char ID_board[10] = "TEST";
 char ver_board[10] = "v3.25";
@@ -91,6 +91,10 @@ int time_sleep_m = 0; // время сна - минуты
 
 char c_time_sleep_h[10] = "1";
 char c_time_sleep_m[10] = "2";
+
+
+uint16_t Timer_key_one_press = 50;            // Время задержки между переключением при одиночном нажатии
+uint16_t Timer_key_press = 300;                // Время задержки между переключением при зажатии
 
 
 
