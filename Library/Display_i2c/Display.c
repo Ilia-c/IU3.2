@@ -27,6 +27,8 @@ int mode_redact = 0;  // 1 - режим редактирования данных, 0 - режим переключения
 int pos_redact = 0;   // позиция для редактирования
 extern char c_Time[]; // из settings
 extern char c_Date[]; // из settings
+
+
 int led_cursor = 1;
 extern int time_update_display;
 extern xSemaphoreHandle Display_semaphore;
@@ -40,6 +42,7 @@ extern int Mode;
 extern int GSM_mode;
 extern int RS485_prot;
 extern int units_mes;
+extern int screen_sever_mode;
 
 extern char c_time_sleep_h;
 extern char c_time_sleep_m;
@@ -54,6 +57,36 @@ extern int GSM_Signal_Level;
 extern int ADC_AKB_Proc;
 
 extern RTC_TimeTypeDef s_Time;
+//extern SPI_HandleTypeDef hspi2;
+
+const int max_munu_in_page = 5; // максимальное количество пунктов меню на странице
+int select_menu_in_page = 0;    // метущий пункт менюc
+extern char len;                //  0 - русский язык;  1 -  английский
+
+
+#define height_up_menu 14                                            // выста верхнего пункта меню
+#define dist_y (int)((64 - height_up_menu) / (max_munu_in_page)) + 2 // расстояние между пунктами меню
+#define pos_x_menu 4                                                 // отступ от края для названий пунктов меню
+#define pos_x_menu_data 100                                          // отступ от края для вывода значений
+
+#define font my5x7fonts
+
+/*  тип меню (char)0b543210
+    6 - вкладка                                             0x40
+    5 - ввод значения                                       0x20
+    4 - изменяемые пункты (трубуется ссылка на структуру)   0x10
+    3 - вывод незменяемого значвения char[]                 0x08
+    0 - по нажатию - действие                               0x01
+*/
+char Time_char[1] = {0x01}; // нужны для записи времени, после окончания редактирования, вставляется в поле DATA_OUT
+char Data_char[1] = {0x02}; // нужны для записи даты, после окончания редактирования, вставляется в поле DATA_OUT
+extern char char_ADC_in_temp[];
+extern char char_ADC_Height[];
+extern char char_ADC_Height_correct[];
+extern char ID_board[];
+extern char ver_board[];
+extern char ver_programm[];
+
 
 menuItem Null_Menu = {{0}, {0}, 0, {0}, {0}, '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0'};
 #define NEXT_MENU Null_Menu
@@ -93,39 +126,29 @@ menuSelect_item RS485_MODE_DATA = {
 menuSelect_item UNITS_MODE_DATA = {
     &units_mes,
     {
-        {"миллиметры", "millimeters"},
+        {"миллим.", "millimeters"},
         {"метры", "meters"}
+    }
+};
+menuSelect_item SCREENSAVER = {
+    &screen_sever_mode ,
+    {
+        {"вкл.", "on"},
+        {"выкл.", "off"}
+    }
+};
+
+menuSelect_item LANGUAGE = {
+    &len,
+    {
+        {"Русский", "Русский"},
+        {"English", "English"}
     }
 };
 ////////////////////////////////////////////////////
 //                  Пункты меню                   //
 ////////////////////////////////////////////////////
-const int max_munu_in_page = 5; // максимальное количество пунктов меню на странице
-int select_menu_in_page = 0;    // метущий пункт менюc
-char len = 'r';                 //  r - русский язык;  e -  английский
 
-#define height_up_menu 14                                            // выста верхнего пункта меню
-#define dist_y (int)((64 - height_up_menu) / (max_munu_in_page)) + 2 // расстояние между пунктами меню
-#define pos_x_menu 4                                                 // отступ от края для названий пунктов меню
-#define pos_x_menu_data 100                                          // отступ от края для вывода значений
-
-#define font my5x7fonts
-
-/*  тип меню (char)0b543210
-    6 - вкладка                                             0x40
-    5 - ввод значения                                       0x20
-    4 - изменяемые пункты (трубуется ссылка на структуру)   0x10
-    3 - вывод незменяемого значвения char[]                 0x08
-    0 - по нажатию - действие                               0x01
-*/
-char Time_char[1] = {0x01}; // нужны для записи времени, после окончания редактирования, вставляется в поле DATA_OUT
-char Data_char[1] = {0x02}; // нужны для записи даты, после окончания редактирования, вставляется в поле DATA_OUT
-extern char char_ADC_in_temp[];
-extern char char_ADC_Height[];
-extern char char_ADC_Height_correct[];
-extern char ID_board[];
-extern char ver_board[];
-extern char ver_programm[];
 
 MAKE_MENU(Menu_1, "Режимы", "Modes", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2, PREVISION_MENU, PARENT_MENU, Menu_1_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
     MAKE_MENU(Menu_1_1, "Цикл", "Cycle", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_1_2, PREVISION_MENU, Menu_1, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
@@ -143,20 +166,22 @@ MAKE_MENU(Menu_2, "Настройки", "Settings", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu
     MAKE_MENU(Menu_2_6, "Уров. дат.", "Modes", 0, "м", "m", Menu_2_7, Menu_2_5, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
     MAKE_MENU(Menu_2_7, "Связь", "GSM", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_8, Menu_2_6, Menu_2, CHILD_MENU, ACTION_MENU, GSM_MODE_DATA, DATA_IN, DATA_OUT);
     MAKE_MENU(Menu_2_8, "Ток. петля", "Modes", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_9, Menu_2_7, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-    MAKE_MENU(Menu_2_9, "RS485", "RS485", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_10, Menu_2_8, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-    MAKE_MENU(Menu_2_10, "Ед. изм.", "Modes", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_11, Menu_2_9, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+    MAKE_MENU(Menu_2_9, "RS485", "RS485", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_10, Menu_2_8, Menu_2, CHILD_MENU, ACTION_MENU, RS485_MODE_DATA, DATA_IN, DATA_OUT);
+    MAKE_MENU(Menu_2_10, "Ед. изм.", "Modes", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_11, Menu_2_9, Menu_2, CHILD_MENU, ACTION_MENU, UNITS_MODE_DATA, DATA_IN, DATA_OUT);
     MAKE_MENU(Menu_2_11, "Инжен. меню", "Modes", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_12, Menu_2_10, Menu_2, Menu_2_11_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
         MAKE_MENU(Menu_2_11_1, "Авт. Калиб.", "Modes", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_11_2, PREVISION_MENU, Menu_2_11, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_11_2, "Ном. платы", "Modes", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_11_3, Menu_2_11_1, Menu_2_11, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_11_3, "Глубина", "Modes", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_11_4, Menu_2_11_2, Menu_2_11, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_11_4, "Ток", "Modes", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_11_5, Menu_2_11_3, Menu_2_11, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_11_5, "Темп. 1", "Modes", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_11_6, Menu_2_11_4, Menu_2_11, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_11_6, "Темп. 2", "Modes", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_11_7, Menu_2_11_5, Menu_2_11, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_11_7, "Темп. 3", "Modes", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_11_8, Menu_2_11_6, Menu_2_11, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_11_8, "Давление", "Modes", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_11_9, Menu_2_11_7, Menu_2_11, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_11_9, "Влажность", "Modes", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, NEXT_MENU, Menu_2_11_8, Menu_2_11, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-    MAKE_MENU(Menu_2_12, "Сброс", "Modes", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_13, Menu_2_11, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-    MAKE_MENU(Menu_2_13, "Формат. SD", "Modes", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, NEXT_MENU, Menu_2_12, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_11_2, "Ном. платы", "Num. of PCB", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_11_3, Menu_2_11_1, Menu_2_11, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_11_3, "Глубина", "Depth", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_11_4, Menu_2_11_2, Menu_2_11, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_11_4, "Ток", "Current", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_11_5, Menu_2_11_3, Menu_2_11, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_11_5, "Темп. 1", "Temp. 1", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_11_6, Menu_2_11_4, Menu_2_11, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_11_6, "Темп. 2", "Temp. 2", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_11_7, Menu_2_11_5, Menu_2_11, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_11_7, "Темп. 3", "Temp. 3", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_11_8, Menu_2_11_6, Menu_2_11, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_11_8, "Давление", "Pressure", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_11_9, Menu_2_11_7, Menu_2_11, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_11_9, "Влажность", "Humidity", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_11_10, Menu_2_11_8, Menu_2_11, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_11_10, "Заставка", "Wallpaper", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, NEXT_MENU, Menu_2_11_9, Menu_2_11, CHILD_MENU, ACTION_MENU, SCREENSAVER, DATA_IN, DATA_OUT);
+    MAKE_MENU(Menu_2_12, "Язык", "Language", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_13, Menu_2_11, Menu_2, CHILD_MENU, ACTION_MENU, LANGUAGE, DATA_IN, DATA_OUT);
+    MAKE_MENU(Menu_2_13, "Сброс", "Modes", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_14, Menu_2_12, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+    MAKE_MENU(Menu_2_14, "Формат. SD", "Modes", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, NEXT_MENU, Menu_2_13, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
 MAKE_MENU(Menu_3, "Сведения", "Info", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_4, Menu_2, PARENT_MENU, Menu_3_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
     MAKE_MENU(Menu_3_1, "ID устр.", "ID Device", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_3_2, PREVISION_MENU, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ID_board);
     MAKE_MENU(Menu_3_2, "Вер. платы.", "Modes", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_3_3, Menu_3_1, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ver_board);
@@ -184,7 +209,7 @@ int search_len_mass(char *string)
     return -1;
 }
 
-/*  тип меню (char)0b543210
+/*  тип меню (char)0b543210 РЕДАКТИРОВАНИЕ ДЕЙСТВИЙ 
     6 - вкладка                                             0x40
     5 - ввод числа                                          0x20
     4 - изменяемые пункты (трубуется ссылка на структуру)   0x10
@@ -194,20 +219,36 @@ int search_len_mass(char *string)
 void Select_diplay_functions(menuItem *menu, int pos_y)
 {
     int len_end_symbol = 0;
-    if (len == 'r')
+    int leng_font = 0;
+    if (len == 0x00)
     {
         OLED_DrawStr(menu->add_signat_ru, winth_display - 10, pos_y * dist_y + height_up_menu, 1);
         len_end_symbol = OLED_GetWidthStr(menu->add_signat_ru) + 2;
     }
     else
     {
+        leng_font = 1;
         OLED_DrawStr(menu->add_signat_en, winth_display - 10, pos_y * dist_y + height_up_menu, 1);
         len_end_symbol = OLED_GetWidthStr(menu->add_signat_en) + 2;
     }
     
-    if (selectedMenuItem->select_bar != (void *)&NULL_ENTRY)
-    {
-        OLED_DrawStr(menu->select_bar->Name[0][0], winth_display - 60, pos_y * dist_y + height_up_menu, 1);
+    // Вывод режима (прокрутка)
+    if (menu->select_bar != (void *)&NULL_ENTRY)
+    {   
+        int len = OLED_GetWidthStr(menu->select_bar->Name[*menu->select_bar->data][leng_font]);
+        
+        if ((mode_redact == 1) && (selectedMenuItem == menu))
+        {
+            OLED_DrawStr(menu->select_bar->Name[*menu->select_bar->data][leng_font], winth_display - len - 8, pos_y * dist_y + height_up_menu, 1);  // вывод если включен выбор (редактирование)
+            int pos_cursor = select_menu_in_page * dist_y + height_up_menu + 2;
+            int x_left = winth_display-len-11;
+            int x_right = winth_display-7;
+            OLED_DrawTriangleFill(x_right, pos_cursor - 1, x_right, pos_cursor + 3, x_right+2, pos_cursor+1);
+            OLED_DrawTriangleFill(x_left, pos_cursor - 1, x_left, pos_cursor + 3, x_left-2, pos_cursor+1);
+        }
+        else{
+            OLED_DrawStr(menu->select_bar->Name[*menu->select_bar->data][leng_font], winth_display - len - 4, pos_y * dist_y + height_up_menu, 1); // вывод если нет выбора 
+        }
     }
 
     if (menu->data_in != (void *)&NULL_ENTRY)
@@ -244,12 +285,14 @@ void Select_diplay_functions(menuItem *menu, int pos_y)
 void Display_punkt_menu(menuItem *menu, int pos_y) // отображение одного пункта меню
 {
     FontSet(font);
-    if (len == 'r')
-    {
+    uint8_t leng_font = 0;
+    if (len == 0x00)
+    {   
         OLED_DrawStr(menu->Name_rus, pos_x_menu, pos_y * dist_y + height_up_menu, 1);
     }
     else
     {
+        leng_font = 1;
         OLED_DrawStr(menu->Name_en, pos_x_menu, pos_y * dist_y + height_up_menu, 1);
     }
 
@@ -265,8 +308,6 @@ void menuChange(menuItem *NewMenu)
         return;
     selectedMenuItem = (menuItem *)(NewMenu);
 }
-
-extern SPI_HandleTypeDef hspi1;
 
 void Display_TopBar(menuItem *CurrentMenu)
 {
@@ -332,33 +373,31 @@ void Display_TopBar(menuItem *CurrentMenu)
     OLED_DrawXBM(right_ot, top_akb_status, akb);
     right_ot -= width_GSM_status;
 
+
     if (GSM_Signal_Level < 0)
     {
         right_ot += 3;
         OLED_DrawXBM(right_ot, top_GSM_status, no_signal);
     }
-    if (GSM_Signal_Level == 0)
-    {
-        OLED_DrawXBM(right_ot, top_GSM_status, signal_0);
-    }
-    if (GSM_Signal_Level == 1)
-    {
-        OLED_DrawXBM(right_ot, top_GSM_status, signal_1);
-    }
-    if (GSM_Signal_Level == 2)
-    {
-        OLED_DrawXBM(right_ot, top_GSM_status, signal_2);
-    }
-    if (GSM_Signal_Level == 3)
-    {
-        OLED_DrawXBM(right_ot, top_GSM_status, signal_3);
+
+    const uint8_t* signal_icons[] = {signal_0, signal_1, signal_2, signal_3};
+    //GSM_Signal_Level = 3;
+    if (GSM_Signal_Level >= 0 && GSM_Signal_Level <= 3) {
+        OLED_DrawXBM(right_ot, top_GSM_status, signal_icons[GSM_Signal_Level]);
     }
     right_ot = winth_display - 12 - 2; // Ширина экрана минус 2 символа - процент заряда (0-9%) и - 2 отступ справа
+
+
+    //Вариант оптимизации
+    
+
+    
 }
 
-void Display_all_menu()
-{ // отображение всех пунктов меню на странице
 
+// отображение всех пунктов меню на странице
+void Display_all_menu()
+{
     OLED_Clear(0);
 
     menuItem *menu_s = (menuItem *)(selectedMenuItem);
@@ -534,7 +573,16 @@ void left_redact()
 
     if (selectedMenuItem->select_bar != (void *)&NULL_ENTRY)
     {
-        // действие при прокрутке
+        if (selectedMenuItem->select_bar->data-1 < 0){
+            mode_redact = 0;
+            led_cursor = 1;
+        }
+        else{
+            time_update_display = time_updateDisplay;
+            if (selectedMenuItem->select_bar->Name[*selectedMenuItem->select_bar->data-1][0][0] != '\0'){
+                *selectedMenuItem->select_bar->data-=1;
+            }
+        }
     }
 }
 void left()
@@ -550,6 +598,7 @@ void left()
         select_menu_in_page = selectedMenuItem->Num_menu;
     }
 }
+
 
 void right_redact()
 {
@@ -568,7 +617,10 @@ void right_redact()
 
     if (selectedMenuItem->select_bar != (void *)&NULL_ENTRY)
     {
-        // действие при прокрутке
+        if (selectedMenuItem->select_bar->Name[*selectedMenuItem->select_bar->data+1][0][0] != '\0'){
+            *selectedMenuItem->select_bar->data+=1;
+        }
+        // действие при прокрутке вправо
     }
 }
 
@@ -677,56 +729,90 @@ void Keyboard_processing()
             }
 
             // Левая часть панели
-
-            if (Keyboard_press_code == '0')
-            {
-                key_press_data_write(Keyboard_press_code);
-            }
-            if (Keyboard_press_code == '1')
-            {
-                key_press_data_write(Keyboard_press_code);
-            }
-            if (Keyboard_press_code == '2')
-            {
-                key_press_data_write(Keyboard_press_code);
-            }
-            if (Keyboard_press_code == '3')
-            {
-                key_press_data_write(Keyboard_press_code);
-            }
-            if (Keyboard_press_code == '4')
-            {
-                key_press_data_write(Keyboard_press_code);
-            }
-            if (Keyboard_press_code == '5')
-            {
-                key_press_data_write(Keyboard_press_code);
-            }
-            if (Keyboard_press_code == '6')
-            {
-                key_press_data_write(Keyboard_press_code);
-            }
-            if (Keyboard_press_code == '7')
-            {
-                key_press_data_write(Keyboard_press_code);
-            }
-            if (Keyboard_press_code == '8')
-            {
-                key_press_data_write(Keyboard_press_code);
-            }
-            if (Keyboard_press_code == '9')
-            {
-                key_press_data_write(Keyboard_press_code);
+            if (mode_redact == 1) {
+                if (Keyboard_press_code >= '0' && Keyboard_press_code <= '9') {
+                    key_press_data_write(Keyboard_press_code);
+                }
             }
         }
         Keyboard_press_code = 0xFF;
     }
 }
-/*
-void Start_video(){
-    for (int i = 0; i<sizeof(frames)/sizeof(frames[0]) ;i++){
 
+///
+/// ВЫВОД ВИДЕО
+///
+
+
+extern const uint8_t frames[23][1026];
+extern const uint16_t frame_delays[];
+
+void UpdateFrameDiff(const uint8_t *new_frame) {
+    static uint8_t old_frame[1024] = {0}; // Старый кадр
+    uint8_t temp_buffer[1024] = {0}; // Промежуточный буфер для нового кадра
+
+    uint8_t width = new_frame[0];
+    uint8_t height = new_frame[1];
+    const uint8_t* data_ptr = &new_frame[2];
+    int widthInBytes = (width + 7) / 8;
+
+    // Декодируем новый кадр в temp_buffer без прямой записи в oled_buffer
+    // В данном случае мы просто раскодируем XBM в формат схожий с oled_buffer
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            uint8_t data = data_ptr[(y * widthInBytes) + (x / 8)];
+            uint8_t bit = 1 << (x & 7);
+            if (data & bit) {
+                temp_buffer[x + (y/8)*OLED_WIDTH] |= (1 << (y & 7));
+            }
+        }
     }
-    OLED_DrawXBM(right_ot, top_akb_status, akb);
+
+    // Сравниваем temp_buffer с old_frame, чтобы найти изменившиеся биты
+    uint8_t changed_pages[8] = {0}; // Отслеживаем какие страницы изменились
+    for (int i = 0; i < 1024; i++) {
+        uint8_t diff = temp_buffer[i] ^ old_frame[i];
+        if (diff != 0) {
+            int page = i / OLED_WIDTH;
+            int x_pos = i % OLED_WIDTH;
+            for (int bit = 0; bit < 8; bit++) {
+                if (diff & (1 << bit)) {
+                    // Пиксель изменился
+                    uint8_t new_pixel = (temp_buffer[i] & (1 << bit)) ? 1 : 0;
+                    OLED_DrawPixelStatus(x_pos, page*8 + bit, new_pixel);
+                    changed_pages[page] = 1;
+                }
+            }
+        }
+    }
+
+    // Обновляем только те страницы, которые изменились
+    for (int p = 0; p < 8; p++) {
+        if (changed_pages[p]) {
+            OLED_UpdateOnePage(p);
+        }
+    }
+
+    // Запоминаем текущий кадр как старый для следующего прохода
+    memcpy(old_frame, temp_buffer, 1024);
 }
-*/
+
+void Start_video() {
+    int contrast = 0xFF;
+    int charge_period = 0xF1;
+    for (int i = 0; i < 23; i++) {
+        UpdateFrameDiff(frames[i]);
+        HAL_Delay(frame_delays[i]);
+        if (i>15){
+            OLED_SetContrast(contrast);
+            OLED_SendCommand(0xD9);  //  Установка фаз
+            OLED_SendCommand(charge_period);  // Установка фаз
+            contrast -= 31;
+            charge_period-=28;
+        }
+    }
+    
+    OLED_SendCommand(0xD9);  //  Установка фаз на рабочий режим
+    OLED_SendCommand(0xF1);  //  Установка фаз на рабочий режим
+    OLED_SetContrast(0xFF);
+}

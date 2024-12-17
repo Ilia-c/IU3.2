@@ -46,6 +46,7 @@ xSemaphoreHandle Display_cursor_semaphore;
 
 extern uint16_t Timer_key_one_press;
 extern uint16_t Timer_key_press;
+extern int screen_sever_mode;
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -231,8 +232,20 @@ int main(void)
   SystemClock_Config();
   PeriphCommonClock_Config();
   MX_GPIO_Init();
+  MX_ADC1_Init();
+  MX_ADC3_Init();
+  MX_I2C1_Init();
+  MX_I2C2_Init();
+  MX_SPI2_Init();
+  MX_TIM6_Init();
+  //MX_UART4_Init();
+  RTC_Init();
+  //MX_USB_HOST_Init();
 
-  
+  ////
+  /// Здесь функция чтения из EEPROM настроек, id и прочего
+  ////
+
   HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, 1);
   HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ADC_Pin, 1);
 
@@ -243,20 +256,11 @@ int main(void)
   HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);
   HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);
   HAL_GPIO_WritePin(ON_N25_GPIO_Port, ON_N25_Pin, 0);
-  
-  HAL_Delay(100);
-  HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 1);
 
+  HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 1);
+  HAL_Delay(10);
+  OLED_Init(&hi2c2);
   
-  MX_ADC1_Init();
-  MX_ADC3_Init();
-  MX_I2C1_Init();
-  MX_I2C2_Init();
-  MX_SPI2_Init();
-  MX_TIM6_Init();
-  //MX_UART4_Init();
-  RTC_Init();
-  //MX_USB_HOST_Init();
 
   HAL_GPIO_WritePin(COL_B1_GPIO_Port, COL_B1_Pin, 1);
   HAL_GPIO_WritePin(COL_B2_GPIO_Port, COL_B2_Pin, 1);
@@ -301,9 +305,9 @@ int main(void)
   HAL_I2C_Mem_Read(&hi2c1, devAddr, memAddr, I2C_MEMADD_SIZE_16BIT, (uint8_t*)rmsg, sizeof(rmsg), HAL_MAX_DELAY);
 
 
-  OLED_Init(&hi2c2);
-  OLED_UpdateScreen();
-  HAL_Delay(1000);
+  
+  if (screen_sever_mode) Start_video();
+  HAL_Delay(400);
 
 
   osKernelInitialize();

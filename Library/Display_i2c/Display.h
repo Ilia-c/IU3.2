@@ -10,10 +10,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "RTC_data.h"
-
 typedef struct Menu_item
 {
-    int *data;              // привязанное значение
+    uint8_t *data;              // привязанное значение
     const char Name[10][2][15]; // Название пункта меню на русском и английском
 } menuSelect_item;
 

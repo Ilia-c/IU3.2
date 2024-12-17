@@ -4,7 +4,7 @@
 #define ABS(A) (((A) < 0) ? ((-1) * (A)) : (A))
 
 static uint8_t oled_start_column = 2;		// Display shift
-static uint8_t oled_buffer[1024];			// Display buffer
+static uint8_t oled_buffer[1024] = {0};			// Display buffer
 static I2C_HandleTypeDef* hi2c;				// Pointer I2C structure
 
 /* private: */
@@ -62,11 +62,11 @@ uint8_t OLED_Init(I2C_HandleTypeDef* i2c_handleTypeDef)
 	OLED_SendCommand(OLED_SET_VCOM_DESELECT);
 	OLED_SendCommand(0x40);
 	OLED_SendCommand(OLED_DISPLAY_ALL_ON_RESUME);
-	OLED_SendCommand(OLED_NORMAL_DISPLAY);
-	OLED_SendCommand(OLED_DISPLAY_ON);
-
+	OLED_SendCommand(OLED_NORMAL_DISPLAY); // или для инвертирования OLED_SendCommand(0xA7);
 	OLED_Clear(0);
-	
+	OLED_UpdateScreen();
+	HAL_Delay(1);
+	OLED_SendCommand(OLED_DISPLAY_ON);
 	return 1;
 }
 
@@ -470,3 +470,5 @@ void OLED_UpdateOnePage(uint8_t page_number)
 		OLED_SendData(oled_buffer[page_number * OLED_WIDTH + j]);
 	}
 }
+
+
