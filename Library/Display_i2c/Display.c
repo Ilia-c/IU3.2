@@ -62,6 +62,7 @@ extern RTC_TimeTypeDef s_Time;
 const int max_munu_in_page = 5; // максимальное количество пунктов меню на странице
 int select_menu_in_page = 0;    // метущий пункт менюc
 extern char len;                //  0 - русский €зык;  1 -  английский
+int Intermediate = 0;           // ѕромежуточна€ переменна€, куда сохран€етс€ настройка до сохранени€
 
 
 #define height_up_menu 14                                            // выста верхнего пункта меню
@@ -145,6 +146,12 @@ menuSelect_item LANGUAGE = {
         {"English", "English"}
     }
 };
+
+
+// »змен€емые параметры
+
+
+
 ////////////////////////////////////////////////////
 //                  ѕункты меню                   //
 ////////////////////////////////////////////////////
@@ -235,11 +242,14 @@ void Select_diplay_functions(menuItem *menu, int pos_y)
     // ¬ывод режима (прокрутка)
     if (menu->select_bar != (void *)&NULL_ENTRY)
     {   
-        int len = OLED_GetWidthStr(menu->select_bar->Name[*menu->select_bar->data][leng_font]);
+        int num_menu = *menu->select_bar->data;
+        if ((selectedMenuItem == menu) && (mode_redact == 1)) num_menu = Intermediate;
+
+        int len = OLED_GetWidthStr(menu->select_bar->Name[num_menu][leng_font]);
         
         if ((mode_redact == 1) && (selectedMenuItem == menu))
         {
-            OLED_DrawStr(menu->select_bar->Name[*menu->select_bar->data][leng_font], winth_display - len - 8, pos_y * dist_y + height_up_menu, 1);  // вывод если включен выбор (редактирование)
+            OLED_DrawStr(menu->select_bar->Name[num_menu][leng_font], winth_display - len - 8, pos_y * dist_y + height_up_menu, 1);  // вывод если включен выбор (редактирование)
             int pos_cursor = select_menu_in_page * dist_y + height_up_menu + 2;
             int x_left = winth_display-len-11;
             int x_right = winth_display-7;
@@ -247,7 +257,7 @@ void Select_diplay_functions(menuItem *menu, int pos_y)
             OLED_DrawTriangleFill(x_left, pos_cursor - 1, x_left, pos_cursor + 3, x_left-2, pos_cursor+1);
         }
         else{
-            OLED_DrawStr(menu->select_bar->Name[*menu->select_bar->data][leng_font], winth_display - len - 4, pos_y * dist_y + height_up_menu, 1); // вывод если нет выбора 
+            OLED_DrawStr(menu->select_bar->Name[num_menu][leng_font], winth_display - len - 4, pos_y * dist_y + height_up_menu, 1); // вывод если нет выбора 
         }
     }
 
@@ -440,6 +450,9 @@ void mode_check()
     if ((selectedMenuItem->data_in != (void *)&NULL_ENTRY) || (selectedMenuItem->select_bar != (void *)&NULL_ENTRY))
     {
         // ввод значений
+        if (selectedMenuItem->data_in != (void *)&NULL_ENTRY) Intermediate = *selectedMenuItem->data_in;
+        if (selectedMenuItem->select_bar != (void *)&NULL_ENTRY) Intermediate = *selectedMenuItem->select_bar->data;
+
         mode_redact = 1;
         pos_redact = 0;
         time_update_display = time_led_cursor;
@@ -456,6 +469,8 @@ void redact_end()
     {
         RTC_set_time();
     }
+    //if (selectedMenuItem->data_in != (void *)&NULL_ENTRY) selectedMenuItem->data_in = Intermediate;
+    if (selectedMenuItem->select_bar != (void *)&NULL_ENTRY) *selectedMenuItem->select_bar->data = Intermediate;
 
     pos_redact = len - 1;
     mode_redact = 0;
@@ -579,8 +594,9 @@ void left_redact()
         }
         else{
             time_update_display = time_updateDisplay;
-            if (selectedMenuItem->select_bar->Name[*selectedMenuItem->select_bar->data-1][0][0] != '\0'){
-                *selectedMenuItem->select_bar->data-=1;
+            if (selectedMenuItem->select_bar->Name[Intermediate-1][0][0] != '\0'){
+                //*selectedMenuItem->select_bar->data-=1;
+                Intermediate-=1;
             }
         }
     }
@@ -617,8 +633,9 @@ void right_redact()
 
     if (selectedMenuItem->select_bar != (void *)&NULL_ENTRY)
     {
-        if (selectedMenuItem->select_bar->Name[*selectedMenuItem->select_bar->data+1][0][0] != '\0'){
-            *selectedMenuItem->select_bar->data+=1;
+        if (selectedMenuItem->select_bar->Name[Intermediate+1][0][0] != '\0'){
+            //*selectedMenuItem->select_bar->data+=1;
+            Intermediate+=1;
         }
         // действие при прокрутке вправо
     }

@@ -9,7 +9,8 @@ extern char Keyboard_press_code;
 
 extern xSemaphoreHandle TIM6_semaphore_100us;
 extern TIM_HandleTypeDef htim6;
-int interrupt = 0; // разрешить или запретить прерывания на время проверки клавиш
+
+extern int mode_redact;
 
 #define delay osDelay(1); // HAL_TIM_Base_Start(&htim6); xSemaphoreTake(TIM6_semaphore_100us, 10)
 
@@ -22,7 +23,9 @@ const char keyMap[4][4] = {
 void ret_keyboard()
 {
     xSemaphoreGive(Display_semaphore);
-
+    if ((mode_redact == 1) || ((mode_redact == 0) && ((Keyboard_press_code == 'U') || (Keyboard_press_code == 'D')))) // что бы при зажатии не проваливаться во вложенные пункты меню
+    HAL_TIM_Base_Start_IT(&htim6);
+    TIM6->CNT = 0;
 
     HAL_GPIO_WritePin(COL_B1_GPIO_Port, COL_B1_Pin, 1);
     HAL_GPIO_WritePin(COL_B2_GPIO_Port, COL_B2_Pin, 1);
@@ -39,11 +42,6 @@ void ret_keyboard()
     HAL_NVIC_ClearPendingIRQ(EXTI9_5_IRQn);
     HAL_NVIC_EnableIRQ(EXTI4_IRQn);
     HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
-
-    
-    HAL_TIM_Base_Start_IT(&htim6);
-    TIM6->CNT = 0;
-    interrupt = 0;
 }
 
 

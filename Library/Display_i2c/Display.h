@@ -16,6 +16,14 @@ typedef struct Menu_item
     const char Name[10][2][15]; // Название пункта меню на русском и английском
 } menuSelect_item;
 
+typedef struct Menu_item_char
+{
+    uint8_t *data;            // привязанное значение
+    uint8_t *size;            // размер символов 001 - 3 символа, 01 - 2 символа
+    uint8_t *UP_data;         // минимальное значение
+    uint8_t *DOWN_data;       // максимальное значение
+} menuSelect_item_char;
+
 typedef struct MAKE_MENU
 {
     const char Name_rus[25];  // Название пункта меню на русском

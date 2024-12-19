@@ -91,8 +91,8 @@ char len = 0x00;                 //  0 - русский язык;  1 -  англ
 int time_sleep_h = 0; // время сна - часы
 int time_sleep_m = 0; // время сна - минуты
 
-char c_time_sleep_h[10] = "1";
-char c_time_sleep_m[10] = "2";
+char c_time_sleep_h[10] = "01";
+char c_time_sleep_m[10] = "02";
 
 
 uint16_t Timer_key_one_press = 50;            // Время задержки между переключением при одиночном нажатии
