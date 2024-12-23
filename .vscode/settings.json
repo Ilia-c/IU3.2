@@ -29,5 +29,5 @@
         "stdio.h": "c",
         "freertos.h": "c"
     },
-    "cortex-debug.variableUseNaturalFormat": false
+    "cortex-debug.variableUseNaturalFormat": true
 }

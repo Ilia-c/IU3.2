@@ -5,8 +5,8 @@ extern menuItem *selectedMenuItem;
 extern int mode_redact;
 
 RTC_HandleTypeDef hrtc;
-RTC_TimeTypeDef Time = {0};
-RTC_DateTypeDef Date = {0};
+extern RTC_TimeTypeDef Time;
+extern RTC_DateTypeDef Date;
 
 extern char c_Time[]; // из settings
 extern char c_Date[]; // из settings
@@ -86,16 +86,16 @@ void RTC_set_time()
 	RTC_get_time();
 }
 
-extern char Time_char[];
-extern char Data_char[];
+
 extern menuItem Null_Menu;
+
 void RTC_read()
 {
-	if ((mode_redact == 0) || ((selectedMenuItem->data_out[0] != Data_char[0]) && (selectedMenuItem->data_in == (void *)&Null_Menu)))
+	if ((mode_redact == 0) || ((selectedMenuItem->data_in == (void *)&Null_Menu)))
 	{
 		RTC_get_date();
 	}
-	if ((mode_redact == 0) || ((selectedMenuItem->data_out[0] != Time_char[0]) && (selectedMenuItem->data_in == (void *)&Null_Menu)))
+	if ((mode_redact == 0) || ((selectedMenuItem->data_in == (void *)&Null_Menu)))
 	{
 		RTC_get_time();
 	}
@@ -120,6 +120,7 @@ void RTC_get_time()
 	HAL_RTC_GetTime(&hrtc, &Time, RTC_FORMAT_BIN);
 	HAL_RTC_GetDate(&hrtc, &Date, RTC_FORMAT_BIN);
 
+/*
 	char time_h[2];
 	char time_m[2];
 	snprintf(time_h, 4, "%02d", Time.Hours);
@@ -133,13 +134,14 @@ void RTC_get_time()
 	{
 		c_Time[i + 3] = time_m[i];
 	}
+	*/
 }
 
 void RTC_get_date()
 {
 	HAL_RTC_GetTime(&hrtc, &Time, RTC_FORMAT_BIN);
 	HAL_RTC_GetDate(&hrtc, &Date, RTC_FORMAT_BIN);
-
+/*
 	char date_d[2];
 	char date_m[2];
 	char date_y[2];
@@ -160,4 +162,5 @@ void RTC_get_date()
 	{
 		c_Date[i + 6] = date_y[i];
 	}
+	*/
 }

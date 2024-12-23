@@ -16,13 +16,27 @@ typedef struct Menu_item
     const char Name[10][2][15]; // Название пункта меню на русском и английском
 } menuSelect_item;
 
+typedef void (*DataFormatter)(char *buffer, size_t size, void *data);
+
 typedef struct Menu_item_char
 {
-    uint8_t *data;            // привязанное значение
-    uint8_t *size;            // размер символов 001 - 3 символа, 01 - 2 символа
-    uint8_t *UP_data;         // минимальное значение
-    uint8_t *DOWN_data;       // максимальное значение
+    char separators[3];     // разделители, 3 штуки, если нету, то '\0'. последний может использоваться в качестве приписки
+    uint8_t Number_of_cells; // количетво ячеек данных
+    uint8_t redact_right_end; // завершение редактирования при нажатии вправо на краю данных 1-включено, 0-выключено
+
+    //  ЯЧЕЙКИ
+    void *data[3];  // ссылки на исходные значения 
+    uint8_t data_type[3]; // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов)
+    int8_t unsigned_signed[3]; // знаковые данные или беззнаковые
+    uint8_t len_data_zero[3]; // ширина ячеек (001 - ширина 3, 23 - ширина 2)
+    uint8_t len_data_zero_unredact[3]; // ширина ячеек в режиме не редактирования (001 - ширина 3, 23 - ширина 2)
+    char data_temp[3][11];   // промежуточные данные (для редактирования)
+    uint32_t UP_data[3];         // минимальные значения
+    uint32_t DOWN_data[3];       // максимальные значения
+    void (*end_redact_func)(void); // функция вызываемая при окончании редактирования (сохранение значений)
 } menuSelect_item_char;
+
+
 
 typedef struct MAKE_MENU
 {
@@ -49,7 +63,7 @@ typedef struct MAKE_MENU
 
     void (*action)(void); // действие при нажатии
     menuSelect_item *select_bar;
-    char *data_in;
+    menuSelect_item_char *data_in;
     char *data_out;
 } menuItem;
 
@@ -64,3 +78,4 @@ void convert_string_to_ascii(const char *input, char *output);
 char convert_to_ascii(unsigned char c);
 void ADC_Init();
 void data_redact_pos(int position, char data);
+void Start_video();

@@ -3,6 +3,7 @@
 ////////////////////////////////////////////////////
 #include "Settings.h"
 #include <time.h>
+#include "RTC_data.h"
 typedef struct
 {
    uint16_t year;          //год     (xxxx)
@@ -32,15 +33,11 @@ char char_BMP280_Temp [10] = "ND";                  // Температура н
 char char_BMP280_Humidity [10] = "ND";              // Влажность в формате char
 char char_BMP280_pressure [10] = "ND";              // Давление воздуха в формате char
 
-
 // Значение АЦП ADS1115 измеряемого значения датчика давления, Вольты и метры (датчик)
 float ADC_Volts = 0;                    // Напряжение на токовом шунте
 float ADC_Height = 0;                   // Глубина в метрах без коррекции
 float ADC_Height_correct = 0;           // Глубина в метрах с корректировкой
 
-char char_ADC_Volts[4] = "ND";                    // Напряжение на токовом шунте в формате char
-char char_ADC_Height[10] = "ND";                   // Глубина в метрах без коррекции в формате char
-char char_ADC_Height_correct[10] = "ND";           // Глубина в метрах с корректировкой в формате char
 
 // Значение Связи (регистрация в сети, уровень сигнала GSM, уровень сигнала (палочки), оператор)
 int GSM_Signal = 0;                     // Код сигнала от самого модуля GSM (0-31)
@@ -72,8 +69,8 @@ int ADC_AKB_cell = 0;                   //  Ячейки заряда (0-3)
 ////////////////////////////////////////////////////
 
 // Дата и время
-char c_Time[10]={0};
-char c_Date[10]={0};
+RTC_TimeTypeDef Time = {0};
+RTC_DateTypeDef Date = {0};
 
 char ID_board[10] = "TEST";
 char ver_board[10] = "v3.25";
@@ -88,15 +85,13 @@ int screen_sever_mode = 1; // включить (0) начальную заста
 char len = 0x00;                 //  0 - русский язык;  1 -  английский
 
 // изменяемые напрямую значения 
-int time_sleep_h = 0; // время сна - часы
-int time_sleep_m = 0; // время сна - минуты
 
-char c_time_sleep_h[10] = "01";
-char c_time_sleep_m[10] = "02";
-
+// настрйока времени сна
+uint16_t time_sleep_h = 0; // время сна - часы
+uint16_t time_sleep_m = 0; // время сна - минуты
 
 uint16_t Timer_key_one_press = 50;            // Время задержки между переключением при одиночном нажатии
-uint16_t Timer_key_press = 300;                // Время задержки между переключением при зажатии
+uint16_t Timer_key_press = 300;               // Время задержки между переключением при зажатии
 
 
 

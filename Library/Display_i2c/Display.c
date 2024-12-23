@@ -44,8 +44,6 @@ extern int RS485_prot;
 extern int units_mes;
 extern int screen_sever_mode;
 
-extern char c_time_sleep_h;
-extern char c_time_sleep_m;
 
 char str[4];
 int right_ot = winth_display - 12 - 2; // Ширина экрана минус 2 символа - процент заряда (0-9%) и - 2 отступ справа
@@ -62,7 +60,8 @@ extern RTC_TimeTypeDef s_Time;
 const int max_munu_in_page = 5; // максимальное количество пунктов меню на странице
 int select_menu_in_page = 0;    // метущий пункт менюc
 extern char len;                //  0 - русский язык;  1 -  английский
-int Intermediate = 0;           // Промежуточная переменная, куда сохраняется настройка до сохранения
+uint8_t Intermediate = 0;           // Промежуточная переменная, куда сохраняется настройка до сохранения
+
 
 
 #define height_up_menu 14                                            // выста верхнего пункта меню
@@ -79,11 +78,7 @@ int Intermediate = 0;           // Промежуточная переменная, куда сохраняется на
     3 - вывод незменяемого значвения char[]                 0x08
     0 - по нажатию - действие                               0x01
 */
-char Time_char[1] = {0x01}; // нужны для записи времени, после окончания редактирования, вставляется в поле DATA_OUT
-char Data_char[1] = {0x02}; // нужны для записи даты, после окончания редактирования, вставляется в поле DATA_OUT
-extern char char_ADC_in_temp[];
-extern char char_ADC_Height[];
-extern char char_ADC_Height_correct[];
+
 extern char ID_board[];
 extern char ver_board[];
 extern char ver_programm[];
@@ -111,28 +106,28 @@ menuItem Null_Menu = {{0}, {0}, 0, {0}, {0}, '\0', '\0', '\0', '\0', '\0', '\0',
 
 // Выбираемые значения и статус
 menuSelect_item GSM_MODE_DATA = { 
-    &GSM_mode,
+    (uint8_t *)&GSM_mode,
     {
         {"Вкл.", "On"},
         {"Выкл", "Off"}
     }
 }; 
 menuSelect_item RS485_MODE_DATA = {
-    &RS485_prot,
+    (uint8_t *)&RS485_prot,
     {
         {"Выкл.", "Off"},
         {"Modbus", "Modbus"}
     }
 };
 menuSelect_item UNITS_MODE_DATA = {
-    &units_mes,
+    (uint8_t *)&units_mes,
     {
-        {"миллим.", "millimeters"},
-        {"метры", "meters"}
+        {"мм", "mm"},
+        {"м", "m"}
     }
 };
 menuSelect_item SCREENSAVER = {
-    &screen_sever_mode ,
+    (uint8_t *)&screen_sever_mode ,
     {
         {"вкл.", "on"},
         {"выкл.", "off"}
@@ -140,16 +135,89 @@ menuSelect_item SCREENSAVER = {
 };
 
 menuSelect_item LANGUAGE = {
-    &len,
+    (uint8_t *)&len,
     {
         {"Русский", "Русский"},
         {"English", "English"}
     }
 };
 
+// Форматирование для uint8_t
+void format_uint8_t(char *buffer, size_t size, void *data) {
+    snprintf(buffer, size, "%u", *(uint8_t *)data);
+}
+// Форматирование для uint16_t
+void format_uint16_t(char *buffer, size_t size, void *data) {
+    snprintf(buffer, size, "%u", *(uint16_t *)data);
+}
+// Форматирование для int32_t
+void format_int32_t(char *buffer, size_t size, void *data) {
+    snprintf(buffer, size, "%ld", *(int32_t *)data);
+}
+void format_char(char *buffer, size_t size, void *data) {
+    return;
+}
+
+DataFormatter formatters[] = {
+    format_uint8_t,
+    format_uint16_t,
+    format_int32_t,
+    format_char
+};
 
 // Изменяемые параметры
+extern RTC_TimeTypeDef Time;
+extern RTC_DateTypeDef Date;
+menuSelect_item_char Date_redact = {
+    {'.', '.', '\0'},   // разделители, если нету, то '\0', последний может использоваться в качестве приписки
+    3,                  // колтичество ячеек данных
+    0,                  // завершение редактирования при нажатии вправо на краю данных 1-включено, 0-выключено 
+    //  ЯЧЕЙКИ
+    {&Date.Date, &Date.Month, &Date.Year},  // исходные значения
+    {0, 0, 0},                          // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов)
+    {0, 0, 0},                  // знаковые данные или беззнаковые
+    {2, 2, 2},                  // ширина ячеек (001 - ширина 3, 23 - ширина 2)
+    {2, 2, 2},                  // ширина ячеек вне редактирования (001 - ширина 3, 23 - ширина 2)
+    {0, 0, 0},                  // промежуточное значение
+    {99, 99, 99},               // максимальные значения
+    {0, 0, 0},                  // минимальные значения
+    '\0'                        // ссылка на функцию завершения работы
+}; // Промежуточная переменная, куда сохраняется настройка до сохранения (char)
 
+menuSelect_item_char Time_redact = {
+    {'.', '\0', '\0'},   // разделители, если нету, то '\0', последний может использоваться в качестве приписки
+    2,                  // колтичество ячеек данных
+    0,                  // завершение редактирования при нажатии вправо на краю данных 1-включено, 0-выключено 
+    //  ЯЧЕЙКИ
+    {&Time.Hours, &Time.Minutes, '\0'},  // исходные значения
+    {0, 0, 0},                           // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов)
+    {0, 0, 0},                  // знаковые данные или беззнаковые
+    {2, 2, 0},                  // ширина ячеек (001 - ширина 3, 23 - ширина 2)
+    {2, 2, 2},                  // ширина ячеек вне редактирования (001 - ширина 3, 23 - ширина 2)
+    {0, 0, 0},                  // промежуточное значение
+    {23, 59, '\0'},             // максимальные значения
+    {0, 0, '\0'},                // минимальные значения
+    '\0'                        // ссылка на функцию завершения работы
+}; // Промежуточная переменная, куда сохраняется настройка до сохранения (char)
+
+
+extern uint16_t time_sleep_h;
+extern uint16_t time_sleep_m;
+menuSelect_item_char Time_sleep_redact = {
+    {'ч', 'м', '\0'},   // разделители, если нету, то '\0', последний может использоваться в качестве приписки
+    2,                  // колтичество ячеек данных
+    0,                  // завершение редактирования при нажатии вправо на краю данных 1-включено, 0-выключено 
+    //  ЯЧЕЙКИ
+    {&time_sleep_h, &time_sleep_m, '\0'},  // исходные значения
+    {1, 1, 1},                  // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов)
+    {0, 0, 0},                  // знаковые данные или беззнаковые
+    {2, 2, 0},                  // ширина ячеек (001 - ширина 3, 23 - ширина 2)
+    {1, 1, 1},                  // ширина ячеек вне редактирования (минимальная) (001 - ширина 3, 23 - ширина 2) 
+    {0, 0, 0},                  // промежуточное значение
+    {23, 59, '\0'},             // максимальные значения
+    {0, 0, '\0'},               // минимальные значения
+    '\0'                        // ссылка на функцию завершения работы
+}; // Промежуточная переменная, куда сохраняется настройка до сохранения (char)
 
 
 ////////////////////////////////////////////////////
@@ -161,14 +229,14 @@ MAKE_MENU(Menu_1, "Режимы", "Modes", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2, PR
     MAKE_MENU(Menu_1_1, "Цикл", "Cycle", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_1_2, PREVISION_MENU, Menu_1, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
     MAKE_MENU(Menu_1_2, "Тест", "Test", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_1_3, Menu_1_1, Menu_1, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
     MAKE_MENU(Menu_1_3, "Показания", "Data", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, NEXT_MENU, Menu_1_2, Menu_1, Menu_1_3_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_1_3_1, "Тепература", "Data", 0, "°", "°", Menu_1_3_2, PREVISION_MENU, Menu_1_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, char_ADC_in_temp);
-        MAKE_MENU(Menu_1_3_2, "Глубина", "Data", 0, "м.", ADD_SIGNAT_EN, Menu_1_3_3, Menu_1_3_1, Menu_1_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, char_ADC_Height);
-        MAKE_MENU(Menu_1_3_3, "Кор. глуб.", "Data", 0, "м.", ADD_SIGNAT_EN, NEXT_MENU, Menu_1_3_2, Menu_1_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, char_ADC_Height_correct);
+        MAKE_MENU(Menu_1_3_1, "Тепература", "Data", 0, "°", "°", Menu_1_3_2, PREVISION_MENU, Menu_1_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_1_3_2, "Глубина", "Data", 0, "м.", ADD_SIGNAT_EN, Menu_1_3_3, Menu_1_3_1, Menu_1_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_1_3_3, "Кор. глуб.", "Data", 0, "м.", ADD_SIGNAT_EN, NEXT_MENU, Menu_1_3_2, Menu_1_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
 MAKE_MENU(Menu_2, "Настройки", "Settings", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_3, Menu_1, PARENT_MENU, Menu_2_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-    MAKE_MENU(Menu_2_1, "Дата", "Data", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_2, PREVISION_MENU, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, c_Date, Time_char);
-    MAKE_MENU(Menu_2_2, "Время", "Time", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_3, Menu_2_1, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, c_Time, Data_char);
-    MAKE_MENU(Menu_2_3, "Время сна", "time sleep", 0, "ч", "h", Menu_2_4, Menu_2_2, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, c_time_sleep_h, DATA_OUT);
-    MAKE_MENU(Menu_2_4, "Время сна", "time sleep", 0, "м", "m", Menu_2_5, Menu_2_3, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, c_time_sleep_m, DATA_OUT);
+    MAKE_MENU(Menu_2_1, "Дата", "Data", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_2, PREVISION_MENU, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Date_redact, DATA_OUT);
+    MAKE_MENU(Menu_2_2, "Время", "Time", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_3, Menu_2_1, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Time_redact, DATA_OUT);
+    MAKE_MENU(Menu_2_3, "Время сна", "time sleep", 0, "ч", "h", Menu_2_4, Menu_2_2, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Time_sleep_redact, DATA_OUT);
+    MAKE_MENU(Menu_2_4, "Время сна", "time sleep", 0, "м", "m", Menu_2_5, Menu_2_3, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
     MAKE_MENU(Menu_2_5, "Нул. ур.", "Modes", 0, "м", "m", Menu_2_6, Menu_2_4, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
     MAKE_MENU(Menu_2_6, "Уров. дат.", "Modes", 0, "м", "m", Menu_2_7, Menu_2_5, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
     MAKE_MENU(Menu_2_7, "Связь", "GSM", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_8, Menu_2_6, Menu_2, CHILD_MENU, ACTION_MENU, GSM_MODE_DATA, DATA_IN, DATA_OUT);
@@ -201,19 +269,74 @@ MAKE_MENU(Menu_4, "Инструкция", "Instruction", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, 
 menuItem *selectedMenuItem = &Menu_1;
 
 /// Возвращает длину строки без учета точек и двоеточий
-int search_len_mass(char *string)
+int search_len_mass(char *string, int len_str, char separotor[])
 {
-    int counter = 0; //
-    for (int i = 0; i < 11; i++)
+    int counter = 0; 
+    for (int i = 0; i < len_str; i++)
     {
-        if ((string[i] != '.') && (string[i] != ':'))
+        if (string[i] == '\0') return counter;
+        if ((string[i] != separotor[0]) && (string[i] != separotor[1]) && (string[i] != separotor[2]))
             counter++;
-        if (string[i] == 0)
-        {
-            return counter - 1;
-        }
     }
     return -1;
+}
+
+
+
+void Data_in_no_redact(menuItem *menu, int pos_y){
+    char string[10] = {'\0'};
+    for (int i = 0; i < menu->data_in->Number_of_cells; i++)
+    {
+        char buffer[11] = {'\0'};
+        char separat[11] = {'\0'}; // массив разделителей, в рамках данного блока, разделителей нету
+        formatters[menu->data_in->data_type[i]](buffer, sizeof(buffer), menu->data_in->data[i]);
+        // дописать нули перед символом
+        if (menu->data_in->data_type[i] != 3)
+        {
+            uint8_t len = search_len_mass(buffer, 11, separat);
+            for (int j = 0; j < (uint8_t)menu->data_in->len_data_zero_unredact[i] - len; j++)
+                separat[j] = '0';
+            strcat(string, separat);
+        }
+        if (menu->data_in->data_type[i] == 3)
+            strcat(string, menu->data_in->data[i]);
+        strcat(string, buffer);
+        char temp[2] = {menu->data_in->separators[i], '\0'};
+        strcat(string, temp);
+    }
+    uint8_t len_string = OLED_GetWidthStr(string) + 4;
+    OLED_DrawStr(string, winth_display - len_string, pos_y * dist_y + height_up_menu, 1);
+}
+
+
+void Data_in_redact(menuItem *menu, int pos_y){
+    
+    char string[11] = {'\0'};
+    uint8_t separators_count = 0;
+
+    for (int i = 0; i < menu->data_in->Number_of_cells; i++)
+    {
+        strcat(string, menu->data_in->data_temp[i]);
+        char temp[2] = {menu->data_in->separators[i], '\0'};
+        if (menu->data_in->separators[i] != '\0') separators_count++;
+        strcat(string, temp);
+    }
+    uint8_t len_string = OLED_GetWidthStr(string) + 4;
+    OLED_DrawStr(string, winth_display - len_string, pos_y * dist_y + height_up_menu, 1);
+    
+    
+    uint8_t len_witout_separator = menu->data_in->len_data_zero[0] + menu->data_in->len_data_zero[1] + menu->data_in->len_data_zero[2];
+    int8_t add_pos = 0;
+    int8_t position = pos_redact+1;
+    for (; add_pos<separators_count; add_pos++){
+        position -= menu->data_in->len_data_zero[add_pos];
+        if (position<=0) break;
+    }
+    char string_temp[11] = {'\0'};
+    strncpy(string_temp, string, pos_redact+add_pos);
+    uint8_t start_pos = OLED_GetWidthStr(string_temp);
+    OLED_DrawHLine(winth_display - len_string + start_pos, pos_y * dist_y + 8 + height_up_menu, 5, led_cursor=!led_cursor);
+
 }
 
 /*  тип меню (char)0b543210 РЕДАКТИРОВАНИЕ ДЕЙСТВИЙ 
@@ -225,24 +348,19 @@ int search_len_mass(char *string)
 */
 void Select_diplay_functions(menuItem *menu, int pos_y)
 {
-    int len_end_symbol = 0;
+    //int len_end_symbol = 0;
     int leng_font = 0;
-    if (len == 0x00)
-    {
-        OLED_DrawStr(menu->add_signat_ru, winth_display - 10, pos_y * dist_y + height_up_menu, 1);
-        len_end_symbol = OLED_GetWidthStr(menu->add_signat_ru) + 2;
-    }
-    else
+    if (len == 0x00) OLED_DrawStr(menu->add_signat_ru, winth_display - 10, pos_y * dist_y + height_up_menu, 1);
+    else 
     {
         leng_font = 1;
         OLED_DrawStr(menu->add_signat_en, winth_display - 10, pos_y * dist_y + height_up_menu, 1);
-        len_end_symbol = OLED_GetWidthStr(menu->add_signat_en) + 2;
     }
     
     // Вывод режима (прокрутка)
     if (menu->select_bar != (void *)&NULL_ENTRY)
     {   
-        int num_menu = *menu->select_bar->data;
+        uint8_t num_menu = *menu->select_bar->data;
         if ((selectedMenuItem == menu) && (mode_redact == 1)) num_menu = Intermediate;
 
         int len = OLED_GetWidthStr(menu->select_bar->Name[num_menu][leng_font]);
@@ -253,41 +371,25 @@ void Select_diplay_functions(menuItem *menu, int pos_y)
             int pos_cursor = select_menu_in_page * dist_y + height_up_menu + 2;
             int x_left = winth_display-len-11;
             int x_right = winth_display-7;
-            OLED_DrawTriangleFill(x_right, pos_cursor - 1, x_right, pos_cursor + 3, x_right+2, pos_cursor+1);
-            OLED_DrawTriangleFill(x_left, pos_cursor - 1, x_left, pos_cursor + 3, x_left-2, pos_cursor+1);
+            if (menu->select_bar->Name[Intermediate+1][0][0] != '\0') OLED_DrawTriangleFill(x_right, pos_cursor - 1, x_right, pos_cursor + 3, x_right+2, pos_cursor+1);
+            if (Intermediate != 0) OLED_DrawTriangleFill(x_left, pos_cursor - 1, x_left, pos_cursor + 3, x_left-2, pos_cursor+1);
         }
         else{
             OLED_DrawStr(menu->select_bar->Name[num_menu][leng_font], winth_display - len - 4, pos_y * dist_y + height_up_menu, 1); // вывод если нет выбора 
         }
     }
 
+
     if (menu->data_in != (void *)&NULL_ENTRY)
     {
-        int counter = OLED_GetWidthStr(menu->data_in) + 2 + len_end_symbol;
-        OLED_DrawStr(menu->data_in, winth_display - counter, pos_y * dist_y + height_up_menu, 1);
+        // режим не редактирования
+        if ((mode_redact == 0) || (selectedMenuItem != menu)){
+            Data_in_no_redact(menu, pos_y);
+        }
 
-        /// индикация ввода
         if ((mode_redact == 1) && (selectedMenuItem == menu))
-        {
-            //  Нужно найти ширину символа. pos_redact - текущий символ
-            // int len = search_len_mass(selectedMenuItem->data_in); // длина массива
-
-            char string_pos_line[10] = {0};
-            int pos_x_line = 0;
-            int i = 0;
-            for (; ((pos_x_line < pos_redact + 1) || (i > 10)); i++)
-            {
-                string_pos_line[i] = selectedMenuItem->data_in[i];
-                if ((selectedMenuItem->data_in[i] != '.') && (selectedMenuItem->data_in[i] != ':'))
-                {
-                    pos_x_line++;
-                }
-            }
-            int len_to_char = OLED_GetWidthStr(string_pos_line);
-            char array[2] = {0};
-            array[0] = selectedMenuItem->data_in[i - 1];
-            int len_select_char = OLED_GetWidthStr(array) - 1;
-            OLED_DrawHLine(winth_display - counter + len_to_char - len_select_char - 1, select_menu_in_page * dist_y + height_up_menu + 8, len_select_char, led_cursor = !led_cursor);
+        {   
+            Data_in_redact(menu, pos_y);
         }
     }
 }
@@ -295,14 +397,14 @@ void Select_diplay_functions(menuItem *menu, int pos_y)
 void Display_punkt_menu(menuItem *menu, int pos_y) // отображение одного пункта меню
 {
     FontSet(font);
-    uint8_t leng_font = 0;
+    //uint8_t leng_font = 0;
     if (len == 0x00)
     {   
         OLED_DrawStr(menu->Name_rus, pos_x_menu, pos_y * dist_y + height_up_menu, 1);
     }
     else
     {
-        leng_font = 1;
+        //leng_font = 1;
         OLED_DrawStr(menu->Name_en, pos_x_menu, pos_y * dist_y + height_up_menu, 1);
     }
 
@@ -321,8 +423,6 @@ void menuChange(menuItem *NewMenu)
 
 void Display_TopBar(menuItem *CurrentMenu)
 {
-
-
     OLED_DrawHLine(line_indentation, line_ind_top, end_line, 1);
     if ((void *)CurrentMenu->Parent != (void *)&NULL_ENTRY)
     {
@@ -330,7 +430,7 @@ void Display_TopBar(menuItem *CurrentMenu)
         OLED_DrawPixel(back_pic_pos_x + 1, back_pic_pos_y);
         OLED_DrawStr(CurrentMenu->Parent, left_pic_last_munu, top_pic_last_munu, 1);
     }
-
+    //OLED_DrawStr("005ч08м", 1, 1, 1);
 /*
     W25_Ini();
     unsigned int id = W25_Read_ID();
@@ -450,7 +550,19 @@ void mode_check()
     if ((selectedMenuItem->data_in != (void *)&NULL_ENTRY) || (selectedMenuItem->select_bar != (void *)&NULL_ENTRY))
     {
         // ввод значений
-        if (selectedMenuItem->data_in != (void *)&NULL_ENTRY) Intermediate = *selectedMenuItem->data_in;
+        if (selectedMenuItem->data_in != (void *)&NULL_ENTRY)
+        {   
+            for (int i = 0; i<3; i++)
+            {
+                char separat[11] = {'\0'};
+                formatters[selectedMenuItem->data_in->data_type[i]](selectedMenuItem->data_in->data_temp[i], sizeof(selectedMenuItem->data_in->data_temp[i]), selectedMenuItem->data_in->data[i]);
+                uint8_t len = search_len_mass(selectedMenuItem->data_in->data_temp[i], 11, separat);
+                for (int j = 0; j < (uint8_t)selectedMenuItem->data_in->len_data_zero[i] - len; j++)
+                    separat[j] = '0';
+                strcat(separat, selectedMenuItem->data_in->data_temp[i]);
+                strcpy(selectedMenuItem->data_in->data_temp[i], separat);
+            }
+        }
         if (selectedMenuItem->select_bar != (void *)&NULL_ENTRY) Intermediate = *selectedMenuItem->select_bar->data;
 
         mode_redact = 1;
@@ -461,17 +573,11 @@ void mode_check()
 }
 void redact_end()
 {
-    if ((mode_redact == 1) && (selectedMenuItem->data_in == c_Date))
-    {
-        RTC_set_date();
-    }
-    if ((mode_redact == 1) && (selectedMenuItem->data_in == c_Time))
-    {
-        RTC_set_time();
-    }
+    // Запись данных в изначальные величины и вызов необходимых функций
+
     //if (selectedMenuItem->data_in != (void *)&NULL_ENTRY) selectedMenuItem->data_in = Intermediate;
     if (selectedMenuItem->select_bar != (void *)&NULL_ENTRY) *selectedMenuItem->select_bar->data = Intermediate;
-
+    
     pos_redact = len - 1;
     mode_redact = 0;
     led_cursor = 1;
@@ -493,29 +599,35 @@ char searc_pos_in_string(char *string, int position)
     return -1;
 }
 
+void position_calculate(int8_t *_add_pos, int *_position)
+{
+    uint8_t separators_count = 0;
+    for (uint8_t i = 0; i < 3; i++) if (selectedMenuItem->data_in->separators[i] != '\0') separators_count++;
+    for (; *_add_pos < separators_count; *_add_pos++)
+    {
+        *_position -= selectedMenuItem->data_in->len_data_zero[*_add_pos];
+        if (*_position <= 0)
+        {
+            *_position += selectedMenuItem->data_in->len_data_zero[*_add_pos];
+            break;
+        }
+    }
+}
+
 void up_redact()
 {
     if (selectedMenuItem->data_in != (void *)&NULL_ENTRY)
     {
         // действия при вводе. Нажатие вверх
-        char data = searc_pos_in_string(selectedMenuItem->data_in, pos_redact);
-        if (data == '9')
-        {
-            if (pos_redact - 1 >= 0)
-            {
-                char data_2 = searc_pos_in_string(selectedMenuItem->data_in, pos_redact - 1);
-                if (data_2 + 1 > '9') data_2 = '0';
-                else data_2++;
-                data_redact_pos(pos_redact - 1, data_2);
-            }
-            data = '0';
-        }
-        else
-            data++;
-        data_redact_pos(pos_redact, data);
+        int8_t add_pos = 0;
+        int position = pos_redact+1;
+        position_calculate(&add_pos, &position);
+        if (selectedMenuItem->data_in->data_temp[add_pos][position] >= '9') selectedMenuItem->data_in->data_temp[add_pos][position] = '0';
+        else selectedMenuItem->data_in->data_temp[add_pos][position]++;
         led_cursor = 0; // нужно что бы курсор сразу загорелся при переклбчении
     }
 }
+
 void up()
 {
     if (!(mode_redact == 0))
@@ -533,26 +645,19 @@ void up()
 
 void down_redact()
 {
+
     if (selectedMenuItem->data_in != (void *)&NULL_ENTRY)
     {
         // действия при вводе. Нажатие вниз
-        char data = searc_pos_in_string(selectedMenuItem->data_in, pos_redact);
-        if (data == '0')
-        {
-            data = '9';
-            if (pos_redact - 1 >= 0)
-            {
-                char data_2 = searc_pos_in_string(selectedMenuItem->data_in, pos_redact - 1);
-                if (data_2 - 1 < '0')
-                    data_2 = '9';
-                else
-                    data_2--;
-                data_redact_pos(pos_redact - 1, data_2);
-            }
-        }
-        else
-            data--;
-        data_redact_pos(pos_redact, data);
+        int8_t add_pos = 0;
+        int8_t position = pos_redact;
+        position_calculate(&add_pos, &position);
+
+        if (selectedMenuItem->data_in->data_temp[add_pos][position] == '0') selectedMenuItem->data_in->data_temp[add_pos][position] = '9';
+        else selectedMenuItem->data_in->data_temp[add_pos][position]--;
+        
+        // добавить проверку min-max
+
         led_cursor = 0; // нужно что бы курсор сразу загорелся при переклбчении
     }
 }
@@ -573,6 +678,7 @@ void down()
 
 void left_redact()
 {
+    
     if (selectedMenuItem->data_in != (void *)&NULL_ENTRY)
     {
         pos_redact--;
@@ -588,7 +694,7 @@ void left_redact()
 
     if (selectedMenuItem->select_bar != (void *)&NULL_ENTRY)
     {
-        if (selectedMenuItem->select_bar->data-1 < 0){
+        if (selectedMenuItem->select_bar->data == 0){
             mode_redact = 0;
             led_cursor = 1;
         }
@@ -618,12 +724,13 @@ void left()
 
 void right_redact()
 {
+    
     if (selectedMenuItem->data_in != (void *)&NULL_ENTRY)
     {
-        int len = search_len_mass(selectedMenuItem->data_in);
+        uint8_t len_witout_separator = selectedMenuItem->data_in->len_data_zero[0] + selectedMenuItem->data_in->len_data_zero[1] + selectedMenuItem->data_in->len_data_zero[2];
         pos_redact++;
         led_cursor = 0; // нужно что бы курсор сразу загорелся при переклбчении
-        if (pos_redact >= len)
+        if (pos_redact >= len_witout_separator)
         {
             redact_end();
         }
@@ -687,6 +794,7 @@ void null_fun()
 // редактирование позиции с учетом  :  и .
 void data_redact_pos(int position, char data)
 {
+    /*
     int counter_pos = 0;
     for (int i = 0; i < 10; i++)
     {
@@ -700,11 +808,12 @@ void data_redact_pos(int position, char data)
         if ((selectedMenuItem->data_in[i + 1] != '.') && (selectedMenuItem->data_in[i + 1] != ':'))
             counter_pos++;
     }
+    */
 }
 
 void key_press_data_write(char data)
 {
-    int len = search_len_mass(selectedMenuItem->data_in);
+    //int len = search_len_mass(selectedMenuItem->data_in);
     data_redact_pos(pos_redact, data);
     pos_redact++;
     led_cursor = 0; // нужно что бы курсор сразу загорелся при переклбчении
