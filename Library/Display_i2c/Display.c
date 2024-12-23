@@ -606,12 +606,13 @@ void position_calculate(int8_t *_add_pos, int *_position)
     for (; *_add_pos < separators_count; *_add_pos++)
     {
         *_position -= selectedMenuItem->data_in->len_data_zero[*_add_pos];
-        if (*_position <= 0)
+        if (*_position < 0)
         {
             *_position += selectedMenuItem->data_in->len_data_zero[*_add_pos];
             break;
         }
     }
+    *_position+=*_add_pos;
 }
 
 void up_redact()
@@ -620,7 +621,7 @@ void up_redact()
     {
         // действия при вводе. Нажатие вверх
         int8_t add_pos = 0;
-        int position = pos_redact+1;
+        int position = pos_redact;
         position_calculate(&add_pos, &position);
         if (selectedMenuItem->data_in->data_temp[add_pos][position] >= '9') selectedMenuItem->data_in->data_temp[add_pos][position] = '0';
         else selectedMenuItem->data_in->data_temp[add_pos][position]++;
