@@ -31,8 +31,8 @@ typedef struct Menu_item_char
     uint8_t len_data_zero[3]; // ширина ячеек (001 - ширина 3, 23 - ширина 2)
     uint8_t len_data_zero_unredact[3]; // ширина ячеек в режиме не редактирования (001 - ширина 3, 23 - ширина 2)
     char data_temp[3][11];   // промежуточные данные (для редактирования)
-    uint32_t UP_data[3];         // минимальные значения
-    uint32_t DOWN_data[3];       // максимальные значения
+    int32_t UP_data[3];         // минимальные значения
+    int32_t DOWN_data[3];       // максимальные значения
     void (*end_redact_func)(void); // функция вызываемая при окончании редактирования (сохранение значений)
 } menuSelect_item_char;
 
@@ -40,8 +40,8 @@ typedef struct Menu_item_char
 
 typedef struct MAKE_MENU
 {
-    const char Name_rus[25];  // Название пункта меню на русском
-    const char Name_en[25];   // Название пункта меню на английском
+    const char Name_rus[26];  // Название пункта меню на русском
+    const char Name_en[26];   // Название пункта меню на английском
     int Num_menu;             // Номер вкладки сверху при переходе
     const char add_signat_ru[5]; // дополнительная надпись справа (еденицы измерения)
     const char add_signat_en[5]; // дополнительная надпись справа (еденицы измерения)
@@ -79,3 +79,6 @@ char convert_to_ascii(unsigned char c);
 void ADC_Init();
 void data_redact_pos(char data);
 void Start_video();
+void Save_general_format();
+void Save_time_format();
+void Save_date_format();

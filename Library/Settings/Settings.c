@@ -4,45 +4,56 @@
 #include "Settings.h"
 #include <time.h>
 #include "RTC_data.h"
-typedef struct
-{
-   uint16_t year;          //год     (xxxx)
-   uint8_t month;          //месяц   (1-12)
-   uint8_t day;            //день    (1-31)
-   uint8_t hour;           //часы    (0-23)
-   uint8_t min;            //минуты  (0-59)
-   uint8_t sec;            //секунды (0-59)
-  uint8_t dow;            //день недели 0 = воскресенье, 1 = понедельник, .... 6 = суббота.
-} _type_datetime;
 
 
-int time_update_display = 20000; // Время обновления экрана (для обновления времени и курсора)
+uint16_t time_update_display = 20000; // Время обновления экрана (для обновления времени и курсора)
 
-// Температура, давление и влажность
+uint32_t STATUS = 0x0000000000000000; // ГЛОБАЛЬНЫЙ СТАТУС, каждый бит состояние блока
+// НАЧАЛО ОПИСАНИЯ STATUS
+
+
+
+// КОНЕЦ ОПИСАНИЯ STATUS
+
+// Температурные датчики
 float ADC_in_temp = 0;                  // Внутренняя температура микроконтроллера
 float ADC_ADS1115_temp = 0;             // Температура на аналоговом датчике температуры
 float OneWire_temp = 0;                 // Температура на датчике OneWire
-float BMP280_Temp = 0;                  // Температура на BMP280
-float BMP280_Humidity = 0;              // Влажность
-float BMP280_pressure = 0;              // Давление воздуха
-
-char char_ADC_in_temp [10] = "ND";                  // Внутренняя температура микроконтроллера в формате char
-char char_ADC_ADS1115_temp [10] = "ND";             // Температура на аналоговом датчике температуры в формате char
-char char_OneWire_temp [10] = "ND";                 // Температура на датчике OneWire в формате char
-char char_BMP280_Temp [10] = "ND";                  // Температура на BMP280 в формате char
-char char_BMP280_Humidity [10] = "ND";              // Влажность в формате char
-char char_BMP280_pressure [10] = "ND";              // Давление воздуха в формате char
+char ADC_in_temp_char[5] = {'\0'};      // Внутренняя температура микроконтроллера
+char ADC_ADS1115_temp_char[5] = {'\0'}; // Температура на аналоговом датчике температуры
+char OneWire_temp_char[5] = {'\0'};     // Температура на датчике OneWire
 
 // Значение АЦП ADS1115 измеряемого значения датчика давления, Вольты и метры (датчик)
-float ADC_Volts = 0;                    // Напряжение на токовом шунте
-float ADC_Height = 0;                   // Глубина в метрах без коррекции
-float ADC_Height_correct = 0;           // Глубина в метрах с корректировкой
+uint32_t ADC_value = 0;       // Значение АЦП
+float ADC_Volts = 0;          // Напряжение на токовом шунте
+float ADC_Current = 0;        // Напряжение на токовом шунте
+float ADC_Height = 0;         // Глубина в метрах без коррекции
+float ADC_Height_correct = 0; // Глубина в метрах с корректировкой
 
+char ADC_value_char[11] = {'\0'};         // Значение АЦП
+char ADC_status_char[3] = "ERR";          // Статус АЦП, работает ли (ERR, WAR, OK)
+char ADC_Volts_char[5] = {'\0'};          // Напряжение на токовом шунте
+char ADC_Current_char[5] = {'\0'};        // Ток на токовом шунте
+char ADC_Height_char[5] = {'\0'};         // Глубина в метрах без коррекции
+char ADC_Height_correct_char[5] = {'\0'}; // Глубина в метрах с корректировкой
 
 // Значение Связи (регистрация в сети, уровень сигнала GSM, уровень сигнала (палочки), оператор)
-int GSM_Signal = 0;                     // Код сигнала от самого модуля GSM (0-31)
-int GSM_Signal_Level = -1;               // Уровень сигнала GSM для отображения на экране (0-3 черточки) -1 - нет регистрации   
-char GSM_operator[10];                  // Название оператора MTS, bilene и т.д.
+uint8_t GSM_Signal = 0;       // Код сигнала от самого модуля GSM (0-31)
+int8_t GSM_Signal_Level = -1; // Уровень сигнала GSM для отображения на экране (0-3 черточки) -1 - нет регистрации
+
+char GSM_status_char[4] = "ERR";       // Статус GSM
+char GSM_SIMCARD_char[4] = "ERR";      // Видит ли GSM SIM?
+char GSM_status_ready_char[4] = "ERR"; // Готов ли GSM?
+char GSM_status_reg_char[4] = "ERR";   // Зарегистрированлн ли GSM в сети
+char GSM_operator_char[10] = "NO";     // Название оператора MTS, bilene и т.д.
+char GSM_signal_lvl_char[3] = "99";    // Уровень сигнала 0-99
+char GSM_gprs_on_char[3] = "NO";       // Включен ли gprs?
+
+// Статус памяти
+
+char EEPROM_status_char[3] = "ERR"; // Статус доступности EEPROM
+char FLASH_status_char[3] = "ERR";  // Статус доступности FLASH
+char SD_status_char[3] = "ERR";     // Статус доступности SD
 
 // Статус экрана (включен/выключен)
 char display_status = 0;                // Статус экран (1- включен, 0 - выключен)
@@ -54,14 +65,17 @@ char RS485_status = 0;                  // Статус работы RS485 (1 - 
 char Keyboard_press_code = 0;           // Код нажатой клавиши на клавиатуре
 
 // Нажатые клавиши на клавиатуре
-int Display_update = 1;           // Обновлять или нет экран (0x00/0xFF)
+uint8_t Display_update = 0x00;          // Обновлять или нет экран (0x00/0xFF)
 
 // Статус акб и батарейки
 float ADC_AKB_volts = 0;                //  Напряжение на аккумуляторе
 int ADC_AKB_Proc = 0;                   //  Проценты заряда аккумулятора
 int ADC_AKB_cell = 0;                   //  Ячейки заряда (0-3)
+char ADC_AKB_volts[4] = {'\0'};         //  Напряжение на аккумуляторе строка. Добавить в функцию вычисления процентов
+char ADC_AKB_Proc[4] = {'\0'};          //  Проценты заряда аккумулятора строка
 
 
+char error_code[4] = {'\0'};
 
 
 ////////////////////////////////////////////////////
@@ -72,17 +86,38 @@ int ADC_AKB_cell = 0;                   //  Ячейки заряда (0-3)
 RTC_TimeTypeDef Time = {0};
 RTC_DateTypeDef Date = {0};
 
-char ID_board[10] = "TEST";
-char ver_board[10] = "v3.25";
-char ver_programm[10] = "0.2";
+char ver_board[10] = "\0";
+const char VERSION_PROGRAMM[10] = "0.10";
 
-// изменяемые через выбор значения
-int Mode = 0; // режим работы устройства  
-int GSM_mode = 0; // режим работы GSM 0 - вкл, 1 - выкл 
-int RS485_prot = 0; // протокол RS485 0 - выкл; 1 - Modbus, и т.д.
-int units_mes = 0; // еденицы измерения 0-мм, 1 -метры
-int screen_sever_mode = 1; // включить (0) начальную заставку или нет (1)
-char len = 0x00;                 //  0 - русский язык;  1 -  английский
+uint8_t VER_PCB_IDEOLOGY = 0;     // Идеологическая версия платы
+uint8_t VER_PCB_VERSION = 0;      // Вкрсия итерации платы
+char VER_PCB_INDEX[3] = {0x99};  // Доп индекс
+
+uint32_t time_work_h = 0;         // Время работы устройства минут
+uint8_t time_work_m = 0;          // Время работы устройства минут
+char time_work_char[10] = "\0";   
+
+char data_add_unit[3] = "\0";     // Дополнительная подпись еденицы измерения
+
+// Выбираемые значения
+uint8_t Mode = 0;                 // режим работы устройства  
+uint8_t Communication = 0;        // режим работы связи 0 - GSM/NB-IoT, 1 - выкл 
+uint8_t RS485_prot = 0;           // протокол RS485 0 - выкл; 1 - Modbus, и т.д.
+uint8_t Current_mode = 0;         // протокол RS485 0 - выкл; 1 - Modbus, и т.д.
+uint8_t units_mes = 0;            // еденицы измерения 0 - мм, 1 - метры, возможно еще другие параметры
+uint8_t screen_sever_mode = 1;    // включить (0) начальную заставку или нет (1)
+
+// Вводимые значения
+double zero_level = 0;           // Смещение от нуля +-00000.00
+int32_t zero_level_int = 0;           // Максимальная глубина целая часть
+uint8_t zero_level_float = 0;           // Максимальная глубина дробная часть
+
+double max_height = 0;          // Максимальная глубина (диапазон измерений)
+double min_height = 0;          // Максимальная глубина (диапазон измерений)
+int32_t lvl_int = 0;            // целая часть для редактирования максимального уровня
+int32_t lvl_float = 0;          // дробная часть для редактирования минимального уровня
+
+char len = 0x00;                  //  0 - русский язык;  1 -  английский
 
 // изменяемые напрямую значения 
 
