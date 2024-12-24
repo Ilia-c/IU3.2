@@ -178,7 +178,7 @@ menuSelect_item_char Date_redact = {
     {0, 0, 0},                  // знаковые данные или беззнаковые
     {2, 2, 2},                  // ширина ячеек (001 - ширина 3, 23 - ширина 2)
     {2, 2, 2},                  // ширина ячеек вне редактирования (001 - ширина 3, 23 - ширина 2)
-    {0, 0, 0},                  // промежуточное значение
+    {'\0', '\0', '\0'},                  // промежуточное значение
     {99, 99, 99},               // максимальные значения
     {0, 0, 0},                  // минимальные значения
     '\0'                        // ссылка на функцию завершения работы
@@ -194,7 +194,7 @@ menuSelect_item_char Time_redact = {
     {0, 0, 0},                  // знаковые данные или беззнаковые
     {2, 2, 0},                  // ширина ячеек (001 - ширина 3, 23 - ширина 2)
     {2, 2, 2},                  // ширина ячеек вне редактирования (001 - ширина 3, 23 - ширина 2)
-    {0, 0, 0},                  // промежуточное значение
+    {'\0', '\0', '\0'},                  // промежуточное значение
     {23, 59, '\0'},             // максимальные значения
     {0, 0, '\0'},                // минимальные значения
     '\0'                        // ссылка на функцию завершения работы
@@ -209,11 +209,11 @@ menuSelect_item_char Time_sleep_redact = {
     0,                  // завершение редактирования при нажатии вправо на краю данных 1-включено, 0-выключено 
     //  ЯЧЕЙКИ
     {&time_sleep_h, &time_sleep_m, '\0'},  // исходные значения
-    {1, 1, 1},                  // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов)
+    {3, 1, 1},                  // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов)
     {0, 0, 0},                  // знаковые данные или беззнаковые
     {2, 2, 0},                  // ширина ячеек (001 - ширина 3, 23 - ширина 2)
     {1, 1, 1},                  // ширина ячеек вне редактирования (минимальная) (001 - ширина 3, 23 - ширина 2) 
-    {0, 0, 0},                  // промежуточное значение
+    {'\0', '\0', '\0'},                  // промежуточное значение
     {23, 59, '\0'},             // максимальные значения
     {0, 0, '\0'},               // минимальные значения
     '\0'                        // ссылка на функцию завершения работы
@@ -293,8 +293,8 @@ void Data_in_no_redact(menuItem *menu, int pos_y){
         // дописать нули перед символом
         if (menu->data_in->data_type[i] != 3)
         {
-            uint8_t len = search_len_mass(buffer, 11, separat);
-            for (int j = 0; j < (uint8_t)menu->data_in->len_data_zero_unredact[i] - len; j++)
+            uint8_t len_dat = search_len_mass(buffer, 11, separat);
+            for (int j = 0; j < (uint8_t)menu->data_in->len_data_zero_unredact[i] - len_dat; j++)
                 separat[j] = '0';
             strcat(string, separat);
         }
@@ -316,6 +316,7 @@ void Data_in_redact(menuItem *menu, int pos_y){
 
     for (int i = 0; i < menu->data_in->Number_of_cells; i++)
     {
+        menu->data_in->data_temp[i][menu->data_in->len_data_zero[i]] = '\0'; // на всякий случай
         strcat(string, menu->data_in->data_temp[i]);
         char temp[2] = {menu->data_in->separators[i], '\0'};
         if (menu->data_in->separators[i] != '\0') separators_count++;
@@ -363,19 +364,19 @@ void Select_diplay_functions(menuItem *menu, int pos_y)
         uint8_t num_menu = *menu->select_bar->data;
         if ((selectedMenuItem == menu) && (mode_redact == 1)) num_menu = Intermediate;
 
-        int len = OLED_GetWidthStr(menu->select_bar->Name[num_menu][leng_font]);
+        int len_dat = OLED_GetWidthStr(menu->select_bar->Name[num_menu][leng_font]);
         
         if ((mode_redact == 1) && (selectedMenuItem == menu))
         {
-            OLED_DrawStr(menu->select_bar->Name[num_menu][leng_font], winth_display - len - 8, pos_y * dist_y + height_up_menu, 1);  // вывод если включен выбор (редактирование)
+            OLED_DrawStr(menu->select_bar->Name[num_menu][leng_font], winth_display - len_dat - 8, pos_y * dist_y + height_up_menu, 1);  // вывод если включен выбор (редактирование)
             int pos_cursor = select_menu_in_page * dist_y + height_up_menu + 2;
-            int x_left = winth_display-len-11;
+            int x_left = winth_display-len_dat-11;
             int x_right = winth_display-7;
             if (menu->select_bar->Name[Intermediate+1][0][0] != '\0') OLED_DrawTriangleFill(x_right, pos_cursor - 1, x_right, pos_cursor + 3, x_right+2, pos_cursor+1);
             if (Intermediate != 0) OLED_DrawTriangleFill(x_left, pos_cursor - 1, x_left, pos_cursor + 3, x_left-2, pos_cursor+1);
         }
         else{
-            OLED_DrawStr(menu->select_bar->Name[num_menu][leng_font], winth_display - len - 4, pos_y * dist_y + height_up_menu, 1); // вывод если нет выбора 
+            OLED_DrawStr(menu->select_bar->Name[num_menu][leng_font], winth_display - len_dat - 4, pos_y * dist_y + height_up_menu, 1); // вывод если нет выбора 
         }
     }
 
@@ -555,10 +556,13 @@ void mode_check()
             for (int i = 0; i<3; i++)
             {
                 char separat[11] = {'\0'};
+                for (int j = 0; j<11; j++) selectedMenuItem->data_in->data_temp[i][j] = '\0';
                 formatters[selectedMenuItem->data_in->data_type[i]](selectedMenuItem->data_in->data_temp[i], sizeof(selectedMenuItem->data_in->data_temp[i]), selectedMenuItem->data_in->data[i]);
-                uint8_t len = search_len_mass(selectedMenuItem->data_in->data_temp[i], 11, separat);
-                for (int j = 0; j < (uint8_t)selectedMenuItem->data_in->len_data_zero[i] - len; j++)
-                    separat[j] = '0';
+                uint8_t len_dat = search_len_mass(selectedMenuItem->data_in->data_temp[i], 11, separat);
+                for (int j = 0; j < (uint8_t)selectedMenuItem->data_in->len_data_zero[i] - len_dat; j++){
+                    if (selectedMenuItem->data_in->data_type[i] != 3) separat[j] = '0';
+                    if (selectedMenuItem->data_in->data_type[i] == 3) separat[j] = 0x99;
+                }
                 strcat(separat, selectedMenuItem->data_in->data_temp[i]);
                 strcpy(selectedMenuItem->data_in->data_temp[i], separat);
             }
@@ -575,10 +579,13 @@ void redact_end()
 {
     // Запись данных в изначальные величины и вызов необходимых функций
 
-    //if (selectedMenuItem->data_in != (void *)&NULL_ENTRY) selectedMenuItem->data_in = Intermediate;
+    if (selectedMenuItem->data_in != (void *)&NULL_ENTRY){ 
+        uint8_t len_witout_separator = selectedMenuItem->data_in->len_data_zero[0] + selectedMenuItem->data_in->len_data_zero[1] + selectedMenuItem->data_in->len_data_zero[2];
+        pos_redact = len_witout_separator - 1;
+    }
     if (selectedMenuItem->select_bar != (void *)&NULL_ENTRY) *selectedMenuItem->select_bar->data = Intermediate;
     
-    pos_redact = len - 1;
+    //pos_redact = len_dat - 1;
     mode_redact = 0;
     led_cursor = 1;
     time_update_display = time_updateDisplay;
@@ -601,30 +608,40 @@ char searc_pos_in_string(char *string, int position)
 
 void position_calculate(int8_t *_add_pos, int *_position)
 {
-    uint8_t separators_count = 0;
-    for (uint8_t i = 0; i < 3; i++) if (selectedMenuItem->data_in->separators[i] != '\0') separators_count++;
-    for (; *_add_pos < separators_count; *_add_pos++)
+    int separators_count = 0;
+    for (int i = 0; i < 3; i++) if (selectedMenuItem->data_in->separators[i] != '\0') separators_count++;
+    for (; *_add_pos < separators_count; (*_add_pos)++)
     {
         *_position -= selectedMenuItem->data_in->len_data_zero[*_add_pos];
         if (*_position < 0)
         {
             *_position += selectedMenuItem->data_in->len_data_zero[*_add_pos];
-            break;
+            return;
         }
     }
-    *_position+=*_add_pos;
 }
 
 void up_redact()
 {
     if (selectedMenuItem->data_in != (void *)&NULL_ENTRY)
     {
-        // действия при вводе. Нажатие вверх
+        // действия при вводе. Нажатие вниз
         int8_t add_pos = 0;
         int position = pos_redact;
         position_calculate(&add_pos, &position);
-        if (selectedMenuItem->data_in->data_temp[add_pos][position] >= '9') selectedMenuItem->data_in->data_temp[add_pos][position] = '0';
-        else selectedMenuItem->data_in->data_temp[add_pos][position]++;
+        // если тип данных char
+        if (selectedMenuItem->data_in->data_type[add_pos] == 3){ 
+            if (selectedMenuItem->data_in->data_temp[add_pos][position]+1 != 0) selectedMenuItem->data_in->data_temp[add_pos][position]++;
+            if (selectedMenuItem->data_in->data_temp[add_pos][position] == 0x98 || 0xA0 || 0xAD) selectedMenuItem->data_in->data_temp[add_pos][position]++;
+        }
+        // если тип данных положительный
+        if (selectedMenuItem->data_in->data_type[add_pos] != 3){ 
+            if (selectedMenuItem->data_in->data_temp[add_pos][position] == '9') selectedMenuItem->data_in->data_temp[add_pos][position] = '0';
+            else selectedMenuItem->data_in->data_temp[add_pos][position]++;
+        }
+        
+        // добавить проверку min-max
+
         led_cursor = 0; // нужно что бы курсор сразу загорелся при переклбчении
     }
 }
@@ -651,11 +668,18 @@ void down_redact()
     {
         // действия при вводе. Нажатие вниз
         int8_t add_pos = 0;
-        int8_t position = pos_redact;
+        int position = pos_redact;
         position_calculate(&add_pos, &position);
-
-        if (selectedMenuItem->data_in->data_temp[add_pos][position] == '0') selectedMenuItem->data_in->data_temp[add_pos][position] = '9';
-        else selectedMenuItem->data_in->data_temp[add_pos][position]--;
+        // если тип данных char
+        if (selectedMenuItem->data_in->data_type[add_pos] == 3){ 
+            if (selectedMenuItem->data_in->data_temp[add_pos][position]-1 > 32) selectedMenuItem->data_in->data_temp[add_pos][position]--;
+            if (selectedMenuItem->data_in->data_temp[add_pos][position] == 0x98 || 0xA0 || 0xAD) selectedMenuItem->data_in->data_temp[add_pos][position]--;
+        }
+        // если тип данных положительный
+        if (selectedMenuItem->data_in->data_type[add_pos] != 3){ 
+            if (selectedMenuItem->data_in->data_temp[add_pos][position] == '0') selectedMenuItem->data_in->data_temp[add_pos][position] = '9';
+            else selectedMenuItem->data_in->data_temp[add_pos][position]--;
+        }
         
         // добавить проверку min-max
 
@@ -793,33 +817,25 @@ void null_fun()
 */
 
 // редактирование позиции с учетом  :  и .
-void data_redact_pos(int position, char data)
+void data_redact_pos(char data)
 {
-    /*
-    int counter_pos = 0;
-    for (int i = 0; i < 10; i++)
-    {
-        char Test = selectedMenuItem->data_in[i];
-        if (counter_pos == position)
-        {
-            selectedMenuItem->data_in[i] = data;
-            led_cursor = 0;
-            return;
-        }
-        if ((selectedMenuItem->data_in[i + 1] != '.') && (selectedMenuItem->data_in[i + 1] != ':'))
-            counter_pos++;
-    }
-    */
+    int8_t add_pos = 0;
+    int position = pos_redact;
+    position_calculate(&add_pos, &position);
+    selectedMenuItem->data_in->data_temp[add_pos][position] = data;
 }
 
 void key_press_data_write(char data)
 {
-    //int len = search_len_mass(selectedMenuItem->data_in);
-    data_redact_pos(pos_redact, data);
-    pos_redact++;
-    led_cursor = 0; // нужно что бы курсор сразу загорелся при переклбчении
-    if (pos_redact >= len)
-        pos_redact = len - 1;
+    if (selectedMenuItem->data_in != (void *)&NULL_ENTRY)
+    {
+        data_redact_pos(data);
+        pos_redact++;
+        led_cursor = 0; // нужно что бы курсор сразу загорелся при переклбчении
+        uint8_t len_witout_separator = selectedMenuItem->data_in->len_data_zero[0] + selectedMenuItem->data_in->len_data_zero[1] + selectedMenuItem->data_in->len_data_zero[2];
+        if (pos_redact >= len_witout_separator)
+            pos_redact -=  1;
+    }
 }
 
 // события по нажатию кнопки на клавиатуре
@@ -856,10 +872,9 @@ void Keyboard_processing()
             }
 
             // Левая часть панели
-            if (mode_redact == 1) {
-                if (Keyboard_press_code >= '0' && Keyboard_press_code <= '9') {
-                    key_press_data_write(Keyboard_press_code);
-                }
+            if (Keyboard_press_code >= '0' && Keyboard_press_code <= '9')
+            {
+                key_press_data_write(Keyboard_press_code);
             }
         }
         Keyboard_press_code = 0xFF;

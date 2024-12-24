@@ -77,5 +77,5 @@ void Keyboard_processing();
 void convert_string_to_ascii(const char *input, char *output);
 char convert_to_ascii(unsigned char c);
 void ADC_Init();
-void data_redact_pos(int position, char data);
+void data_redact_pos(char data);
 void Start_video();
