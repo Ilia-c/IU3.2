@@ -147,6 +147,20 @@ menuSelect_item CURRENT_LOOP = {
     }
 };
 
+// отладка по USB
+extern uint8_t USB_mode;
+// Режим USB, - Работа с внешней flash (0), Работа в коммандном режиме (1), Работа USB в режиме чтения внутренней flash (2), работа в режиме чтения SD карты (3), Работа в режиме дебага USB (4)
+menuSelect_item USB_MODE_STRUCT = {
+    (uint8_t *)&USB_mode,
+    {
+        {"Флешка USB", "FLASH USB"},           // ИЗМЕНИТЬ НАЗВАНИЕ
+        {"Комманды", "Command"},
+        {"Внут. FLASH", "Int. FLASH"},
+        {"Внут. SD", "Int. SD"},
+        {"USB DEBUG", "USB DEBUG"}
+    }
+};
+
 // Форматирование для uint8_t
 void format_uint8_t(char *buffer, size_t size, void *data) {
     snprintf(buffer, size, "%u", *(uint8_t *)data);
@@ -349,6 +363,16 @@ void GSM_sms_test(){}
 // Тест 
 void GSM_internet_test(){}
 
+// Обновление ПО 
+void Programm_Update_USB(){}
+
+// Калибровка ВПИ 
+void Programm_DOWN_LVL_CORRECT(){}
+
+
+// Калибровка НПИ
+void Programm_UP_LVL_CORRECT(){}
+
 
 
 MAKE_MENU(Menu_1, "Режимы", "Modes", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2, PREVISION_MENU, PARENT_MENU, Menu_1_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
@@ -395,10 +419,10 @@ MAKE_MENU(Menu_2, "Настройки", "Settings", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu
     MAKE_MENU(Menu_2_10, "Инжен. меню", "Modes", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_11, Menu_2_9, Menu_2, Menu_2_10_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
         MAKE_MENU(Menu_2_10_10, "Заставка", "Wallpaper", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, NEXT_MENU, Menu_2_10_9, Menu_2_10, CHILD_MENU, ACTION_MENU, SCREENSAVER, DATA_IN, DATA_OUT);
         MAKE_MENU(Menu_2_10_1, "Серийный номер", "Modes", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_10_2, PREVISION_MENU, Menu_2_10, CHILD_MENU, ACTION_MENU, SELECT_BAR, Serial_number, DATA_OUT);
-        MAKE_MENU(Menu_2_10_1, "Обновление ПО", "GSM", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_7, Menu_2_5, Menu_2, CHILD_MENU, !, SELECT_BAR, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_10_2, "Отладка по USB", "Num. of PCB", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_10_3, Menu_2_10_1, Menu_2_10, CHILD_MENU, ACTION_MENU, !, DATA_IN, !);
-        MAKE_MENU(Menu_2_10_2, "Калибровка верх", "Num. of PCB", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_10_3, Menu_2_10_1, Menu_2_10, CHILD_MENU, !, SELECT_BAR, DATA_IN, !);
-        MAKE_MENU(Menu_2_10_3, "Калибровка низ", "Depth", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_10_4, Menu_2_10_2, Menu_2_10, CHILD_MENU, !, SELECT_BAR, DATA_IN, !);
+        MAKE_MENU(Menu_2_10_1, "Обновление ПО", "GSM", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_7, Menu_2_5, Menu_2, CHILD_MENU, Programm_Update_USB, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_10_2, "Отладка по USB", "Num. of PCB", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_10_3, Menu_2_10_1, Menu_2_10, CHILD_MENU, ACTION_MENU, USB_MODE_STRUCT, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_10_2, "Калибровка верх", "Num. of PCB", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_10_3, Menu_2_10_1, Menu_2_10, CHILD_MENU, Programm_DOWN_LVL_CORRECT, SELECT_BAR, DATA_IN, !);
+        MAKE_MENU(Menu_2_10_3, "Калибровка низ", "Depth", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_10_4, Menu_2_10_2, Menu_2_10, CHILD_MENU, Programm_UP_LVL_CORRECT, SELECT_BAR, DATA_IN, !);
         MAKE_MENU(Menu_2_10_4, "Сопротивление", "Current", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_10_5, Menu_2_10_3, Menu_2_10, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, !);
         MAKE_MENU(Menu_2_10_5, "Тепм. корр", "Temp. 1", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_10_6, Menu_2_10_4, Menu_2_10, CHILD_MENU, ACTION_MENU, SELECT_BAR, !, DATA_OUT);
         MAKE_MENU(Menu_2_10_6, "Смещение", "Temp. 2", 0, ADD_SIGNAT_RU, ADD_SIGNAT_EN, Menu_2_10_7, Menu_2_10_5, Menu_2_10, CHILD_MENU, ACTION_MENU, SELECT_BAR, !, DATA_OUT);
