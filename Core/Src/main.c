@@ -38,7 +38,7 @@
 /* USER CODE BEGIN Includes */
 
 extern char Keyboard_press_code;
-extern int time_update_display;
+extern uint16_t time_update_display;
 
 xSemaphoreHandle Keyboard_semapfore;
 xSemaphoreHandle Display_semaphore;
@@ -46,7 +46,7 @@ xSemaphoreHandle Display_cursor_semaphore;
 
 extern uint16_t Timer_key_one_press;
 extern uint16_t Timer_key_press;
-extern int screen_sever_mode;
+extern uint8_t screen_sever_mode;
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/

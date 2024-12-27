@@ -1,42 +1,75 @@
-////////////////////////////////////////////////////
-//               Статус переферии                 //
-////////////////////////////////////////////////////
 #include "Settings.h"
-#include <time.h>
-#include "RTC_data.h"
+#include <time.h>      // Если вам нужны функции времени
+#include "RTC_data.h"  // Опционально, если нужны детали из RTC_data
 
+////////////////////////////////////////////////////////////////////////////////
+//               Статус периферии (реальные определения)
+////////////////////////////////////////////////////////////////////////////////
 
+// Реализация функции (для примера)
+void Nuss()
+{
+    // Если нужно, здесь код обновления или преобразования значений
+}
+
+// Блок GSM и АЦП определять заново не нужно (структуры описаны в Settings.h),
+// но создаём "экземпляры" глобальных переменных:
+
+// Время обновления экрана
 uint16_t time_update_display = 20000; // Время обновления экрана (для обновления времени и курсора)
 
-uint32_t STATUS = 0x00000000; // ГЛОБАЛЬНЫЙ СТАТУС, каждый бит состояние блока
+// ГЛОБАЛЬНЫЙ СТАТУС, каждый бит - состояние блока
 /* НАЧАЛО ОПИСАНИЯ STATUS
-0 -                       1 -                       2 -
-3 -                       4 -                       5 -
-6 -                       7 -                       8 -
-9 -                       10 -                       11 -
-12 -                       13 -                       14 -
-15 -                       16 -                       17 -
-18 -                       19 -                      20 -
-21 -                       22 -                       23 -
-24 -                       25 -                       26 -
-27 -                       28 -                       29 -
-30 -                       31 -
+   0 -                       
+   1 -                       
+   2 -                       
+   3 -                       
+   4 -                       
+   5 -                       
+   6 -                       
+   7 -                       
+   8 -                       
+   9 -                       
+   10 -                       
+   11 -                       
+   12 -                       
+   13 -                       
+   14 -                       
+   15 -                       
+   16 -                       
+   17 -                       
+   18 -                       
+   19 -                       
+   20 -                       
+   21 -                       
+   22 -                       
+   23 -                       
+   24 -                       
+   25 -                       
+   26 -                       
+   27 -                       
+   28 -                       
+   29 -                       
+   30 -                       
+   31 -
  КОНЕЦ ОПИСАНИЯ STATUS */
+uint32_t STATUS = 0x00000000;
 
-uint16_t OPERATION_CODE = 0x0000; // Код текущей операции
+// Код текущей операции
 /* НАЧАЛО ОПИСАНИЯ КОДА ОПЕРАЦИИ
-0
- КОНЕЦ ОПИСАНИЯ КОДА ОПЕРАЦИИ */
-
+   0
+   КОНЕЦ ОПИСАНИЯ КОДА ОПЕРАЦИИ
+*/
+uint16_t OPERATION_CODE = 0x0000;
 
 
 // Внутренний АЦП
-float ADC_in_temp = 0;                  // Внутренняя температура микроконтроллера
-float ADC_ADS1115_temp = 0;             // Температура на аналоговом датчике температуры
-float OneWire_temp = 0;                 // Температура на датчике OneWire
-char ADC_in_temp_char[5] = {'\0'};      // Внутренняя температура микроконтроллера
-char ADC_ADS1115_temp_char[5] = {'\0'}; // Температура на аналоговом датчике температуры
-char OneWire_temp_char[5] = {'\0'};     // Температура на датчике OneWire
+float ADC_in_temp           = 0;                  
+float ADC_MS5193T_temp      = 0;             
+float OneWire_temp          = 0;                 
+char  ADC_in_temp_char[5]   = {'\0'};      
+char  ADC_MS5193T_temp_char[5] = {'\0'}; 
+char  OneWire_temp_char[5]  = {'\0'};     
 
 
 // Индикация статуса блока
@@ -46,133 +79,132 @@ char STATUS_CHAR[3][5] = {
     "WAR"
 };
 
-// Блок GSM
-typedef struct GSM_STATUS
-{
-    uint8_t Status; // Стутус работы GSM - 0 - ERR,  1 - WAR, 2 - OK, 3 - выкл
-    uint8_t mode;   // Режим работы GSM, 0 - вкл, 2 - выкл
+// Экземпляр структуры АЦП
+ADC_MS5193T_item ADC_data = {
+    .ADC_value = 0, // Значение АЦП
+    .ADC_Volts = 0, // Напряжение на токовом шунте
+    .ADC_Current = 0, // Ток на токовом шунте
+    .ADC_SI_value = 0, // Выходное значение без коррекции
+    .ADC_SI_value_correct = 0, // Выходное значение с корректировкой
 
-    // Значение Связи (регистрация в сети, уровень сигнала GSM, уровень сигнала (палочки), оператор)
-    uint8_t GSM_Signal;       // Код сигнала от самого модуля GSM (0-31 и 99)
-    int8_t GSM_Signal_Level; // Уровень сигнала GSM для отображения на экране (0-3 черточки) -1 - нет регистрации
+    .ADC_RESISTOR = 49.99, // Сопротивление шунта
+    .PPM = 10,    // PPM
+    .Status = 0, // Статус работы АЦП - 0 - ERR,  1 - WAR, 2 - OK, 3 - выкл
+    .mode = 2, // Режим работы АЦП, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
     
-    char GSM_status_char[4] = "ERR";       // Статус GSM
-    char GSM_SIMCARD_char[4] = "ERR";      // Видит ли GSM SIM?
-    char GSM_status_ready_char[4] = "ERR"; // Готов ли GSM?
-    char GSM_status_reg_char[4] = "ERR";   // Зарегистрированлн ли GSM в сети
-    char GSM_operator_char[10] = "NO";     // Название оператора MTS, bilene и т.д.
-    char GSM_signal_lvl_char[3] = "99";    // Уровень сигнала 0-99
-    char GSM_gprs_on_char[3] = "NO";       // Включен ли gprs?
-
-    void (*update_value)(void); // Ссылка на функцию обновления GSM (перевод в текст)
-} GSM_STATUS_item;
-
-
-// Блок АЦП
-typedef struct ADC_MS5193T
-{
-    int32_t ADC_value;          // Значение АЦП
-    float ADC_Volts;            // Напряжение на токовом шунте
-    float ADC_Current;          // Ток на токовом шунте
-    float ADC_SI_value;         // Выходное значение без коррекции по уровню
-    float ADC_SI_value_correct; // Выходное значение с корректировкой по уровню
-
-    uint8_t Status; // Стутус работы АЦП - 0 - ERR,  1 - WAR, 2 - OK, 3 - выкл
-    uint8_t mode;   // Режим работы АЦП, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
+    .GVL_correct = 0,
 
     // Калибровка
-    float UP_LEVEL_CORRECT;      // Коррекция максиального уровня (при 20мА)
-    float DOWN_LEVEL_CORRECT[2]; // Коррекция минимального уровня (при 0мА и 4мА)
+    .UP_LEVEL_CORRECT = 0,      // Коррекция максиального уровня (при 20мА)
+    .DOWN_LEVEL_CORRECT = {0, 0}, // Коррекция минимального уровня (0мА и 4мА)
 
-    // Вывлд значений
-    char ADC_value_char[11];               // Значение АЦП в виде строки
-    char ADC_Volts_char[5];                // Напряжение на токовом шунте
-    char ADC_Current_char[5];              // Ток на токовом шунте
-    char ADC_SI_value_char[5];             // Выходное значение без коррекции по уровню
-    char ADC_SI_value_correct_char[5];     // Выходное значение с корректировкой по уровню
-    float UP_LEVEL_CORRECT_char[10];       // Коррекция максиального уровня (при 20мА)
-    float DOWN_LEVEL_CORRECT_cahar[2][10]; // Коррекция минимального уровня (при 0мА и 4мА)
+    .MAX_LVL = 0,
+    .ZERO_LVL = 0,
 
-    void (*update_value)(void); // Ссылка на функцию обновления значений (Чтение данных с АЦП)
-} ADC_MS5193T_item;
+    .MAX_LVL_char = {-9999, 0},
+    .ZERO_LVL_char = {0, 0},
+    .UP_LEVEL_CORRECT_char = {0, 0},  
+    .DOWN_LEVEL_CORRECT_char = {0, 0},
+    .GVL_correct_char = {0, 0},
+
+    // Вывод значений
+    .ADC_status_char = "ND", // АЦП в виде строки
+    .ADC_value_char = "ND", // АЦП в виде строки
+    .ADC_Volts_char = "ND", // Напряжение
+    .ADC_Current_char = "ND", // Ток
+    .ADC_SI_value_char = "ND", // Выход без коррекции
+    .ADC_SI_value_correct_char = "ND", // Выход с коррекцией
+    .update_value = Nuss // Ссылка на функцию чтения/обновления АЦП
+};
+
+// Экземпляр структуры GSM
+GSM_STATUS_item GSM_data = {
+    0, // Статус работы GSM - 0 - ERR,  1 - WAR, 2 - OK, 3 - выкл
+    0, // Режим работы GSM, 0 - вкл, 2 - выкл
+
+    99, // Код сигнала (0..31, 99)
+    .GSM_Signal_Level = -1, // Уровень сигнала GSM (0..3) или -1 (нет регистрации)
+
+    "ND", // Статус GSM
+    "ND", // Видит ли GSM SIM?
+    "ND", // Готов ли GSM?
+    "ND", // Зарегистрирован ли GSM
+    "ND", // Название оператора
+    "ND", // Уровень сигнала 0..99
+    "ND", // GPRS?
+    Nuss  // Функция обновления
+};
+
+// Экземпляр структуры GSM
+Prgramm_version_item Prog_ver = {
+    .VERSION_PROGRAMM = "0.15b",
+    .VERSION_PCB = "3.7-001",
+    .VER_PCB_IDEOLOGY = 3,
+    .VER_PCB_VERSION = 7,
+    .VER_PCB_INDEX = "-001",
+    .time_work_h = 0,
+    .time_work_m = 0,
+    .time_work_char = "1",
+    .update_value = Nuss  // Функция обновления
+};
 
 
 
 // Статус памяти
-char EEPROM_status_char[3] = "ERR"; // Статус доступности EEPROM
-char FLASH_status_char[3] = "ERR";  // Статус доступности FLASH
-char SD_status_char[3] = "ERR";     // Статус доступности SD
+char EEPROM_status_char[3] = "ERR";
+char FLASH_status_char[3]  = "ERR";
+char SD_status_char[3]     = "ERR";
 
-// Режим экрана (включен/выключен)
-uint8_t display_status = 0;                // Статус экран (1- включен, 0 - выключен)
+// Режим экрана
+uint8_t display_status     = 0;
 
-// Нажатые клавиши на клавиатуре
-char Keyboard_press_code = 0;           // Код нажатой клавиши на клавиатуре
+// Нажатые клавиши
+char    Keyboard_press_code= 0;
+uint8_t Display_update     = 0;
 
-// Нажатые клавиши на клавиатуре
-uint8_t Display_update = 0x00;          // Обновлять или нет экран (0x00/0xFF)
-
-// Статус акб и батарейки
-float ADC_AKB_volts = 0;                //  Напряжение на аккумуляторе
-int ADC_AKB_Proc = 0;                   //  Проценты заряда аккумулятора
-int ADC_AKB_cell = 0;                   //  Ячейки заряда (0-3)
-char ADC_AKB_volts[4] = {'\0'};         //  Напряжение на аккумуляторе строка. Добавить в функцию вычисления процентов
-char ADC_AKB_Proc[4] = {'\0'};          //  Проценты заряда аккумулятора строка
-
-
-char error_code[4] = {'\0'};
+// Статус АКБ и батарейки
+float  ADC_AKB_volts       = 0;  
+int    ADC_AKB_Proc        = 0;   
+int    ADC_AKB_cell        = 0;   
+char   ADC_AKB_volts_char[4] = {'\0'}; 
+char   ADC_AKB_Proc_char[4]  = {'\0'}; 
+char error_code[4]         = {'\0'};
 
 
 ////////////////////////////////////////////////////
-//            Настроечные параметры               //
+//            Настроечные параметры
 ////////////////////////////////////////////////////
+
+
+
 
 // Дата и время
 RTC_TimeTypeDef Time = {0};
 RTC_DateTypeDef Date = {0};
 
-char ver_board[10] = "\0";
-const char VERSION_PROGRAMM[10] = "0.10";
 
-uint8_t VER_PCB_IDEOLOGY = 0;     // Идеологическая версия платы
-uint8_t VER_PCB_VERSION = 0;      // Вкрсия итерации платы
-char VER_PCB_INDEX[3] = {0x99};  // Доп индекс
 
-uint32_t time_work_h = 0;         // Время работы устройства минут
-uint8_t time_work_m = 0;          // Время работы устройства минут
-char time_work_char[10] = "\0";   
+uint32_t time_work_h              = 0;       
+uint8_t  time_work_m              = 0;       
+char     time_work_char[10]       = "\0";    
 
-char data_add_unit[3] = "\0";     // Дополнительная подпись еденицы измерения
+char data_add_unit[3]            = "\0";    
 
 // Выбираемые значения
-uint8_t Mode = 0;                 // режим работы устройства  
-uint8_t Communication = 0;        // режим работы связи 0 - GSM/NB-IoT, 1 - выкл 
-uint8_t RS485_prot = 0;           // протокол RS485 0 - выкл; 1 - Modbus, и т.д.
-uint8_t units_mes = 0;            // еденицы измерения 0 - мм, 1 - метры, возможно еще другие параметры
-uint8_t screen_sever_mode = 1;    // включить (0) начальную заставку или нет (1)
-uint8_t USB_mode = 0;             // Режим USB, - Работа с внешней flash (0), Работа в коммандном режиме (1), Работа USB в режиме чтения внутренней flash (2), работа в режиме чтения SD карты (3), Работа в режиме дебага USB (4) 
-
-// Вводимые значения
-double zero_level = 0;           // Смещение от нуля +-00000.00
-int32_t zero_level_int = 0;           // Максимальная глубина целая часть
-uint8_t zero_level_float = 0;           // Максимальная глубина дробная часть
-
-double max_height = 0;          // Максимальная глубина (диапазон измерений)
-double min_height = 0;          // Максимальная глубина (диапазон измерений)
-int32_t lvl_int = 0;            // целая часть для редактирования максимального уровня
-int32_t lvl_float = 0;          // дробная часть для редактирования минимального уровня
-
-char len = 0x00;                  //  0 - русский язык;  1 -  английский
-
-// изменяемые напрямую значения 
-
-// настрйока времени сна
-uint16_t time_sleep_h = 2; // время сна - часы
-uint16_t time_sleep_m = 0; // время сна - минуты
-
-uint16_t Timer_key_one_press = 50;            // Время задержки между переключением при одиночном нажатии
-uint16_t Timer_key_press = 300;               // Время задержки между переключением при зажатии
+uint8_t Mode                     = 0;  
+uint8_t Communication            = 0;  
+uint8_t RS485_prot               = 0;  
+uint8_t units_mes                = 0;  
+uint8_t screen_sever_mode        = 1;  
+uint8_t USB_mode                 = 0;  
 
 
+char len                         = 0x00;
 
+// Настройка времени сна
+uint16_t time_sleep_h            = 2; 
+uint16_t time_sleep_m            = 0; 
+
+uint16_t Timer_key_one_press     = 50;  
+uint16_t Timer_key_press         = 300; 
 
