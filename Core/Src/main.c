@@ -305,7 +305,7 @@ int main(void)
   HAL_I2C_Mem_Read(&hi2c1, devAddr, memAddr, I2C_MEMADD_SIZE_16BIT, (uint8_t*)rmsg, sizeof(rmsg), HAL_MAX_DELAY);
 
 
-  
+  screen_sever_mode = 0;
   if (screen_sever_mode) Start_video();
   HAL_Delay(400);
 

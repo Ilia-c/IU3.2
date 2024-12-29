@@ -4,8 +4,8 @@
 #define winth_display 128
 #define height_display 64
 
-#define line_indentation 2                            //  отступы верхней линии слева и справа
-#define end_line winth_display - 2 * line_indentation //  отступы верхней линии слева и справа
+#define line_indentation 0                            //  отступы верхней линии слева и справа
+#define end_line 125                                  //  отступы верхней линии слева и справа
 #define line_ind_top 11                               // оттуп линии сверху
 #define back_pic_pos_x 0                              // начало иконки предыдущий пункт меню x
 #define back_pic_pos_y 4                              // начало иконки предыдущий пункт меню y
@@ -57,7 +57,7 @@ extern int ADC_AKB_Proc;
 const int max_munu_in_page = 4; // максимальное количество пунктов меню на странице видимое (+1)
 int select_menu_in_page = 0;    // метущий пункт менюc
 extern char len;                //  0 - русский язык;  1 -  английский
-uint8_t Intermediate = 0;           // Промежуточная переменная, куда сохраняется настройка до сохранения
+uint8_t Intermediate = 0;           // Промежуточная переменная, куда сохраняется настройка до сохранения при прокрутке (номер пункта)
 
 
 
@@ -68,19 +68,11 @@ uint8_t Intermediate = 0;           // Промежуточная переменная, куда сохраняетс
 
 #define font my5x7fonts
 
-/*  тип меню (char)0b543210
-    6 - вкладка                                             0x40
-    5 - ввод значения                                       0x20
-    4 - изменяемые пункты (трубуется ссылка на структуру)   0x10
-    3 - вывод незменяемого значвения char[]                 0x08
-    0 - по нажатию - действие                               0x01
-*/
-
 extern char ver_board[];
 extern const char VERSION_PROGRAMM[10];
 extern char time_work_char[];
 
-menuItem Null_Menu = {{0}, {0}, 0, {0}, {0}, '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0'};
+menuItem Null_Menu = {{0}, {0}, 0, "", '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0'};
 #define NEXT_MENU Null_Menu
 #define PREVISION_MENU Null_Menu
 #define PARENT_MENU Null_Menu
@@ -89,17 +81,16 @@ menuItem Null_Menu = {{0}, {0}, 0, {0}, {0}, '\0', '\0', '\0', '\0', '\0', '\0',
 #define SELECT_BAR Null_Menu
 #define DATA_IN Null_Menu
 #define DATA_OUT Null_Menu
-#define ADD_SIGNAT_RU ""
-#define ADD_SIGNAT_EN ""
+char *ADD_SIGNAT[2] = {"\0","\0"};
 #define NULL_ENTRY Null_Menu
 
 void NULL_F(){}
-#define MAKE_MENU(Id, Name_rus, Name_en, Num_menu, add_signat_ru, add_signat_en, Next, Previous, Parent, Child, action, select_bar, data_in, Data_out) \
+#define MAKE_MENU(Id, Name_rus, Name_en, Num_menu, _add_signat, Next, Previous, Parent, Child, action, select_bar, data_in, Data_out) \
     extern menuItem Next;                                                                                                                              \
     extern menuItem Previous;                                                                                                                          \
     extern menuItem Parent;                                                                                                                            \
     extern menuItem Child;                                                                                                                             \
-    menuItem Id = {Name_rus, Name_en, 0, add_signat_ru, add_signat_en, (void *)&Next, (void *)&Previous, (void *)&Parent, (void *)&Child, (void *)&action, (menuSelect_item *)&select_bar, (menuSelect_item_char *)&data_in, (char *)&Data_out}
+    menuItem Id = {Name_rus, Name_en, 0, _add_signat, (void *)&Next, (void *)&Previous, (void *)&Parent, (void *)&Child, (void *)&action, (menuSelect_item *)&select_bar, (menuSelect_item_char *)&data_in, (char *)&Data_out}
 
 // Выбираемые значения и статус
 menuSelect_item Communication_DATA = { 
@@ -192,9 +183,13 @@ DataFormatter formatters[] = {
     format_uint8_t,
     format_uint16_t,
     format_int32_t,
-    format_char
+    format_char,
+    format_int32_t
 };
 void Null_func(){}
+
+
+
 
 // Изменяемые параметры
 extern GSM_STATUS_item GSM_data;
@@ -206,16 +201,18 @@ menuSelect_item_char Date_redact = {
     {'.', '.', '\0'},   // разделители, если нету, то '\0', последний может использоваться в качестве приписки
     3,                  // колтичество ячеек данных
     0,                  // завершение редактирования при нажатии вправо на краю данных 1-включено, 0-выключено 
+    '\0',
     //  ЯЧЕЙКИ
     {&Date.Date, &Date.Month, &Date.Year},  // исходные значения
     {0, 0, 0},                  // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов)
-    {0, 0, 0},                  // знаковые данные или беззнаковые
+    {0, 0},                  // знак (автоматически)
     {2, 2, 2},                  // ширина ячеек (001 - ширина 3, 23 - ширина 2)
     {2, 2, 2},                  // ширина ячеек вне редактирования (001 - ширина 3, 23 - ширина 2)
     {"\0", "\0", "\0"},         // промежуточное значение
     {31, 12, 99},               // максимальные значения
     {0, 0, 0},                  // минимальные значения
-    Save_date_format            // ссылка на функцию завершения работы
+    Save_date_format,            // ссылка на функцию завершения работы
+    '\0'
 }; // Промежуточная переменная, куда сохраняется настройка до сохранения (char)
 
 // Редактирования времени RTC
@@ -223,16 +220,18 @@ menuSelect_item_char Time_redact = {
     {':', '\0', '\0'},   // разделители, если нету, то '\0', последний может использоваться в качестве приписки
     2,                  // колтичество ячеек данных
     0,                  // завершение редактирования при нажатии вправо на краю данных 1-включено, 0-выключено 
+    '\0',
     //  ЯЧЕЙКИ
     {&Time.Hours, &Time.Minutes, '\0'},  // исходные значения
     {0, 0, 0},                   // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов)
-    {0, 0, 0},                   // знаковые данные или беззнаковые
+    {0, 0},                   // знак (автоматически)
     {2, 2, 0},                   // ширина ячеек (001 - ширина 3, 23 - ширина 2)
     {2, 2, 2},                   // ширина ячеек вне редактирования (001 - ширина 3, 23 - ширина 2)
     {"\0", "\0", "\0"},          // промежуточное значение
     {23, 59, '\0'},              // максимальные значения
     {0, 0, '\0'},                // минимальные значения
-    Save_time_format                    // ссылка на функцию завершения работы
+    Save_time_format,                    // ссылка на функцию завершения работы
+    '\0',
 }; // Промежуточная переменная, куда сохраняется настройка до сохранения (char)
 
 // Время сна, устройства
@@ -242,105 +241,115 @@ menuSelect_item_char Time_sleep_redact = {
     {'ч', 'м', '\0'},   // разделители, если нету, то '\0', последний может использоваться в качестве приписки
     2,                  // колтичество ячеек данных
     0,                  // завершение редактирования при нажатии вправо на краю данных 1-включено, 0-выключено 
+    '\0',
     //  ЯЧЕЙКИ
     {&time_sleep_h, &time_sleep_m, '\0'},  // исходные значения
     {1, 1, 1},                  // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов)
-    {0, 0, 0},                  // знаковые данные или беззнаковые
+    {0, 0},                  // знак (автоматически)
     {3, 2, 0},                  // ширина ячеек (001 - ширина 3, 23 - ширина 2)
-    {1, 1, 1},                  // ширина ячеек вне редактирования (минимальная) (001 - ширина 3, 23 - ширина 2) 
+    {1, 1, 0},                  // ширина ячеек вне редактирования (минимальная) (001 - ширина 3, 23 - ширина 2) 
     {"\0", "\0", "\0"},         // промежуточное значение
     {999, 59, '\0'},            // максимальные значения
     {0, 5, '\0'},               // минимальные значения
-    Save_general_format         // ссылка на функцию завершения работы
+    Save_general_format,         // ссылка на функцию завершения работы
+    '\0',
 }; // Промежуточная переменная, куда сохраняется настройка до сохранения (char)
 
 
 
 
 
-
-
-// Максимальный уровень погружного датчика
+// ВПИ, верхний предел измерений
 menuSelect_item_char Max_Level_Mesurment = {
     {'.', '\0', '\0'},   // разделители, если нету, то '\0', последний может использоваться в качестве приписки
     2,                  // колтичество ячеек данных
     0,                  // завершение редактирования при нажатии вправо на краю данных 1-включено, 0-выключено 
+    &ADC_data.MAX_LVL,
     //  ЯЧЕЙКИ
     {&ADC_data.MAX_LVL_char[0], &ADC_data.MAX_LVL_char[1], '\0'},  // исходные значения
-    {2, 2, 0},                   // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов), 4 - float (знаковый)
-    {1, 0, 0},                   // знаковые данные или беззнаковые
-    {6, 3, 0},                   // ширина ячеек (001 - ширина 3, 23 - ширина 2)
+    {2, 4, 0},                   // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов), 4 - float (знаковый)
+    {0, 0},                  // знак (автоматически)
+    {6, 2, 0},                   // ширина ячеек (001 - ширина 3, 23 - ширина 2)
     {2, 2, 2},                   // ширина ячеек вне редактирования (001 - ширина 3, 23 - ширина 2)
     {"\0", "\0", "\0"},          // промежуточное значение
     {99999, 999, '\0'},              // максимальные значения
     {-99999, 0, '\0'},                // минимальные значения
-    Save_general_format                    // ссылка на функцию завершения работы
+    Save_general_format,                    // ссылка на функцию завершения работы
+    SAVE_DOUBLE
 }; // Промежуточная переменная, куда сохраняется настройка до сохранения (char)
 
-// Минимальный уровень погружного датчика
+// НПИ, нижний предел измерений
 menuSelect_item_char Min_Level_Mesurment = {
     {'.', '\0', '\0'},   // разделители, если нету, то '\0', последний может использоваться в качестве приписки
     2,                  // колтичество ячеек данных
     0,                  // завершение редактирования при нажатии вправо на краю данных 1-включено, 0-выключено 
+    &ADC_data.ZERO_LVL,
     //  ЯЧЕЙКИ
     {&ADC_data.ZERO_LVL_char[0], &ADC_data.ZERO_LVL_char[1], '\0'},  // исходные значения
-    {2, 2, 0},                   // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов)
-    {1, 0, 0},                   // знаковые данные или беззнаковые
-    {6, 3, 0},                   // ширина ячеек (001 - ширина 3, 23 - ширина 2)
+    {2, 4, 0},                   // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов) 4 - int32 беззнаковый
+    {0, 0},                   // знак (автоматически)
+    {6, 2, 0},                   // ширина ячеек (001 - ширина 3, 23 - ширина 2)
     {2, 2, 2},                   // ширина ячеек вне редактирования (001 - ширина 3, 23 - ширина 2)
     {"\0", "\0", "\0"},          // промежуточное значение
     {99999, 999, '\0'},              // максимальные значения
     {-99999, 0, '\0'},                // минимальные значения
-    Save_general_format                    // ссылка на функцию завершения работы
+    Save_general_format,                    // ссылка на функцию завершения работы
+    SAVE_DOUBLE
 }; // Промежуточная переменная, куда сохраняется настройка до сохранения (char)
+
+// Калибровка ВПИ 
+void SAVE_DOUBLE(double *save_data, int32_t *value_int, int32_t *value_float, int size_float, uint8_t _signed){
+    *save_data+=*value_int;
+    double temp = (double)*value_float;
+    for (int i=0; i<size_float; i++) temp/=10;
+    *save_data+=temp;
+    if (_signed == 1) *save_data*=-1;
+}
 
 menuSelect_item_char GVL_Correct = {
     {'.', '\0', '\0'},   // разделители, если нету, то '\0', последний может использоваться в качестве приписки
     2,                  // колтичество ячеек данных
     0,                  // завершение редактирования при нажатии вправо на краю данных 1-включено, 0-выключено 
+    &ADC_data.GVL_correct,
     //  ЯЧЕЙКИ
     {&ADC_data.GVL_correct_char[0], &ADC_data.GVL_correct_char[1], '\0'},  // исходные значения
-    {2, 2, 0},                   // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов)
-    {1, 0, 0},                   // знаковые данные или беззнаковые
-    {6, 3, 0},                   // ширина ячеек (001 - ширина 3, 23 - ширина 2)
+    {2, 4, 0},                   // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов)
+    {0, 0},                   // знак (автоматически)
+    {5, 2, 0},                   // ширина ячеек (001 - ширина 3, 23 - ширина 2)
     {2, 2, 2},                   // ширина ячеек вне редактирования (001 - ширина 3, 23 - ширина 2)
     {"\0", "\0", "\0"},          // промежуточное значение
     {99999, 999, '\0'},              // максимальные значения
     {-99999, 0, '\0'},                // минимальные значения
-    Save_general_format                    // ссылка на функцию завершения работы
+    Save_general_format,                    // ссылка на функцию завершения работы
+    SAVE_DOUBLE
 }; // Промежуточная переменная, куда сохраняется настройка до сохранения (char)
-
 
 
 menuSelect_item_char Serial_number = {
     {'.', '\0', '\0'},   // разделители, если нету, то '\0', последний может использоваться в качестве приписки
     3,                  // колтичество ячеек данных
     0,                  // завершение редактирования при нажатии вправо на краю данных 1-включено, 0-выключено 
+    '\0',
     //  ЯЧЕЙКИ
     {&Prog_ver.VER_PCB_IDEOLOGY, &Prog_ver.VER_PCB_VERSION, &Prog_ver.VER_PCB_INDEX},  // исходные значения
     {0, 0, 3},                   // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов)
-    {0, 0, 0},                   // знаковые данные или беззнаковые
+    {0, 0},                   // знаковые данные или беззнаковые
     {2, 2, 4},                   // ширина ячеек (001 - ширина 3, 23 - ширина 2)
     {2, 2, 0},                   // ширина ячеек вне редактирования (001 - ширина 3, 23 - ширина 2)
     {"\0", "\0", "\0"},          // промежуточное значение
     {99, 99, '\0'},              // максимальные значения
     {0, 0, '\0'},                // минимальные значения
-    Save_general_format                    // ссылка на функцию завершения работы
+    Save_general_format,                    // ссылка на функцию завершения работы
+    '\0'
 }; // Промежуточная переменная, куда сохраняется настройка до сохранения (char)
 
 ////////////////////////////////////////////////////
 //                 Функции меню                   //
 ////////////////////////////////////////////////////
 
-
-
-
 ////////////////////////////////////////////////////
 //                  Пункты меню                   //
 ////////////////////////////////////////////////////
-
-
-
 
 extern char EEPROM_status_char[3]; // Статус доступности EEPROM
 extern char FLASH_status_char[3];  // Статус доступности FLASH
@@ -359,79 +368,84 @@ void GSM_internet_test(){}
 // Обновление ПО 
 void Programm_Update_USB(){}
 
-// Калибровка ВПИ 
-void Programm_DOWN_LVL_CORRECT(){}
-
-// Калибровка НПИ
-void Programm_UP_LVL_CORRECT(){}
 
 
-  MAKE_MENU(Menu_1    , "Режимы"       , "Modes"        , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_2         , PREVISION_MENU , PARENT_MENU    , Menu_1_1       , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
-    MAKE_MENU(Menu_1_1  , "Цикл"         , "Cycle"        , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_1_2       , PREVISION_MENU , Menu_1         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
-    MAKE_MENU(Menu_1_2  , "Диагностика"         , "Test check"         , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_1_3       , Menu_1_1       , Menu_1         , Menu_1_2_1     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
-      MAKE_MENU(Menu_1_2_1, "Код ошибки"   , "Error code"   , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_1_2_2     , PREVISION_MENU , Menu_1_2       , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
-      MAKE_MENU(Menu_1_2_2, "Полный тест"  , "Full test"    , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_1_2_3     , Menu_1_2_1     , Menu_1_2       , CHILD_MENU     , full_test      , SELECT_BAR     , DATA_IN        , DATA_OUT);
-      MAKE_MENU(Menu_1_2_3, "АКБ"          , "BAT"          , 0              , "в"            , "v"            , Menu_1_2_4     , Menu_1_2_2     , Menu_1_2       , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , ADC_AKB_volts_char);
-      MAKE_MENU(Menu_1_2_4, "АЦП"          , "ADC"          , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_1_2_5     , Menu_1_2_3     , Menu_1_2       , Menu_1_2_4_1   , ACTION_MENU    , SELECT_BAR     , DATA_IN        , ADC_data.ADC_status_char);
-        MAKE_MENU(Menu_1_2_4_1, "АЦП"          , "ADC"          , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_1_2_4_2   , PREVISION_MENU , Menu_1_2_4     , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , ADC_data.ADC_value_char);
-        MAKE_MENU(Menu_1_2_4_2, "Показания"    , "Metering values"          , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_1_2_4_3   , Menu_1_2_4_1   , Menu_1_2_4     , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , ADC_data.ADC_SI_value_char);
-        MAKE_MENU(Menu_1_2_4_3, "Сопротивление шунта"    , "Shunt resistance"          , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_1_2_4_4   , Menu_1_2_4_2   , Menu_1_2_4     , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , ADC_data.ADC_SI_value_correct_char);
-        MAKE_MENU(Menu_1_2_4_4, "Напряжение шунта", "Shunt voltage"          , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_1_2_4_5   , Menu_1_2_4_3   , Menu_1_2_4     , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN           , ADC_data.ADC_Volts_char);
-        MAKE_MENU(Menu_1_2_4_5, "Ток шунта"          , "Shunt current"          , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , NEXT_MENU      , Menu_1_2_4_4   , Menu_1_2_4     , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , ADC_data.ADC_Current_char);
-      MAKE_MENU(Menu_1_2_5, "Связь"          , "Mobile network"          , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_1_2_6     , Menu_1_2_4     , Menu_1_2       , Menu_1_2_5_1   , ACTION_MENU    , SELECT_BAR     , DATA_IN            ,    GSM_data.GSM_status_char);
-        MAKE_MENU(Menu_1_2_5_1, "Тест СМС"     , "SMS test"          , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_1_2_5_2   , PREVISION_MENU , Menu_1_2_5     , CHILD_MENU     , GSM_sms_test   , SELECT_BAR     , DATA_IN        , DATA_OUT);
-        MAKE_MENU(Menu_1_2_5_2, "Тест САЙТ"    , "SITE test"          , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_1_2_5_3   , Menu_1_2_5_1   , Menu_1_2_5     , CHILD_MENU     , GSM_internet_test, SELECT_BAR   , DATA_IN        , DATA_OUT);
-        MAKE_MENU(Menu_1_2_5_3, "SIM-карта"    , "SIM-card"          , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_1_2_5_4   , Menu_1_2_5_2   , Menu_1_2_5     , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , GSM_data.GSM_SIMCARD_char);
-        MAKE_MENU(Menu_1_2_5_4, "Статус"   , "Status"          , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_1_2_5_5   , Menu_1_2_5_3   , Menu_1_2_5     , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , GSM_data.GSM_status_ready_char);
-        MAKE_MENU(Menu_1_2_5_5, "Регистрация"  , "Logging"          , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_1_2_5_6   , Menu_1_2_5_4   , Menu_1_2_5     , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , GSM_data.GSM_status_reg_char);
-        MAKE_MENU(Menu_1_2_5_6, "Оператор"     , "Mobile operator"          , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_1_2_5_7   , Menu_1_2_5_5   , Menu_1_2_5     , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , GSM_data.GSM_operator_char);
-        MAKE_MENU(Menu_1_2_5_7, "Уровень сигн.", "Signal level"          , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_1_2_5_8   , Menu_1_2_5_6   , Menu_1_2_5     , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , GSM_data.GSM_signal_lvl_char);
-        MAKE_MENU(Menu_1_2_5_8, "Статус GPRS", "GPRS status"          , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , NEXT_MENU      , Menu_1_2_5_7   , Menu_1_2_5     , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , GSM_data.GSM_gprs_on_char);
-      MAKE_MENU(Menu_1_2_6, "EEPROM"       , "EEPROM"       , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_1_2_7     , Menu_1_2_5     , Menu_1_2       , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , EEPROM_status_char);
-      MAKE_MENU(Menu_1_2_7, "SD-карта"           , "SD-card"           , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_1_2_8     , Menu_1_2_6     , Menu_1_2       , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , FLASH_status_char);
-      MAKE_MENU(Menu_1_2_8, "FLASH"        , "FLASH"        , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , NEXT_MENU      , Menu_1_2_7     , Menu_1_2       , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , SD_status_char);
-    MAKE_MENU(Menu_1_3  , "Показания датчиков"    , "Sensor reading"         , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , NEXT_MENU      , Menu_1_2       , Menu_1         , Menu_1_3_1     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
-      MAKE_MENU(Menu_1_3_1, "Тепература"   , "Temperature "         , 0              , "°"            , "°"            , Menu_1_3_2     , PREVISION_MENU , Menu_1_3       , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , ADC_MS5193T_temp_char);
-      MAKE_MENU(Menu_1_3_2, "Глубина"      , "Data"         , 0              , "м"           , "m"  , Menu_1_3_3     , Menu_1_3_1     , Menu_1_3       , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , ADC_data.ADC_SI_value_char);
-      MAKE_MENU(Menu_1_3_3, "УГВ"   , "GWL"         , 0              , "м"           , "m"  , NEXT_MENU      , Menu_1_3_2     , Menu_1_3       , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , ADC_data.ADC_SI_value_correct_char);
-  MAKE_MENU(Menu_2    , "Настройки"    , "Settings"     , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_3         , Menu_1         , PARENT_MENU    , Menu_2_1       , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
-    MAKE_MENU(Menu_2_1  , "Дата"         , "Date"         , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_2_2       , PREVISION_MENU , Menu_2         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , Date_redact    , DATA_OUT);
-    MAKE_MENU(Menu_2_2  , "Время"        , "Time"         , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_2_3       , Menu_2_1       , Menu_2         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , Time_redact    , DATA_OUT);
-    MAKE_MENU(Menu_2_3  , "Время сна"    , "Seep time"   , 0              , "ч"            , "h"            , Menu_2_4       , Menu_2_2       , Menu_2         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , Time_sleep_redact, DATA_OUT);
-    MAKE_MENU(Menu_2_4  , "Корр. УГВ"     , "GWL correction"        , 0              , "м"            , "m"            , Menu_2_5       , Menu_2_3       , Menu_2         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , GVL_Correct        , DATA_OUT);
-    MAKE_MENU(Menu_2_5  , "ВПИ"          , "Upper-range value "        , 0              , "м"            , "m"            , Menu_2_6       , Menu_2_4       , Menu_2         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , Max_Level_Mesurment, DATA_OUT);
-    MAKE_MENU(Menu_2_6  , "НПИ"          , "Lower-range value"        , 0              , "м"            , "m"            , Menu_2_7       , Menu_2_5       , Menu_2         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , Min_Level_Mesurment, DATA_OUT);
-    MAKE_MENU(Menu_2_7  , "Связь"        , "Mobile network"          , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_2_8       , Menu_2_6       , Menu_2         , CHILD_MENU     , ACTION_MENU    , Communication_DATA, DATA_IN        , DATA_OUT);
-    MAKE_MENU(Menu_2_8  , "Выгр. на сайт", "Data uploading"          , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_2_9       , Menu_2_7       , Menu_2         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
-    MAKE_MENU(Menu_2_9  , "Запись на USB", "USB write"          , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_2_10       , Menu_2_8       , Menu_2         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
-    MAKE_MENU(Menu_2_10 , "Токовая петля"   , "Current loop "        , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_2_11       , Menu_2_9       , Menu_2         , CHILD_MENU     , ACTION_MENU    , CURRENT_LOOP   , DATA_IN        , DATA_OUT);
-    MAKE_MENU(Menu_2_11 , "RS-485"        , "RS-485"        , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_2_12       , Menu_2_10       , Menu_2         , CHILD_MENU     , ACTION_MENU    , RS485_MODE_DATA, DATA_IN        , DATA_OUT);
-    MAKE_MENU(Menu_2_12 , "Ед. изм."     , "Unit measure"        , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_2_13      , Menu_2_11       , Menu_2         , CHILD_MENU     , ACTION_MENU    , UNITS_MODE_DATA, DATA_IN        , DATA_OUT);
-    MAKE_MENU(Menu_2_13 , "Инжен. меню"  , "Administration menu"        , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_2_14      , Menu_2_12       , Menu_2         , Menu_2_13_1    , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
-      MAKE_MENU(Menu_2_13_1, "Заставка"     , "Startup screen"    , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_2_13_2      , PREVISION_MENU    , Menu_2_13      , CHILD_MENU     , ACTION_MENU    , SCREENSAVER    , DATA_IN        , DATA_OUT);
-      MAKE_MENU(Menu_2_13_2, "ID устр.", "ID Device"        , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_2_13_3    , Menu_2_13_1 , Menu_2_13      , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , Serial_number  , DATA_OUT);
-      MAKE_MENU(Menu_2_13_3, "Обновление ПО", "Update of software"          , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_2_13_4       , Menu_2_13_2       , Menu_2_13      , CHILD_MENU     , Programm_Update_USB, SELECT_BAR     , DATA_IN        , DATA_OUT);
-      MAKE_MENU(Menu_2_13_4, "Режим USB", "USB mode"  , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_2_13_5    , Menu_2_13_3    , Menu_2_13      , CHILD_MENU     , ACTION_MENU    , USB_MODE_STRUCT, DATA_IN        , DATA_OUT);
-      MAKE_MENU(Menu_2_13_5, "Калибровка шутна(верх)", "Shunt calibration(up)"  , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_2_13_6    , Menu_2_13_4    , Menu_2_13      , CHILD_MENU     , Programm_DOWN_LVL_CORRECT, SELECT_BAR     , DATA_IN        , DATA_OUT);
-      MAKE_MENU(Menu_2_13_6, "Калибровка шутна(низ)", "Shunt calibration(low)"        , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_2_13_7    , Menu_2_13_5    , Menu_2_13      , CHILD_MENU     , Programm_UP_LVL_CORRECT, SELECT_BAR     , DATA_IN        , DATA_OUT);
-      MAKE_MENU(Menu_2_13_7, "Сопротивление шунта", "Shunt resistance"      , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_2_13_8    , Menu_2_13_6    , Menu_2_13      , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
-      MAKE_MENU(Menu_2_13_8, "Температурная корр."   , "Offset temperature"      , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_2_13_9    , Menu_2_13_7    , Menu_2_13      , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
-      MAKE_MENU(Menu_2_13_9, "Нелинейность"     , "Non-linearity"      , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_2_13_10    , Menu_2_13_8    , Menu_2_13      , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
-      MAKE_MENU(Menu_2_13_10, "Температура МК"     , "MCU temp."      , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_2_13_11    , Menu_2_13_9    , Menu_2_13      , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
-      MAKE_MENU(Menu_2_13_11, "Температура анал."  , "Analog sensor temp."     , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_2_13_12    , Menu_2_13_10    , Menu_2_13      , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
-      MAKE_MENU(Menu_2_13_12, "Температура цифр."  , "Digital sensor temp."     , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_2_13_13   , Menu_2_13_11    , Menu_2_13      , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
-      MAKE_MENU(Menu_2_13_13, "Тест FLASH"   , "FLASH test"     , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_2_13_14   , Menu_2_13_12    , Menu_2_13      , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
-      MAKE_MENU(Menu_2_13_14, "Тест EEPROM"  , "EEPROM test"     , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_2_13_15   , Menu_2_13_13    , Menu_2_13      , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
-      MAKE_MENU(Menu_2_13_15, "Тест SD-карты"      , "SD-card test"     , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_2_13_16   , Menu_2_13_14    , Menu_2_13      , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
-      MAKE_MENU(Menu_2_13_16, "Режим БЛОКИРОВКА"   , "BLOCK mode"     , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , NEXT_MENU   , Menu_2_13_15    , Menu_2_13      , CHILD_MENU     , ACTION_MENU    , DATA_IN        , DATA_IN        , DATA_OUT);
-    MAKE_MENU(Menu_2_14 , "Язык"         , "Language"     , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_2_15      , Menu_2_13      , Menu_2         , CHILD_MENU     , ACTION_MENU    , LANGUAGE       , DATA_IN        , DATA_OUT);
-    MAKE_MENU(Menu_2_15 , "Сброс настроек"        , "Factory reset"        , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_2_16      , Menu_2_14      , Menu_2         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
-    MAKE_MENU(Menu_2_16 , "Формат. SD"   , "SD formatting"        , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , NEXT_MENU      , Menu_2_15      , Menu_2         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
-  MAKE_MENU(Menu_3    , "Сведения"     , "Info"         , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_4         , Menu_2         , PARENT_MENU    , Menu_3_1       , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
-    MAKE_MENU(Menu_3_1  , "ID устр."     , "ID Device"    , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_3_2       , PREVISION_MENU , Menu_3         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , Prog_ver.VERSION_PCB);
-    MAKE_MENU(Menu_3_2  , "Вер. ПО"      , "Software version"        , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , Menu_3_3       , Menu_3_1       , Menu_3         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , Prog_ver.VERSION_PROGRAMM);
-    MAKE_MENU(Menu_3_3  , "Время работы" , "Elapsed time"        , 0              , "ч"  , "h"  , NEXT_MENU      , Menu_3_2       , Menu_3         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , Prog_ver.time_work_char);
-  MAKE_MENU(Menu_4    , "Инструкция"   , "Instruction"  , 0              , ADD_SIGNAT_RU  , ADD_SIGNAT_EN  , NEXT_MENU      , Menu_3         , PARENT_MENU    , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
+
+
+char *Unit_measurement[2] = {"м\0", "m\0"};  // Единицы измерения
+char *Unit_voltage[2] = {"в\0", "v\0"};      // Напряжение
+char *Unit_hours[2] = {"ч\0", "h\0"};        // Часы
+char *Unit_minuts[2] = {"м\0", "m\0"};       // Минуты
+char *Unit_degree[2] = {"°\0", "°\0"};       // Градусы
+char *Unit_resistance[2] = {"Ом\0", "Ohms\0"}; // Сопротивление
+char *Unit_current[2] = {"А\0", "Amps\0"};   // Ток
+
+  MAKE_MENU(Menu_1    , "Режимы"       , "Modes"        , 0              , ADD_SIGNAT  , Menu_2         , PREVISION_MENU , PARENT_MENU    , Menu_1_1       , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
+    MAKE_MENU(Menu_1_1  , "Цикл"         , "Cycle"        , 0              , ADD_SIGNAT  , Menu_1_2       , PREVISION_MENU , Menu_1         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
+    MAKE_MENU(Menu_1_2  , "Диагностика"         , "Test check"         , 0              ,  ADD_SIGNAT  , Menu_1_3       , Menu_1_1       , Menu_1         , Menu_1_2_1     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
+      MAKE_MENU(Menu_1_2_1, "Код ошибки"   , "Error code"   , 0              , ADD_SIGNAT  , Menu_1_2_2     , PREVISION_MENU , Menu_1_2       , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
+      MAKE_MENU(Menu_1_2_2, "Полный тест"  , "Full test"    , 0              , ADD_SIGNAT  ,  Menu_1_2_3     , Menu_1_2_1     , Menu_1_2       , CHILD_MENU     , full_test      , SELECT_BAR     , DATA_IN        , DATA_OUT);
+      MAKE_MENU(Menu_1_2_3, "АКБ"          , "BAT"          , 0              , Unit_voltage            ,  Menu_1_2_4     , Menu_1_2_2     , Menu_1_2       , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , ADC_AKB_volts_char);
+      MAKE_MENU(Menu_1_2_4, "АЦП"          , "ADC"          , 0              , ADD_SIGNAT  ,  Menu_1_2_5     , Menu_1_2_3     , Menu_1_2       , Menu_1_2_4_1   , ACTION_MENU    , SELECT_BAR     , DATA_IN        , ADC_data.ADC_status_char);
+        MAKE_MENU(Menu_1_2_4_1, "АЦП"          , "ADC"          , 0              , ADD_SIGNAT  , Menu_1_2_4_2   , PREVISION_MENU , Menu_1_2_4     , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , ADC_data.ADC_value_char);
+        MAKE_MENU(Menu_1_2_4_2, "Показания"    , "Metering values"          , 0              , Unit_measurement  ,  Menu_1_2_4_3   , Menu_1_2_4_1   , Menu_1_2_4     , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , ADC_data.ADC_SI_value_char);
+        MAKE_MENU(Menu_1_2_4_3, "Сопротивление шунта"    , "Shunt resistance"          , 0              , Unit_resistance  ,  Menu_1_2_4_4   , Menu_1_2_4_2   , Menu_1_2_4     , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , ADC_data.ADC_SI_value_correct_char);
+        MAKE_MENU(Menu_1_2_4_4, "Напряжение шунта", "Shunt voltage"          , 0              , Unit_voltage  ,  Menu_1_2_4_5   , Menu_1_2_4_3   , Menu_1_2_4     , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN           , ADC_data.ADC_Volts_char);
+        MAKE_MENU(Menu_1_2_4_5, "Ток шунта"          , "Shunt current"          , 0              , Unit_current  ,  NEXT_MENU      , Menu_1_2_4_4   , Menu_1_2_4     , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , ADC_data.ADC_Current_char);
+      MAKE_MENU(Menu_1_2_5, "Связь"          , "Mobile network"          , 0              , ADD_SIGNAT  ,  Menu_1_2_6     , Menu_1_2_4     , Menu_1_2       , Menu_1_2_5_1   , ACTION_MENU    , SELECT_BAR     , DATA_IN            ,    GSM_data.GSM_status_char);
+        MAKE_MENU(Menu_1_2_5_1, "Тест СМС"     , "SMS test"          , 0              , ADD_SIGNAT  , Menu_1_2_5_2   , PREVISION_MENU , Menu_1_2_5     , CHILD_MENU     , GSM_sms_test   , SELECT_BAR     , DATA_IN        , DATA_OUT);
+        MAKE_MENU(Menu_1_2_5_2, "Тест САЙТ"    , "SITE test"          , 0              , ADD_SIGNAT  , Menu_1_2_5_3   , Menu_1_2_5_1   , Menu_1_2_5     , CHILD_MENU     , GSM_internet_test, SELECT_BAR   , DATA_IN        , DATA_OUT);
+        MAKE_MENU(Menu_1_2_5_3, "SIM-карта"    , "SIM-card"          , 0              , ADD_SIGNAT  ,  Menu_1_2_5_4   , Menu_1_2_5_2   , Menu_1_2_5     , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , GSM_data.GSM_SIMCARD_char);
+        MAKE_MENU(Menu_1_2_5_4, "Статус"   , "Status"          , 0              , ADD_SIGNAT  ,  Menu_1_2_5_5   , Menu_1_2_5_3   , Menu_1_2_5     , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , GSM_data.GSM_status_ready_char);
+        MAKE_MENU(Menu_1_2_5_5, "Регистрация"  , "Logging"          , 0              , ADD_SIGNAT  ,  Menu_1_2_5_6   , Menu_1_2_5_4   , Menu_1_2_5     , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , GSM_data.GSM_status_reg_char);
+        MAKE_MENU(Menu_1_2_5_6, "Оператор"     , "Mobile operator"          , 0              , ADD_SIGNAT  ,  Menu_1_2_5_7   , Menu_1_2_5_5   , Menu_1_2_5     , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , GSM_data.GSM_operator_char);
+        MAKE_MENU(Menu_1_2_5_7, "Уровень сигн.", "Signal level"          , 0              , ADD_SIGNAT  , Menu_1_2_5_8   , Menu_1_2_5_6   , Menu_1_2_5     , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , GSM_data.GSM_signal_lvl_char);
+        MAKE_MENU(Menu_1_2_5_8, "Статус GPRS", "GPRS status"          , 0              , ADD_SIGNAT  ,  NEXT_MENU      , Menu_1_2_5_7   , Menu_1_2_5     , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , GSM_data.GSM_gprs_on_char);
+      MAKE_MENU(Menu_1_2_6, "EEPROM"       , "EEPROM"       , 0              , ADD_SIGNAT  ,  Menu_1_2_7     , Menu_1_2_5     , Menu_1_2       , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , EEPROM_status_char);
+      MAKE_MENU(Menu_1_2_7, "SD-карта"           , "SD-card"           , 0              , ADD_SIGNAT  ,  Menu_1_2_8     , Menu_1_2_6     , Menu_1_2       , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , FLASH_status_char);
+      MAKE_MENU(Menu_1_2_8, "FLASH"        , "FLASH"        , 0              , ADD_SIGNAT  ,  NEXT_MENU      , Menu_1_2_7     , Menu_1_2       , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , SD_status_char);
+    MAKE_MENU(Menu_1_3  , "Показания"    , "Sensor reading"         , 0              , ADD_SIGNAT  , NEXT_MENU      , Menu_1_2       , Menu_1         , Menu_1_3_1     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
+      MAKE_MENU(Menu_1_3_1, "Тепература"   , "Temperature "         , 0              , Unit_degree            , Menu_1_3_2     , PREVISION_MENU , Menu_1_3       , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , ADC_MS5193T_temp_char);
+      MAKE_MENU(Menu_1_3_2, "Глубина"      , "Data"         , 0              , Unit_measurement           , Menu_1_3_3     , Menu_1_3_1     , Menu_1_3       , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , ADC_data.ADC_SI_value_char);
+      MAKE_MENU(Menu_1_3_3, "УГВ"   , "GWL"         , 0              ,Unit_measurement           , NEXT_MENU      , Menu_1_3_2     , Menu_1_3       , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , ADC_data.ADC_SI_value_correct_char);
+  MAKE_MENU(Menu_2    , "Настройки"    , "Settings"     , 0              , ADD_SIGNAT  ,  Menu_3         , Menu_1         , PARENT_MENU    , Menu_2_1       , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
+    MAKE_MENU(Menu_2_1  , "Дата"         , "Date"         , 0              , ADD_SIGNAT  ,Menu_2_2       , PREVISION_MENU , Menu_2         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , Date_redact    , DATA_OUT);
+    MAKE_MENU(Menu_2_2  , "Время"        , "Time"         , 0              , ADD_SIGNAT  , Menu_2_3       , Menu_2_1       , Menu_2         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , Time_redact    , DATA_OUT);
+    MAKE_MENU(Menu_2_3  , "Время сна"    , "Seep time"   , 0              , ADD_SIGNAT            ,  Menu_2_4       , Menu_2_2       , Menu_2         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , Time_sleep_redact, DATA_OUT);
+    MAKE_MENU(Menu_2_4  , "Корр. УГВ"     , "GWL correction"        , 0              , Unit_measurement             , Menu_2_5       , Menu_2_3       , Menu_2         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , GVL_Correct        , DATA_OUT);
+    MAKE_MENU(Menu_2_5  , "ВПИ"          , "U-range"        , 0              ,Unit_measurement               , Menu_2_6       , Menu_2_4       , Menu_2         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , Max_Level_Mesurment, DATA_OUT);
+    MAKE_MENU(Menu_2_6  , "НПИ"          , "L-range"        , 0              , Unit_measurement               , Menu_2_7       , Menu_2_5       , Menu_2         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , Min_Level_Mesurment, DATA_OUT);
+    MAKE_MENU(Menu_2_7  , "Связь"        , "Network"          , 0              , ADD_SIGNAT   , Menu_2_8       , Menu_2_6       , Menu_2         , CHILD_MENU     , ACTION_MENU    , Communication_DATA, DATA_IN        , DATA_OUT);
+    MAKE_MENU(Menu_2_8  , "Выгр. на сайт", "Data uploading"          , 0              , ADD_SIGNAT   , Menu_2_9       , Menu_2_7       , Menu_2         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
+    MAKE_MENU(Menu_2_9  , "Запись на USB", "USB write"          , 0              , ADD_SIGNAT   , Menu_2_10       , Menu_2_8       , Menu_2         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
+    MAKE_MENU(Menu_2_10 , "Токовая петля"   , "Current loop "        , 0              , ADD_SIGNAT  , Menu_2_11       , Menu_2_9       , Menu_2         , CHILD_MENU     , ACTION_MENU    , CURRENT_LOOP   , DATA_IN        , DATA_OUT);
+    MAKE_MENU(Menu_2_11 , "RS-485"        , "RS-485"        , 0              , ADD_SIGNAT  ,  Menu_2_12       , Menu_2_10       , Menu_2         , CHILD_MENU     , ACTION_MENU    , RS485_MODE_DATA, DATA_IN        , DATA_OUT);
+    MAKE_MENU(Menu_2_12 , "Ед. изм."     , "Unit measure"        , 0              , ADD_SIGNAT    , Menu_2_13      , Menu_2_11       , Menu_2         , CHILD_MENU     , ACTION_MENU    , UNITS_MODE_DATA, DATA_IN        , DATA_OUT);
+    MAKE_MENU(Menu_2_13 , "Инжен. меню"  , "Administration menu"        , 0              , ADD_SIGNAT  , Menu_2_14      , Menu_2_12       , Menu_2         , Menu_2_13_1    , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
+      MAKE_MENU(Menu_2_13_1, "Заставка"     , "Startup screen"    , 0              , ADD_SIGNAT  , Menu_2_13_2      , PREVISION_MENU    , Menu_2_13      , CHILD_MENU     , ACTION_MENU    , SCREENSAVER    , DATA_IN        , DATA_OUT);
+      MAKE_MENU(Menu_2_13_2, "ID устр.", "ID Device"        , 0              , ADD_SIGNAT  , Menu_2_13_3    , Menu_2_13_1 , Menu_2_13      , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , Serial_number  , DATA_OUT);
+      MAKE_MENU(Menu_2_13_3, "Обновление ПО", "Update of software"          , 0              , ADD_SIGNAT   , Menu_2_13_4       , Menu_2_13_2       , Menu_2_13      , CHILD_MENU     , Programm_Update_USB, SELECT_BAR     , DATA_IN        , DATA_OUT);
+      MAKE_MENU(Menu_2_13_4, "Режим USB", "USB mode"  , 0              , ADD_SIGNAT    , Menu_2_13_5    , Menu_2_13_3    , Menu_2_13      , CHILD_MENU     , ACTION_MENU    , USB_MODE_STRUCT, DATA_IN        , DATA_OUT);
+      MAKE_MENU(Menu_2_13_5, "Калибровка шутна(верх)", "Shunt calibration(up)"  , 0              , ADD_SIGNAT  , Menu_2_13_6    , Menu_2_13_4    , Menu_2_13      , CHILD_MENU     , ACTION_MENU, SELECT_BAR     , DATA_IN        , DATA_OUT);
+      MAKE_MENU(Menu_2_13_6, "Калибровка шутна(низ)", "Shunt calibration(low)"        , 0              , ADD_SIGNAT  , Menu_2_13_7    , Menu_2_13_5    , Menu_2_13      , CHILD_MENU     , ACTION_MENU, SELECT_BAR     , DATA_IN        , DATA_OUT);
+      MAKE_MENU(Menu_2_13_7, "Сопротивление шунта", "Shunt resistance"      , 0              , Unit_resistance  , Menu_2_13_8    , Menu_2_13_6    , Menu_2_13      , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
+      MAKE_MENU(Menu_2_13_8, "Температурная корр."   , "Offset temperature"      , 0              , Unit_degree   , Menu_2_13_9    , Menu_2_13_7    , Menu_2_13      , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
+      MAKE_MENU(Menu_2_13_9, "!!!"     , "!!!"      , 0              , ADD_SIGNAT   , Menu_2_13_10    , Menu_2_13_8    , Menu_2_13      , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
+      MAKE_MENU(Menu_2_13_10, "Температура МК"     , "MCU temp."      , 0              , Unit_degree   , Menu_2_13_11    , Menu_2_13_9    , Menu_2_13      , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
+      MAKE_MENU(Menu_2_13_11, "Температура анал."  , "Analog sensor temp."     , 0              , Unit_degree  , Menu_2_13_12    , Menu_2_13_10    , Menu_2_13      , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
+      MAKE_MENU(Menu_2_13_12, "Температура цифр."  , "Digital sensor temp."     , 0              , Unit_degree , Menu_2_13_13   , Menu_2_13_11    , Menu_2_13      , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
+      MAKE_MENU(Menu_2_13_13, "Тест FLASH"   , "FLASH test"     , 0              , ADD_SIGNAT   , Menu_2_13_14   , Menu_2_13_12    , Menu_2_13      , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
+      MAKE_MENU(Menu_2_13_14, "Тест EEPROM"  , "EEPROM test"     , 0              , ADD_SIGNAT   , Menu_2_13_15   , Menu_2_13_13    , Menu_2_13      , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
+      MAKE_MENU(Menu_2_13_15, "Тест SD-карты"      , "SD-card test"     , 0              , ADD_SIGNAT  , Menu_2_13_16   , Menu_2_13_14    , Menu_2_13      , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
+      MAKE_MENU(Menu_2_13_16, "Режим БЛОКИРОВКА"   , "BLOCK mode"     , 0              , ADD_SIGNAT  ,  NEXT_MENU   , Menu_2_13_15    , Menu_2_13      , CHILD_MENU     , ACTION_MENU    , DATA_IN        , DATA_IN        , DATA_OUT);
+    MAKE_MENU(Menu_2_14 , "Язык"         , "Language"     , 0              , ADD_SIGNAT  ,  Menu_2_15      , Menu_2_13      , Menu_2         , CHILD_MENU     , ACTION_MENU    , LANGUAGE       , DATA_IN        , DATA_OUT);
+    MAKE_MENU(Menu_2_15 , "Сброс настроек"        , "Factory reset"        , 0              , ADD_SIGNAT  ,  Menu_2_16      , Menu_2_14      , Menu_2         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
+    MAKE_MENU(Menu_2_16 , "Формат. SD"   , "SD formatting"        , 0              , ADD_SIGNAT  ,  NEXT_MENU      , Menu_2_15      , Menu_2         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
+  MAKE_MENU(Menu_3    , "Сведения"     , "Info"         , 0              , ADD_SIGNAT  ,  Menu_4         , Menu_2         , PARENT_MENU    , Menu_3_1       , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
+    MAKE_MENU(Menu_3_1  , "ID устр."     , "ID Device"    , 0              , ADD_SIGNAT  ,  Menu_3_2       , PREVISION_MENU , Menu_3         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , Prog_ver.VERSION_PCB);
+    MAKE_MENU(Menu_3_2  , "Вер. ПО"      , "Software version"        , 0              , ADD_SIGNAT  , Menu_3_3       , Menu_3_1       , Menu_3         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , Prog_ver.VERSION_PROGRAMM);
+    MAKE_MENU(Menu_3_3  , "Время работы" , "Elapsed time"        , 0              ,ADD_SIGNAT  , NEXT_MENU      , Menu_3_2       , Menu_3         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , Prog_ver.time_work_char);
+  MAKE_MENU(Menu_4    , "Инструкция"   , "Instruction"  , 0              , ADD_SIGNAT  ,NEXT_MENU      , Menu_3         , PARENT_MENU    , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
 
 ////////////////////////////////////////////////////
 //                Обработка меню                  //
@@ -452,7 +466,7 @@ int search_len_mass(char *string, int len_str, char separator[])
 }
 
 
-
+// Вывод занчений data_in вне режима редоктирования
 void Data_in_no_redact(menuItem *menu, int pos_y){
     char string[20] = {'\0'};
     for (int i = 0; i < menu->data_in->Number_of_cells; i++)
@@ -460,12 +474,10 @@ void Data_in_no_redact(menuItem *menu, int pos_y){
         char buffer[20] = {'\0'};
         char separat[20] = {'\0'}; // массив разделителей, в рамках данного блока, разделителей нету
 
-        uint8_t minus = 0;
-        if ((menu->data_in->unsigned_signed[i] == 1) && (*(int32_t *)menu->data_in->data[i]<0)) string[0] = '-';
-
+        if (menu->data_in->data_type[i] == 2) if (menu->data_in->unsigned_signed[0] == 1) string[0] = '-';
         formatters[menu->data_in->data_type[i]](buffer, sizeof(buffer), menu->data_in->data[i]);
         // дописать нули перед символом
-        if (menu->data_in->data_type[i] != 3)
+        if (menu->data_in->data_type[i] != 3) 
         {
             uint8_t len_dat = search_len_mass(buffer, 11, separat);
             for (int j = 0; j < (uint8_t)menu->data_in->len_data_zero_unredact[i] - len_dat; j++)
@@ -478,39 +490,63 @@ void Data_in_no_redact(menuItem *menu, int pos_y){
         strcat(string, temp);
 
     }
-    uint8_t len_string = OLED_GetWidthStr(string) + 4;
-    OLED_DrawStr(string, winth_display - len_string, pos_y * dist_y + height_up_menu, 1);
+
+    uint8_t len_add_signa = OLED_GetWidthStr(menu->add_signat[len]);
+    uint8_t len_string = OLED_GetWidthStr(string);
+    OLED_DrawStr(string, winth_display - (len_string + len_add_signa + 4), pos_y * dist_y + height_up_menu, 1);
 }
 
-
+// Вывод занчений data_in в режиме редоктирования
 void Data_in_redact(menuItem *menu, int pos_y){
     
     char string[11] = {'\0'};
-    uint8_t separators_count = 0;
+    uint8_t len_sig = 0;
+    uint8_t separator_count = 0;
+    if (menu->data_in->data_type[0] == 2) if (menu->data_in->unsigned_signed[1] == 1) string[0] = '-'; else string[0] = '+';
+    len_sig = OLED_GetWidthStr(string);
 
     for (int i = 0; i < menu->data_in->Number_of_cells; i++)
     {
         menu->data_in->data_temp[i][menu->data_in->len_data_zero[i]] = '\0'; // на всякий случай
         strcat(string, menu->data_in->data_temp[i]);
+        if (menu->data_in->separators[i] != '\0') separator_count++;
         char temp[2] = {menu->data_in->separators[i], '\0'};
-        if (menu->data_in->separators[i] != '\0') separators_count++;
         strcat(string, temp);
     }
+    uint8_t len_add_signa = OLED_GetWidthStr(menu->add_signat[len]);
     uint8_t len_string = OLED_GetWidthStr(string) + 4;
-    OLED_DrawStr(string, winth_display - len_string, pos_y * dist_y + height_up_menu, 1);
+    OLED_DrawStr(string, winth_display - (len_string + len_add_signa), pos_y * dist_y + height_up_menu, 1);
     
-    
-    //uint8_t len_witout_separator = menu->data_in->len_data_zero[0] + menu->data_in->len_data_zero[1] + menu->data_in->len_data_zero[2];
+    /*
+    int8_t add_pos = 0;
+    int position = pos_redact;
+    for (; add_pos < separator_count; add_pos++)
+    {
+        position -= selectedMenuItem->data_in->len_data_zero[add_pos];
+        if (position < 0)
+        {
+            position+= selectedMenuItem->data_in->len_data_zero[add_pos];
+            break;
+        }
+    }    
+
+    char string_temp[11] = {'\0'};
+    strncpy(string_temp, string, pos_redact + add_pos);
+    uint8_t start_pos = OLED_GetWidthStr(string_temp);
+    OLED_DrawHLine(winth_display - (len_string + len_add_signa - len_sig) + start_pos, pos_y * dist_y + 8 + height_up_menu, 5, led_cursor=!led_cursor);
+*/
+
     int8_t add_pos = 0;
     int8_t position = pos_redact+1;
-    for (; add_pos<separators_count; add_pos++){
+    for (; add_pos<separator_count; add_pos++){
         position -= menu->data_in->len_data_zero[add_pos];
         if (position<=0) break;
     }
     char string_temp[11] = {'\0'};
-    strncpy(string_temp, string, pos_redact+add_pos);
+    strncpy(string_temp, string+1, pos_redact+add_pos);
     uint8_t start_pos = OLED_GetWidthStr(string_temp);
-    OLED_DrawHLine(winth_display - len_string + start_pos, pos_y * dist_y + 8 + height_up_menu, 5, led_cursor=!led_cursor);
+    OLED_DrawHLine(winth_display - (len_string + len_add_signa - len_sig) + start_pos, pos_y * dist_y + 8 + height_up_menu, 5, led_cursor=!led_cursor);
+    
 
 }
 
@@ -523,14 +559,10 @@ void Data_in_redact(menuItem *menu, int pos_y){
 */
 void Select_diplay_functions(menuItem *menu, int pos_y)
 {
-    //int len_end_symbol = 0;
-    int leng_font = 0;
-    if (len == 0x00) OLED_DrawStr(menu->add_signat_ru, winth_display - 10, pos_y * dist_y + height_up_menu, 1);
-    else 
-    {
-        leng_font = 1;
-        OLED_DrawStr(menu->add_signat_en, winth_display - 10, pos_y * dist_y + height_up_menu, 1);
-    }
+    uint8_t leng_font = 0;
+    uint8_t len_signat = OLED_GetWidthStr(menu->add_signat[len]);
+    if (len_signat > 0) len_signat += 4;
+    OLED_DrawStr(menu->add_signat[len], winth_display-len_signat, pos_y * dist_y + height_up_menu, 1);
     
     // Вывод режима (прокрутка)
     if (menu->select_bar != (void *)&NULL_ENTRY)
@@ -538,11 +570,11 @@ void Select_diplay_functions(menuItem *menu, int pos_y)
         uint8_t num_menu = *menu->select_bar->data;
         if ((selectedMenuItem == menu) && (mode_redact == 1)) num_menu = Intermediate;
 
-        int len_dat = OLED_GetWidthStr(menu->select_bar->Name[num_menu][leng_font]);
+        int len_dat = OLED_GetWidthStr(menu->select_bar->Name[num_menu][len]);
         
         if ((mode_redact == 1) && (selectedMenuItem == menu))
         {
-            OLED_DrawStr(menu->select_bar->Name[num_menu][leng_font], winth_display - len_dat - 8, pos_y * dist_y + height_up_menu, 1);  // вывод если включен выбор (редактирование)
+            OLED_DrawStr(menu->select_bar->Name[num_menu][len], winth_display - len_dat - 8, pos_y * dist_y + height_up_menu, 1);  // вывод если включен выбор (редактирование)
             int pos_cursor = select_menu_in_page * dist_y + height_up_menu + 2;
             int x_left = winth_display-len_dat-11;
             int x_right = winth_display-7;
@@ -550,21 +582,7 @@ void Select_diplay_functions(menuItem *menu, int pos_y)
             if (Intermediate != 0) OLED_DrawTriangleFill(x_left, pos_cursor - 1, x_left, pos_cursor + 3, x_left-2, pos_cursor+1);
         }
         else{
-            OLED_DrawStr(menu->select_bar->Name[num_menu][leng_font], winth_display - len_dat - 4, pos_y * dist_y + height_up_menu, 1); // вывод если нет выбора 
-        }
-    }
-
-
-    if (menu->data_in != (void *)&NULL_ENTRY)
-    {
-        // режим не редактирования
-        if ((mode_redact == 0) || (selectedMenuItem != menu)){
-            Data_in_no_redact(menu, pos_y);
-        }
-
-        if ((mode_redact == 1) && (selectedMenuItem == menu))
-        {   
-            Data_in_redact(menu, pos_y);
+            OLED_DrawStr(menu->select_bar->Name[num_menu][len], winth_display - len_dat - 4, pos_y * dist_y + height_up_menu, 1); // вывод если нет выбора 
         }
     }
 }
@@ -579,16 +597,26 @@ void Display_punkt_menu(menuItem *menu, int pos_y) // отображение одного пункта 
     }
     else
     {
-        //leng_font = 1;
         OLED_DrawStr(menu->Name_en, pos_x_menu, pos_y * dist_y + height_up_menu, 1);
     }
 
     if (menu->data_out != (void *)&NULL_ENTRY)
     {
-        uint8_t len_add_signa = 0;
-        if ((len == 0x00) && (menu->add_signat_ru != (void *)&NULL_ENTRY)) len_add_signa = OLED_GetWidthStr(menu->add_signat_ru);
-        if ((len != 0x00) && (menu->add_signat_ru != (void *)&NULL_ENTRY))  len_add_signa = OLED_GetWidthStr(menu->add_signat_en);
+        uint8_t len_add_signa = OLED_GetWidthStr(menu->add_signat[len]);
         OLED_DrawStr(menu->data_out, winth_display - (OLED_GetWidthStr(menu->data_out)) - (len_add_signa+4), pos_y * dist_y + height_up_menu, 1);
+    }
+
+    if (menu->data_in != (void *)&NULL_ENTRY)
+    {
+        // режим не редактирования
+        if ((mode_redact == 0) || (selectedMenuItem != menu)){
+            Data_in_no_redact(menu, pos_y);
+        }
+
+        if ((mode_redact == 1) && (selectedMenuItem == menu))
+        {   
+            Data_in_redact(menu, pos_y);
+        }
     }
     
 }
@@ -721,6 +749,7 @@ void mode_check()
 {
     if ((selectedMenuItem->data_in != (void *)&NULL_ENTRY) || (selectedMenuItem->select_bar != (void *)&NULL_ENTRY))
     {
+        pos_redact = 0;
         // ввод значений
         if (selectedMenuItem->data_in != (void *)&NULL_ENTRY)
         {   
@@ -728,11 +757,8 @@ void mode_check()
             {
                 char separat[11] = {'\0'};
                 for (int j = 0; j<11; j++) selectedMenuItem->data_in->data_temp[i][j] = '\0';
-
-                uint8_t minus = 0;
-                if ((selectedMenuItem->data_in->unsigned_signed[i] == 1) && (*(int32_t *)selectedMenuItem->data_in->data[i]<0)) minus = 1;
-                formatters[selectedMenuItem->data_in->data_type[i]](selectedMenuItem->data_in->data_temp[i], sizeof(selectedMenuItem->data_in->data_temp[i]), selectedMenuItem->data_in->data[i]);
                 
+                formatters[selectedMenuItem->data_in->data_type[i]](selectedMenuItem->data_in->data_temp[i], sizeof(selectedMenuItem->data_in->data_temp[i]), selectedMenuItem->data_in->data[i]);
                 
                 uint8_t len_dat = search_len_mass(selectedMenuItem->data_in->data_temp[i], 11, separat);
                 for (int j = 0; j < (uint8_t)selectedMenuItem->data_in->len_data_zero[i] - len_dat; j++){
@@ -742,29 +768,38 @@ void mode_check()
                 
                 strcat(separat, selectedMenuItem->data_in->data_temp[i]);
                 strcpy(selectedMenuItem->data_in->data_temp[i], separat);
-                if (minus == 1) selectedMenuItem->data_in->data_temp[i][selectedMenuItem->data_in->len_data_zero[i]] = '-'; 
-                else if (selectedMenuItem->data_in->unsigned_signed[i] == 1) selectedMenuItem->data_in->data_temp[i][selectedMenuItem->data_in->len_data_zero[i]] = '+'; 
+
+                selectedMenuItem->data_in->unsigned_signed[1] = selectedMenuItem->data_in->unsigned_signed[0];
+                //if (selectedMenuItem->data_in->data_type[i] == 2) pos_redact = 1;
             }
         }
         if (selectedMenuItem->select_bar != (void *)&NULL_ENTRY) Intermediate = *selectedMenuItem->select_bar->data;
 
         mode_redact = 1;
-        pos_redact = 0;
+        
         time_update_display = time_led_cursor;
         xSemaphoreGive(Display_semaphore);
     }
 }
 
+
+// Все операции рабюоты со знаком можно и нужно оптимизировать
 void Save_general_format(){
+    uint8_t presence_of_number = 0; // проверка на не 0
     for (int i = 0; i<selectedMenuItem->data_in->Number_of_cells; i++){
-        int32_t result = strtol(selectedMenuItem->data_in->data_temp[i], NULL, 10);
+        int32_t result = strtol(selectedMenuItem->data_in->data_temp[i], NULL, 10); 
+        if ((selectedMenuItem->data_in->data_type == 4) && (result<0)) result*=-1; 
         if (selectedMenuItem->data_in->data_type[i] == 3){ strcpy(selectedMenuItem->data_in->data[i], selectedMenuItem->data_in->data_temp[i]); return;}
         if (result < selectedMenuItem->data_in->DOWN_data[i]) return;
         if (result > selectedMenuItem->data_in->UP_data[i]) return;
         if (selectedMenuItem->data_in->data_type[i] == 0) *((uint8_t *)selectedMenuItem->data_in->data[i]) = (uint8_t)result;
         if (selectedMenuItem->data_in->data_type[i] == 1) *((uint16_t *)selectedMenuItem->data_in->data[i]) = (uint16_t)result;
         if (selectedMenuItem->data_in->data_type[i] == 2) *((int32_t *)selectedMenuItem->data_in->data[i]) = result;
+        if (selectedMenuItem->data_in->data_type[i] == 4) *((int32_t *)selectedMenuItem->data_in->data[i]) = (uint32_t)result;
+        if (result!=0) presence_of_number = 1;
     }
+    if (presence_of_number == 0) selectedMenuItem->data_in->unsigned_signed[1] = 0;
+    selectedMenuItem->data_in->unsigned_signed[0] = selectedMenuItem->data_in->unsigned_signed[1];
 }
 
 void Save_date_format(){
@@ -789,6 +824,10 @@ void Save_time_format(){
     RTC_read();
 }
 
+void Programm_GVL_CORRECT(){
+
+
+}
 
 void redact_end()
 {
@@ -797,7 +836,17 @@ void redact_end()
     if (selectedMenuItem->data_in != (void *)&NULL_ENTRY){ 
         uint8_t len_witout_separator = selectedMenuItem->data_in->len_data_zero[0] + selectedMenuItem->data_in->len_data_zero[1] + selectedMenuItem->data_in->len_data_zero[2];
         pos_redact = len_witout_separator - 1;
-        selectedMenuItem->data_in->end_redact_func(); // вызов функции для сохранения изменений
+
+        if (selectedMenuItem->data_in->end_redact_func != '\0') selectedMenuItem->data_in->end_redact_func(); // вызов функции для сохранения изменений
+        if (selectedMenuItem->data_in->end_redact_func_2 != NULL)
+        {
+            selectedMenuItem->data_in->end_redact_func_2(
+                selectedMenuItem->data_in->data_double,
+                (int32_t *)selectedMenuItem->data_in->data[0],
+                (int32_t *)selectedMenuItem->data_in->data[1],
+                selectedMenuItem->data_in->len_data_zero[1],
+                selectedMenuItem->data_in->unsigned_signed[0]);
+        }
     }
     if (selectedMenuItem->select_bar != (void *)&NULL_ENTRY) *selectedMenuItem->select_bar->data = Intermediate;
     
@@ -810,9 +859,7 @@ void redact_end()
 
 void position_calculate(int8_t *_add_pos, int *_position)
 {
-    int separators_count = selectedMenuItem->data_in->Number_of_cells;
-    //for (int i = 0; i < 3; i++) if (selectedMenuItem->data_in->separators[i] != '\0') separators_count++;
-    for (; *_add_pos < separators_count; (*_add_pos)++)
+    for (; *_add_pos < selectedMenuItem->data_in->Number_of_cells; (*_add_pos)++)
     {
         *_position -= selectedMenuItem->data_in->len_data_zero[*_add_pos];
         if (*_position < 0)
@@ -913,9 +960,14 @@ void left_redact()
     
     if (selectedMenuItem->data_in != (void *)&NULL_ENTRY)
     {
+        int8_t add_pos = 0;
+        int position = pos_redact;
+        position_calculate(&add_pos, &position);
+        uint8_t pos_search = 0; // позиция до которой нужно не допустить перемещение
+
         pos_redact--;
         led_cursor = 0;
-        if (pos_redact < 0)
+        if (pos_redact < pos_search)
         {
             mode_redact = 0;
             led_cursor = 1;
@@ -933,7 +985,6 @@ void left_redact()
         else{
             time_update_display = time_updateDisplay;
             if (selectedMenuItem->select_bar->Name[Intermediate-1][0][0] != '\0'){
-                //*selectedMenuItem->select_bar->data-=1;
                 Intermediate-=1;
             }
         }
@@ -1041,6 +1092,77 @@ void key_press_data_write(char data)
             pos_redact -=  1;
     }
 }
+
+/**
+ * Переключает символ c из латиницы в кириллицу и обратно (Windows-1251).
+ * D -> Г, d -> г, и т.д.
+ * "Лишние" русские буквы (после 26-й) отправляем в 'Z'/'z'.
+ */
+static unsigned char switch_char(unsigned char c)
+{
+    // Заглавные латинские [A..Z] = [65..90]
+    if (c >= 65 && c <= 90)
+    {
+        unsigned char index = c - 65;     // 0..25
+        // Прибавляем к 'А'(192). Если вдруг что-то вышло за предел 25, 
+        // принудительно ставим последнюю «допустимую» букву (Я) или логику ниже
+        if (index < 26) 
+            c = 192 + index; // 192..217
+        else
+            c = 223;         // 'Я'
+    }
+    // Заглавные русские [А..Я] = [192..223]
+    else if (c >= 192 && c <= 223)
+    {
+        unsigned char index = c - 192;    // 0..31
+        // Если индекс больше 25 (т.е. Э, Ю, Я …), отправляемся в 'Z' (90)
+        if (index < 26) 
+            c = 65 + index;  // 65..90
+        else
+            c = 90;          // 'Z'
+    }
+    // Строчные латинские [a..z] = [97..122]
+    else if (c >= 97 && c <= 122)
+    {
+        unsigned char index = c - 97;     // 0..25
+        if (index < 26) 
+            c = 224 + index; // 224..249
+        else
+            c = 255;         // 'я'
+    }
+    // Строчные русские [а..я] = [224..255]
+    else if (c >= 224 && c <= 255)
+    {
+        unsigned char index = c - 224;    // 0..31
+        // Если индекс > 25 (э, ю, я …) => 'z'
+        if (index < 26)
+            c = 97 + index;  // 97..122
+        else
+            c = 122;         // 'z'
+    }
+
+    return c;
+}
+
+
+void press_plus_minus(){
+    int8_t add_pos = 0;
+    int position = pos_redact;
+    position_calculate(&add_pos, &position);
+    
+    // если тип данных char
+    if (selectedMenuItem->data_in->data_type[add_pos] == 2 || 4)
+    {
+        selectedMenuItem->data_in->unsigned_signed[1] ^= 1;
+    }
+    if (selectedMenuItem->data_in->data_type[add_pos] == 3)
+    {
+        unsigned char oldChar = selectedMenuItem->data_in->data_temp[add_pos][position];
+        unsigned char newChar = switch_char(oldChar);
+        selectedMenuItem->data_in->data_temp[add_pos][position] = newChar;
+    }
+}
+
 void null_fun(){}
 // события по нажатию кнопки на клавиатуре
 void Keyboard_processing()
@@ -1072,7 +1194,7 @@ void Keyboard_processing()
         {
             if (Keyboard_press_code == 'P')
             {
-                null_fun();
+                press_plus_minus();
             }
 
             // Левая часть панели

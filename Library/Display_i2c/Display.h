@@ -27,15 +27,17 @@ typedef struct Menu_item_char
     uint8_t redact_right_end; // завершение редактирования при нажатии вправо на краю данных 1-включено, 0-выключено
 
     //  ЯЧЕЙКИ
+    double *data_double;
     void *data[3];  // ссылки на исходные значения 
-    uint8_t data_type[3]; // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов)
-    int8_t unsigned_signed[3]; // знаковые данные или беззнаковые
+    uint8_t data_type[3]; // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов) 4 - float
+    uint8_t unsigned_signed[2]; // есть минус или нет 1-да, 0 - нет.  Первое - текущее, второе - промежуточное
     uint8_t len_data_zero[3]; // ширина ячеек (001 - ширина 3, 23 - ширина 2)
     uint8_t len_data_zero_unredact[3]; // ширина ячеек в режиме не редактирования (001 - ширина 3, 23 - ширина 2)
     char data_temp[3][11];   // промежуточные данные (для редактирования)
     int32_t UP_data[3];         // минимальные значения
     int32_t DOWN_data[3];       // максимальные значения
-    void (*end_redact_func)(void); // функция вызываемая при окончании редактирования (сохранение значений)
+    void (*end_redact_func)(void);
+    void (*end_redact_func_2)(double *save_data, int32_t *value_int, int32_t *value_float, int size_float, uint8_t _signed); // функция вызываемая при окончании редактирования (сохранение значений)
 } menuSelect_item_char;
 
 
@@ -45,8 +47,7 @@ typedef struct MAKE_MENU
     const char Name_rus[26];  // Название пункта меню на русском
     const char Name_en[26];   // Название пункта меню на английском
     int Num_menu;             // Номер вкладки сверху при переходе
-    const char add_signat_ru[5]; // дополнительная надпись справа (еденицы измерения)
-    const char add_signat_en[5]; // дополнительная надпись справа (еденицы измерения)
+    char **add_signat; // дополнительная надпись справа (еденицы измерения)
 
     /*  тип меню (char)0b543210
         6 - вкладка                                             0x40
@@ -84,3 +85,5 @@ void Start_video();
 void Save_general_format();
 void Save_time_format();
 void Save_date_format();
+void Programm_GVL_CORRECT();
+void SAVE_DOUBLE(double *save_data, int32_t *value_int, int32_t *value_float, int size_float, uint8_t _signed);
