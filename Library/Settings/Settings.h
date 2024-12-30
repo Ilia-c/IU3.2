@@ -62,16 +62,19 @@ typedef struct ADC_MS5193T
     int32_t ADC_value;              // Значение АЦП
     float   ADC_Volts;              // Напряжение на токовом шунте
     float   ADC_Current;            // Ток на токовом шунте
-    float   ADC_SI_value;           // Выходное значение без коррекции по уровню
-    float   ADC_SI_value_correct;   // Выходное значение с корректировкой по уровню
+    double   ADC_SI_value;           // Выходное значение без коррекции по уровню
+    double   ADC_SI_value_correct;   // Выходное значение с корректировкой по уровню
 
-    uint16_t ADC_RESISTOR;
+    double ADC_ION;
+    float ADC_RESISTOR;
     int32_t PPM;
     uint8_t Status; // Статус работы АЦП - 0 - ERR,  1 - WAR, 2 - OK, 3 - выкл
     uint8_t mode;   // Режим работы АЦП, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
 
     // Корректировка УГВ
     double GVL_correct;      // Коррекция нулевой точки (смещение +- от текущего значения)
+    int32_t ADC_correct_zero_0_4;      // Коррекция нулевой точки (смещение +- от текущего значения)
+    int32_t ADC_correct_max_20;      // Коррекция нулевой точки (смещение +- от текущего значения)
 
     // Калибровка
     double UP_LEVEL_CORRECT;      // Коррекция максимального уровня (при 20мА)
@@ -133,7 +136,7 @@ extern float ADC_in_temp;
 extern float ADC_MS5193T_temp;            
 extern float OneWire_temp;                
 extern char  ADC_in_temp_char[5];         
-extern char  ADC_MS5193T_temp_char[5];    
+extern char  ADC_MS5193T_temp_char[11];    
 extern char  OneWire_temp_char[5];        
 
 // Индикация статуса блока

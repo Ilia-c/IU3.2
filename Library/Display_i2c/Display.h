@@ -47,7 +47,7 @@ typedef struct MAKE_MENU
     const char Name_rus[26];  // Название пункта меню на русском
     const char Name_en[26];   // Название пункта меню на английском
     int Num_menu;             // Номер вкладки сверху при переходе
-    char **add_signat; // дополнительная надпись справа (еденицы измерения)
+    menuSelect_item *add_signat;           // дополнительная надпись справа (режим) 0 - отключено 1 - select_bar
 
     /*  тип меню (char)0b543210
         6 - вкладка                                             0x40

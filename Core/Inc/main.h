@@ -62,8 +62,8 @@ void Error_Handler(void);
 #define RESERVED_GPIO_Port GPIOC
 #define EN_5V_Pin GPIO_PIN_1
 #define EN_5V_GPIO_Port GPIOC
-#define EN_3P3V_Pin GPIO_PIN_2
-#define EN_3P3V_GPIO_Port GPIOC
+#define EN_3P8V_Pin GPIO_PIN_2
+#define EN_3P8V_GPIO_Port GPIOC
 #define ON_N25_Pin GPIO_PIN_3
 #define ON_N25_GPIO_Port GPIOC
 #define UART4_WU_Pin GPIO_PIN_2

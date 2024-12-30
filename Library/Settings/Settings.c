@@ -68,7 +68,7 @@ float ADC_in_temp           = 0;
 float ADC_MS5193T_temp      = 0;             
 float OneWire_temp          = 0;                 
 char  ADC_in_temp_char[5]   = {'\0'};      
-char  ADC_MS5193T_temp_char[5] = {'\0'}; 
+char  ADC_MS5193T_temp_char[11] = {'\0'}; 
 char  OneWire_temp_char[5]  = {'\0'};     
 
 
@@ -84,18 +84,23 @@ ADC_MS5193T_item ADC_data = {
     .ADC_value = 0, // Значение АЦП
     .ADC_Volts = 0, // Напряжение на токовом шунте
     .ADC_Current = 0, // Ток на токовом шунте
+
     .ADC_SI_value = 0, // Выходное значение без коррекции
     .ADC_SI_value_correct = 0, // Выходное значение с корректировкой
 
+    .ADC_ION = 1.17, // Опорный источник
     .ADC_RESISTOR = 49.99, // Сопротивление шунта
     .PPM = 10,    // PPM
     .Status = 0, // Статус работы АЦП - 0 - ERR,  1 - WAR, 2 - OK, 3 - выкл
     .mode = 2, // Режим работы АЦП, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
     
+    
     .GVL_correct = 0,
+    .ADC_correct_zero_0_4 = 4,
+    .ADC_correct_max_20 = 20,
 
     // Калибровка
-    .UP_LEVEL_CORRECT = 0,      // Коррекция максиального уровня (при 20мА)
+    .UP_LEVEL_CORRECT = 0,        // Коррекция максиального уровня (при 20мА)
     .DOWN_LEVEL_CORRECT = {0, 0}, // Коррекция минимального уровня (0мА и 4мА)
 
     .MAX_LVL = 0,
@@ -194,7 +199,7 @@ char data_add_unit[3]            = "\0";
 uint8_t Mode                     = 0;  
 uint8_t Communication            = 0;  
 uint8_t RS485_prot               = 0;  
-uint8_t units_mes                = 0;  
+uint8_t units_mes                = 1;   // по умолчанию метры
 uint8_t screen_sever_mode        = 1;  
 uint8_t USB_mode                 = 0;  
 

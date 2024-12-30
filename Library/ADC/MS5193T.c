@@ -65,10 +65,11 @@ void MS5193T_Reset(void)
     HAL_Delay(1); // Небольшая задержка после сброса
 }
 
+uint8_t read_por = 0;
 // Функция инициализации MS5193T
 void MS5193T_Init(void) {
-    uint8_t ModeRegisterMsg[2] = {0b00000000, 0b00001111};  // Непрерывный режим, частота обновления 16.7 Гц
-    //uint8_t ConfigRegisterMsg[2] = {0b00010000, 0b10000000}; // Unipolar, Gain=1, AIN2+ - AIN2-, Внутренний опорный источник
+    uint8_t ModeRegisterMsg[2] = {0b00100000, 0b00000111};  // Непрерывный режим, частота обновления 33.2 Гц
+    //uint8_t ModeRegisterMsg[2] = {0b00000000, 0b00001111}; 
     uint8_t ConfigRegisterMsg[2] = {0b00010000, 0b10000001}; //
     //uint8_t IoRegisterMsg[1] = {0x00};  // Ток возбуждения выключен
 
@@ -102,18 +103,65 @@ void MS5193T_Init(void) {
     }
 }
 
-
 // Функция чтения данных из регистра данных MS5193T (24-битные данные)
 int32_t Read_MS5193T_Data(void)
 {
 	uint8_t xtemp[3];
 	int32_t adValue=0;
-
     SPI2_Read_buf(0x58, xtemp, 3); // Чтение регистра данных
-    
     // Преобразование 3 байт в 24-битное значение со знаком
     adValue = (((int32_t)xtemp[0]) << 16) | (((int32_t)xtemp[1]) << 8) | xtemp[2];
 
+    if (read_por == 0){ calculate_ADC_data_temp(adValue); read_por++;}
+    else{ calculate_ADC_data_heigh(adValue); read_por = 0; }
 
     return adValue;
 }
+
+
+
+
+void calculate_ADC_data_temp(int32_t adValue) {
+    double koeff = 0.0000000697; 
+    koeff = adValue*koeff-0.5;
+    koeff /= 0.01; 
+
+    ADC_MS5193T_temp = koeff;
+    gcvt(ADC_MS5193T_temp, 4, ADC_MS5193T_temp_char);
+
+    
+
+    uint8_t ModeRegisterMsg[2] = {0b00000000, 0b00000111};  
+    uint8_t ConfigRegisterMsg[2] = {0b00010000, 0b10000000}; // канал на АЦП
+    // Настройка регистра режима
+    SPI2_Write_buf(0x08, ModeRegisterMsg, 2);
+    HAL_Delay(1);
+    // Настройка регистра конфигурации
+    SPI2_Write_buf(0x10, ConfigRegisterMsg, 2);
+    HAL_Delay(1);
+}
+
+void calculate_ADC_data_heigh(int32_t adValue) {
+    double koeff = 0.0000000697; 
+    koeff = adValue*koeff-0.4;
+    koeff *= 9.375; 
+    ADC_data.ADC_SI_value = koeff;
+    for (int i = 0; i<11; i++) ADC_data.ADC_value_char[i] = 0;
+    gcvt(ADC_data.ADC_SI_value, 6, ADC_data.ADC_value_char);
+    
+
+    uint8_t ModeRegisterMsg[2] = {0b00100000, 0b00000111};  
+    uint8_t ConfigRegisterMsg[2] = {0b00010000, 0b10000001}; //
+    // Настройка регистра режима
+    SPI2_Write_buf(0x08, ModeRegisterMsg, 2);
+    HAL_Delay(1);
+    // Настройка регистра конфигурации
+    SPI2_Write_buf(0x10, ConfigRegisterMsg, 2);
+    HAL_Delay(1);
+}
+
+
+
+
+
+
