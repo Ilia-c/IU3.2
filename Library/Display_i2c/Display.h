@@ -12,6 +12,7 @@
 #include "RTC_data.h"
 
 
+
 typedef struct Menu_item
 {
     uint8_t *data;              // привязанное значение

@@ -86,7 +86,7 @@ UART_HandleTypeDef huart4;
 osThreadId_t SD_cardHandle;
 const osThreadAttr_t SD_card_attributes = {
     .name = "SD_card",
-    .stack_size = 128 * 4,
+    .stack_size = 512 * 4,
     .priority = (osPriority_t)osPriorityNormal,
 };
 /* Definitions for Display_I2C */
@@ -290,6 +290,31 @@ void RTC_SetAlarm_HoursMinutes(uint8_t hours, uint8_t minutes)
     }
 }
 
+void GPIO_AnalogConfig(void) {
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    __HAL_RCC_GPIOC_CLK_ENABLE();
+
+    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+
+    GPIO_InitStruct.Pin = GPIO_PIN_All;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = GPIO_PIN_All; 
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = GPIO_PIN_All; 
+    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+    __HAL_RCC_GPIOA_CLK_DISABLE();
+    __HAL_RCC_GPIOB_CLK_DISABLE();
+    __HAL_RCC_GPIOC_CLK_DISABLE();
+}
+
+
 void Enter_StandbyMode(uint8_t hours, uint8_t minutes)
 {
     // Отключим всё лишнее, остановим таймер SysTick и т.д.
@@ -363,75 +388,43 @@ int main(void)
   HAL_PWR_EnableBkUpAccess(); 
 
   HAL_Init();
-  RTC_Init();
   SystemClock_Config();
   PeriphCommonClock_Config();
+
   MX_GPIO_Init();
   MX_ADC1_Init();
-  MX_ADC3_Init();
+  //MX_ADC3_Init();
   MX_I2C1_Init();
   MX_I2C2_Init();
   MX_SPI2_Init();
   MX_TIM6_Init();
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
+  RTC_Init();
 
-
+  //HAL_Delay(1000);
   HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, 1);
   HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ADC_Pin, 1);
-  HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
+  HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 1);
   HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);
   HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);
   HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 1);
-  HAL_Delay(1000);
+  HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 1);
+  HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);
+  
+  HAL_Delay(5);
 
-  WriteToSDCard();
 
-  Enter_StandbyMode(1, 0);
-  //if (Check_Wakeup_Reason() == 0)
-  //{
-      // Обычный запуск – уходим в Standby на 30 сек
-  //    Enter_StandbyMode(1, 0);
-  //}
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
 
 
   
-  /* USER CODE BEGIN 1 */
-
-  /* USER CODE END 1 */
-
-  /* MCU Configuration--------------------------------------------------------*/
-
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  //HAL_Init();
-
-
-  //MX_UART4_Init();
-  //RTC_Init();
-  //MX_USB_HOST_Init();
 
   ////
   /// Здесь функция чтения из EEPROM настроек, id и прочего
   ////
 
-  HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, 1);
-  HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ADC_Pin, 1);
-
-  HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
-  HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);
-
-
-  HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);
-  HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 1);
-
-  HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 1);
   HAL_Delay(10);
   OLED_Init(&hi2c2);
   
-
-  HAL_GPIO_WritePin(COL_B1_GPIO_Port, COL_B1_Pin, 1);
-  HAL_GPIO_WritePin(COL_B2_GPIO_Port, COL_B2_Pin, 1);
-  HAL_GPIO_WritePin(COL_B3_GPIO_Port, COL_B3_Pin, 1);
-  HAL_GPIO_WritePin(COL_B4_GPIO_Port, COL_B4_Pin, 1);
   
 
   NVIC_SetPriority(TIM6_IRQn, 6);
@@ -440,9 +433,6 @@ int main(void)
   HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);
   //HAL_TIM_Base_Start_IT(&htim6);
 
-  //while(1){}
-  //  https://easyelectronics.ru/realizaciya-funkcii-zaderzhki-menshe-1ms-na-freertos-s-pomoshhyu-tajmera-i-task-notification.html?ysclid=m16udaxden17209319
-  
   //W25_Ini();
   //id = W25_Read_ID();
 
@@ -451,13 +441,11 @@ int main(void)
   MS5193T_Init();
 
 
-  //HAL_GPIO_WritePin(ON_N25_GPIO_Port, ON_N25_Pin, 1);
-  //HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 1);
-  //HAL_GPIO_WritePin(ON_N25_GPIO_Port, ON_N25_Pin, 1);
-  //HAL_Delay(1000);
-  //HAL_GPIO_WritePin(ON_N25_GPIO_Port, ON_N25_Pin, 0);
-
-
+  HAL_GPIO_WritePin(ON_N25_GPIO_Port, ON_N25_Pin, 1);
+  HAL_Delay(200);
+  HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 1);
+  HAL_Delay(200);
+  HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 0);
 
 
 
@@ -478,10 +466,14 @@ int main(void)
   HAL_I2C_Mem_Read(&hi2c1, devAddr, memAddr, I2C_MEMADD_SIZE_16BIT, (uint8_t*)rmsg, sizeof(rmsg), HAL_MAX_DELAY);
 
 
-  screen_sever_mode = 0;
+  screen_sever_mode =  1;
   if (screen_sever_mode) Start_video();
+  HAL_GPIO_WritePin(COL_B1_GPIO_Port, COL_B1_Pin, 1);
+  HAL_GPIO_WritePin(COL_B2_GPIO_Port, COL_B2_Pin, 1);
+  HAL_GPIO_WritePin(COL_B3_GPIO_Port, COL_B3_Pin, 1);
+  HAL_GPIO_WritePin(COL_B4_GPIO_Port, COL_B4_Pin, 1);
   HAL_Delay(400);
-
+  
 
   osKernelInitialize();
 
@@ -632,16 +624,16 @@ static void MX_ADC1_Init(void)
   /* USER CODE END ADC1_Init 1 */
 
   /** Common config
-   */
+  */
   hadc1.Instance = ADC1;
-  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV6;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
+  hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
   hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   hadc1.Init.LowPowerAutoWait = DISABLE;
-  hadc1.Init.ContinuousConvMode = DISABLE;
-  hadc1.Init.NbrOfConversion = 1;
+  hadc1.Init.ContinuousConvMode = ENABLE;
+  hadc1.Init.NbrOfConversion = 2;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
@@ -654,7 +646,7 @@ static void MX_ADC1_Init(void)
   }
 
   /** Configure the ADC multi-mode
-   */
+  */
   multimode.Mode = ADC_MODE_INDEPENDENT;
   if (HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK)
   {
@@ -662,10 +654,10 @@ static void MX_ADC1_Init(void)
   }
 
   /** Configure Regular Channel
-   */
-  sConfig.Channel = ADC_CHANNEL_VBAT;
+  */
+  sConfig.Channel = ADC_CHANNEL_VREFINT;
   sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
+  sConfig.SamplingTime = ADC_SAMPLETIME_247CYCLES_5;
   sConfig.SingleDiff = ADC_SINGLE_ENDED;
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset = 0;
@@ -673,10 +665,22 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_1;
+  sConfig.Rank = ADC_REGULAR_RANK_2;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
   /* USER CODE BEGIN ADC1_Init 2 */
 
   /* USER CODE END ADC1_Init 2 */
+
 }
+
+
 
 static void MX_TIM6_Init(void)
 {
@@ -705,55 +709,43 @@ static void MX_TIM6_Init(void)
 
 static void MX_ADC3_Init(void)
 {
-
-  /* USER CODE BEGIN ADC3_Init 0 */
-
-  /* USER CODE END ADC3_Init 0 */
-
   ADC_ChannelConfTypeDef sConfig = {0};
 
-  /* USER CODE BEGIN ADC3_Init 1 */
+  hadc3.Instance                      = ADC3;
+  hadc3.Init.ClockPrescaler          = ADC_CLOCK_ASYNC_DIV1;     // Делитель тактирования
+  hadc3.Init.Resolution              = ADC_RESOLUTION_12B;       // 12 бит
+  hadc3.Init.DataAlign               = ADC_DATAALIGN_RIGHT;
+  hadc3.Init.ScanConvMode            = ADC_SCAN_DISABLE;         // Один канал
+  hadc3.Init.EOCSelection            = ADC_EOC_SINGLE_CONV;
+  hadc3.Init.LowPowerAutoWait        = DISABLE;
+  hadc3.Init.ContinuousConvMode      = DISABLE;                  // Одиночное преобразование
+  hadc3.Init.NbrOfConversion         = 1;
+  hadc3.Init.DiscontinuousConvMode   = DISABLE;
+  hadc3.Init.ExternalTrigConv        = ADC_SOFTWARE_START;
+  hadc3.Init.ExternalTrigConvEdge    = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc3.Init.DMAContinuousRequests   = DISABLE;
+  hadc3.Init.Overrun                 = ADC_OVR_DATA_PRESERVED;
+  hadc3.Init.OversamplingMode        = DISABLE;
 
-  /* USER CODE END ADC3_Init 1 */
-
-  /** Common config
-   */
-  hadc3.Instance = ADC3;
-  hadc3.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
-  hadc3.Init.Resolution = ADC_RESOLUTION_12B;
-  hadc3.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc3.Init.ScanConvMode = ADC_SCAN_DISABLE;
-  hadc3.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
-  hadc3.Init.LowPowerAutoWait = DISABLE;
-  hadc3.Init.ContinuousConvMode = DISABLE;
-  hadc3.Init.NbrOfConversion = 1;
-  hadc3.Init.DiscontinuousConvMode = DISABLE;
-  hadc3.Init.ExternalTrigConv = ADC_SOFTWARE_START;
-  hadc3.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-  hadc3.Init.DMAContinuousRequests = DISABLE;
-  hadc3.Init.Overrun = ADC_OVR_DATA_PRESERVED;
-  hadc3.Init.OversamplingMode = DISABLE;
   if (HAL_ADC_Init(&hadc3) != HAL_OK)
   {
     Error_Handler();
   }
 
-  /** Configure Regular Channel
-   */
-  sConfig.Channel = ADC_CHANNEL_TEMPSENSOR;
-  sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
-  sConfig.SingleDiff = ADC_SINGLE_ENDED;
+  // Настраиваем регулярный канал — PC0 = Channel 1 (ADC123_IN1)
+  sConfig.Channel      = ADC_CHANNEL_1;
+  sConfig.Rank         = ADC_REGULAR_RANK_1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_24CYCLES_5; // При необходимости выбрать больше (например, 47.5 или 92.5)
+  sConfig.SingleDiff   = ADC_SINGLE_ENDED;
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
-  sConfig.Offset = 0;
+  sConfig.Offset       = 0;
+
   if (HAL_ADC_ConfigChannel(&hadc3, &sConfig) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN ADC3_Init 2 */
-
-  /* USER CODE END ADC3_Init 2 */
 }
+
 
 /**
  * @brief I2C1 Initialization Function
@@ -978,7 +970,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, COL_B3_Pin|COL_B2_Pin|COL_B1_Pin|ON_DISP_Pin
-                          |ON_RS_Pin|SPI2_CS_ROM_Pin|ON_ROM_Pin, GPIO_PIN_RESET);
+                          |ON_RS_Pin|GPIO_PIN_4|SPI2_CS_ROM_Pin|ON_ROM_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : RESERVED_Pin EN_5V_Pin EN_3P3V_Pin ON_N25_Pin
                            COL_B4_Pin SPI2_CS_ADC_Pin One_Wire_Pin */
@@ -989,6 +981,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
+  GPIO_InitStruct.Pin = GPIO_PIN_0;
+  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;  // Отключение подтяжек
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
   /*Configure GPIO pins : UART4_WU_Pin ON_OWEN_Pin */
   GPIO_InitStruct.Pin = UART4_WU_Pin|ON_OWEN_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -1015,9 +1011,9 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(STR_B4_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : COL_B3_Pin COL_B2_Pin COL_B1_Pin ON_DISP_Pin
-                           ON_RS_Pin ON_ROM_Pin */
+                           ON_RS_Pin PB4 ON_ROM_Pin */
   GPIO_InitStruct.Pin = COL_B3_Pin|COL_B2_Pin|COL_B1_Pin|ON_DISP_Pin
-                          |ON_RS_Pin|ON_ROM_Pin;
+                          |ON_RS_Pin|GPIO_PIN_4|ON_ROM_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -1051,7 +1047,6 @@ static void MX_GPIO_Init(void)
 }
 
 
-
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
@@ -1063,15 +1058,60 @@ static void MX_GPIO_Init(void)
  * @retval None
  */
 /* USER CODE END Header_StartDefaultTask */
+int32_t ADC1_Read_PC0(void) { 
+    // --- Калибровка АЦП ---
+    if (HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED) != HAL_OK) {
+        Error_Handler();
+    }
 
+    // --- Чтение VREFINT ---
+    ADC_ChannelConfTypeDef sConfig = {0};
+    sConfig.Channel = ADC_CHANNEL_VREFINT;  // VREFINT
+    sConfig.Rank = ADC_REGULAR_RANK_1;
+    sConfig.SamplingTime = ADC_SAMPLETIME_640CYCLES_5;
+    if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
+        Error_Handler();
+    }
 
+    HAL_ADC_Start(&hadc1);
+    if (HAL_ADC_PollForConversion(&hadc1, 100) != HAL_OK) {
+        Error_Handler();
+    }
+    uint32_t vrefint_raw = HAL_ADC_GetValue(&hadc1);
+    HAL_ADC_Stop(&hadc1);
+
+    // --- Чтение PC0 ---
+    sConfig.Channel = ADC_CHANNEL_1;  // PC0
+    if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
+        Error_Handler();
+    }
+
+    HAL_ADC_Start(&hadc1);
+    if (HAL_ADC_PollForConversion(&hadc1, 100) != HAL_OK) {
+        Error_Handler();
+    }
+    uint32_t measurement_raw = HAL_ADC_GetValue(&hadc1);
+    HAL_ADC_Stop(&hadc1);
+    return measurement_raw;  // Возвращаем скорректированное значение АЦП
+}
+uint32_t data_read_adc_in = 0;
 void StartDefaultTask(void *argument)
 {
   UNUSED(argument);
-  RTC_get_time();
-  
+  RTC_read();
 
-/*
+
+  Read_MS5193T_Data();
+  HAL_Delay(200);
+  Read_MS5193T_Data();
+  HAL_Delay(200);
+  Read_MS5193T_Data();
+  HAL_Delay(200);
+  Read_MS5193T_Data();
+  HAL_Delay(200);
+
+  
+  data_read_adc_in = ADC1_Read_PC0();
   MX_DMA_Init();
   MX_SDMMC1_SD_Init();
   HAL_StatusTypeDef res = HAL_SD_Init(&hsd1);
@@ -1083,7 +1123,13 @@ void StartDefaultTask(void *argument)
   HAL_Delay(200);
   MX_FATFS_Init();
   WriteToSDCard();
-*/
+
+  
+  if (Check_Wakeup_Reason() == 1) {
+        // Если не аппаратный сброс
+        Enter_StandbyMode(0, 30);
+  } 
+  
 
 
   

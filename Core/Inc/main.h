@@ -109,7 +109,7 @@ void Error_Handler(void);
 #define ON_ROM_Pin GPIO_PIN_7
 #define ON_ROM_GPIO_Port GPIOB
 
-
+void Enter_StandbyMode(uint8_t hours, uint8_t minutes);
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

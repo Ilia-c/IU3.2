@@ -8,7 +8,6 @@ RTC_HandleTypeDef hrtc;
 extern RTC_TimeTypeDef Time;
 extern RTC_DateTypeDef Date;
 
-
 void RTC_Init(void)
 {
 	hrtc.Instance = RTC;

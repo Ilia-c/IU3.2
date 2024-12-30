@@ -389,13 +389,17 @@ void GSM_internet_test(){}
 // Обновление ПО 
 void Programm_Update_USB(){}
 
+void sleep(){
+    Enter_StandbyMode(0, 30);
+}
+
 //uint8_t dat = 0;
 menuSelect_item NO_SIGNED = {
     (uint8_t *)&dat, { {"", ""} }
 };
 
   MAKE_MENU(Menu_1    , "Режимы"       , "Modes"        , 0              , NO_SIGNED  , Menu_2         , PREVISION_MENU , PARENT_MENU    , Menu_1_1       , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
-    MAKE_MENU(Menu_1_1  , "Цикл"         , "Cycle"        , 0              , NO_SIGNED  , Menu_1_2       , PREVISION_MENU , Menu_1         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
+    MAKE_MENU(Menu_1_1  , "Цикл"         , "Cycle"        , 0              , NO_SIGNED  , Menu_1_2       , PREVISION_MENU , Menu_1         , CHILD_MENU     , sleep    , SELECT_BAR     , DATA_IN        , DATA_OUT);
     MAKE_MENU(Menu_1_2  , "Диагностика"         , "Test check"         , 0              ,  NO_SIGNED  , Menu_1_3       , Menu_1_1       , Menu_1         , Menu_1_2_1     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
       MAKE_MENU(Menu_1_2_1, "Код ошибки"   , "Error code"   , 0              , NO_SIGNED  , Menu_1_2_2     , PREVISION_MENU , Menu_1_2       , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
       MAKE_MENU(Menu_1_2_2, "Полный тест"  , "Full test"    , 0              , NO_SIGNED  ,  Menu_1_2_3     , Menu_1_2_1     , Menu_1_2       , CHILD_MENU     , full_test      , SELECT_BAR     , DATA_IN        , DATA_OUT);
