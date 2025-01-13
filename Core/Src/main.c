@@ -33,6 +33,7 @@
 #include "MS5193T.h"
 #include "SD.h"
 #include "usb_host.h"
+#include "usb_device.h"
 #include <stdio.h>
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -442,9 +443,9 @@ int main(void)
 
 
   HAL_GPIO_WritePin(ON_N25_GPIO_Port, ON_N25_Pin, 1);
-  HAL_Delay(200);
+  HAL_Delay(500);
   HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 1);
-  HAL_Delay(200);
+  HAL_Delay(600);
   HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 0);
 
 
@@ -548,7 +549,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_MSI;
   RCC_OscInitStruct.PLL.PLLM = 1;
-  RCC_OscInitStruct.PLL.PLLN = 20;
+  RCC_OscInitStruct.PLL.PLLN = 40;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV7;
   RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
   RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
@@ -603,6 +604,8 @@ void PeriphCommonClock_Config(void)
     Error_Handler();
   }
 }
+
+
 
 /**
  * @brief ADC1 Initialization Function
@@ -896,7 +899,7 @@ static void MX_SPI2_Init(void)
 
 
 
-__attribute__((unused)) static void MX_UART4_Init(void)
+static void MX_UART4_Init(void)
 {
 
   /* USER CODE BEGIN UART4_Init 0 */
@@ -907,7 +910,7 @@ __attribute__((unused)) static void MX_UART4_Init(void)
 
   /* USER CODE END UART4_Init 1 */
   huart4.Instance = UART4;
-  huart4.Init.BaudRate = 115200;
+  huart4.Init.BaudRate = 57600;
   huart4.Init.WordLength = UART_WORDLENGTH_8B;
   huart4.Init.StopBits = UART_STOPBITS_1;
   huart4.Init.Parity = UART_PARITY_NONE;
@@ -920,9 +923,6 @@ __attribute__((unused)) static void MX_UART4_Init(void)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN UART4_Init 2 */
-
-  /* USER CODE END UART4_Init 2 */
 }
 
 /**
@@ -1047,17 +1047,7 @@ static void MX_GPIO_Init(void)
 }
 
 
-/* USER CODE BEGIN 4 */
 
-/* USER CODE END 4 */
-
-/* USER CODE BEGIN Header_StartDefaultTask */
-/**
- * @brief  Function implementing the SD_card thread.
- * @param  argument: Not used
- * @retval None
- */
-/* USER CODE END Header_StartDefaultTask */
 int32_t ADC1_Read_PC0(void) { 
     // --- Калибровка АЦП ---
     if (HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED) != HAL_OK) {
@@ -1099,8 +1089,10 @@ void StartDefaultTask(void *argument)
 {
   UNUSED(argument);
   RTC_read();
+  //MX_USB_HOST_Init();
+  MX_USB_DEVICE_Init();
 
-
+  /*
   Read_MS5193T_Data();
   HAL_Delay(200);
   Read_MS5193T_Data();
@@ -1123,14 +1115,13 @@ void StartDefaultTask(void *argument)
   HAL_Delay(200);
   MX_FATFS_Init();
   WriteToSDCard();
-
+  
   
   if (Check_Wakeup_Reason() == 1) {
-        // Если не аппаратный сброс
-        Enter_StandbyMode(0, 30);
+    Enter_StandbyMode(0, 30);// Если не аппаратный сброс. не работает, нужно переписать
   } 
   
-
+ */
 
   
 

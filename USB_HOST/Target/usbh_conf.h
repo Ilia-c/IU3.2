@@ -7,7 +7,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
+  * Copyright (c) 2025 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -33,7 +33,6 @@
 
 #include "stm32l4xx.h"
 #include "stm32l4xx_hal.h"
-#include "stm32l4xx_hal_hcd.h"
 
 /* USER CODE BEGIN INCLUDE */
 
@@ -84,7 +83,7 @@
 #define USBH_MAX_DATA_BUFFER      512U
 
 /*----------   -----------*/
-#define USBH_DEBUG_LEVEL      3U
+#define USBH_DEBUG_LEVEL      0U
 
 /*----------   -----------*/
 #define USBH_USE_OS      1U

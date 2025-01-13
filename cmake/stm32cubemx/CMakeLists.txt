@@ -34,8 +34,13 @@ target_include_directories(stm32cubemx INTERFACE
     ../../Library/SD_card
     ../../Middlewares/ST/STM32_USB_Host_Library/Core/Inc
     ../../Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Inc
+    ../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc
+    ../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc
     ../../USB_HOST/App
     ../../USB_HOST/Target
+    ../../USB_DEVICE/App
+    ../../USB_DEVICE/Target
+    ../../Library/USB-UART_Mode
 )
 
 target_sources(stm32cubemx INTERFACE
@@ -108,6 +113,7 @@ target_sources(stm32cubemx INTERFACE
     ../../Library/w25q128/w25q128.c
     ../../Library/ADC/MS5193T.c
     ../../Library/SD_card/SD.c
+    ../../Library/USB-UART_Mode/UART_GMS.c
     ../../Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_core.c
     ../../Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ctlreq.c
     ../../Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ioreq.c
@@ -115,9 +121,16 @@ target_sources(stm32cubemx INTERFACE
     ../../Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc.c
     ../../Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc_bot.c
     ../../Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc_scsi.c
-    
+    ../../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.c
+    ../../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c
+    ../../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.c
+    ../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.c
     ../../USB_HOST/App/usb_host.c
     ../../USB_HOST/Target/usbh_conf.c
+    ../../USB_DEVICE/App/usb_device.c
+    ../../USB_DEVICE/App/usbd_desc.c
+    ../../USB_DEVICE/App/usbd_cdc_if.c
+    ../../USB_DEVICE/Target/usbd_conf.c
 )
 
 target_link_directories(stm32cubemx INTERFACE
