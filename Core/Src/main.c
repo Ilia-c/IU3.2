@@ -32,8 +32,9 @@
 #include "w25q128.h"
 #include "MS5193T.h"
 #include "SD.h"
-#include "usb_host.h"
+//#include "usb_host.h"
 #include "usb_device.h"
+#include "usbd_cdc_if.h"
 #include <stdio.h>
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -44,6 +45,7 @@ extern uint16_t time_update_display;
 xSemaphoreHandle Keyboard_semapfore;
 xSemaphoreHandle Display_semaphore;
 xSemaphoreHandle Display_cursor_semaphore;
+xSemaphoreHandle USB_COM_semaphore;
 
 extern uint16_t Timer_key_one_press;
 extern uint16_t Timer_key_press;
@@ -101,43 +103,50 @@ const osThreadAttr_t Display_I2C_attributes = {
 osThreadId_t ADC_readHandle;
 const osThreadAttr_t ADC_read_attributes = {
     .name = "ADC_read",
-    .stack_size = 128 * 4,
+    .stack_size = 256 * 4,
     .priority = (osPriority_t)osPriorityLow3,
 };
 /* Definitions for RS485_data */
 osThreadId_t RS485_dataHandle;
 const osThreadAttr_t RS485_data_attributes = {
     .name = "RS485_data",
-    .stack_size = 128 * 4,
+    .stack_size = 256 * 4,
     .priority = (osPriority_t)osPriorityLow3,
 };
 /* Definitions for SIM800_data */
 osThreadId_t SIM800_dataHandle;
 const osThreadAttr_t SIM800_data_attributes = {
     .name = "SIM800_data",
-    .stack_size = 128 * 4,
+    .stack_size = 256 * 4,
     .priority = (osPriority_t)osPriorityLow,
 };
 /* Definitions for SIM800_data */
 osThreadId_t Monitor_taskHandle;
 const osThreadAttr_t Monitor_task_attributes = {
     .name = "Monitor_task",
-    .stack_size = 128 * 4,
+    .stack_size = 256 * 4,
     .priority = (osPriority_t)osPriorityLow,
 };
 /* Definitions for Main */
 osThreadId_t MainHandle;
 const osThreadAttr_t Main_attributes = {
     .name = "Main",
-    .stack_size = 128 * 4,
+    .stack_size = 256 * 4,
     .priority = (osPriority_t)osPriorityLow,
 };
 /* Definitions for Keyboard_task */
 osThreadId_t Keyboard_taskHandle;
 const osThreadAttr_t Keyboard_task_attributes = {
     .name = "Keyboard_task",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityLow6,
+    .stack_size = 256 * 4,
+    .priority = (osPriority_t)osPriorityLow2,
+};
+
+osThreadId_t USB_COM_taskHandle;
+const osThreadAttr_t USB_COM_task_attributes = {
+    .name = "USB_COM_task",
+    .stack_size = 2048 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
 };
 /* USER CODE BEGIN PV */
 
@@ -165,6 +174,7 @@ void SIM800_data(void *argument);
 void Monitor_task(void *argument);
 void Main(void *argument);
 void Keyboard_task(void *argument);
+void USB_COM_task(void *argument);
 void HAL_TIM6_Callback(void);
 
 unsigned int id = 0x00;
@@ -407,6 +417,7 @@ int main(void)
   HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 1);
   HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);
   HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);
+  HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);
   HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 1);
   HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 1);
   HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);
@@ -475,7 +486,6 @@ int main(void)
   HAL_GPIO_WritePin(COL_B4_GPIO_Port, COL_B4_Pin, 1);
   HAL_Delay(400);
   
-
   osKernelInitialize();
 
   SD_cardHandle = osThreadNew(StartDefaultTask, NULL, &SD_card_attributes);
@@ -486,6 +496,8 @@ int main(void)
   Monitor_taskHandle = osThreadNew(Monitor_task, NULL, &Monitor_task_attributes);
   MainHandle = osThreadNew(Main, NULL, &Main_attributes);
   Keyboard_taskHandle = osThreadNew(Keyboard_task, NULL, &Keyboard_task_attributes);
+  USB_COM_taskHandle = osThreadNew(USB_COM_task, NULL, &USB_COM_task_attributes);
+  
 
   osKernelStart();
 
@@ -541,15 +553,13 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSE|RCC_OSCILLATORTYPE_MSI;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
-  RCC_OscInitStruct.MSIState = RCC_MSI_ON;
-  RCC_OscInitStruct.MSICalibrationValue = 0;
-  RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_MSI;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 1;
-  RCC_OscInitStruct.PLL.PLLN = 40;
+  RCC_OscInitStruct.PLL.PLLN = 10;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV7;
   RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
   RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
@@ -567,20 +577,16 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
   {
     Error_Handler();
   }
-
-  /** Enable MSI Auto calibration
-  */
-  HAL_RCCEx_EnableMSIPLLMode();
 }
 
 /**
- * @brief Peripherals Common Clock Configuration
- * @retval None
- */
+  * @brief Peripherals Common Clock Configuration
+  * @retval None
+  */
 void PeriphCommonClock_Config(void)
 {
   RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
@@ -592,9 +598,9 @@ void PeriphCommonClock_Config(void)
   PeriphClkInit.AdcClockSelection = RCC_ADCCLKSOURCE_PLLSAI1;
   PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLLSAI1;
   PeriphClkInit.Sdmmc1ClockSelection = RCC_SDMMC1CLKSOURCE_PLLSAI1;
-  PeriphClkInit.PLLSAI1.PLLSAI1Source = RCC_PLLSOURCE_MSI;
+  PeriphClkInit.PLLSAI1.PLLSAI1Source = RCC_PLLSOURCE_HSE;
   PeriphClkInit.PLLSAI1.PLLSAI1M = 1;
-  PeriphClkInit.PLLSAI1.PLLSAI1N = 24;
+  PeriphClkInit.PLLSAI1.PLLSAI1N = 12;
   PeriphClkInit.PLLSAI1.PLLSAI1P = RCC_PLLP_DIV7;
   PeriphClkInit.PLLSAI1.PLLSAI1Q = RCC_PLLQ_DIV2;
   PeriphClkInit.PLLSAI1.PLLSAI1R = RCC_PLLR_DIV2;
@@ -604,6 +610,8 @@ void PeriphCommonClock_Config(void)
     Error_Handler();
   }
 }
+
+
 
 
 
@@ -1091,6 +1099,9 @@ void StartDefaultTask(void *argument)
   RTC_read();
   //MX_USB_HOST_Init();
   MX_USB_DEVICE_Init();
+  
+  //HAL_NVIC_SetPriority(OTG_FS_IRQn, 5, 0);
+  //HAL_NVIC_EnableIRQ(OTG_FS_IRQn);
 
   /*
   Read_MS5193T_Data();
@@ -1132,7 +1143,7 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for (;;)
   {
-    osDelay(1);
+    osDelay(10);
   }
   /* USER CODE END 5 */
 }
@@ -1248,6 +1259,41 @@ void Keyboard_task(void *argument)
     osDelay(Timer_key_one_press);
   }
 }
+
+#define RX_BUFFER_SIZE 128
+uint8_t UserRxBuffer[RX_BUFFER_SIZE];  // Буфер для данных  
+uint32_t UserRxLength = 0;             // Длина данных
+
+void USB_COM_task(void *argument)
+{
+  UNUSED(argument);
+  for (;;)
+  {   
+    osDelay(60000);
+    /*
+      xSemaphoreTake(USB_COM_semaphore, portMAX_DELAY);
+      UserRxBuffer[UserRxLength] = '\0'; // Завершаем строку
+      if (strncmp((char *)UserRxBuffer, "STM+", 4) == 0)
+      {
+        if (strcmp((char *)UserRxBuffer + 4, "PING") == 0)
+        {
+          CDC_Transmit_FS((uint8_t *)"PONG\r\n", 6);
+        }
+        else if (strcmp((char *)UserRxBuffer + 4, "HELLO") == 0)
+        {
+          CDC_Transmit_FS((uint8_t *)"Hello from STM32!\r\n", 20);
+        }
+        else
+        {
+          CDC_Transmit_FS((uint8_t *)"Unknown command\r\n", 17);
+        }
+      }
+      memset(UserRxBuffer, 0, sizeof(UserRxBuffer));
+      UserRxLength = 0;
+      */
+    }
+}
+
 
 int a = 0;
 
