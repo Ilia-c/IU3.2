@@ -177,6 +177,7 @@ static int8_t CDC_DeInit_FS(void)
   * @param  length: Number of data to be sent (in bytes)
   * @retval Result of the operation: USBD_OK if all operations are OK else USBD_FAIL
   */
+volatile uint8_t is_terminal_connected = 0;
 static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 {
   /* USER CODE BEGIN 5 */
@@ -228,8 +229,22 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
     break;
 
     case CDC_SET_CONTROL_LINE_STATE:
+      uint8_t dtr = pbuf[0] & 0x01;     // Состояние DTR
+      if (dtr != is_terminal_connected) // Проверяем изменение состояния
+      {
+        is_terminal_connected = dtr;
 
-    break;
+        if (dtr)
+        {
+          CDC_Transmit_FS((uint8_t *)"Terminal connected\r\n", 21);
+        }
+        else
+        {
+          // Опционально: обработка отключения терминала
+          CDC_Transmit_FS((uint8_t *)"Terminal disconnected\r\n", 24);
+        }
+      }
+      break;
 
     case CDC_SEND_BREAK:
 
@@ -259,15 +274,29 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
   * @retval Result of the operation: USBD_OK if all operations are OK else USBD_FAIL
   */
 
-extern xSemaphoreHandle Keyboard_semapfore;
-static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
+extern xSemaphoreHandle USB_COM_semaphore;
+#define RX_BUFFER_SIZE 128
+
+uint8_t UserRxBuffer[RX_BUFFER_SIZE];  // Буфер для приема данных
+uint16_t UserRxLength = 0;            // Длина данных
+
+static int8_t CDC_Receive_FS(uint8_t *Buf, uint32_t *Len)
 {
-  /* USER CODE BEGIN 6 */
-  static portBASE_TYPE xTaskWoken;
-  xSemaphoreGiveFromISR(Keyboard_semapfore, &xTaskWoken); 
+  if (*Len < RX_BUFFER_SIZE)
+  {
+    memcpy(UserRxBuffer, Buf, *Len);
+    UserRxBuffer[*Len] = '\0'; // Завершаем строку
+    UserRxLength = *Len;
+
+    // Освобождаем семафор, чтобы задача начала обработку данных
+    BaseType_t xTaskWoken = pdFALSE;
+    xSemaphoreGiveFromISR(USB_COM_semaphore, &xTaskWoken);
+    portYIELD_FROM_ISR(xTaskWoken); // Переключение задач, если требуется
+  }
 
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+  // CDC_Transmit_FS((uint8_t *)"USB CDC ready\r\n", 15);
   return (USBD_OK);
   /* USER CODE END 6 */
 }
