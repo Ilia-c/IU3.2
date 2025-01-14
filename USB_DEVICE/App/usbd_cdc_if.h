@@ -28,6 +28,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_cdc.h"
+#include "FreeRTOS.h"
+#include "semphr.h"
+#include "main.h"
 
 /* USER CODE BEGIN INCLUDE */
 
@@ -48,8 +51,8 @@
   * @{
   */
 /* Define size for the receive and transmit buffer over CDC */
-#define APP_RX_DATA_SIZE  2048
-#define APP_TX_DATA_SIZE  2048
+#define APP_RX_DATA_SIZE  512
+#define APP_TX_DATA_SIZE  512
 /* USER CODE BEGIN EXPORTED_DEFINES */
 
 /* USER CODE END EXPORTED_DEFINES */

@@ -146,7 +146,7 @@ osThreadId_t USB_COM_taskHandle;
 const osThreadAttr_t USB_COM_task_attributes = {
     .name = "USB_COM_task",
     .stack_size = 2048 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
+    .priority = (osPriority_t)osPriorityLow2,
 };
 /* USER CODE BEGIN PV */
 
@@ -424,7 +424,6 @@ int main(void)
   
   HAL_Delay(5);
 
-
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
 
 
@@ -477,14 +476,6 @@ int main(void)
 
   HAL_I2C_Mem_Read(&hi2c1, devAddr, memAddr, I2C_MEMADD_SIZE_16BIT, (uint8_t*)rmsg, sizeof(rmsg), HAL_MAX_DELAY);
 
-
-  screen_sever_mode =  1;
-  if (screen_sever_mode) Start_video();
-  HAL_GPIO_WritePin(COL_B1_GPIO_Port, COL_B1_Pin, 1);
-  HAL_GPIO_WritePin(COL_B2_GPIO_Port, COL_B2_Pin, 1);
-  HAL_GPIO_WritePin(COL_B3_GPIO_Port, COL_B3_Pin, 1);
-  HAL_GPIO_WritePin(COL_B4_GPIO_Port, COL_B4_Pin, 1);
-  HAL_Delay(400);
   
   osKernelInitialize();
 
@@ -1097,8 +1088,19 @@ void StartDefaultTask(void *argument)
 {
   UNUSED(argument);
   RTC_read();
-  //MX_USB_HOST_Init();
+
   MX_USB_DEVICE_Init();
+  HAL_NVIC_SetPriority(OTG_FS_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(OTG_FS_IRQn);
+  screen_sever_mode =  1;
+  if (screen_sever_mode) Start_video();
+  HAL_GPIO_WritePin(COL_B1_GPIO_Port, COL_B1_Pin, 1);
+  HAL_GPIO_WritePin(COL_B2_GPIO_Port, COL_B2_Pin, 1);
+  HAL_GPIO_WritePin(COL_B3_GPIO_Port, COL_B3_Pin, 1);
+  HAL_GPIO_WritePin(COL_B4_GPIO_Port, COL_B4_Pin, 1);
+  HAL_Delay(400);
+  //MX_USB_HOST_Init();
+  //MX_USB_DEVICE_Init();
   
   //HAL_NVIC_SetPriority(OTG_FS_IRQn, 5, 0);
   //HAL_NVIC_EnableIRQ(OTG_FS_IRQn);
@@ -1269,8 +1271,6 @@ void USB_COM_task(void *argument)
   UNUSED(argument);
   for (;;)
   {   
-    osDelay(60000);
-    /*
       xSemaphoreTake(USB_COM_semaphore, portMAX_DELAY);
       UserRxBuffer[UserRxLength] = '\0'; // Завершаем строку
       if (strncmp((char *)UserRxBuffer, "STM+", 4) == 0)
@@ -1290,7 +1290,8 @@ void USB_COM_task(void *argument)
       }
       memset(UserRxBuffer, 0, sizeof(UserRxBuffer));
       UserRxLength = 0;
-      */
+      
+      
     }
 }
 
