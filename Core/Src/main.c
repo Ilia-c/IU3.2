@@ -36,6 +36,7 @@
 #include "usb_device.h"
 #include "usbd_cdc_if.h"
 #include <stdio.h>
+#include "USB_COMPORT.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -145,7 +146,7 @@ const osThreadAttr_t Keyboard_task_attributes = {
 osThreadId_t USB_COM_taskHandle;
 const osThreadAttr_t USB_COM_task_attributes = {
     .name = "USB_COM_task",
-    .stack_size = 2048 * 4,
+    .stack_size = 1024 * 4,
     .priority = (osPriority_t)osPriorityLow2,
 };
 /* USER CODE BEGIN PV */
@@ -393,6 +394,19 @@ uint8_t Check_Wakeup_Reason(void)
 }
 
 
+#define UART_RX_BUFFER_SIZE 128
+uint8_t UART_RxBuffer[UART_RX_BUFFER_SIZE];
+// Длина принятых данных UART
+volatile uint16_t UART_RxLength = 0;
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if (huart->Instance == UART4)
+    {
+        CDC_Transmit_FS(UART_RxBuffer, UART_RxLength);
+        HAL_UART_Receive_IT(&huart4, UART_RxBuffer, UART_RX_BUFFER_SIZE);
+    }
+}
+
 int main(void)
 {
   __HAL_RCC_PWR_CLK_ENABLE();
@@ -401,7 +415,6 @@ int main(void)
   HAL_Init();
   SystemClock_Config();
   PeriphCommonClock_Config();
-
   MX_GPIO_Init();
   MX_ADC1_Init();
   //MX_ADC3_Init();
@@ -410,6 +423,7 @@ int main(void)
   MX_SPI2_Init();
   MX_TIM6_Init();
   RTC_Init();
+
 
   HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, 0);
   HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ADC_Pin, 0);
@@ -421,6 +435,10 @@ int main(void)
   HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 0);
   HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);
   HAL_Delay(10);
+  MX_UART4_Init();
+  HAL_UART_Receive_IT(&huart4, UART_RxBuffer, UART_RX_BUFFER_SIZE);
+  HAL_NVIC_SetPriority(UART4_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(UART4_IRQn);
   HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, 1);
   HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ADC_Pin, 1);
   HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 1);
@@ -430,7 +448,6 @@ int main(void)
   HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 1);
   HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 1);
   HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);
-  
   HAL_Delay(5);
 
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
@@ -897,14 +914,6 @@ static void MX_SPI2_Init(void)
 
 static void MX_UART4_Init(void)
 {
-
-  /* USER CODE BEGIN UART4_Init 0 */
-
-  /* USER CODE END UART4_Init 0 */
-
-  /* USER CODE BEGIN UART4_Init 1 */
-
-  /* USER CODE END UART4_Init 1 */
   huart4.Instance = UART4;
   huart4.Init.BaudRate = 57600;
   huart4.Init.WordLength = UART_WORDLENGTH_8B;
@@ -914,7 +923,8 @@ static void MX_UART4_Init(void)
   huart4.Init.HwFlowCtl = UART_HWCONTROL_NONE;
   huart4.Init.OverSampling = UART_OVERSAMPLING_16;
   huart4.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart4.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  huart4.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_DMADISABLEONERROR_INIT;
+  huart4.AdvancedInit.DMADisableonRxError = UART_ADVFEATURE_DMA_DISABLEONRXERROR;
   if (HAL_UART_Init(&huart4) != HAL_OK)
   {
     Error_Handler();
@@ -1266,69 +1276,18 @@ void Keyboard_task(void *argument)
 }
 
 
-#define RX_BUFFER_SIZE 128
-extern uint8_t UserRxBuffer[RX_BUFFER_SIZE];
-extern uint16_t UserRxLength;
-void TrimCommand(char *command)
-{
-    char *end = command + strlen(command) - 1;
-
-    while (end >= command && (*end == '\r' || *end == '\n'))
-    {
-        *end = '\0';
-        end--;
-    }
-}
 
 
 // ИЗМЕНИТЬ БУФФЕР НА СТАНДАРТНРЫЙ
 void USB_COM_task(void *argument)
 {
     UNUSED(argument);
-
     for (;;)
     {
         // Ожидаем семафор (данные готовы к обработке)
         xSemaphoreTake(USB_COM_semaphore, portMAX_DELAY);
-        
-            // Удаляем завершающие символы (\r и \n)
-            char *command = (char *)UserRxBuffer;
-            TrimCommand(command);
-
-            // Проверяем префикс команды
-            if (strncmp(command, "STM+", 4) == 0)
-            {
-                const char *cmd = &command[4];
-
-                if (strcmp(cmd, "PING") == 0)
-                {
-                    CDC_Transmit_FS((uint8_t *)"PONG\r\n", 6);
-                }
-                else if (strcmp(cmd, "HELLO") == 0)
-                {
-                    CDC_Transmit_FS((uint8_t *)"Hello from STM32!\r\n", 20);
-                }
-                else if (strcmp(cmd, "STATUS") == 0)
-                {
-                    CDC_Transmit_FS((uint8_t *)"System status: OK\r\n", 20);
-                }
-                else
-                {
-                    CDC_Transmit_FS((uint8_t *)"Unknown command\r\n", 17);
-                }
-            }
-            else
-            {
-                CDC_Transmit_FS((uint8_t *)"Invalid command prefix\r\n", 25);
-            }
-
-            // Очищаем буфер
-            memset(UserRxBuffer, 0, sizeof(UserRxBuffer));
-            UserRxLength = 0;
-        }
-
-        osDelay(1); // Задержка для предотвращения "пустого" цикла
-    
+        USB_COM();
+    }
 }
 
 int a = 0;

@@ -275,30 +275,29 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
   */
 
 extern xSemaphoreHandle USB_COM_semaphore;
-#define RX_BUFFER_SIZE 128
+#define RX_BUFFER_SIZE APP_RX_DATA_SIZE
 
-uint8_t UserRxBuffer[RX_BUFFER_SIZE];  // Буфер для приема данных
-uint16_t UserRxLength = 0;            // Длина данных
+uint16_t UserRxLength = 0;
 
 static int8_t CDC_Receive_FS(uint8_t *Buf, uint32_t *Len)
 {
   if (*Len < RX_BUFFER_SIZE)
   {
-    memcpy(UserRxBuffer, Buf, *Len);
-    UserRxBuffer[*Len] = '\0'; // Завершаем строку
+    // Используем UserRxBufferFS для приема данных
+    memcpy(UserRxBufferFS, Buf, *Len);
+    UserRxBufferFS[*Len] = '\0'; // Завершаем строку
     UserRxLength = *Len;
 
-    // Освобождаем семафор, чтобы задача начала обработку данных
+    // Освобождаем семафор
     BaseType_t xTaskWoken = pdFALSE;
     xSemaphoreGiveFromISR(USB_COM_semaphore, &xTaskWoken);
-    portYIELD_FROM_ISR(xTaskWoken); // Переключение задач, если требуется
+    portYIELD_FROM_ISR(xTaskWoken);
   }
 
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
-  // CDC_Transmit_FS((uint8_t *)"USB CDC ready\r\n", 15);
+
   return (USBD_OK);
-  /* USER CODE END 6 */
 }
 
 /**

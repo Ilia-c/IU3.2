@@ -61,6 +61,7 @@ extern DMA_HandleTypeDef hdma_sdmmc1_tx;
 extern SD_HandleTypeDef hsd1;
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim6;
+extern UART_HandleTypeDef huart4;
 
 /* USER CODE BEGIN EV */
 
@@ -269,6 +270,18 @@ void DMA2_Channel4_IRQHandler(void)
   /* USER CODE BEGIN DMA2_Channel4_IRQn 1 */
 
   /* USER CODE END DMA2_Channel4_IRQn 1 */
+}
+
+
+void UART4_IRQHandler(void)
+{
+  /* USER CODE BEGIN UART4_IRQn 0 */
+
+  /* USER CODE END UART4_IRQn 0 */
+  HAL_UART_IRQHandler(&huart4);
+  /* USER CODE BEGIN UART4_IRQn 1 */
+
+  /* USER CODE END UART4_IRQn 1 */
 }
 
 /**

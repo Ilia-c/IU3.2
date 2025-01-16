@@ -41,6 +41,7 @@ target_include_directories(stm32cubemx INTERFACE
     ../../USB_DEVICE/App
     ../../USB_DEVICE/Target
     ../../Library/USB-UART_Mode
+    ../../Library/USB
 )
 
 target_sources(stm32cubemx INTERFACE
@@ -131,6 +132,8 @@ target_sources(stm32cubemx INTERFACE
     ../../USB_DEVICE/App/usbd_desc.c
     ../../USB_DEVICE/App/usbd_cdc_if.c
     ../../USB_DEVICE/Target/usbd_conf.c
+    ../../Library/USB/USB_FLASH.c
+    ../../Library/USB/USB_COMPORT.c
 )
 
 target_link_directories(stm32cubemx INTERFACE
