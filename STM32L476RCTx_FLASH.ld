@@ -69,6 +69,12 @@ FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 512K
 /* Define output sections */
 SECTIONS
 {
+  .ram2 (NOLOAD) :
+  {
+    . = ALIGN(4);
+    *(.ram2 .ram2.*)   /* все секции, начинающиеся на .ram2 */
+    . = ALIGN(4);
+  } >RAM2
   /* The startup code goes first into FLASH */
   .isr_vector :
   {

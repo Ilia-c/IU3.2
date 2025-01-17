@@ -8,52 +8,91 @@ extern UART_HandleTypeDef huart4;
 
 void TrimCommand(char *command)
 {
-    char *end = command + strlen(command) - 1;
-
-    while (end >= command && (*end == '\r' || *end == '\n'))
+    // Удаляем только завершающий '\n' (если есть)
+    int len = strlen(command);
+    if (len > 0 && command[len - 1] == '\n')
     {
-        *end = '\0';
-        end--;
+        command[len - 1] = '\0';
     }
 }
 
+uint8_t command_un = 0;
 void USB_COM(void *argument)
 {
-    // Удаляем завершающие символы (\r и \n)
+    command_un = 0;
+    // 1) Удаляем завершающие символы (только '\n')
     char *command = (char *)UserRxBufferFS;
     TrimCommand(command);
 
-    // Проверяем префикс команды
+    // 2) Проверяем «STM+»
     if (strncmp(command, "STM+", 4) == 0)
     {
+        command_un = 1;
         const char *cmd = &command[4];
 
-        if (strcmp(cmd, "STATUS") == 0)
+        if (strstr(cmd, "STATUS") != NULL)
         {
             USB_Send_Status_Report();
-            return;
         }
-        else if (strcmp(cmd, "HELLO") == 0)
+        else if (strstr(cmd, "HELLO") != NULL)
         {
-            CDC_Transmit_FS((uint8_t *)"Hello from STM32!\r\n", 20);
-            return;
+            CDC_Transmit_FS((uint8_t *)"Hello from STM32!\r\n", 32);
         }
-
-        CDC_Transmit_FS((uint8_t *)"Unknown command\r\n", 17);
-        return;
+        else if (strstr(cmd, "RSTGSM") != NULL)
+        {
+            CDC_Transmit_FS((uint8_t *)"START RESET L651\r\n", 32);
+            HAL_GPIO_WritePin(ON_N25_GPIO_Port, ON_N25_Pin, 0);
+            HAL_Delay(100);
+            HAL_GPIO_WritePin(ON_N25_GPIO_Port, ON_N25_Pin, 1);
+            HAL_Delay(100);
+            HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 1);
+            HAL_Delay(600);
+            HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 0);
+            CDC_Transmit_FS((uint8_t *)"FINISH RESET L651\r\n", 32);
+        }
+        else
+        {
+            CDC_Transmit_FS((uint8_t *)"Unknown command\r\n", 17);
+        }
     }
+
     if (strncmp(command, "AT", 2) == 0)
     {
-        // Пересылка команды AT+ через UART4
+        command_un = 1;
+        // Передаем всю команду по UART4
+        SendSomeCommandAndSetFlag();
         HAL_UART_Transmit(&huart4, (uint8_t *)command, strlen(command), HAL_MAX_DELAY);
-        CDC_Transmit_FS((uint8_t *)"Command sent via UART4\r\n", 24);
-        return;
+
+        // Формируем ответ для USB
+        char response[128];
+        snprintf(response, sizeof(response),"Command L651: %s", command);
+
+        // Отправляем ответ
+        CDC_Transmit_FS((uint8_t *)response, strlen(response));
     }
-    CDC_Transmit_FS((uint8_t *)"Invalid command prefix\r\n", 25);
-    return;
-    // Очищаем буфер
+
+    if (strncmp(command, "GSM+", 4) == 0)
+    {
+        command_un = 1;
+        memmove(command, command + 4, strlen(command + 4) + 1);
+        SendSomeCommandAndSetFlag();
+        HAL_UART_Transmit(&huart4, (uint8_t *)command, strlen(command), HAL_MAX_DELAY);
+
+        // Формируем ответ для USB
+        char response[128];
+        snprintf(response, sizeof(response),"Command L651: %s", command);
+
+        // Отправляем ответ
+        CDC_Transmit_FS((uint8_t *)response, strlen(response));
+    }
+
+    if (command_un == 0) CDC_Transmit_FS((uint8_t *)"Invalid command prefix\r\n", 25);
     memset(UserRxBufferFS, 0, RX_BUFFER_SIZE);
+
 }
+
+
+
 
 
 extern Prgramm_version_item Prog_ver;

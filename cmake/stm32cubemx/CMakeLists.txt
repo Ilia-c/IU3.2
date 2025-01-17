@@ -40,8 +40,8 @@ target_include_directories(stm32cubemx INTERFACE
     ../../USB_HOST/Target
     ../../USB_DEVICE/App
     ../../USB_DEVICE/Target
-    ../../Library/USB-UART_Mode
     ../../Library/USB
+    ../../Library/UART_GSM
 )
 
 target_sources(stm32cubemx INTERFACE
@@ -114,7 +114,6 @@ target_sources(stm32cubemx INTERFACE
     ../../Library/w25q128/w25q128.c
     ../../Library/ADC/MS5193T.c
     ../../Library/SD_card/SD.c
-    ../../Library/USB-UART_Mode/UART_GMS.c
     ../../Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_core.c
     ../../Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ctlreq.c
     ../../Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ioreq.c
@@ -134,6 +133,7 @@ target_sources(stm32cubemx INTERFACE
     ../../USB_DEVICE/Target/usbd_conf.c
     ../../Library/USB/USB_FLASH.c
     ../../Library/USB/USB_COMPORT.c
+    ../../Library/UART_GSM/GSM.c
 )
 
 target_link_directories(stm32cubemx INTERFACE

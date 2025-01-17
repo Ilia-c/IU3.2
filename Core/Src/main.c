@@ -32,11 +32,12 @@
 #include "w25q128.h"
 #include "MS5193T.h"
 #include "SD.h"
-//#include "usb_host.h"
+#include "usb_host.h"
 #include "usb_device.h"
 #include "usbd_cdc_if.h"
 #include <stdio.h>
 #include "USB_COMPORT.h"
+#include "GSM.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -51,6 +52,8 @@ xSemaphoreHandle USB_COM_semaphore;
 extern uint16_t Timer_key_one_press;
 extern uint16_t Timer_key_press;
 extern uint8_t screen_sever_mode;
+
+extern uint8_t gsmRxChar;
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -146,7 +149,7 @@ const osThreadAttr_t Keyboard_task_attributes = {
 osThreadId_t USB_COM_taskHandle;
 const osThreadAttr_t USB_COM_task_attributes = {
     .name = "USB_COM_task",
-    .stack_size = 1024 * 4,
+    .stack_size = 1024 * 6,
     .priority = (osPriority_t)osPriorityLow2,
 };
 /* USER CODE BEGIN PV */
@@ -164,6 +167,7 @@ static void MX_I2C1_Init(void);        //
 static void MX_I2C2_Init(void);        //
 static void MX_SDMMC1_SD_Init(void);   //
 static void MX_SPI2_Init(void);        //
+//static void MX_UART1_Init(void);       //
 static void MX_UART4_Init(void);       //
 static void MX_TIM6_Init(void);
 
@@ -394,18 +398,7 @@ uint8_t Check_Wakeup_Reason(void)
 }
 
 
-#define UART_RX_BUFFER_SIZE 128
-uint8_t UART_RxBuffer[UART_RX_BUFFER_SIZE];
-// Длина принятых данных UART
-volatile uint16_t UART_RxLength = 0;
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-    if (huart->Instance == UART4)
-    {
-        CDC_Transmit_FS(UART_RxBuffer, UART_RxLength);
-        HAL_UART_Receive_IT(&huart4, UART_RxBuffer, UART_RX_BUFFER_SIZE);
-    }
-}
+void None_func(){}
 
 int main(void)
 {
@@ -435,8 +428,11 @@ int main(void)
   HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 0);
   HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);
   HAL_Delay(10);
+
+  EnableUsbCDC_UART(*None_func);
   MX_UART4_Init();
-  HAL_UART_Receive_IT(&huart4, UART_RxBuffer, UART_RX_BUFFER_SIZE);
+
+
   HAL_NVIC_SetPriority(UART4_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(UART4_IRQn);
   HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, 1);
@@ -1099,6 +1095,7 @@ void StartDefaultTask(void *argument)
   MX_USB_DEVICE_Init();
   HAL_NVIC_SetPriority(OTG_FS_IRQn, 5, 0); // Приоритет прерывания
   HAL_NVIC_EnableIRQ(OTG_FS_IRQn);        // Включение прерывания
+  HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
   screen_sever_mode =  1;
   if (screen_sever_mode) Start_video();
   HAL_GPIO_WritePin(COL_B1_GPIO_Port, COL_B1_Pin, 1);
