@@ -58,24 +58,13 @@ void ParseGsmLine(char *line)
         return;
     }
 
-    // Теперь cmdSent = 1, значит мы аккумулируем все строки в cmdBuffer
-    // и после OK или ERROR всё отправим.
-    // Проверяем, влезает ли строка в наш cmdBuffer (с запасом под \r\n и '\0')
     uint16_t lineLen = strlen(line);
     if (cmdIndex + lineLen + 2 < CMD_BUFFER_SIZE - 1)
     {
         strcpy(&cmdBuffer[cmdIndex], line);
         cmdIndex += lineLen;
-        // Добавим "\r\n" в конец, чтобы сохранить структуру построчно
-        //cmdBuffer[cmdIndex++] = '\r';
-        //cmdBuffer[cmdIndex++] = '\n';
-        //cmdBuffer[cmdIndex] = '\0';
     }
 
-    // Проверяем, есть ли в строке "OK" или "ERROR"
-    // Важно: "ERROR" может быть и "+CME ERROR: 50" — т.е. substr "ERROR"
-    // всё равно найдётся.
-    // Аналогичная проверка "ERROR" (ищем подстроку "ERROR")
     if ((strstr(line, "ERROR") != NULL) || (strstr(line, "OK") != NULL) || (strstr(line, "COMMAND NO RESPONSE!") != NULL))
     {
 

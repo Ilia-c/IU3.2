@@ -164,7 +164,7 @@ char SD_status_char[3]     = "ERR";
 uint8_t display_status     = 0;
 
 // Нажатые клавиши
-char    Keyboard_press_code= 0;
+char    Keyboard_press_code= 0x00;
 uint8_t Display_update     = 0;
 
 // Статус АКБ и батарейки
@@ -210,6 +210,6 @@ char len                         = 0x00;
 uint16_t time_sleep_h            = 2; 
 uint16_t time_sleep_m            = 0; 
 
-uint16_t Timer_key_one_press     = 50;  
-uint16_t Timer_key_press         = 300; 
+uint16_t Timer_key_one_press     = 20;  
+uint16_t Timer_key_press         = 200; 
 

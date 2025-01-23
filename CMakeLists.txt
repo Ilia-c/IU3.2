@@ -66,3 +66,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 
     # Add user defined libraries
 )
+
+set(linker_flags
+    "${linker_flags} -Wl,-Map=project.map"
+)

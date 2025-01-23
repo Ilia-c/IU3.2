@@ -48,7 +48,8 @@ typedef struct MAKE_MENU
     const char Name_rus[26];  // Название пункта меню на русском
     const char Name_en[26];   // Название пункта меню на английском
     int Num_menu;             // Номер вкладки сверху при переходе
-    menuSelect_item *add_signat;           // дополнительная надпись справа (режим) 0 - отключено 1 - select_bar
+    const int data_update;             // Обновлять или нет этот пункт меню каждые 100мс (1/0 вкл/выкл)
+    menuSelect_item *add_signat;       // дополнительная надпись справа (режим) 0 - отключено 1 - select_bar
 
     /*  тип меню (char)0b543210
         6 - вкладка                                             0x40

@@ -77,6 +77,18 @@
 #define configUSE_RECURSIVE_MUTEXES              1
 #define configUSE_COUNTING_SEMAPHORES            1
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION  0
+
+
+
+#include "stm32l4xx.h"
+#define configRECORD_STACK_HIGH_ADDRESS 1
+#define configGENERATE_RUN_TIME_STATS 1
+#define INCLUDE_xSemaphoreGetMutexHolder 1
+extern void DWT_Init(void); // чтобы видеть прототип функции
+#define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()  DWT_Init()
+#define portGET_RUN_TIME_COUNTER_VALUE() (DWT->CYCCNT)
+
+
 /* USER CODE BEGIN MESSAGE_BUFFER_LENGTH_TYPE */
 /* Defaults to size_t for backward compatibility, but can be changed
    if lengths will always be less than the number of bytes in a size_t. */

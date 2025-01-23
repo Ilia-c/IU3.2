@@ -60,6 +60,7 @@ extern DMA_HandleTypeDef hdma_sdmmc1_rx;
 extern DMA_HandleTypeDef hdma_sdmmc1_tx;
 extern SD_HandleTypeDef hsd1;
 extern TIM_HandleTypeDef htim2;
+extern TIM_HandleTypeDef htim5;
 extern TIM_HandleTypeDef htim6;
 extern UART_HandleTypeDef huart4;
 
@@ -194,9 +195,15 @@ void TIM2_IRQHandler(void)
   /* USER CODE END TIM2_IRQn 1 */
 }
 
-extern int a;
+void TIM5_IRQHandler(void)
+{
+  HAL_TIM_IRQHandler(&htim5);
+  HAL_TIM5_Callback();
+}
+
 void TIM6_DAC_IRQHandler(void)
 {
+  HAL_TIM_IRQHandler(&htim6);
   HAL_TIM6_Callback();
 }
 
@@ -217,29 +224,13 @@ void TIM6_DAC_IRQHandler(void)
   */
 void EXTI4_IRQHandler(void)
 {
-  /* USER CODE BEGIN EXTI4_IRQn 0 */
-
-  /* USER CODE END EXTI4_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(STR_B4_Pin);
-  /* USER CODE BEGIN EXTI4_IRQn 1 */
-
-  /* USER CODE END EXTI4_IRQn 1 */
 }
-
-/**
-  * @brief This function handles EXTI line[9:5] interrupts.
-  */
 void EXTI9_5_IRQHandler(void)
 {
-  /* USER CODE BEGIN EXTI9_5_IRQn 0 */
-
-  /* USER CODE END EXTI9_5_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(STR_B1_Pin);
   HAL_GPIO_EXTI_IRQHandler(STR_B2_Pin);
   HAL_GPIO_EXTI_IRQHandler(STR_B3_Pin);
-  /* USER CODE BEGIN EXTI9_5_IRQn 1 */
-
-  /* USER CODE END EXTI9_5_IRQn 1 */
 }
 /**
   * @brief This function handles USB OTG FS global interrupt.
