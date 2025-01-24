@@ -9,6 +9,7 @@ extern char Keyboard_press_code;
 
 extern xSemaphoreHandle TIM6_semaphore_100us;
 extern TIM_HandleTypeDef htim6;
+extern uint16_t Timer_key_press;
 
 extern int mode_redact;
 
@@ -24,8 +25,6 @@ void ret_keyboard()
 {
     xSemaphoreGive(Display_semaphore);
     if ((mode_redact == 1) || ((mode_redact == 0) && ((Keyboard_press_code == 'U') || (Keyboard_press_code == 'D')))) // что бы при зажатии не проваливаться во вложенные пункты меню
-    HAL_TIM_Base_Start_IT(&htim6);
-    TIM6->CNT = 0;
 
     HAL_GPIO_WritePin(COL_B1_GPIO_Port, COL_B1_Pin, 1);
     HAL_GPIO_WritePin(COL_B2_GPIO_Port, COL_B2_Pin, 1);
@@ -42,17 +41,25 @@ void ret_keyboard()
     HAL_NVIC_ClearPendingIRQ(EXTI9_5_IRQn);
     HAL_NVIC_EnableIRQ(EXTI4_IRQn);
     HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+    TIM6->SR &= ~TIM_SR_UIF;
+    __HAL_TIM_SET_COUNTER(&htim6, 0);
+    HAL_TIM_Base_Start_IT(&htim6);
 }
 
 
 void ScanKeypad()
 {
-    osDelay(1);
-
+    osDelay(2);
     // Если был дребезг
-    if ((HAL_GPIO_ReadPin(STR_B1_GPIO_Port, STR_B1_Pin) == 0) && (HAL_GPIO_ReadPin(STR_B2_GPIO_Port, STR_B2_Pin) == 0) && (HAL_GPIO_ReadPin(STR_B3_GPIO_Port, STR_B3_Pin) == 0) && (HAL_GPIO_ReadPin(STR_B4_GPIO_Port, STR_B4_Pin) == 0))
-    return;
+    if ((HAL_GPIO_ReadPin(STR_B1_GPIO_Port, STR_B1_Pin) == 0) && (HAL_GPIO_ReadPin(STR_B2_GPIO_Port, STR_B2_Pin) == 0) && (HAL_GPIO_ReadPin(STR_B3_GPIO_Port, STR_B3_Pin) == 0) && (HAL_GPIO_ReadPin(STR_B4_GPIO_Port, STR_B4_Pin) == 0)){
+        __HAL_TIM_SET_AUTORELOAD(&htim6, Timer_key_press-1);
+        __HAL_TIM_SET_COUNTER(&htim6, 0);
+        return;
+    }
     
+    
+    HAL_TIM_Base_Stop_IT(&htim6);
+    TIM6->SR &= ~TIM_SR_UIF;
     HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
     HAL_NVIC_DisableIRQ(EXTI4_IRQn);
 
@@ -187,9 +194,7 @@ void ScanKeypad()
     __HAL_GPIO_EXTI_CLEAR_IT(STR_B4_Pin);
     HAL_NVIC_ClearPendingIRQ(EXTI4_IRQn);
     HAL_NVIC_ClearPendingIRQ(EXTI9_5_IRQn);
+    
     HAL_NVIC_EnableIRQ(EXTI4_IRQn);
     HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
-
-    HAL_TIM_Base_Stop_IT(&htim6);
-    TIM6->CNT = 0;
 }

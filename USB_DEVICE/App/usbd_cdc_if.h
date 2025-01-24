@@ -31,6 +31,7 @@
 #include "FreeRTOS.h"
 #include "semphr.h"
 #include "main.h"
+#include "Settings.h"
 
 /* USER CODE BEGIN INCLUDE */
 

@@ -211,5 +211,8 @@ uint16_t time_sleep_h            = 2;
 uint16_t time_sleep_m            = 0; 
 
 uint16_t Timer_key_one_press     = 20;  
-uint16_t Timer_key_press         = 200; 
+uint16_t Timer_key_press         = 800; 
+uint16_t Timer_key_press_fast    = 200; 
 
+#define MY_USB_RX_BUFFER_SIZE  512   // Максимум, что хотим собрать
+uint8_t g_myRxBuffer[MY_USB_RX_BUFFER_SIZE];

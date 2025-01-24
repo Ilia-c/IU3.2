@@ -1,7 +1,7 @@
 #include "GSM.h"
 
-#define MAX_LINE_LEN 256
-#define CMD_BUFFER_SIZE 1024
+#define MAX_LINE_LEN 512
+#define CMD_BUFFER_SIZE 512
 
 extern UART_HandleTypeDef huart4;
 // Флаг включённого USB: 0 — не передавать, 0xFF — передавать
@@ -91,13 +91,14 @@ void ParseGsmLine(char *line)
  */
 void ProcessGsmChar(uint8_t c)
 {
-    if (c == '>')
+    if ((c == '>') && (gsmLineIndex==0))
     {
         if (usbEnabled == 0xFF)
         {
             gsmLineBuffer[gsmLineIndex++] = c;
             gsmLineBuffer[gsmLineIndex] = '\0';
             CDC_Transmit_FS((uint8_t *)gsmLineBuffer, 1);
+            //CDC_Transmit_FS((uint8_t *)gsmLineBuffer, strlen(gsmLineBuffer));
             cmdIndex = 0;
             cmdBuffer[0] = '\0';
             cmdSent = 0;
@@ -163,9 +164,7 @@ void ProcessGsmChar(uint8_t c)
             {
                 gsmLineBuffer[MAX_LINE_LEN - 1] = '\0';
             }
-
             ParseGsmLine((char *)gsmLineBuffer);
-
             gsmLineIndex = 0;
             parseState = PARSE_IDLE;
             return;

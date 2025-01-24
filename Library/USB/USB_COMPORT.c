@@ -15,13 +15,13 @@ void TrimCommand(char *command)
         command[len - 1] = '\0';
     }
 }
-
+extern uint8_t g_myRxBuffer[512]; 
+extern uint8_t UserRxBufferFS[512];
 uint8_t command_un = 0;
 void USB_COM(void *argument)
 {
     command_un = 0;
-    // 1) Удаляем завершающие символы (только '\n')
-    char *command = (char *)UserRxBufferFS;
+    char *command = (char *)g_myRxBuffer;
     TrimCommand(command);
 
     // 2) Проверяем «STM+»
@@ -58,17 +58,15 @@ void USB_COM(void *argument)
 
     if (strncmp(command, "AT", 2) == 0)
     {
+        char response[512];
+                // Отправляем ответ
+        snprintf(response, sizeof(response),"Command L651: %s", command);
+        CDC_Transmit_FS((uint8_t *)response, strlen(response));
+
         command_un = 1;
         // Передаем всю команду по UART4
         SendSomeCommandAndSetFlag();
         HAL_UART_Transmit(&huart4, (uint8_t *)command, strlen(command), HAL_MAX_DELAY);
-
-        // Формируем ответ для USB
-        char response[128];
-        snprintf(response, sizeof(response),"Command L651: %s", command);
-
-        // Отправляем ответ
-        CDC_Transmit_FS((uint8_t *)response, strlen(response));
     }
 
     if (strncmp(command, "GSM+", 4) == 0)
@@ -79,7 +77,7 @@ void USB_COM(void *argument)
         HAL_UART_Transmit(&huart4, (uint8_t *)command, strlen(command), HAL_MAX_DELAY);
 
         // Формируем ответ для USB
-        char response[128];
+        char response[512];
         snprintf(response, sizeof(response),"Command L651: %s", command);
 
         // Отправляем ответ
@@ -88,6 +86,8 @@ void USB_COM(void *argument)
 
     if (command_un == 0) CDC_Transmit_FS((uint8_t *)"Invalid command prefix\r\n", 25);
     memset(UserRxBufferFS, 0, RX_BUFFER_SIZE);
+    memset(g_myRxBuffer, 0, RX_BUFFER_SIZE);
+
 
 }
 
@@ -98,7 +98,7 @@ void USB_COM(void *argument)
 extern Prgramm_version_item Prog_ver;
 void USB_Send_Status_Report(void)
 {
-    char buffer[128]; // Локальный буфер для передачи данных
+    char buffer[512]; // Локальный буфер для передачи данных
     int len = 0;      // Текущая длина строки
 
     // Отправляем данные о GSM

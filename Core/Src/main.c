@@ -52,6 +52,7 @@ xSemaphoreHandle Main_semaphore;
 
 extern uint16_t Timer_key_one_press;
 extern uint16_t Timer_key_press;
+extern uint16_t Timer_key_press_fast;
 extern uint8_t screen_sever_mode;
 
 extern uint8_t gsmRxChar;
@@ -145,13 +146,13 @@ osThreadId_t Keyboard_taskHandle;
 const osThreadAttr_t Keyboard_task_attributes = {
     .name = "Keyboard_task",
     .stack_size = 128 * 2,
-    .priority = (osPriority_t)osPriorityLow2,
+    .priority = (osPriority_t)osPriorityLow4,
 };
 
 osThreadId_t USB_COM_taskHandle;
 const osThreadAttr_t USB_COM_task_attributes = {
     .name = "USB_COM_task",
-    .stack_size = 1024 * 6,
+    .stack_size = 1024 * 8,
     .priority = (osPriority_t)osPriorityLow2,
 };
 /* USER CODE BEGIN PV */
@@ -518,14 +519,21 @@ int main(void)
  * @brief System Clock Configuration
  * @retval None
  */
-extern uint16_t PORT_NUM;
-extern int interrupt;
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
   if ((GPIO_Pin == STR_B1_Pin) || (GPIO_Pin == STR_B2_Pin) || (GPIO_Pin == STR_B3_Pin) || (GPIO_Pin == STR_B4_Pin))
   {
-    static portBASE_TYPE xTaskWoken;
-    xSemaphoreGiveFromISR(Keyboard_semapfore, &xTaskWoken); 
+    uint8_t B1 = HAL_GPIO_ReadPin(STR_B1_GPIO_Port, STR_B1_Pin);
+    uint8_t B2 = HAL_GPIO_ReadPin(STR_B2_GPIO_Port, STR_B2_Pin);
+    uint8_t B3 = HAL_GPIO_ReadPin(STR_B2_GPIO_Port, STR_B3_Pin);
+    uint8_t B4 = HAL_GPIO_ReadPin(STR_B3_GPIO_Port, STR_B4_Pin);
+    osDelay(2);
+    if ((HAL_GPIO_ReadPin(STR_B1_GPIO_Port, STR_B1_Pin) == B1) && (HAL_GPIO_ReadPin(STR_B2_GPIO_Port, STR_B2_Pin) == B2) && (HAL_GPIO_ReadPin(STR_B3_GPIO_Port, STR_B3_Pin) == B3) && (HAL_GPIO_ReadPin(STR_B4_GPIO_Port, STR_B4_Pin) == B4))
+    {
+
+      static portBASE_TYPE xTaskWoken;
+      xSemaphoreGiveFromISR(Keyboard_semapfore, &xTaskWoken);
+    }
   }
 }
 
@@ -578,9 +586,10 @@ void HAL_TIM5_Callback(void)
 
 void HAL_TIM6_Callback(void)
 {
-  HAL_TIM_IRQHandler(&htim6);
-  TIM6->CNT = 0;
   HAL_TIM_Base_Stop_IT(&htim6);
+          __HAL_TIM_SET_AUTORELOAD(&htim6, Timer_key_press-1);
+  //TIM6->CNT = 0;
+  //__HAL_TIM_SET_AUTORELOAD(&htim6, Timer_key_press_fast);
   static portBASE_TYPE xTaskWoken;
   xSemaphoreGiveFromISR(Keyboard_semapfore, &xTaskWoken); 
 }
@@ -787,13 +796,13 @@ static void MX_TIM6_Init(void)
   htim6.Init.Prescaler = 40000 - 1;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim6.Init.Period = Timer_key_press - 1;
-  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
     Error_Handler();
   }
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  sMasterConfig.MasterSlaveMode = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
   {
     Error_Handler();
@@ -1083,13 +1092,13 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : STR_B1_Pin STR_B2_Pin STR_B3_Pin */
   GPIO_InitStruct.Pin = STR_B1_Pin|STR_B2_Pin|STR_B3_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : STR_B4_Pin */
   GPIO_InitStruct.Pin = STR_B4_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(STR_B4_GPIO_Port, &GPIO_InitStruct);
 
@@ -1268,11 +1277,8 @@ void Main(void *argument)
 
 
   // Настройка таймера клавиатуры
-  NVIC_SetPriority(TIM6_DAC_IRQn, 6);
-  TIM6->SR&=~TIM_SR_UIF;
-  TIM6->CNT = 0;
-  HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);
-  
+  HAL_NVIC_SetPriority(TIM6_DAC_IRQn, 8, 0); // Установите приоритет
+  HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);        // Включите прерывание
 
   HAL_Delay(100);
   HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 1);
@@ -1345,7 +1351,7 @@ void Keyboard_task(void *argument)
   {
     xSemaphoreTake(Keyboard_semapfore, portMAX_DELAY);
     ScanKeypad();
-    osDelay(Timer_key_one_press);
+    //osDelay(Timer_key_one_press);
   }
 }
 
