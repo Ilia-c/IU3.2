@@ -22,12 +22,12 @@ const char keyMap[4][4] = {
     {'7', '8', '9', 'L'},
     {'0', 'P', 'O', 'R'}};
 void ret_keyboard()
-{
+{   
+    
     if (Prot_Keyboard_press_code == 0xFF){
+        __HAL_TIM_SET_AUTORELOAD(&htim6, Timer_key_press);
         if (Keyboard_press_code != 0xFF){
             xSemaphoreGive(Display_semaphore);
-            Prot_Keyboard_press_code = 0xFF;
-            __HAL_TIM_SET_AUTORELOAD(&htim6, Timer_key_press);
         }
     }
     else{
@@ -35,6 +35,7 @@ void ret_keyboard()
             xSemaphoreGive(Display_semaphore);
         }
         Keyboard_press_code = Prot_Keyboard_press_code;
+        if ((mode_redact == 1) || ((mode_redact == 0) && ((Keyboard_press_code == 'U') || (Keyboard_press_code == 'D'))))
         HAL_TIM_Base_Start_IT(&htim6);
     }
     //Keyboard_press_code = Prot_Keyboard_press_code;

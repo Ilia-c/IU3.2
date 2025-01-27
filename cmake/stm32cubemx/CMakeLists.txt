@@ -42,6 +42,7 @@ target_include_directories(stm32cubemx INTERFACE
     ../../USB_DEVICE/Target
     ../../Library/USB
     ../../Library/UART_GSM
+    ../../Library/Sleep_system
 )
 
 target_sources(stm32cubemx INTERFACE
@@ -134,6 +135,7 @@ target_sources(stm32cubemx INTERFACE
     ../../Library/USB/USB_FLASH.c
     ../../Library/USB/USB_COMPORT.c
     ../../Library/UART_GSM/GSM.c
+    ../../Library/Sleep_system/Sleep.c
 )
 
 target_link_directories(stm32cubemx INTERFACE

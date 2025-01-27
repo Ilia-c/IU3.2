@@ -35,7 +35,7 @@ rule C_COMPILER__CubeMX_unscanned_Debug
 # Rule for linking C executable.
 
 rule C_EXECUTABLE_LINKER__CubeMX_Debug
-  command = C:\Windows\system32\cmd.exe /C "$PRE_LINK && C:\ST\STM32CubeCLT_1.16.0\GNU-tools-for-STM32\bin\arm-none-eabi-gcc.exe $FLAGS -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard  -T "C:/Users/39611/Desktop/Projects/IU3.2/STM32L476RCTx_FLASH.ld" --specs=nano.specs -Wl,-Map=CubeMX.map -Wl,--gc-sections -Wl,--start-group -lc -lm -Wl,--end-group -Wl,--print-memory-usage $LINK_FLAGS $in -o $TARGET_FILE $LINK_PATH $LINK_LIBRARIES && $POST_BUILD"
+  command = C:\Windows\system32\cmd.exe /C "$PRE_LINK && C:\ST\STM32CubeCLT_1.16.0\GNU-tools-for-STM32\bin\arm-none-eabi-gcc.exe $FLAGS -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard  -T "C:/Projects/IU3.2/STM32L476RCTx_FLASH.ld" --specs=nano.specs -Wl,-Map=CubeMX.map -Wl,--gc-sections -Wl,--start-group -lc -lm -Wl,--end-group -Wl,--print-memory-usage $LINK_FLAGS $in -o $TARGET_FILE $LINK_PATH $LINK_LIBRARIES && $POST_BUILD"
   description = Linking C executable $TARGET_FILE
   restat = $RESTAT
 
@@ -52,7 +52,7 @@ rule CUSTOM_COMMAND
 # Rule for re-running cmake.
 
 rule RERUN_CMAKE
-  command = C:\ST\STM32CubeCLT_1.16.0\CMake\bin\cmake.exe --regenerate-during-build -SC:\Users\39611\Desktop\Projects\IU3.2 -BC:\Users\39611\Desktop\Projects\IU3.2\build\Debug
+  command = C:\ST\STM32CubeCLT_1.16.0\CMake\bin\cmake.exe --regenerate-during-build -SC:\Projects\IU3.2 -BC:\Projects\IU3.2\build\Debug
   description = Re-running CMake...
   generator = 1
 

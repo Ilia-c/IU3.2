@@ -85,6 +85,7 @@ uint8_t dat = 0;
 #define UPTADE_ON 1
 #define UPTADE_OFF 0
 
+extern TIM_HandleTypeDef htim6;
 void NULL_F(){}
 #define MAKE_MENU(Id, Name_rus, Name_en, Num_menu, data_uptade, _add_signat, Next, Previous, Parent, Child, action, select_bar, data_in, Data_out) \
     extern menuItem Next;                                                                                                                              \
@@ -865,6 +866,8 @@ void redact_end()
     if (selectedMenuItem->select_bar != (void *)&NULL_ENTRY) *selectedMenuItem->select_bar->data = Intermediate;
     
     //pos_redact = len_dat - 1;
+    HAL_TIM_Base_Stop_IT(&htim6);
+    TIM6->SR &= ~TIM_SR_UIF;
     mode_redact = 0;
     led_cursor = 1; 
 }
@@ -914,6 +917,10 @@ void up_redact()
 
 void up()
 {
+    if ((selectedMenuItem->select_bar != (void *)&NULL_ENTRY) && (mode_redact == 1)){
+        redact_end();
+    }
+
     if (!(mode_redact == 0))
     {
         up_redact();
@@ -955,6 +962,9 @@ void down_redact()
 }
 void down()
 {
+    if ((selectedMenuItem->select_bar != (void *)&NULL_ENTRY) && (mode_redact == 1)){
+        redact_end();
+    }
     if (!(mode_redact == 0))
     {
         down_redact();
@@ -982,6 +992,8 @@ void left_redact()
         led_cursor = 0;
         if (pos_redact < pos_search)
         {
+            HAL_TIM_Base_Stop_IT(&htim6);
+            TIM6->SR &= ~TIM_SR_UIF;
             mode_redact = 0;
             led_cursor = 1;
         }
