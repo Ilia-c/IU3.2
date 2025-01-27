@@ -526,11 +526,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     uint8_t B1 = HAL_GPIO_ReadPin(STR_B1_GPIO_Port, STR_B1_Pin);
     uint8_t B2 = HAL_GPIO_ReadPin(STR_B2_GPIO_Port, STR_B2_Pin);
     uint8_t B3 = HAL_GPIO_ReadPin(STR_B2_GPIO_Port, STR_B3_Pin);
-    uint8_t B4 = HAL_GPIO_ReadPin(STR_B3_GPIO_Port, STR_B4_Pin);
+    uint8_t B4 = HAL_GPIO_ReadPin(STR_B4_GPIO_Port, STR_B4_Pin);
     osDelay(2);
     if ((HAL_GPIO_ReadPin(STR_B1_GPIO_Port, STR_B1_Pin) == B1) && (HAL_GPIO_ReadPin(STR_B2_GPIO_Port, STR_B2_Pin) == B2) && (HAL_GPIO_ReadPin(STR_B3_GPIO_Port, STR_B3_Pin) == B3) && (HAL_GPIO_ReadPin(STR_B4_GPIO_Port, STR_B4_Pin) == B4))
     {
-
       static portBASE_TYPE xTaskWoken;
       xSemaphoreGiveFromISR(Keyboard_semapfore, &xTaskWoken);
     }
@@ -586,10 +585,10 @@ void HAL_TIM5_Callback(void)
 
 void HAL_TIM6_Callback(void)
 {
-  HAL_TIM_Base_Stop_IT(&htim6);
-          __HAL_TIM_SET_AUTORELOAD(&htim6, Timer_key_press-1);
+  //HAL_TIM_Base_Stop_IT(&htim6);
+  //__HAL_TIM_SET_AUTORELOAD(&htim6, Timer_key_press-1);
   //TIM6->CNT = 0;
-  //__HAL_TIM_SET_AUTORELOAD(&htim6, Timer_key_press_fast);
+  __HAL_TIM_SET_AUTORELOAD(&htim6, Timer_key_press_fast);
   static portBASE_TYPE xTaskWoken;
   xSemaphoreGiveFromISR(Keyboard_semapfore, &xTaskWoken); 
 }
@@ -796,13 +795,13 @@ static void MX_TIM6_Init(void)
   htim6.Init.Prescaler = 40000 - 1;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim6.Init.Period = Timer_key_press - 1;
-  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
     Error_Handler();
   }
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
-  sMasterConfig.MasterSlaveMode = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  sMasterConfig.MasterSlaveMode = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
   {
     Error_Handler();
@@ -1093,13 +1092,13 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pins : STR_B1_Pin STR_B2_Pin STR_B3_Pin */
   GPIO_InitStruct.Pin = STR_B1_Pin|STR_B2_Pin|STR_B3_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : STR_B4_Pin */
   GPIO_InitStruct.Pin = STR_B4_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(STR_B4_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : COL_B3_Pin COL_B2_Pin COL_B1_Pin ON_DISP_Pin

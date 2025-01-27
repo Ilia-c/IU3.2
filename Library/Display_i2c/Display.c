@@ -594,7 +594,6 @@ void Select_diplay_functions(menuItem *menu, int pos_y)
         if ((selectedMenuItem == menu) && (mode_redact == 1)) num_menu = Intermediate;
 
         int len_dat = OLED_GetWidthStr(menu->select_bar->Name[num_menu][len]);
-        
         if ((mode_redact == 1) && (selectedMenuItem == menu))
         {
             OLED_DrawStr(menu->select_bar->Name[num_menu][len], winth_display - len_dat - 8, pos_y * dist_y + height_up_menu, 1);  // вывод если включен выбор (редактирование)
