@@ -51,12 +51,12 @@ xSemaphoreHandle Display_cursor_semaphore;
 xSemaphoreHandle USB_COM_semaphore;
 xSemaphoreHandle Main_semaphore;
 
-extern uint16_t Timer_key_one_press;
-extern uint16_t Timer_key_press;
-extern uint16_t Timer_key_press_fast;
-extern uint8_t screen_sever_mode;
+extern const uint16_t Timer_key_one_press;
+extern const uint16_t Timer_key_press;
+extern const uint16_t Timer_key_press_fast;
 
 extern uint8_t gsmRxChar;
+extern EEPROM_Settings_item EEPROM;
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -210,6 +210,7 @@ int main(void)
   MX_TIM6_Init();
   RTC_Init();
 
+  Data_UPDATE_char();
 
   HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, 0);
   HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ADC_Pin, 0);
@@ -1042,8 +1043,8 @@ void Main(void *argument)
   HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
 
   
-  screen_sever_mode =  1;
-  if (screen_sever_mode) Start_video();
+  EEPROM.screen_sever_mode =  1;
+  if (EEPROM.screen_sever_mode) Start_video();
 
   HAL_GPIO_WritePin(COL_B1_GPIO_Port, COL_B1_Pin, 1);
   HAL_GPIO_WritePin(COL_B2_GPIO_Port, COL_B2_Pin, 1);

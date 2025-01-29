@@ -5,6 +5,7 @@
 extern uint8_t UserRxBufferFS[RX_BUFFER_SIZE];
 extern uint16_t UserRxLength;
 extern UART_HandleTypeDef huart4;
+extern EEPROM_Settings_item EEPROM;
 
 void TrimCommand(char *command)
 {
@@ -93,9 +94,6 @@ void USB_COM(void *argument)
 
 
 
-
-
-extern Prgramm_version_item Prog_ver;
 void USB_Send_Status_Report(void)
 {
     char buffer[512]; // Локальный буфер для передачи данных
@@ -128,13 +126,13 @@ void USB_Send_Status_Report(void)
     CDC_Transmit_FS((uint8_t *)buffer, len);
 
     // Отправляем данные о версии программы
-    len = snprintf(buffer, sizeof(buffer), "Program Version: %s\r\n", Prog_ver.VERSION_PROGRAMM);
+    len = snprintf(buffer, sizeof(buffer), "Program Version: %s\r\n", EEPROM.version.VERSION_PROGRAMM);
     CDC_Transmit_FS((uint8_t *)buffer, len);
 
-    len = snprintf(buffer, sizeof(buffer), "PCB Version: %s\r\n", Prog_ver.VERSION_PCB);
+    len = snprintf(buffer, sizeof(buffer), "PCB Version: %s\r\n", EEPROM.version.VERSION_PCB);
     CDC_Transmit_FS((uint8_t *)buffer, len);
 
     len = snprintf(buffer, sizeof(buffer), "Time Worked: %lu h, %lu m\r\n",
-                   Prog_ver.time_work_h, Prog_ver.time_work_m);
+                   EEPROM.time_work_h, EEPROM.time_work_m);
     CDC_Transmit_FS((uint8_t *)buffer, len);
 }

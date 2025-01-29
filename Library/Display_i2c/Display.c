@@ -32,16 +32,9 @@ extern xSemaphoreHandle Display_semaphore;
 /// |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 /// |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
-extern int ADC_AKB_Proc;
-
 extern GSM_STATUS_item GSM_data;
 extern ADC_MS5193T_item ADC_data;
-
-extern uint8_t Mode;
-extern uint8_t Communication;
-extern uint8_t RS485_prot;
-extern uint8_t units_mes;
-extern uint8_t screen_sever_mode;
+extern EEPROM_Settings_item EEPROM;
 
 
 char str[4];
@@ -55,7 +48,6 @@ extern int ADC_AKB_Proc;
 
 const int max_munu_in_page = 4; // максимальное количество пунктов меню на странице видимое (+1)
 int select_menu_in_page = 0;    // метущий пункт менюc
-extern char len;                //  0 - русский язык;  1 -  английский
 uint8_t Intermediate = 0;           // Промежуточная переменная, куда сохраняется настройка до сохранения при прокрутке (номер пункта)
 
 
@@ -97,21 +89,21 @@ void NULL_F(){}
 
 // Выбираемые значения и статус
 menuSelect_item Communication_DATA = { 
-    .data = (uint8_t *)&Communication,
+    .data = (uint8_t *)&EEPROM.Communication,
     .Name = {
         {"GSM/NB-IoT", "GSM/NB-IoT"},
         {"Выкл", "Off"}
     },
 }; 
 menuSelect_item RS485_MODE_DATA = {
-    (uint8_t *)&RS485_prot,
+    (uint8_t *)&EEPROM.RS485_prot,
     {
         {"Выкл.", "Off"},
         {"Modbus", "Modbus"}
     }
 };
 menuSelect_item UNITS_MODE_DATA = {
-    (uint8_t *)&units_mes,
+    (uint8_t *)&EEPROM.units_mes,
     {
         {"мм", "mm"},
         {"м", "m"},
@@ -119,7 +111,7 @@ menuSelect_item UNITS_MODE_DATA = {
     }
 };
 menuSelect_item SCREENSAVER = {
-    (uint8_t *)&screen_sever_mode ,
+    (uint8_t *)&EEPROM.screen_sever_mode ,
     {
         {"вкл.", "on"},
         {"выкл.", "off"}
@@ -127,7 +119,7 @@ menuSelect_item SCREENSAVER = {
 };
 
 menuSelect_item LANGUAGE = {
-    (uint8_t *)&len,
+    (uint8_t *)&EEPROM.len,
     {
         {"Русский", "Русский"},
         {"English", "English"}
@@ -148,7 +140,7 @@ menuSelect_item CURRENT_LOOP = {
 extern uint8_t USB_mode;
 // Режим USB, - Работа с внешней flash (0), Работа в коммандном режиме (1), Работа USB в режиме чтения внутренней flash (2), работа в режиме чтения SD карты (3), Работа в режиме дебага USB (4)
 menuSelect_item USB_MODE_STRUCT = {
-    (uint8_t *)&USB_mode,
+    (uint8_t *)&EEPROM.USB_mode,
     {
         {"Флешка USB", "FLASH USB"},           // ИЗМЕНИТЬ НАЗВАНИЕ
         {"Команды", "Comand"},
@@ -216,7 +208,6 @@ void Null_func(){}
 
 // Изменяемые параметры
 extern GSM_STATUS_item GSM_data;
-extern Prgramm_version_item Prog_ver;
 // Редактирования даты RTC
 extern RTC_TimeTypeDef Time;
 extern RTC_DateTypeDef Date;
@@ -228,13 +219,13 @@ menuSelect_item_char Date_redact = {
     //  ЯЧЕЙКИ
     {&Date.Date, &Date.Month, &Date.Year},  // исходные значения
     {0, 0, 0},                  // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов)
-    {0, 0},                  // знак (автоматически)
+    {0, 0},                     // знак (автоматически)
     {2, 2, 2},                  // ширина ячеек (001 - ширина 3, 23 - ширина 2)
     {2, 2, 2},                  // ширина ячеек вне редактирования (001 - ширина 3, 23 - ширина 2)
     {"\0", "\0", "\0"},         // промежуточное значение
     {31, 12, 99},               // максимальные значения
     {0, 0, 0},                  // минимальные значения
-    Save_date_format,            // ссылка на функцию завершения работы
+    Save_date_format,           // ссылка на функцию завершения работы
     '\0'
 }; // Промежуточная переменная, куда сохраняется настройка до сохранения (char)
 
@@ -258,15 +249,14 @@ menuSelect_item_char Time_redact = {
 }; // Промежуточная переменная, куда сохраняется настройка до сохранения (char)
 
 // Время сна, устройства
-extern uint16_t time_sleep_h;
-extern uint16_t time_sleep_m;
+
 menuSelect_item_char Time_sleep_redact = {
     {'ч', 'м', '\0'},   // разделители, если нету, то '\0', последний может использоваться в качестве приписки
     2,                  // колтичество ячеек данных
     0,                  // завершение редактирования при нажатии вправо на краю данных 1-включено, 0-выключено 
     '\0',
     //  ЯЧЕЙКИ
-    {&time_sleep_h, &time_sleep_m, '\0'},  // исходные значения
+    {&EEPROM.time_sleep_h, &EEPROM.time_sleep_m, '\0'},  // исходные значения
     {1, 1, 1},                  // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов)
     {0, 0},                  // знак (автоматически)
     {3, 2, 0},                  // ширина ячеек (001 - ширина 3, 23 - ширина 2)
@@ -279,9 +269,6 @@ menuSelect_item_char Time_sleep_redact = {
 }; // Промежуточная переменная, куда сохраняется настройка до сохранения (char)
 
 
-
-
-
 // ВПИ, верхний предел измерений
 menuSelect_item_char Max_Level_Mesurment = {
     {'.', '\0', '\0'},   // разделители, если нету, то '\0', последний может использоваться в качестве приписки
@@ -291,7 +278,7 @@ menuSelect_item_char Max_Level_Mesurment = {
     //  ЯЧЕЙКИ
     {&ADC_data.MAX_LVL_char[0], &ADC_data.MAX_LVL_char[1], '\0'},  // исходные значения
     {2, 4, 0},                   // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов), 4 - float (знаковый)
-    {0, 0},                  // знак (автоматически)
+    {1, 0},                  // знак (автоматически)
     {6, 2, 0},                   // ширина ячеек (001 - ширина 3, 23 - ширина 2)
     {2, 2, 2},                   // ширина ячеек вне редактирования (001 - ширина 3, 23 - ширина 2)
     {"\0", "\0", "\0"},          // промежуточное значение
@@ -347,16 +334,15 @@ menuSelect_item_char GVL_Correct = {
     SAVE_DOUBLE
 }; // Промежуточная переменная, куда сохраняется настройка до сохранения (char)
 
-
 menuSelect_item_char Serial_number = {
     {'.', '\0', '\0'},   // разделители, если нету, то '\0', последний может использоваться в качестве приписки
     3,                  // колтичество ячеек данных
     0,                  // завершение редактирования при нажатии вправо на краю данных 1-включено, 0-выключено 
     '\0',
     //  ЯЧЕЙКИ
-    {&Prog_ver.VER_PCB_IDEOLOGY, &Prog_ver.VER_PCB_VERSION, &Prog_ver.VER_PCB_INDEX},  // исходные значения
+    {&EEPROM.version.VER_PCB_IDEOLOGY, &EEPROM.version.VER_PCB_VERSION, &EEPROM.version.VER_PCB_INDEX},  // исходные значения
     {0, 0, 3},                   // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов)
-    {0, 0},                   // знаковые данные или беззнаковые
+    {0, 0},                      // знаковые данные или беззнаковые
     {2, 2, 4},                   // ширина ячеек (001 - ширина 3, 23 - ширина 2)
     {2, 2, 0},                   // ширина ячеек вне редактирования (001 - ширина 3, 23 - ширина 2)
     {"\0", "\0", "\0"},          // промежуточное значение
@@ -462,9 +448,9 @@ menuSelect_item NO_SIGNED = {
     MAKE_MENU(Menu_2_15 , "Сброс настроек"        , "Factory reset"        , 0 , UPTADE_OFF               , NO_SIGNED  ,  Menu_2_16      , Menu_2_14      , Menu_2         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
     MAKE_MENU(Menu_2_16 , "Формат. SD"   , "SD formatting"        , 0 , UPTADE_OFF              , NO_SIGNED  ,  NEXT_MENU      , Menu_2_15      , Menu_2         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
   MAKE_MENU(Menu_3    , "Сведения"     , "Info"         , 0 , UPTADE_OFF               , NO_SIGNED  ,  Menu_4         , Menu_2         , PARENT_MENU    , Menu_3_1       , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
-    MAKE_MENU(Menu_3_1  , "ID устр."     , "ID Device"    , 0 , UPTADE_OFF               , NO_SIGNED  ,  Menu_3_2       , PREVISION_MENU , Menu_3         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , Prog_ver.VERSION_PCB);
-    MAKE_MENU(Menu_3_2  , "Вер. ПО"      , "Software version"        , 0 , UPTADE_OFF               , NO_SIGNED  , Menu_3_3       , Menu_3_1       , Menu_3         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , Prog_ver.VERSION_PROGRAMM);
-    MAKE_MENU(Menu_3_3  , "Время работы" , "Elapsed time"        , 0 , UPTADE_OFF               ,NO_SIGNED  , NEXT_MENU      , Menu_3_2       , Menu_3         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , Prog_ver.time_work_char);
+    MAKE_MENU(Menu_3_1  , "ID устр."     , "ID Device"    , 0 , UPTADE_OFF               , NO_SIGNED  ,  Menu_3_2       , PREVISION_MENU , Menu_3         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , EEPROM.version.VERSION_PCB);
+    MAKE_MENU(Menu_3_2  , "Вер. ПО"      , "Software version"        , 0 , UPTADE_OFF               , NO_SIGNED  , Menu_3_3       , Menu_3_1       , Menu_3         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , EEPROM.version.VERSION_PROGRAMM);
+    MAKE_MENU(Menu_3_3  , "Время работы" , "Elapsed time"        , 0 , UPTADE_OFF               ,NO_SIGNED  , NEXT_MENU      , Menu_3_2       , Menu_3         , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , EEPROM.version.time_work_char);
   MAKE_MENU(Menu_4    , "Инструкция"   , "Instruction"  , 0 , UPTADE_OFF               , NO_SIGNED  ,NEXT_MENU      , Menu_3         , PARENT_MENU    , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
 
 ////////////////////////////////////////////////////
@@ -512,7 +498,7 @@ void Data_in_no_redact(menuItem *menu, int pos_y){
     }
 
     uint8_t len_add_signa = 0;
-    len_add_signa = OLED_GetWidthStr(menu->add_signat->Name[*menu->add_signat->data][len]);
+    len_add_signa = OLED_GetWidthStr(menu->add_signat->Name[*menu->add_signat->data][EEPROM.len]);
     uint8_t len_string = OLED_GetWidthStr(string);
     OLED_DrawStr(string, winth_display - (len_string + len_add_signa + 4), pos_y * dist_y + height_up_menu, 1);
 }
@@ -535,7 +521,7 @@ void Data_in_redact(menuItem *menu, int pos_y){
         strcat(string, temp);
     }
     uint8_t len_add_signa = 0;
-    len_add_signa = OLED_GetWidthStr(menu->add_signat->Name[*menu->add_signat->data][len]);
+    len_add_signa = OLED_GetWidthStr(menu->add_signat->Name[*menu->add_signat->data][EEPROM.len]);
     uint8_t len_string = OLED_GetWidthStr(string) + 4;
     OLED_DrawStr(string, winth_display - (len_string + len_add_signa), pos_y * dist_y + height_up_menu, 1);
     
@@ -583,9 +569,9 @@ void Select_diplay_functions(menuItem *menu, int pos_y)
 {
     uint8_t leng_font = 0;
     uint8_t len_signat = 0;
-    len_signat = OLED_GetWidthStr(menu->add_signat->Name[*menu->add_signat->data][len]);
+    len_signat = OLED_GetWidthStr(menu->add_signat->Name[*menu->add_signat->data][EEPROM.len]);
     if (len_signat > 0) len_signat += 4;
-    OLED_DrawStr(menu->add_signat->Name[*menu->add_signat->data][len], winth_display-len_signat, pos_y * dist_y + height_up_menu, 1);
+    OLED_DrawStr(menu->add_signat->Name[*menu->add_signat->data][EEPROM.len], winth_display-len_signat, pos_y * dist_y + height_up_menu, 1);
     
     
     // Вывод режима (прокрутка)
@@ -594,10 +580,10 @@ void Select_diplay_functions(menuItem *menu, int pos_y)
         uint8_t num_menu = *menu->select_bar->data;
         if ((selectedMenuItem == menu) && (mode_redact == 1)) num_menu = Intermediate;
 
-        int len_dat = OLED_GetWidthStr(menu->select_bar->Name[num_menu][len]);
+        int len_dat = OLED_GetWidthStr(menu->select_bar->Name[num_menu][EEPROM.len]);
         if ((mode_redact == 1) && (selectedMenuItem == menu))
         {
-            OLED_DrawStr(menu->select_bar->Name[num_menu][len], winth_display - len_dat - 8, pos_y * dist_y + height_up_menu, 1);  // вывод если включен выбор (редактирование)
+            OLED_DrawStr(menu->select_bar->Name[num_menu][EEPROM.len], winth_display - len_dat - 8, pos_y * dist_y + height_up_menu, 1);  // вывод если включен выбор (редактирование)
             int pos_cursor = select_menu_in_page * dist_y + height_up_menu + 2;
             int x_left = winth_display-len_dat-11;
             int x_right = winth_display-7;
@@ -605,7 +591,7 @@ void Select_diplay_functions(menuItem *menu, int pos_y)
             if (Intermediate != 0) OLED_DrawTriangleFill(x_left, pos_cursor - 1, x_left, pos_cursor + 3, x_left-2, pos_cursor+1);
         }
         else{
-            OLED_DrawStr(menu->select_bar->Name[num_menu][len], winth_display - len_dat - 4, pos_y * dist_y + height_up_menu, 1); // вывод если нет выбора 
+            OLED_DrawStr(menu->select_bar->Name[num_menu][EEPROM.len], winth_display - len_dat - 4, pos_y * dist_y + height_up_menu, 1); // вывод если нет выбора 
         }
     }
 }
@@ -614,13 +600,13 @@ void Display_punkt_menu(menuItem *menu, int pos_y) // отображение одного пункта 
 {
     FontSet(font);
     
-    if (len == 0x00) OLED_DrawStr(menu->Name_rus, pos_x_menu, pos_y * dist_y + height_up_menu, 1);
+    if (EEPROM.len == 0x00) OLED_DrawStr(menu->Name_rus, pos_x_menu, pos_y * dist_y + height_up_menu, 1);
     else OLED_DrawStr(menu->Name_en, pos_x_menu, pos_y * dist_y + height_up_menu, 1);
 
     if (menu->data_out != (void *)&NULL_ENTRY)
     {
         uint8_t len_add_signa = 0;
-        len_add_signa = OLED_GetWidthStr(menu->add_signat->Name[*menu->add_signat->data][len]);
+        len_add_signa = OLED_GetWidthStr(menu->add_signat->Name[*menu->add_signat->data][EEPROM.len]);
         OLED_DrawStr(menu->data_out, winth_display - (OLED_GetWidthStr(menu->data_out)) - (len_add_signa+4), pos_y * dist_y + height_up_menu, 1);
     }
 

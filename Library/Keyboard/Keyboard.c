@@ -9,7 +9,7 @@ char Prot_Keyboard_press_code;
 
 extern xSemaphoreHandle TIM6_semaphore_100us;
 extern TIM_HandleTypeDef htim6;
-extern uint16_t Timer_key_press;
+extern const uint16_t Timer_key_press;
 
 extern int mode_redact;
 

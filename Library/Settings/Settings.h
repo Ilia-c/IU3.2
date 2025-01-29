@@ -3,40 +3,41 @@
 
 // Подключаем стандартные типы: uint8_t, int8_t, int32_t и т.д.
 #include <stdint.h>
-// Если нужно время, можно оставить <time.h>. 
+// Если нужно время, можно оставить <time.h>.
 // Здесь же можно подключать нужные HAL-заголовки (stm32fxx_hal.h) и т.п.
-#include "RTC_data.h"  // Подключение вашего заголовка с RTC_TimeTypeDef, RTC_DateTypeDef
+#include "RTC_data.h" // Подключение вашего заголовка с RTC_TimeTypeDef, RTC_DateTypeDef
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-////////////////////////////////////////////////////////////////////////////////
-// Прототип функции
-////////////////////////////////////////////////////////////////////////////////
-void Nuss(void);
+  ////////////////////////////////////////////////////////////////////////////////
+  // Прототип функции
+  ////////////////////////////////////////////////////////////////////////////////
+  void Nuss(void);
 
-////////////////////////////////////////////////////////////////////////////////
-//               Описание структур GSM_STATUS_item и ADC_MS5193T_item
-////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////
+  //               Описание структур GSM_STATUS_item и ADC_MS5193T_item
+  ////////////////////////////////////////////////////////////////////////////////
 
-// Блок GSM
-/*
-  Структура GSM_STATUS:
-  - Хранит информацию о статусе GSM-модуля, уровне сигнала, имени оператора,
-    SIM-карте и т.д.
-  - Поле update_value указывает на функцию, преобразующую внутренние поля в текст
-    (например, для отладки или вывода на экран).
-*/
-typedef struct GSM_STATUS
-{
+  // Блок GSM
+  /*
+    Структура GSM_STATUS:
+    - Хранит информацию о статусе GSM-модуля, уровне сигнала, имени оператора,
+      SIM-карте и т.д.
+    - Поле update_value указывает на функцию, преобразующую внутренние поля в текст
+      (например, для отладки или вывода на экран).
+  */
+  typedef struct GSM_STATUS
+  {
     uint8_t Status; // Статус работы GSM - 0 - ERR,  1 - WAR, 2 - OK, 3 - выкл
     uint8_t mode;   // Режим работы GSM, 0 - вкл, 2 - выкл
 
     // Значение Связи (регистрация в сети, уровень сигнала GSM, уровень сигнала (палочки), оператор)
-    uint8_t GSM_Signal;       // Код сигнала от самого модуля GSM (0-31 и 99)
-    int8_t  GSM_Signal_Level; // Уровень сигнала GSM (0..3) или -1, если нет регистрации
-    
+    uint8_t GSM_Signal;      // Код сигнала от самого модуля GSM (0-31 и 99)
+    int8_t GSM_Signal_Level; // Уровень сигнала GSM (0..3) или -1, если нет регистрации
+
     char GSM_status_char[5];       // Статус GSM
     char GSM_SIMCARD_char[5];      // Видит ли GSM SIM?
     char GSM_status_ready_char[5]; // Готов ли GSM?
@@ -45,167 +46,175 @@ typedef struct GSM_STATUS
     char GSM_signal_lvl_char[2];   // Уровень сигнала 0-99
     char GSM_gprs_on_char[3];      // Включен ли gprs?
 
-    void (*update_value)(void);    // Ссылка на функцию обновления GSM (перевод в текст)
-} GSM_STATUS_item;
+    void (*update_value)(void); // Ссылка на функцию обновления GSM (перевод в текст)
+  } GSM_STATUS_item;
 
+  // Блок АЦП
+  /*
+    Структура ADC_MS5193T:
+    - Описывает данные по измеряемому току/напряжению на шунте, выходное
+      значение без/с коррекцией и др.
+    - Поле update_value указывает на функцию, которая производит чтение/обновление
+      значений с АЦП.
+  */
+  typedef struct ADC_MS5193T
+  {
+    int32_t ADC_value;           // Значение АЦП
+    float ADC_Volts;             // Напряжение на токовом шунте
+    float ADC_Current;           // Ток на токовом шунте
+    double ADC_SI_value;         // Выходное значение без коррекции по уровню
+    double ADC_SI_value_correct; // Выходное значение с корректировкой по уровню
+    uint8_t Status;              // Статус работы АЦП - 0 - ERR,  1 - WAR, 2 - OK, 3 - выкл
 
-// Блок АЦП
-/*
-  Структура ADC_MS5193T:
-  - Описывает данные по измеряемому току/напряжению на шунте, выходное
-    значение без/с коррекцией и др.
-  - Поле update_value указывает на функцию, которая производит чтение/обновление
-    значений с АЦП.
-*/
-typedef struct ADC_MS5193T
-{
-    int32_t ADC_value;              // Значение АЦП
-    float   ADC_Volts;              // Напряжение на токовом шунте
-    float   ADC_Current;            // Ток на токовом шунте
-    double   ADC_SI_value;           // Выходное значение без коррекции по уровню
-    double   ADC_SI_value_correct;   // Выходное значение с корректировкой по уровню
-
-    double ADC_ION;
-    float ADC_RESISTOR;
+    double *ADC_ION;
+    float *ADC_RESISTOR;
     int32_t PPM;
-    uint8_t Status; // Статус работы АЦП - 0 - ERR,  1 - WAR, 2 - OK, 3 - выкл
-    uint8_t mode;   // Режим работы АЦП, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
-
+    uint8_t *mode; // Режим работы АЦП, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
     // Корректировка УГВ
-    double GVL_correct;      // Коррекция нулевой точки (смещение +- от текущего значения)
-    int32_t ADC_correct_zero_0_4;      // Коррекция нулевой точки (смещение +- от текущего значения)
-    int32_t ADC_correct_max_20;      // Коррекция нулевой точки (смещение +- от текущего значения)
-
+    double *GVL_correct; // Коррекция нулевой точки (смещение +- от текущего значения)
+    double *k_koeff;     // Коэффициэнт наклона линейной зависисимости. (По 2 точкам, 20мА и 4мА)
     // Калибровка
-    double UP_LEVEL_CORRECT;      // Коррекция максимального уровня (при 20мА)
-    double DOWN_LEVEL_CORRECT[2]; // Коррекция минимального уровня (при 0мА и 4мА)
+    double *MAX_LVL;  // Максимальный уровень (например 15 метров) ВПИ
+    double *ZERO_LVL; // Нулевое значение     (например 0 метров)  НПИ
 
-    double MAX_LVL;  // Максимальный уровень (например 15 метров) ВПИ
-    double ZERO_LVL; // Нулевое значение     (например 0 метров)  НПИ
+    // Вывод значений (отображение)
+    int32_t MAX_LVL_char[2];            // Установка максиального уровня (1 - до запятой | 2 - после запятой)
+    int32_t ZERO_LVL_char[2];           // Установка минимального уровня (1 - 0мА/4мА  | 2 - до запятой | 3 - после запятой)
+    int32_t UP_LEVEL_CORRECT_char[2];   // Коррекция максиального уровня (20мА) - учитывает смещение от этого уровня
+    int32_t DOWN_LEVEL_CORRECT_char[2]; // Коррекция минимального уровня (0мА/4мА)  - учитывает смещение от этого уровня
+    int32_t GVL_correct_char[2];        // Коррекция нулевой точки (смещение +- от текущего значения) дробная часть
 
-    int32_t MAX_LVL_char[2];                // Установка максиального уровня (1 - до запятой | 2 - после запятой)
-    int32_t ZERO_LVL_char[2];               // Установка минимального уровня (1 - 0мА/4мА  | 2 - до запятой | 3 - после запятой)
-    int32_t UP_LEVEL_CORRECT_char[2];       // Коррекция максиального уровня (20мА) - учитывает смещение от этого уровня
-    int32_t DOWN_LEVEL_CORRECT_char[2];     // Коррекция минимального уровня (0мА/4мА)  - учитывает смещение от этого уровня
-
-    int32_t GVL_correct_char[2];              // Коррекция нулевой точки (смещение +- от текущего значения) дробная часть
-
-    // Вывод значений
     char ADC_status_char[5];
-    char ADC_value_char[11];               // Значение АЦП в виде строки
-    char ADC_Volts_char[5];                // Напряжение на токовом шунте
-    char ADC_Current_char[5];              // Ток на токовом шунте
-    char ADC_SI_value_char[5];             // Выходное значение без коррекции
-    char ADC_SI_value_correct_char[5];     // Выходное значение с коррекцией
+    char ADC_value_char[11];           // Значение АЦП в виде строки
+    char ADC_Volts_char[5];            // Напряжение на токовом шунте
+    char ADC_Current_char[5];          // Ток на токовом шунте
+    char ADC_SI_value_char[5];         // Выходное значение без коррекции
+    char ADC_SI_value_correct_char[5]; // Выходное значение с коррекцией
 
     void (*update_value)(void); // Ссылка на функцию обновления (чтение данных с АЦП)
-} ADC_MS5193T_item;
+  } ADC_MS5193T_item;
 
-
-
-typedef struct Prgramm_version
-{
+  typedef struct Prgramm_version
+  {
     const char VERSION_PROGRAMM[10];
-    char VERSION_PCB[22];
+    char VERSION_PCB[10];
+    char time_work_char[10];
+    uint8_t VER_PCB_IDEOLOGY;
+    uint8_t VER_PCB_VERSION;
+    char VER_PCB_INDEX[5];
+  } Prgramm_version_item;
 
-    uint8_t VER_PCB_IDEOLOGY;     
-    uint8_t VER_PCB_VERSION;      
-    char    VER_PCB_INDEX[11];  
-    uint32_t time_work_h;
-    uint32_t time_work_m;
-    char     time_work_char[10];
-    void (*update_value)(void);    // Ссылка на функцию обновления версии ПО
-} Prgramm_version_item;
+  ////////////////////////////////////////////////////////////////////////////////
+  // Глобальные переменные (extern), чтобы использовать их в других файлах .c
+  ////////////////////////////////////////////////////////////////////////////////
 
+  // Время обновления экрана (для обновления времени и курсора)
+  extern uint16_t time_update_display;
 
-////////////////////////////////////////////////////////////////////////////////
-// Глобальные переменные (extern), чтобы использовать их в других файлах .c
-////////////////////////////////////////////////////////////////////////////////
+  // Глобальный статус (каждый бит - состояние блока)
+  extern uint32_t STATUS;
 
-// Время обновления экрана (для обновления времени и курсора)
-extern uint16_t time_update_display;
+  // Код текущей операции
+  extern uint32_t OPERATION_CODE;
 
-// Глобальный статус (каждый бит - состояние блока)
-extern uint32_t STATUS;
+  // Внутренний АЦП
+  extern float ADC_in_temp;
+  extern float ADC_MS5193T_temp;
+  extern float OneWire_temp;
+  extern char ADC_in_temp_char[5];
+  extern char ADC_MS5193T_temp_char[11];
+  extern char OneWire_temp_char[5];
 
-// Код текущей операции
-extern uint16_t OPERATION_CODE;
+  // Индикация статуса блока
+  extern char STATUS_CHAR[4][5];
 
-// Внутренний АЦП
-extern float ADC_in_temp;                  
-extern float ADC_MS5193T_temp;            
-extern float OneWire_temp;                
-extern char  ADC_in_temp_char[5];         
-extern char  ADC_MS5193T_temp_char[11];    
-extern char  OneWire_temp_char[5];        
+  // Структуры с данными
+  extern ADC_MS5193T_item ADC_data;
+  extern GSM_STATUS_item GSM_data;
 
-// Индикация статуса блока
-extern char STATUS_CHAR[3][5];
+  // Статус памяти
+  extern char EEPROM_status_char[3];
+  extern char FLASH_status_char[3];
+  extern char SD_status_char[3];
 
-// Структуры с данными
-extern ADC_MS5193T_item ADC_data;
-extern GSM_STATUS_item  GSM_data;
+  // Режим экрана (включен/выключен)
+  extern uint8_t display_status;
 
-// Статус памяти
-extern char EEPROM_status_char[3];
-extern char FLASH_status_char[3];
-extern char SD_status_char[3];
+  // Нажатые клавиши на клавиатуре
+  extern char Keyboard_press_code;
+  extern uint8_t Display_update;
 
-// Режим экрана (включен/выключен)
-extern uint8_t display_status;
+  // Статус акб и батарейки
+  extern float ADC_AKB_volts;
+  extern int ADC_AKB_Proc;
+  extern int ADC_AKB_cell;
+  extern char ADC_AKB_volts_char[4];
+  extern char ADC_AKB_Proc_char[4];
 
-// Нажатые клавиши на клавиатуре
-extern char    Keyboard_press_code;
-extern uint8_t Display_update;
+  extern char error_code[4];
 
-// Статус акб и батарейки
-extern float  ADC_AKB_volts;         
-extern int    ADC_AKB_Proc;          
-extern int    ADC_AKB_cell;          
-extern char   ADC_AKB_volts_char[4]; 
-extern char   ADC_AKB_Proc_char[4];  
+  //////////////////////
+  // Настроечные параметры
+  //////////////////////
 
-extern char error_code[4];
+  // Дата и время
+  extern RTC_TimeTypeDef Time;
+  extern RTC_DateTypeDef Date;
 
-//////////////////////
-// Настроечные параметры
-//////////////////////
+  extern char data_add_unit[3];
 
-// Дата и время
-extern RTC_TimeTypeDef Time;
-extern RTC_DateTypeDef Date;
+  // Выбираемые значения
+  extern uint8_t Mode;
+  extern uint8_t Communication;
+  extern uint8_t RS485_prot;
+  extern uint8_t units_mes;
+  extern uint8_t screen_sever_mode;
+  extern uint8_t USB_mode;
 
+  // Вводимые значения
 
+  extern const uint16_t Timer_key_one_press;
+  extern const uint16_t Timer_key_press;
+  extern const uint16_t Timer_key_press_fast;
 
-extern char data_add_unit[3];
+  // Структура сохраняемая в EEPROM
+  typedef struct EEPROM_Settings
+  {
+    Prgramm_version_item version; // Текущая версия устройства
+    char last_error_code[4];      // Последний код ошибки
+    uint32_t time_work_h;         // Время работы устройства часы
+    uint32_t time_work_m;         // Время работы устройства минуты
 
-// Выбираемые значения
-extern uint8_t Mode;               
-extern uint8_t Communication;      
-extern uint8_t RS485_prot;         
-extern uint8_t units_mes;          
-extern uint8_t screen_sever_mode;  
-extern uint8_t USB_mode;           
+    /*-----------------*/
+    // Вводимые данные //
+    /*-----------------*/
+    uint16_t time_sleep_h; // Время сна устройства часы
+    uint16_t time_sleep_m; // Время сна устройства минуты
+    //  АЦП  //
+    double ADC_ION;     // Напряжение ИОН АЦП
+    float ADC_RESISTOR; // Сопротивление резистора
+    double GVL_correct; // Коррекция нулевой точки (смещение +- от текущего значения) УГВ
+    double k_koeff;     // Коэффициэнт наклона линейной зависисимости. (По 2 точкам, 20мА и 4мА)
+    double MAX_LVL;     // Максимальный уровень (например 15 метров) ВПИ
+    double ZERO_LVL;    // Нулевое значение     (например 0 метров)  НПИ
+    // коррекция температуры (смещение) //
+    double Crorrect_TEMP_A; // Смещение датчика аналогового температуры
+    double Crorrect_TEMP_D; // Смещение датчика цифрового температуры
 
-// Вводимые значения
-extern double  zero_level;         
-extern int32_t zero_level_int;     
-extern uint8_t zero_level_float;   
+    /*-----------------*/
+    // select_bar      //
+    /*-----------------*/
+    uint8_t Mode;              // текущий режим работы
+    uint8_t Communication;     // Включен GSM или нет
+    uint8_t RS485_prot;        // Протокол RS-485
+    uint8_t units_mes;         // по умолчанию метры, еденицы измерения
+    uint8_t screen_sever_mode; // Включить или нет заставку при включении
+    uint8_t USB_mode;          // режим работы USB
+    uint8_t len;               // Язык меню
+    uint8_t mode_ADC;          // Режим работы АЦП, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
 
-extern double  max_height;         
-extern double  min_height;         
-extern int32_t lvl_int;            
-extern int32_t lvl_float;          
-
-extern char len;                  
-
-// Настройка времени сна
-extern uint16_t time_sleep_h;  
-extern uint16_t time_sleep_m;  
-
-extern uint16_t Timer_key_one_press;  
-extern uint16_t Timer_key_press;     
-
+    void (*update_value)(void); // Ссылка на функцию перевода значений в строки
+  } EEPROM_Settings_item;
 
 #ifdef __cplusplus
 }
