@@ -113,8 +113,8 @@ menuSelect_item UNITS_MODE_DATA = {
 menuSelect_item SCREENSAVER = {
     (uint8_t *)&EEPROM.screen_sever_mode ,
     {
-        {"вкл.", "on"},
-        {"выкл.", "off"}
+        {"выкл.", "off"},
+        {"вкл.", "on"}
     }
 };
 
@@ -277,8 +277,8 @@ menuSelect_item_char Max_Level_Mesurment = {
     &ADC_data.MAX_LVL,
     //  ЯЧЕЙКИ
     {&ADC_data.MAX_LVL_char[0], &ADC_data.MAX_LVL_char[1], '\0'},  // исходные значения
-    {2, 4, 0},                   // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов), 4 - float (знаковый)
-    {1, 0},                  // знак (автоматически)
+    {2, 2, 0},                   // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов), 4 - float (знаковый)
+    {0, 0},                     // знак (автоматически)
     {6, 2, 0},                   // ширина ячеек (001 - ширина 3, 23 - ширина 2)
     {2, 2, 2},                   // ширина ячеек вне редактирования (001 - ширина 3, 23 - ширина 2)
     {"\0", "\0", "\0"},          // промежуточное значение
@@ -296,7 +296,7 @@ menuSelect_item_char Min_Level_Mesurment = {
     &ADC_data.ZERO_LVL,
     //  ЯЧЕЙКИ
     {&ADC_data.ZERO_LVL_char[0], &ADC_data.ZERO_LVL_char[1], '\0'},  // исходные значения
-    {2, 4, 0},                   // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов) 4 - int32 беззнаковый
+    {2, 2, 0},                   // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов) 4 - int32 беззнаковый
     {0, 0},                   // знак (автоматически)
     {6, 2, 0},                   // ширина ячеек (001 - ширина 3, 23 - ширина 2)
     {2, 2, 2},                   // ширина ячеек вне редактирования (001 - ширина 3, 23 - ширина 2)
@@ -308,12 +308,13 @@ menuSelect_item_char Min_Level_Mesurment = {
 }; // Промежуточная переменная, куда сохраняется настройка до сохранения (char)
 
 // Калибровка ВПИ 
-void SAVE_DOUBLE(double *save_data, int32_t *value_int, int32_t *value_float, int size_float, uint8_t _signed){
-    *save_data+=*value_int;
+void SAVE_DOUBLE(double **save_data, int32_t *value_int, int32_t *value_float, int size_float, uint8_t _signed){
+    **save_data = 0;
+    **save_data+=*value_int;
     double temp = (double)*value_float;
     for (int i=0; i<size_float; i++) temp/=10;
-    *save_data+=temp;
-    if (_signed == 1) *save_data*=-1;
+    **save_data+=temp;
+    if (_signed == 1) **save_data*=-1;
 }
 
 menuSelect_item_char GVL_Correct = {
@@ -323,8 +324,8 @@ menuSelect_item_char GVL_Correct = {
     &ADC_data.GVL_correct,
     //  ЯЧЕЙКИ
     {&ADC_data.GVL_correct_char[0], &ADC_data.GVL_correct_char[1], '\0'},  // исходные значения
-    {2, 4, 0},                   // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов)
-    {0, 0},                   // знак (автоматически)
+    {2, 2, 0},                   // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов)
+    {0, 0},                      // знак (автоматически)
     {5, 2, 0},                   // ширина ячеек (001 - ширина 3, 23 - ширина 2)
     {2, 2, 2},                   // ширина ячеек вне редактирования (001 - ширина 3, 23 - ширина 2)
     {"\0", "\0", "\0"},          // промежуточное значение
@@ -472,6 +473,21 @@ int search_len_mass(char *string, int len_str, char separator[])
 }
 
 
+void split_double(double *number, int32_t *int_part, int32_t *frac_part, uint8_t precision) {
+    if (number == NULL || int_part == NULL || frac_part == NULL) {
+        return; // Защита от передачи NULL-указателей
+    }
+
+    // Извлекаем целую часть
+    *int_part = (int32_t)(*number); // Сохраняем знак в целой части
+    // Вычисляем дробную часть
+    double fractional = *number - (double)(*int_part);
+    // Умножаем дробную часть на 10^precision и округляем
+    double scaling_factor = pow(10, precision);
+    *frac_part = (int32_t)(fractional * scaling_factor + 0.5); // Округление дробной части
+}
+
+
 // Вывод занчений data_in вне режима редоктирования
 void Data_in_no_redact(menuItem *menu, int pos_y){
     char string[20] = {'\0'};
@@ -479,6 +495,18 @@ void Data_in_no_redact(menuItem *menu, int pos_y){
     {
         char buffer[20] = {'\0'};
         char separat[20] = {'\0'}; // массив разделителей, в рамках данного блока, разделителей нету
+        if (menu->data_in->data_double != 0x00)
+        {
+            if (**menu->data_in->data_double < 0)
+            {
+                menu->data_in->unsigned_signed[0] = 1;
+            }
+            else
+            {
+                menu->data_in->unsigned_signed[0] = 0;
+            }
+            split_double(*menu->data_in->data_double, menu->data_in->data[0], menu->data_in->data[1], menu->data_in->len_data_zero[1]);
+        }
 
         if (menu->data_in->data_type[i] == 2) if (menu->data_in->unsigned_signed[0] == 1) string[0] = '-';
         formatters[menu->data_in->data_type[i]](buffer, sizeof(buffer), menu->data_in->data[i]);
@@ -856,6 +884,10 @@ void redact_end()
     TIM6->SR &= ~TIM_SR_UIF;
     mode_redact = 0;
     led_cursor = 1; 
+    EEPROM_SaveSettings(&EEPROM);
+    if (!EEPROM_CheckDataValidity()){
+        STATUS+=0x08;
+    }
 }
 
 

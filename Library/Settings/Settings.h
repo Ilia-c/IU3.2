@@ -96,7 +96,7 @@ extern "C"
 
   typedef struct Prgramm_version
   {
-    const char VERSION_PROGRAMM[10];
+    char VERSION_PROGRAMM[10];
     char VERSION_PCB[10];
     char time_work_char[10];
     uint8_t VER_PCB_IDEOLOGY;
@@ -212,8 +212,6 @@ extern "C"
     uint8_t USB_mode;          // режим работы USB
     uint8_t len;               // Язык меню
     uint8_t mode_ADC;          // Режим работы АЦП, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
-
-    void (*update_value)(void); // Ссылка на функцию перевода значений в строки
   } EEPROM_Settings_item;
 
 #ifdef __cplusplus

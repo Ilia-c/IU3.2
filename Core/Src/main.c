@@ -39,6 +39,7 @@
 #include "USB_COMPORT.h"
 #include "GSM.h"
 #include "Sleep.h"
+#include "AT24C02.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -210,7 +211,6 @@ int main(void)
   MX_TIM6_Init();
   RTC_Init();
 
-  Data_UPDATE_char();
 
   HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, 0);
   HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ADC_Pin, 0);
@@ -261,22 +261,24 @@ int main(void)
   
   MS5193T_Init();
 
-
-
-  const char wmsg[] = "Some data";
-  char rmsg[sizeof(wmsg)];
-  uint16_t devAddr = (0x50 << 1);
-  uint16_t memAddr = 0x0100;
-  HAL_StatusTypeDef status;
-
-  HAL_I2C_Mem_Write(&hi2c1, devAddr, memAddr, I2C_MEMADD_SIZE_16BIT, (uint8_t *)wmsg, sizeof(wmsg), HAL_MAX_DELAY);
-  for (;;)
+  if (!(EEPROM_IsDataExists()))
   {
-    status = HAL_I2C_IsDeviceReady(&hi2c1, devAddr, 1, HAL_MAX_DELAY);
-    if (status == HAL_OK)
-      break;
+    if (!EEPROM_SaveSettings(&EEPROM))
+    {
+    }
   }
-  HAL_I2C_Mem_Read(&hi2c1, devAddr, memAddr, I2C_MEMADD_SIZE_16BIT, (uint8_t *)rmsg, sizeof(rmsg), HAL_MAX_DELAY);
+  else
+  {
+    if (!EEPROM_LoadSettings(&EEPROM))
+    {
+      if (!EEPROM_SaveSettings(&EEPROM))
+      {
+        while (1)
+        {
+        }
+      }
+    }
+  }
 
   osKernelInitialize();
   MainHandle = osThreadNew(Main, NULL, &Main_attributes);
@@ -1021,6 +1023,10 @@ void RS485_data(void *argument)
 void SIM800_data(void *argument)
 {
   UNUSED(argument);
+  HAL_Delay(100);
+  HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 1);
+  HAL_Delay(600);
+  HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 0);
   /* USER CODE BEGIN SIM800_data */
   /* Infinite loop */
   for (;;)
@@ -1042,9 +1048,7 @@ void Main(void *argument)
   HAL_NVIC_EnableIRQ(OTG_FS_IRQn);         // Включение прерывания
   HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
 
-  
-  EEPROM.screen_sever_mode =  1;
-  if (EEPROM.screen_sever_mode) Start_video();
+  if (EEPROM.screen_sever_mode == 1) Start_video();
 
   HAL_GPIO_WritePin(COL_B1_GPIO_Port, COL_B1_Pin, 1);
   HAL_GPIO_WritePin(COL_B2_GPIO_Port, COL_B2_Pin, 1);
@@ -1060,11 +1064,6 @@ void Main(void *argument)
   // Настройка таймера клавиатуры
   HAL_NVIC_SetPriority(TIM6_DAC_IRQn, 8, 0); // Установите приоритет
   HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);        // Включите прерывание
-
-  HAL_Delay(100);
-  HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 1);
-  HAL_Delay(600);
-  HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 0);
 
 
   /*
