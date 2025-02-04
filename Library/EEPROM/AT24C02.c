@@ -45,7 +45,7 @@ static bool EEPROM_WriteData(uint16_t memAddr, const uint8_t *pData, uint16_t si
                                    I2C_MEMADD_SIZE_8BIT, // Важно для AT24C02
                                    (uint8_t *)(pData + bytesWritten),
                                    bytesToWrite,
-                                   HAL_MAX_DELAY);
+                                   1000);
         if (status != HAL_OK) {
             return false;
         }
@@ -67,7 +67,7 @@ static bool EEPROM_ReadData(uint16_t memAddr, uint8_t *pData, uint16_t size) {
                                                 I2C_MEMADD_SIZE_8BIT, // Важно
                                                 pData,
                                                 size,
-                                                HAL_MAX_DELAY);
+                                                1000);
     return (status == HAL_OK);
 }
 

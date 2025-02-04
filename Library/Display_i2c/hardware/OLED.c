@@ -65,7 +65,7 @@ uint8_t OLED_Init(I2C_HandleTypeDef* i2c_handleTypeDef)
 	OLED_SendCommand(OLED_NORMAL_DISPLAY); // или для инвертирования OLED_SendCommand(0xA7);
 	OLED_Clear(0);
 	OLED_UpdateScreen();
-	HAL_Delay(1);
+	HAL_Delay(10);
 	OLED_SendCommand(OLED_DISPLAY_ON);
 	return 1;
 }

@@ -1,21 +1,21 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
-// Подключаем стандартные типы: uint8_t, int8_t, int32_t и т.д.
 #include <stdint.h>
-// Если нужно время, можно оставить <time.h>.
-// Здесь же можно подключать нужные HAL-заголовки (stm32fxx_hal.h) и т.п.
-#include "RTC_data.h" // Подключение вашего заголовка с RTC_TimeTypeDef, RTC_DateTypeDef
+#include "RTC_data.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-  ////////////////////////////////////////////////////////////////////////////////
-  // Прототип функции
-  ////////////////////////////////////////////////////////////////////////////////
-  void Nuss(void);
+// Глобальный статус (каждый бит - состояние блока)
+extern uint64_t STATUS;
+
+// define для режима работы
+#define REDACT_MODE 0          // режим редактирования
+#define CYCLE_MODE 1           // режим цикла
+#define FIRMWARE_UPDATE_MODE 2 // режим обновления прошивки
 
   ////////////////////////////////////////////////////////////////////////////////
   //               Описание структур GSM_STATUS_item и ADC_MS5193T_item
@@ -111,8 +111,6 @@ extern "C"
   // Время обновления экрана (для обновления времени и курсора)
   extern uint16_t time_update_display;
 
-  // Глобальный статус (каждый бит - состояние блока)
-  extern uint32_t STATUS;
 
   // Код текущей операции
   extern uint32_t OPERATION_CODE;

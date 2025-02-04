@@ -58,30 +58,12 @@ extern const uint16_t Timer_key_press_fast;
 
 extern uint8_t gsmRxChar;
 extern EEPROM_Settings_item EEPROM;
-/* USER CODE END Includes */
 
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
 
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
-/* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc3;
-
 I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c2;
-
 SD_HandleTypeDef hsd1;
 DMA_HandleTypeDef hdma_sdmmc1_rx;
 DMA_HandleTypeDef hdma_sdmmc1_tx;
@@ -140,7 +122,7 @@ const osThreadAttr_t Monitor_task_attributes = {
 osThreadId_t MainHandle;
 const osThreadAttr_t Main_attributes = {
     .name = "Main",
-    .stack_size = 512 * 3,
+    .stack_size = 512 * 4,
     .priority = (osPriority_t)osPriorityNormal,
 };
 /* Definitions for Keyboard_task */
@@ -157,6 +139,15 @@ const osThreadAttr_t USB_COM_task_attributes = {
     .stack_size = 1024 * 8,
     .priority = (osPriority_t)osPriorityLow2,
 };
+
+
+osThreadId_t Main_Cycle_taskHandle;
+const osThreadAttr_t Main_Cycle_task_attributes = {
+    .name = "Main_Cycle_task",
+    .stack_size = 128 * 1,
+    .priority = (osPriority_t)osPriorityLow5,
+};
+
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -184,6 +175,7 @@ void RS485_data(void *argument);
 void SIM800_data(void *argument);
 void Monitor_task(void *argument);
 void Main(void *argument);
+void Main_Cycle(void *argument); // основной режим в циклическом режиме
 void Keyboard_task(void *argument);
 void USB_COM_task(void *argument);
 void HAL_TIM6_Callback(void);
@@ -211,9 +203,9 @@ int main(void)
   MX_TIM6_Init();
   RTC_Init();
 
-
-  HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, 0);
-  HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ADC_Pin, 0);
+  // Начальные состояния переферии - ВСЕ ОТКЛЮЧЕНО
+  HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, 1);
+  HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ADC_Pin, 1);
   HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
   HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);
   HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 0);
@@ -223,65 +215,42 @@ int main(void)
   HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);
   HAL_Delay(10);
 
-  EnableUsbCDC_UART(*None_func);
-  MX_UART4_Init();
 
-
-  HAL_NVIC_SetPriority(UART4_IRQn, 5, 0);
-  HAL_NVIC_EnableIRQ(UART4_IRQn);
-  HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, 1);
-  HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ADC_Pin, 1);
-  HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 1);
-  HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);
-  HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);
-  HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);
-  HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 1);
-  HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 1);
-  HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);
-  HAL_Delay(5);
-
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
-
+  // ЗАПУСКАЕТСЯ ВСЕГДА 
+  HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);             // Общее питание 5В
+  HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);         // Общее питание 3.3В
+  HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);           // Включение Памяти на плате
 
   
-
-  ////
-  /// Здесь функция чтения из EEPROM настроек, id и прочего
-  ////
-
   HAL_Delay(10);
-  OLED_Init(&hi2c2);
-  
-  
-
-  //W25_Ini();
-  //id = W25_Read_ID();
-
-  //WriteToSDCard();
-  
-  MS5193T_Init();
-
+  // Чтение данных из EEPROM
   if (!(EEPROM_IsDataExists()))
   {
+    // Данных нету - первый запуск 
     if (!EEPROM_SaveSettings(&EEPROM))
     {
+      // Сохранение не вышло - нет связи с EEPROM
     }
   }
   else
   {
     if (!EEPROM_LoadSettings(&EEPROM))
     {
+      // Ошибка - неверный идентификатор данных
       if (!EEPROM_SaveSettings(&EEPROM))
       {
-        while (1)
-        {
-        }
+        // Сохранение не вышло - нет связи с EEPROM
       }
     }
   }
+  
+  if (EEPROM.Communication == 1) HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 1);
+  
 
   osKernelInitialize();
-  MainHandle = osThreadNew(Main, NULL, &Main_attributes);
+  if (EEPROM.Mode == 1) Main_Cycle_taskHandle = osThreadNew(Main_Cycle, NULL, &Main_Cycle_task_attributes); // Задача для циклического режима
+  if (EEPROM.Mode == 0) MainHandle = osThreadNew(Main, NULL, &Main_attributes); // Задача для циклического режима
+
   SD_cardHandle = osThreadNew(SD_card, NULL, &SD_card_attributes);
   Display_I2CHandle = osThreadNew(Display_I2C, NULL, &Display_I2C_attributes);
   ADC_readHandle = osThreadNew(ADC_read, NULL, &ADC_read_attributes);
@@ -986,7 +955,6 @@ void ADC_read(void *argument)
   /* Infinite loop */
   for (;;)
   {
-
     Read_MS5193T_Data();
     osDelay(100);
     //xSemaphoreGive(Display_semaphore);
@@ -1039,7 +1007,23 @@ void SIM800_data(void *argument)
 void Main(void *argument)
 {
   UNUSED(argument);
-  
+
+  HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
+  HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);
+  HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 1);
+  HAL_Delay(10);
+  OLED_Init(&hi2c2);
+  HAL_Delay(20);
+
+  EnableUsbCDC_UART(*None_func);
+  MX_UART4_Init();
+  HAL_NVIC_SetPriority(UART4_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(UART4_IRQn);
+  W25_Ini();
+  id = W25_Read_ID();
+  MS5193T_Init();
+  // WriteToSDCard();
+
   RTC_read();
   
   //MX_USB_HOST_Init();
@@ -1107,6 +1091,8 @@ void Main(void *argument)
   HAL_NVIC_EnableIRQ(TIM5_IRQn);        // Включите прерывание
   HAL_TIM_Base_Start_IT(&htim5);
 
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1); // ВКЛЮЧИТЬ СИГНАЛЬНЫЙ СВЕТОДИОД
+
   for (;;)
   {
     RTC_read();
@@ -1144,7 +1130,14 @@ void SD_card(void *argument)
     }
 }
 
-
+void Main_Cycle(void *argument)
+{
+    UNUSED(argument);
+    for (;;)
+    {
+      osDelay(10000);
+    }
+}
 void USB_COM_task(void *argument)
 {
     UNUSED(argument);
