@@ -51,6 +51,7 @@ xSemaphoreHandle Display_semaphore;
 xSemaphoreHandle Display_cursor_semaphore;
 xSemaphoreHandle USB_COM_semaphore;
 xSemaphoreHandle Main_semaphore;
+xSemaphoreHandle SD_CARD_semapfore;
 
 extern const uint16_t Timer_key_one_press;
 extern const uint16_t Timer_key_press;
@@ -111,13 +112,6 @@ const osThreadAttr_t SIM800_data_attributes = {
     .stack_size = 256 * 4,
     .priority = (osPriority_t)osPriorityLow,
 };
-/* Definitions for SIM800_data */
-osThreadId_t Monitor_taskHandle;
-const osThreadAttr_t Monitor_task_attributes = {
-    .name = "Monitor_task",
-    .stack_size = 256 * 4,
-    .priority = (osPriority_t)osPriorityLow,
-};
 /* Definitions for Main */
 osThreadId_t MainHandle;
 const osThreadAttr_t Main_attributes = {
@@ -173,7 +167,6 @@ void Display_I2C(void *argument);
 void ADC_read(void *argument);
 void RS485_data(void *argument);
 void SIM800_data(void *argument);
-void Monitor_task(void *argument);
 void Main(void *argument);
 void Main_Cycle(void *argument); // основной режим в циклическом режиме
 void Keyboard_task(void *argument);
@@ -256,7 +249,6 @@ int main(void)
   ADC_readHandle = osThreadNew(ADC_read, NULL, &ADC_read_attributes);
   RS485_dataHandle = osThreadNew(RS485_data, NULL, &RS485_data_attributes);
   SIM800_dataHandle = osThreadNew(SIM800_data, NULL, &SIM800_data_attributes);
-  Monitor_taskHandle = osThreadNew(Monitor_task, NULL, &Monitor_task_attributes);
   Keyboard_taskHandle = osThreadNew(Keyboard_task, NULL, &Keyboard_task_attributes);
   USB_COM_taskHandle = osThreadNew(USB_COM_task, NULL, &USB_COM_task_attributes);
   osKernelStart();
@@ -1085,6 +1077,7 @@ void Main(void *argument)
   vSemaphoreCreateBinary(Display_cursor_semaphore);
   vSemaphoreCreateBinary(USB_COM_semaphore);
   vSemaphoreCreateBinary(Main_semaphore);
+  vSemaphoreCreateBinary(SD_CARD_semapfore);
 
     // Запуск глобального таймера для обновления экрана
   HAL_NVIC_SetPriority(TIM5_IRQn, 8, 0); // Установите приоритет
@@ -1098,15 +1091,6 @@ void Main(void *argument)
     RTC_read();
     xSemaphoreGive(Display_semaphore);
     xSemaphoreTake(Main_semaphore, portMAX_DELAY);
-  }
-}
-
-void Monitor_task(void *argument)
-{
-  UNUSED(argument);
-  for (;;)
-  {
-    osDelay(60000);
   }
 }
 
@@ -1126,10 +1110,12 @@ void SD_card(void *argument)
     UNUSED(argument);
     for (;;)
     {
-      osDelay(60000);
+      xSemaphoreTake(SD_CARD_semapfore, portMAX_DELAY);
     }
 }
 
+
+// Запускается только при 
 void Main_Cycle(void *argument)
 {
     UNUSED(argument);
