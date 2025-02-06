@@ -77,19 +77,27 @@ TIM_HandleTypeDef htim6;
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart4;
 
+
+/* Definitions for Main */
+osThreadId_t MainHandle;
+const osThreadAttr_t Main_attributes = {
+    .name = "Main",
+    .stack_size = 256 * 1,
+    .priority = (osPriority_t)osPriorityHigh,
+};
 /* Definitions for SD_card */
 osThreadId_t SD_cardHandle;
 const osThreadAttr_t SD_card_attributes = {
     .name = "SD_card",
     .stack_size = 256 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
+    .priority = (osPriority_t)osPriorityLow1,
 };
 /* Definitions for Display_I2C */
 osThreadId_t Display_I2CHandle;
 const osThreadAttr_t Display_I2C_attributes = {
     .name = "Display_I2C",
     .stack_size = 1024 * 1,
-    .priority = (osPriority_t)osPriorityLow2,
+    .priority = (osPriority_t)osPriorityNormal3,
 };
 /* Definitions for ADC_read */
 osThreadId_t ADC_readHandle;
@@ -110,13 +118,6 @@ osThreadId_t SIM800_dataHandle;
 const osThreadAttr_t SIM800_data_attributes = {
     .name = "SIM800_data",
     .stack_size = 256 * 4,
-    .priority = (osPriority_t)osPriorityLow,
-};
-/* Definitions for Main */
-osThreadId_t MainHandle;
-const osThreadAttr_t Main_attributes = {
-    .name = "Main",
-    .stack_size = 512 * 4,
     .priority = (osPriority_t)osPriorityNormal,
 };
 /* Definitions for Keyboard_task */
@@ -131,17 +132,17 @@ osThreadId_t USB_COM_taskHandle;
 const osThreadAttr_t USB_COM_task_attributes = {
     .name = "USB_COM_task",
     .stack_size = 1024 * 8,
-    .priority = (osPriority_t)osPriorityLow2,
+    .priority = (osPriority_t)osPriorityLow6,
 };
 
-
+/*
 osThreadId_t Main_Cycle_taskHandle;
 const osThreadAttr_t Main_Cycle_task_attributes = {
     .name = "Main_Cycle_task",
     .stack_size = 128 * 1,
     .priority = (osPriority_t)osPriorityLow5,
 };
-
+*/
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -240,10 +241,89 @@ int main(void)
   if (EEPROM.Communication == 1) HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 1);
   
 
-  osKernelInitialize();
-  if (EEPROM.Mode == 1) Main_Cycle_taskHandle = osThreadNew(Main_Cycle, NULL, &Main_Cycle_task_attributes); // Задача для циклического режима
-  if (EEPROM.Mode == 0) MainHandle = osThreadNew(Main, NULL, &Main_attributes); // Задача для циклического режима
 
+  
+  HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
+  HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);
+  HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 1);
+  HAL_Delay(10);
+  OLED_Init(&hi2c2);
+  HAL_Delay(20);
+
+  // Условие работы в режиме GSM
+  MX_UART4_Init();
+
+  // Условие работы в режиме USB
+  //MX_USB_HOST_Init();
+  MX_USB_DEVICE_Init();
+  EnableUsbCDC_UART(*None_func); // Включение передачи данных UART-USB (ответы от модуля GSM)
+  HAL_NVIC_SetPriority(OTG_FS_IRQn, 5, 0); // Приоритет прерывания
+  HAL_NVIC_EnableIRQ(OTG_FS_IRQn);         // Включение прерывания
+  HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
+
+  HAL_NVIC_SetPriority(UART4_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(UART4_IRQn);
+
+  W25_Ini();
+  id = W25_Read_ID();
+  MS5193T_Init();
+  // WriteToSDCard();
+
+  RTC_read();
+  
+
+  if (EEPROM.screen_sever_mode == 1) Start_video();
+
+  HAL_GPIO_WritePin(COL_B1_GPIO_Port, COL_B1_Pin, 1);
+  HAL_GPIO_WritePin(COL_B2_GPIO_Port, COL_B2_Pin, 1);
+  HAL_GPIO_WritePin(COL_B3_GPIO_Port, COL_B3_Pin, 1);
+  HAL_GPIO_WritePin(COL_B4_GPIO_Port, COL_B4_Pin, 1);
+  HAL_GPIO_WritePin(ON_N25_GPIO_Port, ON_N25_Pin, 1);
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 7, 0);
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 7, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
+
+  // Настройка таймера клавиатуры
+  HAL_NVIC_SetPriority(TIM6_DAC_IRQn, 8, 0); // Установите приоритет
+  HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);        // Включите прерывание
+
+
+  /*
+  Read_MS5193T_Data();
+  HAL_Delay(200);
+  Read_MS5193T_Data();
+  HAL_Delay(200);
+  Read_MS5193T_Data();
+  HAL_Delay(200);
+  Read_MS5193T_Data();
+  HAL_Delay(200);
+
+  
+  data_read_adc_in = ADC1_Read_PC0();
+  MX_DMA_Init();
+  MX_SDMMC1_SD_Init();
+  HAL_StatusTypeDef res = HAL_SD_Init(&hsd1);
+  HAL_SD_CardInfoTypeDef CardInfo;
+  FRESULT res_2 = HAL_SD_GetCardInfo(&hsd1, &CardInfo);
+  HAL_SD_CardStateTypeDef res_1 = HAL_SD_GetCardState(&hsd1);
+  res = HAL_SD_ConfigWideBusOperation(&hsd1, SDMMC_BUS_WIDE_4B);
+  res_1 = HAL_SD_GetCardState(&hsd1);
+  HAL_Delay(200);
+  MX_FATFS_Init();
+  WriteToSDCard();
+  
+  
+  if (Check_Wakeup_Reason() == 1) {
+    Enter_StandbyMode(0, 30);// Если не аппаратный сброс. не работает, нужно переписать
+  } 
+  */
+ 
+
+  osKernelInitialize();
+  //if (EEPROM.Mode == 1) Main_Cycle_taskHandle = osThreadNew(Main_Cycle, NULL, &Main_Cycle_task_attributes); // Задача для циклического режима
+  MainHandle = osThreadNew(Main, NULL, &Main_attributes); // Задача для циклического режима
   SD_cardHandle = osThreadNew(SD_card, NULL, &SD_card_attributes);
   Display_I2CHandle = osThreadNew(Display_I2C, NULL, &Display_I2C_attributes);
   ADC_readHandle = osThreadNew(ADC_read, NULL, &ADC_read_attributes);
@@ -999,79 +1079,6 @@ void SIM800_data(void *argument)
 void Main(void *argument)
 {
   UNUSED(argument);
-
-  HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
-  HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);
-  HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 1);
-  HAL_Delay(10);
-  OLED_Init(&hi2c2);
-  HAL_Delay(20);
-
-  EnableUsbCDC_UART(*None_func);
-  MX_UART4_Init();
-  HAL_NVIC_SetPriority(UART4_IRQn, 5, 0);
-  HAL_NVIC_EnableIRQ(UART4_IRQn);
-  W25_Ini();
-  id = W25_Read_ID();
-  MS5193T_Init();
-  // WriteToSDCard();
-
-  RTC_read();
-  
-  //MX_USB_HOST_Init();
-  MX_USB_DEVICE_Init();
-  HAL_NVIC_SetPriority(OTG_FS_IRQn, 5, 0); // Приоритет прерывания
-  HAL_NVIC_EnableIRQ(OTG_FS_IRQn);         // Включение прерывания
-  HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
-
-  if (EEPROM.screen_sever_mode == 1) Start_video();
-
-  HAL_GPIO_WritePin(COL_B1_GPIO_Port, COL_B1_Pin, 1);
-  HAL_GPIO_WritePin(COL_B2_GPIO_Port, COL_B2_Pin, 1);
-  HAL_GPIO_WritePin(COL_B3_GPIO_Port, COL_B3_Pin, 1);
-  HAL_GPIO_WritePin(COL_B4_GPIO_Port, COL_B4_Pin, 1);
-  HAL_GPIO_WritePin(ON_N25_GPIO_Port, ON_N25_Pin, 1);
-  HAL_NVIC_SetPriority(EXTI4_IRQn, 7, 0);
-  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 7, 0);
-  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
-  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
-
-
-  // Настройка таймера клавиатуры
-  HAL_NVIC_SetPriority(TIM6_DAC_IRQn, 8, 0); // Установите приоритет
-  HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);        // Включите прерывание
-
-
-  /*
-  Read_MS5193T_Data();
-  HAL_Delay(200);
-  Read_MS5193T_Data();
-  HAL_Delay(200);
-  Read_MS5193T_Data();
-  HAL_Delay(200);
-  Read_MS5193T_Data();
-  HAL_Delay(200);
-
-  
-  data_read_adc_in = ADC1_Read_PC0();
-  MX_DMA_Init();
-  MX_SDMMC1_SD_Init();
-  HAL_StatusTypeDef res = HAL_SD_Init(&hsd1);
-  HAL_SD_CardInfoTypeDef CardInfo;
-  FRESULT res_2 = HAL_SD_GetCardInfo(&hsd1, &CardInfo);
-  HAL_SD_CardStateTypeDef res_1 = HAL_SD_GetCardState(&hsd1);
-  res = HAL_SD_ConfigWideBusOperation(&hsd1, SDMMC_BUS_WIDE_4B);
-  res_1 = HAL_SD_GetCardState(&hsd1);
-  HAL_Delay(200);
-  MX_FATFS_Init();
-  WriteToSDCard();
-  
-  
-  if (Check_Wakeup_Reason() == 1) {
-    Enter_StandbyMode(0, 30);// Если не аппаратный сброс. не работает, нужно переписать
-  } 
-  */
- 
   vSemaphoreCreateBinary(Keyboard_semapfore);
   vSemaphoreCreateBinary(Display_semaphore);
   vSemaphoreCreateBinary(Display_cursor_semaphore);

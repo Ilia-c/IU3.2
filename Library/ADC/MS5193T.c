@@ -112,8 +112,8 @@ int32_t Read_MS5193T_Data(void)
     // Преобразование 3 байт в 24-битное значение со знаком
     adValue = (((int32_t)xtemp[0]) << 16) | (((int32_t)xtemp[1]) << 8) | xtemp[2];
 
-    if (read_por == 0){ calculate_ADC_data_temp(adValue); read_por++;}
-    else{ calculate_ADC_data_heigh(adValue); read_por = 0; }
+    calculate_ADC_data_temp(adValue); read_por++;
+    calculate_ADC_data_heigh(adValue); read_por = 0; 
 
     return adValue;
 }
