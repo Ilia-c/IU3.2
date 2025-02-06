@@ -1,7 +1,6 @@
 #include "keyboard.h"
 extern xSemaphoreHandle Keyboard_semapfore;
 
-extern uint8_t Display_update;
 extern xSemaphoreHandle Display_semaphore;
 extern char Keyboard_press_code;
 char Prot_Keyboard_press_code;

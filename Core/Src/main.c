@@ -118,14 +118,14 @@ osThreadId_t SIM800_dataHandle;
 const osThreadAttr_t SIM800_data_attributes = {
     .name = "SIM800_data",
     .stack_size = 256 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
+    .priority = (osPriority_t)osPriorityLow7,
 };
 /* Definitions for Keyboard_task */
 osThreadId_t Keyboard_taskHandle;
 const osThreadAttr_t Keyboard_task_attributes = {
     .name = "Keyboard_task",
     .stack_size = 128 * 2,
-    .priority = (osPriority_t)osPriorityLow4,
+    .priority = (osPriority_t)osPriorityNormal1,
 };
 
 osThreadId_t USB_COM_taskHandle;
@@ -241,8 +241,6 @@ int main(void)
   if (EEPROM.Communication == 1) HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 1);
   
 
-
-  
   HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
   HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);
   HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 1);
@@ -291,15 +289,6 @@ int main(void)
 
 
   /*
-  Read_MS5193T_Data();
-  HAL_Delay(200);
-  Read_MS5193T_Data();
-  HAL_Delay(200);
-  Read_MS5193T_Data();
-  HAL_Delay(200);
-  Read_MS5193T_Data();
-  HAL_Delay(200);
-
   
   data_read_adc_in = ADC1_Read_PC0();
   MX_DMA_Init();
@@ -352,7 +341,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     uint8_t B2 = HAL_GPIO_ReadPin(STR_B2_GPIO_Port, STR_B2_Pin);
     uint8_t B3 = HAL_GPIO_ReadPin(STR_B2_GPIO_Port, STR_B3_Pin);
     uint8_t B4 = HAL_GPIO_ReadPin(STR_B4_GPIO_Port, STR_B4_Pin);
-    osDelay(2);
+    osDelay(1);
     if ((HAL_GPIO_ReadPin(STR_B1_GPIO_Port, STR_B1_Pin) == B1) && (HAL_GPIO_ReadPin(STR_B2_GPIO_Port, STR_B2_Pin) == B2) && (HAL_GPIO_ReadPin(STR_B3_GPIO_Port, STR_B3_Pin) == B3) && (HAL_GPIO_ReadPin(STR_B4_GPIO_Port, STR_B4_Pin) == B4))
     {
       static portBASE_TYPE xTaskWoken;
@@ -1027,19 +1016,14 @@ void ADC_read(void *argument)
   /* Infinite loop */
   for (;;)
   {
-    Read_MS5193T_Data();
-    osDelay(100);
+    ADC_data.update_value();
+    osDelay(300);
     //xSemaphoreGive(Display_semaphore);
   }
   /* USER CODE END ADC_read */
 }
 
-/* USER CODE BEGIN Header_RS485_data */
-/**
- * @brief Function implementing the RS485_data thread.
- * @param argument: Not used
- * @retval None
- */
+
 /* USER CODE END Header_RS485_data */
 void RS485_data(void *argument)
 {
@@ -1048,7 +1032,7 @@ void RS485_data(void *argument)
   /* Infinite loop */
   for (;;)
   {
-    osDelay(1000);
+    osDelay(10000);
   }
   /* USER CODE END RS485_data */
 }
@@ -1067,8 +1051,6 @@ void SIM800_data(void *argument)
   HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 1);
   HAL_Delay(600);
   HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 0);
-  /* USER CODE BEGIN SIM800_data */
-  /* Infinite loop */
   for (;;)
   {
     osDelay(1000);
@@ -1118,6 +1100,7 @@ void SD_card(void *argument)
     for (;;)
     {
       xSemaphoreTake(SD_CARD_semapfore, portMAX_DELAY);
+      osDelay(1000);
     }
 }
 

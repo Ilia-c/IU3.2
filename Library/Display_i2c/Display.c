@@ -35,6 +35,7 @@ extern xSemaphoreHandle Display_semaphore;
 extern GSM_STATUS_item GSM_data;
 extern ADC_MS5193T_item ADC_data;
 extern EEPROM_Settings_item EEPROM;
+extern ERRCODE_item ERRCODE;
 
 
 char str[4];
@@ -354,17 +355,11 @@ menuSelect_item_char Serial_number = {
 }; // Промежуточная переменная, куда сохраняется настройка до сохранения (char)
 
 ////////////////////////////////////////////////////
-//                 Функции меню                   //
-////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////
 //                  Пункты меню                   //
 ////////////////////////////////////////////////////
-
 extern char EEPROM_status_char[3]; // Статус доступности EEPROM
 extern char FLASH_status_char[3];  // Статус доступности FLASH
 extern char SD_status_char[3];     // Статус доступности SD
-extern char  ADC_in_temp_char[5];
 
 // полный тест при нажатии кнопки
 void full_test(){}
@@ -412,7 +407,7 @@ menuSelect_item NO_SIGNED = {
       MAKE_MENU(Menu_1_2_7, "SD-карта"           , "SD-card"           , 0 , UPTADE_OFF               , NO_SIGNED  ,  Menu_1_2_8     , Menu_1_2_6     , Menu_1_2       , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , FLASH_status_char);
       MAKE_MENU(Menu_1_2_8, "FLASH"        , "FLASH"        , 0 , UPTADE_OFF               , NO_SIGNED  ,  NEXT_MENU      , Menu_1_2_7     , Menu_1_2       , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , SD_status_char);
     MAKE_MENU(Menu_1_3  , "Показания"    , "Sensor reading"         , 0 , UPTADE_OFF               , NO_SIGNED  , NEXT_MENU      , Menu_1_2       , Menu_1         , Menu_1_3_1     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
-      MAKE_MENU(Menu_1_3_1, "Тепература"   , "Temperature "         , 0 , UPTADE_ON               ,      Unit_degree       , Menu_1_3_2     , PREVISION_MENU , Menu_1_3       , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , ADC_MS5193T_temp_char);
+      MAKE_MENU(Menu_1_3_1, "Тепература"   , "Temperature "         , 0 , UPTADE_ON               ,      Unit_degree       , Menu_1_3_2     , PREVISION_MENU , Menu_1_3       , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , ADC_data.ADC_MS5193T_temp_char);
       MAKE_MENU(Menu_1_3_2, "Глубина"      , "Data"         , 0 , UPTADE_ON               ,       UNITS_MODE_DATA     , Menu_1_3_3     , Menu_1_3_1     , Menu_1_3       , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , ADC_data.ADC_value_char);
       MAKE_MENU(Menu_1_3_3, "УГВ"   , "GWL"         , 0 , UPTADE_ON               ,      UNITS_MODE_DATA     , NEXT_MENU      , Menu_1_3_2     , Menu_1_3       , CHILD_MENU     , ACTION_MENU    , SELECT_BAR     , DATA_IN        , ADC_data.ADC_SI_value_correct_char);
   MAKE_MENU(Menu_2    , "Настройки"    , "Settings"     , 0 , UPTADE_OFF               , NO_SIGNED  ,  Menu_3         , Menu_1         , PARENT_MENU    , Menu_2_1       , ACTION_MENU    , SELECT_BAR     , DATA_IN        , DATA_OUT);
@@ -477,7 +472,6 @@ void split_double(double *number, int32_t *int_part, int32_t *frac_part, uint8_t
     if (number == NULL || int_part == NULL || frac_part == NULL) {
         return; // Защита от передачи NULL-указателей
     }
-
     // Извлекаем целую часть
     *int_part = (int32_t)(*number); // Сохраняем знак в целой части
     // Вычисляем дробную часть
@@ -886,7 +880,7 @@ void redact_end()
     led_cursor = 1; 
     EEPROM_SaveSettings(&EEPROM);
     if (!EEPROM_CheckDataValidity()){
-        STATUS+=0x08;
+        ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
     }
 }
 

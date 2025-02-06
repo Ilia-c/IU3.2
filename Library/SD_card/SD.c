@@ -48,7 +48,7 @@ void WriteToSDCard(void)
     strcat(string, buffer);
     strcat(string, rz);
 
-    strcat(string, ADC_MS5193T_temp_char);
+    strcat(string, ADC_data.ADC_MS5193T_temp_char);
     strcat(string, rz);
     strcat(string, ADC_data.ADC_value_char);
     strcat(string, rz);

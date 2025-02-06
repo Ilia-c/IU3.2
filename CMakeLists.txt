@@ -11,7 +11,7 @@ cmake_minimum_required(VERSION 3.22)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS ON)
-
+add_link_options(-u _printf_float)
 
 # Define the build type
 if(NOT CMAKE_BUILD_TYPE)

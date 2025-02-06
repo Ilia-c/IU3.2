@@ -16,8 +16,8 @@ void TrimCommand(char *command)
         command[len - 1] = '\0';
     }
 }
-extern uint8_t g_myRxBuffer[512]; 
-extern uint8_t UserRxBufferFS[512];
+extern uint8_t g_myRxBuffer[MY_USB_RX_BUFFER_SIZE]; 
+extern uint8_t UserRxBufferFS[MY_USB_RX_BUFFER_SIZE];
 uint8_t command_un = 0;
 void USB_COM(void *argument)
 {
@@ -92,47 +92,6 @@ void USB_COM(void *argument)
 
 }
 
-
-
 void USB_Send_Status_Report(void)
 {
-    char buffer[512]; // Локальный буфер для передачи данных
-    int len = 0;      // Текущая длина строки
-
-    // Отправляем данные о GSM
-    len = snprintf(buffer, sizeof(buffer), "GSM Status: %s\r\n", GSM_data.GSM_status_char);
-    CDC_Transmit_FS((uint8_t *)buffer, len);
-
-    len = snprintf(buffer, sizeof(buffer), "GSM SIM Card: %s\r\n", GSM_data.GSM_SIMCARD_char);
-    CDC_Transmit_FS((uint8_t *)buffer, len);
-
-    len = snprintf(buffer, sizeof(buffer), "GSM Ready: %s\r\n", GSM_data.GSM_status_ready_char);
-    CDC_Transmit_FS((uint8_t *)buffer, len);
-
-    len = snprintf(buffer, sizeof(buffer), "GSM Registered: %s\r\n", GSM_data.GSM_status_reg_char);
-    CDC_Transmit_FS((uint8_t *)buffer, len);
-
-    len = snprintf(buffer, sizeof(buffer), "GSM Operator: %s\r\n", GSM_data.GSM_operator_char);
-    CDC_Transmit_FS((uint8_t *)buffer, len);
-
-    len = snprintf(buffer, sizeof(buffer), "GSM Signal Level: %d\r\n", GSM_data.GSM_Signal_Level);
-    CDC_Transmit_FS((uint8_t *)buffer, len);
-
-    // Отправляем данные о ADC
-    len = snprintf(buffer, sizeof(buffer), "ADC Value: %d\r\n", ADC_data.ADC_value);
-    CDC_Transmit_FS((uint8_t *)buffer, len);
-
-    len = snprintf(buffer, sizeof(buffer), "ADC Status: %s\r\n", ADC_data.ADC_status_char);
-    CDC_Transmit_FS((uint8_t *)buffer, len);
-
-    // Отправляем данные о версии программы
-    len = snprintf(buffer, sizeof(buffer), "Program Version: %s\r\n", EEPROM.version.VERSION_PROGRAMM);
-    CDC_Transmit_FS((uint8_t *)buffer, len);
-
-    len = snprintf(buffer, sizeof(buffer), "PCB Version: %s\r\n", EEPROM.version.VERSION_PCB);
-    CDC_Transmit_FS((uint8_t *)buffer, len);
-
-    len = snprintf(buffer, sizeof(buffer), "Time Worked: %lu h, %lu m\r\n",
-                   EEPROM.time_work_h, EEPROM.time_work_m);
-    CDC_Transmit_FS((uint8_t *)buffer, len);
 }
