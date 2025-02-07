@@ -19,7 +19,7 @@ void TrimCommand(char *command)
 extern uint8_t g_myRxBuffer[MY_USB_RX_BUFFER_SIZE]; 
 extern uint8_t UserRxBufferFS[MY_USB_RX_BUFFER_SIZE];
 uint8_t command_un = 0;
-void USB_COM(void *argument)
+void USB_COM(void)
 {
     command_un = 0;
     char *command = (char *)g_myRxBuffer;

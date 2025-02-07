@@ -62,7 +62,7 @@ extern USBD_DescriptorsTypeDef FS_Desc;
   * Init USB device Library, add supported class and start the library
   * @retval None
   */
-void MX_USB_DEVICE_Init(void)
+void MX_USB_DEVICE_Init_COMPORT(void)
 {
   /* USER CODE BEGIN USB_DEVICE_Init_PreTreatment */
 

@@ -98,21 +98,20 @@ void MS5193T_Init(void) {
 }
 
 // Функция чтения данных из регистра данных MS5193T (24-битные данные)
-void Read_MS5193T_Data(void)
+uint32_t Read_MS5193T_Data(void)
 {
     taskENTER_CRITICAL();
 	uint8_t xtemp[3] = {0x00, 0x00, 0x00};
 	int32_t adValue=0;
     SPI2_Read_buf(0x58, xtemp, 3); // Чтение регистра данных
-    
     // Преобразование 3 байт в 24-битное значение со знаком
     adValue = (((int32_t)xtemp[0]) << 16) | (((int32_t)xtemp[1]) << 8) | xtemp[2];
     if (read_por == 0)
     {
         calculate_ADC_data_temp(adValue);
         read_por++;
-        uint8_t ModeRegisterMsg[2] = {0b00000000, 0b00000111};  
-        uint8_t ConfigRegisterMsg[2] = {0b00010000, 0b10000000}; // канал на АЦП
+        uint8_t ModeRegisterMsg[2] = {0b00100000, 0b00000111};  
+        uint8_t ConfigRegisterMsg[2] = {0b00010001, 0b10010000}; // канал на АЦП
         // Настройка регистра режима
         SPI2_Write_buf(0x08, ModeRegisterMsg, 2);
         //osDelay(1);
@@ -123,8 +122,8 @@ void Read_MS5193T_Data(void)
     {
         calculate_ADC_data_heigh(adValue);
         read_por = 0;
-        uint8_t ModeRegisterMsg[2] = {0b00000000, 0b00000111};  
-        uint8_t ConfigRegisterMsg[2] = {0b00010000, 0b10000001}; // канал на АЦП
+        uint8_t ModeRegisterMsg[2] = {0b00100000, 0b00000111};  
+        uint8_t ConfigRegisterMsg[2] = {0b00010001, 0b10010001}; // канал на АЦП
         // Настройка регистра режима
         SPI2_Write_buf(0x08, ModeRegisterMsg, 2);
         //osDelay(1);
@@ -132,6 +131,7 @@ void Read_MS5193T_Data(void)
         SPI2_Write_buf(0x10, ConfigRegisterMsg, 2);
     }
     taskEXIT_CRITICAL();
+    return adValue;
 }
 
 

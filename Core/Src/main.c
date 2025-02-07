@@ -51,7 +51,6 @@ xSemaphoreHandle Display_semaphore;
 xSemaphoreHandle Display_cursor_semaphore;
 xSemaphoreHandle USB_COM_semaphore;
 xSemaphoreHandle Main_semaphore;
-xSemaphoreHandle SD_CARD_semapfore;
 
 extern const uint16_t Timer_key_one_press;
 extern const uint16_t Timer_key_press;
@@ -85,13 +84,7 @@ const osThreadAttr_t Main_attributes = {
     .stack_size = 256 * 1,
     .priority = (osPriority_t)osPriorityHigh,
 };
-/* Definitions for SD_card */
-osThreadId_t SD_cardHandle;
-const osThreadAttr_t SD_card_attributes = {
-    .name = "SD_card",
-    .stack_size = 256 * 4,
-    .priority = (osPriority_t)osPriorityLow1,
-};
+
 /* Definitions for Display_I2C */
 osThreadId_t Display_I2CHandle;
 const osThreadAttr_t Display_I2C_attributes = {
@@ -135,14 +128,14 @@ const osThreadAttr_t USB_COM_task_attributes = {
     .priority = (osPriority_t)osPriorityLow6,
 };
 
-/*
+
 osThreadId_t Main_Cycle_taskHandle;
 const osThreadAttr_t Main_Cycle_task_attributes = {
     .name = "Main_Cycle_task",
     .stack_size = 128 * 1,
     .priority = (osPriority_t)osPriorityLow5,
 };
-*/
+
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -163,7 +156,6 @@ static void MX_UART4_Init(void);       //
 static void MX_TIM5_Init(void);
 static void MX_TIM6_Init(void);
 
-void SD_card(void *argument);
 void Display_I2C(void *argument);
 void ADC_read(void *argument);
 void RS485_data(void *argument);
@@ -193,28 +185,31 @@ int main(void)
   MX_I2C1_Init();
   MX_I2C2_Init();
   MX_SPI2_Init();
+  MX_UART4_Init();
   MX_TIM5_Init();
   MX_TIM6_Init();
+  
   RTC_Init();
-
+  RTC_read();
   // Начальные состояния переферии - ВСЕ ОТКЛЮЧЕНО
   HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, 1);
   HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ADC_Pin, 1);
   HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
-  HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);
+  HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);     // Не включаем RS по умолчанию
   HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 0);
   HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 0);
   HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
   HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 0);
   HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);
+  
   HAL_Delay(10);
 
 
   // ЗАПУСКАЕТСЯ ВСЕГДА 
   HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);             // Общее питание 5В
-  HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);         // Общее питание 3.3В
+  HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);         // Общее питание 3.3В (АЦП, темп., и т.д.)
   HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);           // Включение Памяти на плате
-
+  
   
   HAL_Delay(10);
   // Чтение данных из EEPROM
@@ -238,54 +233,51 @@ int main(void)
     }
   }
   
-  if (EEPROM.Communication == 1) HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 1);
-  
+  // Запуск в режиме настройки (экран вкл)
+  if (EEPROM.Mode == 0){
+    // Включение переферии
+    HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 1); // Включение датчика давления и !!!  измерение текущего напряжения питания 1:10
+    HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 1); // Включаем экран
+    HAL_Delay(10);
+    OLED_Init(&hi2c2);
+    HAL_Delay(20);
+    HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
+    HAL_NVIC_SetPriority(UART4_IRQn, 5, 0);
+    HAL_NVIC_EnableIRQ(UART4_IRQn);
 
-  HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
-  HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);
-  HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 1);
-  HAL_Delay(10);
-  OLED_Init(&hi2c2);
-  HAL_Delay(20);
+    //if (EEPROM.USB_mode == 0) MX_USB_DEVICE_Init_COMPORT(); // Режим работы в USB_FLASH (перефброс фалов с данными на внешний USB)
+    if (EEPROM.USB_mode == 1){
+      MX_USB_DEVICE_Init_COMPORT(); // Режим работы в VirtualComPort
+      EnableUsbCDC_UART(*None_func); // Включение передачи данных UART-USB (ответы от модуля GSM)
+      HAL_NVIC_SetPriority(OTG_FS_IRQn, 5, 0); // Приоритет прерывания
+      HAL_NVIC_EnableIRQ(OTG_FS_IRQn);         // Включение прерывания
+    }
+    //if (EEPROM.USB_mode == 2) MX_USB_DEVICE_Init_COMPORT(); // Режим работы в USB-FLASH с внутренней flash
+    //if (EEPROM.USB_mode == 3) MX_USB_DEVICE_Init_COMPORT(); // Режим работы в USB-FLASH с SD
 
-  // Условие работы в режиме GSM
-  MX_UART4_Init();
+    if (EEPROM.screen_sever_mode == 1) Start_video();
+    HAL_GPIO_WritePin(COL_B1_GPIO_Port, COL_B1_Pin, 1);
+    HAL_GPIO_WritePin(COL_B2_GPIO_Port, COL_B2_Pin, 1);
+    HAL_GPIO_WritePin(COL_B3_GPIO_Port, COL_B3_Pin, 1);
+    HAL_GPIO_WritePin(COL_B4_GPIO_Port, COL_B4_Pin, 1);
+    HAL_NVIC_SetPriority(EXTI4_IRQn, 7, 0);
+    HAL_NVIC_SetPriority(EXTI9_5_IRQn, 7, 0);
+    HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+    HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+    
+    // Настройка таймера клавиатуры
+    HAL_NVIC_SetPriority(TIM6_DAC_IRQn, 8, 0); // Установите приоритет
+    HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);        // Включите прерывание
+  }
 
-  // Условие работы в режиме USB
-  //MX_USB_HOST_Init();
-  MX_USB_DEVICE_Init();
-  EnableUsbCDC_UART(*None_func); // Включение передачи данных UART-USB (ответы от модуля GSM)
-  HAL_NVIC_SetPriority(OTG_FS_IRQn, 5, 0); // Приоритет прерывания
-  HAL_NVIC_EnableIRQ(OTG_FS_IRQn);         // Включение прерывания
-  HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
-
-  HAL_NVIC_SetPriority(UART4_IRQn, 5, 0);
-  HAL_NVIC_EnableIRQ(UART4_IRQn);
-
+  // Инициализация переферии
   W25_Ini();
   id = W25_Read_ID();
+  // Добавить обработку ошибки flash, если id неверный
   MS5193T_Init();
-  // WriteToSDCard();
-
-  RTC_read();
+  //WriteToSDCard();
   
 
-  if (EEPROM.screen_sever_mode == 1) Start_video();
-
-  HAL_GPIO_WritePin(COL_B1_GPIO_Port, COL_B1_Pin, 1);
-  HAL_GPIO_WritePin(COL_B2_GPIO_Port, COL_B2_Pin, 1);
-  HAL_GPIO_WritePin(COL_B3_GPIO_Port, COL_B3_Pin, 1);
-  HAL_GPIO_WritePin(COL_B4_GPIO_Port, COL_B4_Pin, 1);
-  HAL_GPIO_WritePin(ON_N25_GPIO_Port, ON_N25_Pin, 1);
-  HAL_NVIC_SetPriority(EXTI4_IRQn, 7, 0);
-  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 7, 0);
-  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
-  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
-
-
-  // Настройка таймера клавиатуры
-  HAL_NVIC_SetPriority(TIM6_DAC_IRQn, 8, 0); // Установите приоритет
-  HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);        // Включите прерывание
 
 
   /*
@@ -311,15 +303,26 @@ int main(void)
  
 
   osKernelInitialize();
-  //if (EEPROM.Mode == 1) Main_Cycle_taskHandle = osThreadNew(Main_Cycle, NULL, &Main_Cycle_task_attributes); // Задача для циклического режима
-  MainHandle = osThreadNew(Main, NULL, &Main_attributes); // Задача для циклического режима
-  SD_cardHandle = osThreadNew(SD_card, NULL, &SD_card_attributes);
-  Display_I2CHandle = osThreadNew(Display_I2C, NULL, &Display_I2C_attributes);
+
   ADC_readHandle = osThreadNew(ADC_read, NULL, &ADC_read_attributes);
   RS485_dataHandle = osThreadNew(RS485_data, NULL, &RS485_data_attributes);
   SIM800_dataHandle = osThreadNew(SIM800_data, NULL, &SIM800_data_attributes);
-  Keyboard_taskHandle = osThreadNew(Keyboard_task, NULL, &Keyboard_task_attributes);
-  USB_COM_taskHandle = osThreadNew(USB_COM_task, NULL, &USB_COM_task_attributes);
+
+  if (EEPROM.Mode == 0){
+    USB_COM_taskHandle = osThreadNew(USB_COM_task, NULL, &USB_COM_task_attributes);
+    MainHandle = osThreadNew(Main, NULL, &Main_attributes); // Задача для настроечного режима
+    Keyboard_taskHandle = osThreadNew(Keyboard_task, NULL, &Keyboard_task_attributes);
+    Display_I2CHandle = osThreadNew(Display_I2C, NULL, &Display_I2C_attributes);
+  }
+  if (EEPROM.Mode == 1)
+  {
+    Main_Cycle_taskHandle = osThreadNew(Main_Cycle, NULL, &Main_Cycle_task_attributes); // Задача для циклического режима
+    // Приостановка всех задач
+    osThreadSuspend(ADC_readHandle);
+    osThreadSuspend(RS485_dataHandle);
+    osThreadSuspend(SIM800_dataHandle);
+  }
+
   osKernelStart();
 
 
@@ -964,7 +967,7 @@ int32_t ADC1_Read_PC0(void) {
     }
     uint32_t vrefint_raw = HAL_ADC_GetValue(&hadc1);
     HAL_ADC_Stop(&hadc1);
-
+    
     // --- Чтение PC0 ---
     sConfig.Channel = ADC_CHANNEL_1;  // PC0
     if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
@@ -979,84 +982,6 @@ int32_t ADC1_Read_PC0(void) {
     HAL_ADC_Stop(&hadc1);
     return measurement_raw;  // Возвращаем скорректированное значение АЦП
 }
-uint32_t data_read_adc_in = 0;
-
-/* USER CODE BEGIN Header_Display_I2C */
-/**
- * @brief Function implementing the Display_I2C thread.
- * @param argument: Not used
- * @retval None
- */
-/* USER CODE END Header_Display_I2C */
-void Display_I2C(void *argument)
-{
-  UNUSED(argument);
-  /* USER CODE BEGIN Display_I2C */
-  /* Infinite loop */
-  for (;;)
-  {
-    xSemaphoreTake(Display_semaphore, portMAX_DELAY);
-    Keyboard_processing();
-    Display_all_menu();
-  }
-  /* USER CODE END Display_I2C */
-}
-
-/* USER CODE BEGIN Header_ADC_read */
-/**
- * @brief Function implementing the ADC_read thread.
- * @param argument: Not used
- * @retval None
- */
-/* USER CODE END Header_ADC_read */
-void ADC_read(void *argument)
-{
-  UNUSED(argument);
-  /* USER CODE BEGIN ADC_read */
-  /* Infinite loop */
-  for (;;)
-  {
-    ADC_data.update_value();
-    osDelay(300);
-    //xSemaphoreGive(Display_semaphore);
-  }
-  /* USER CODE END ADC_read */
-}
-
-
-/* USER CODE END Header_RS485_data */
-void RS485_data(void *argument)
-{
-  UNUSED(argument);
-  /* USER CODE BEGIN RS485_data */
-  /* Infinite loop */
-  for (;;)
-  {
-    osDelay(10000);
-  }
-  /* USER CODE END RS485_data */
-}
-
-/* USER CODE BEGIN Header_SIM800_data */
-/**
- * @brief Function implementing the SIM800_data thread.
- * @param argument: Not used
- * @retval None
- */
-/* USER CODE END Header_SIM800_data */
-void SIM800_data(void *argument)
-{
-  UNUSED(argument);
-  HAL_Delay(100);
-  HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 1);
-  HAL_Delay(600);
-  HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 0);
-  for (;;)
-  {
-    osDelay(1000);
-  }
-  /* USER CODE END SIM800_data */
-}
 
 void Main(void *argument)
 {
@@ -1066,7 +991,6 @@ void Main(void *argument)
   vSemaphoreCreateBinary(Display_cursor_semaphore);
   vSemaphoreCreateBinary(USB_COM_semaphore);
   vSemaphoreCreateBinary(Main_semaphore);
-  vSemaphoreCreateBinary(SD_CARD_semapfore);
 
     // Запуск глобального таймера для обновления экрана
   HAL_NVIC_SetPriority(TIM5_IRQn, 8, 0); // Установите приоритет
@@ -1082,6 +1006,82 @@ void Main(void *argument)
     xSemaphoreTake(Main_semaphore, portMAX_DELAY);
   }
 }
+// Запускается только при циклическом режиме
+void Main_Cycle(void *argument)
+{
+    UNUSED(argument);
+
+
+    
+    Enter_StandbyMode(EEPROM.time_sleep_h, EEPROM.time_sleep_m);
+}
+
+/* USER CODE BEGIN Header_ADC_read */
+/**
+ * @brief Function implementing the ADC_read thread.
+ * @param argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_ADC_read */
+void ADC_read(void *argument)
+{
+  UNUSED(argument);
+  for (;;)
+  {
+    ADC_data.update_value();
+    osDelay(300);
+    //xSemaphoreGive(Display_semaphore);
+    if (EEPROM.Mode != 0) osThreadSuspend(ADC_readHandle); // Остановить, если циклический режим (для однократного выполнения)
+  }
+}
+
+void RS485_data(void *argument)
+{
+  UNUSED(argument);
+  for (;;)
+  {
+    osDelay(10000);
+    if (EEPROM.Mode != 0) osThreadSuspend(RS485_dataHandle); // Остановить, если циклический режим (для однократного выполнения)
+  }
+}
+
+
+void SIM800_data(void *argument)
+{
+  UNUSED(argument);
+  for (;;)
+  {
+    // Если GSM должен быть включен
+    if (EEPROM.Communication == 1){
+      // Если GSM был выключен
+      if (HAL_GPIO_ReadPin(EN_3P8V_GPIO_Port, EN_3P8V_Pin) == 0){
+        HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 1); // Включение GSM
+        osDelay(100);
+        HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 1);
+        osDelay(600);
+        HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 0);
+      }
+      // Тут добавить проверку на статус (отправка AT раз в N секунд) и статуса регистрации в сети
+    } 
+    // Если GSM должен быть выключен
+    if (EEPROM.Communication == 0) HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0); 
+    if (EEPROM.Mode != 0) osThreadSuspend(SIM800_dataHandle); // Остановить, если циклический режим (для однократного выполнения)
+    osDelay(5000);
+  }
+  /* USER CODE END SIM800_data */
+}
+
+uint32_t data_read_adc_in = 0;
+void Display_I2C(void *argument)
+{
+  UNUSED(argument);
+  for (;;)
+  {
+    xSemaphoreTake(Display_semaphore, portMAX_DELAY);
+    Keyboard_processing();
+    Display_all_menu();
+  }
+}
 
 void Keyboard_task(void *argument)
 {
@@ -1094,26 +1094,7 @@ void Keyboard_task(void *argument)
   }
 }
 
-void SD_card(void *argument)
-{
-    UNUSED(argument);
-    for (;;)
-    {
-      xSemaphoreTake(SD_CARD_semapfore, portMAX_DELAY);
-      osDelay(1000);
-    }
-}
 
-
-// Запускается только при 
-void Main_Cycle(void *argument)
-{
-    UNUSED(argument);
-    for (;;)
-    {
-      osDelay(10000);
-    }
-}
 void USB_COM_task(void *argument)
 {
     UNUSED(argument);

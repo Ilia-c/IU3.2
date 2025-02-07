@@ -146,8 +146,7 @@ menuSelect_item USB_MODE_STRUCT = {
         {"Флешка USB", "FLASH USB"},           // ИЗМЕНИТЬ НАЗВАНИЕ
         {"Команды", "Comand"},
         {"Внут. FLASH", "Int. FLASH"},
-        {"Внут. SD", "Int. SD"},
-        {"USB DEBUG", "USB DEBUG"}
+        {"Внут. SD", "Int. SD"}
     }
 };
 
@@ -663,22 +662,7 @@ void Display_TopBar(menuItem *CurrentMenu)
     sprintf(str, "ID Value: 0x%X\n", id);
     OLED_DrawStr(str, 1, 1, 1);
 */
-/*
-    uint32_t data = Read_MS5193T_Data();
-    double koeff = 0.0000000697; 
-    koeff = data*koeff-0.4;
-    koeff *= 9.375; 
-    gcvt(koeff, 4, str);
-    OLED_DrawStr(str, 1, 1, 1);
-*/
-/*
-    uint32_t data = Read_MS5193T_Data();
-    double koeff = 0.0000000697; 
-    koeff = data*koeff-0.5;
-    koeff /= 0.01; 
-    gcvt(koeff, 4, str);
-    OLED_DrawStr(str, 1, 1, 1);
-*/
+
 
     sprintf(str, "%d", ADC_AKB_Proc);
     if (ADC_AKB_Proc < 10)
