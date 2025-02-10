@@ -15558,8 +15558,9 @@ LOAD C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/
                 0x08005a58       0x24 CMakeFiles/CubeMX.dir/FATFS/Target/sd_diskio.c.obj
                 0x08005a58                BSP_SD_ReadCpltCallback
  .text.BSP_PlatformIsDetected
-                0x08005a7c       0x2c CMakeFiles/CubeMX.dir/FATFS/Target/fatfs_platform.c.obj
+                0x08005a7c       0x2a CMakeFiles/CubeMX.dir/FATFS/Target/fatfs_platform.c.obj
                 0x08005a7c                BSP_PlatformIsDetected
+ *fill*         0x08005aa6        0x2 
  .text.MX_FATFS_Init
                 0x08005aa8       0x24 CMakeFiles/CubeMX.dir/FATFS/App/fatfs.c.obj
                 0x08005aa8                MX_FATFS_Init
