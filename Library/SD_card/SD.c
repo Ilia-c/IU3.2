@@ -4,6 +4,10 @@
 #include "string.h"
 #include "Settings.h"
 #include "main.h"
+#include "fatfs.h"
+#include "stdio.h"
+#include "string.h"
+#include "stdbool.h"
 
 /* Внешние переменные, определённые в другом файле */
 extern FATFS SDFatFS;
@@ -14,6 +18,14 @@ extern char SDPath[4]; // Предположим, что здесь лежит "
 
 extern RTC_TimeTypeDef Time;
 extern RTC_DateTypeDef Date;
+
+void SD_check(){
+    FRESULT res;
+	if((res = f_mount(&SDFatFS, SDPath, 1)) == FR_OK)
+	{
+        
+    }
+}
 
 void format_uint8_t_2(char *buffer, size_t size, uint8_t data) {
     snprintf(buffer, size, "%u", data);

@@ -1,5 +1,6 @@
 #include "main.h"
 #include "Settings.h"
+#include "Status_codes.h"
 #include "cmsis_os2.h"
 #define _GNU_SOURCE
 #include <stdlib.h>

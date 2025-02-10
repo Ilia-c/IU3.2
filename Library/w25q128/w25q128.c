@@ -50,6 +50,9 @@ void W25_Ini(void)
     W25_Reset();
     HAL_Delay(100);
     unsigned int id = W25_Read_ID();
+    if (id != 0xef4018){
+        ERRCODE.STATUS |= STATUS_FLASH_INIT_ERROR;
+    }
 }
 
 uint32_t W25_Read_ID(void)

@@ -51,6 +51,7 @@ xSemaphoreHandle Display_semaphore;
 xSemaphoreHandle Display_cursor_semaphore;
 xSemaphoreHandle USB_COM_semaphore;
 xSemaphoreHandle Main_semaphore;
+xSemaphoreHandle ADC_READY; // Окончания преобразования при работе в циклическом режиме
 
 extern const uint16_t Timer_key_one_press;
 extern const uint16_t Timer_key_press;
@@ -58,6 +59,7 @@ extern const uint16_t Timer_key_press_fast;
 
 extern uint8_t gsmRxChar;
 extern EEPROM_Settings_item EEPROM;
+extern ERRCODE_item ERRCODE;
 
 
 ADC_HandleTypeDef hadc1;
@@ -65,8 +67,6 @@ ADC_HandleTypeDef hadc3;
 I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c2;
 SD_HandleTypeDef hsd1;
-DMA_HandleTypeDef hdma_sdmmc1_rx;
-DMA_HandleTypeDef hdma_sdmmc1_tx;
 
 SPI_HandleTypeDef hspi2;
 
@@ -76,6 +76,8 @@ TIM_HandleTypeDef htim6;
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart4;
 
+DMA_HandleTypeDef hdma_sdmmc1_rx;
+DMA_HandleTypeDef hdma_sdmmc1_tx;
 
 /* Definitions for Main */
 osThreadId_t MainHandle;
@@ -117,7 +119,7 @@ const osThreadAttr_t SIM800_data_attributes = {
 osThreadId_t Keyboard_taskHandle;
 const osThreadAttr_t Keyboard_task_attributes = {
     .name = "Keyboard_task",
-    .stack_size = 128 * 2,
+    .stack_size = 256 * 2,
     .priority = (osPriority_t)osPriorityNormal1,
 };
 
@@ -125,7 +127,7 @@ osThreadId_t USB_COM_taskHandle;
 const osThreadAttr_t USB_COM_task_attributes = {
     .name = "USB_COM_task",
     .stack_size = 1024 * 8,
-    .priority = (osPriority_t)osPriorityLow6,
+    .priority = (osPriority_t)osPriorityLow2,
 };
 
 
@@ -136,6 +138,12 @@ const osThreadAttr_t Main_Cycle_task_attributes = {
     .priority = (osPriority_t)osPriorityLow5,
 };
 
+osThreadId_t  ERROR_INDICATE_taskHandle;
+const osThreadAttr_t Erroe_indicate_task_attributes = {
+    .name = "Erroe_indicate_task",
+    .stack_size = 1024 * 1,
+    .priority = (osPriority_t)osPriorityLow,
+};
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -149,12 +157,13 @@ static void MX_ADC1_Init(void);
 static void MX_ADC3_Init(void);
 static void MX_I2C1_Init(void);        //
 static void MX_I2C2_Init(void);        //
-static void MX_SDMMC1_SD_Init(void);   //
+void MX_SDMMC1_SD_Init(void);   //
 static void MX_SPI2_Init(void);        //
 //static void MX_UART1_Init(void);     //
 static void MX_UART4_Init(void);       //
 static void MX_TIM5_Init(void);
 static void MX_TIM6_Init(void);
+
 
 void Display_I2C(void *argument);
 void ADC_read(void *argument);
@@ -164,6 +173,7 @@ void Main(void *argument);
 void Main_Cycle(void *argument); // основной режим в циклическом режиме
 void Keyboard_task(void *argument);
 void USB_COM_task(void *argument);
+void Erroe_indicate(void *argument);
 void HAL_TIM6_Callback(void);
 void SetTimerPeriod(uint32_t period_ms);
 
@@ -188,7 +198,7 @@ int main(void)
   MX_UART4_Init();
   MX_TIM5_Init();
   MX_TIM6_Init();
-  
+
   RTC_Init();
   RTC_read();
   // Начальные состояния переферии - ВСЕ ОТКЛЮЧЕНО
@@ -210,7 +220,10 @@ int main(void)
   HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);         // Общее питание 3.3В (АЦП, темп., и т.д.)
   HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);           // Включение Памяти на плате
   
-  
+ 
+
+
+
   HAL_Delay(10);
   // Чтение данных из EEPROM
   if (!(EEPROM_IsDataExists()))
@@ -232,7 +245,22 @@ int main(void)
       }
     }
   }
-  
+
+  HAL_PWR_EnableBkUpAccess();
+  uint32_t value = HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_INDEX_RESET_PROG);
+  // Если сброс из перехода в цикл
+  if (value == DATA_RESET_PROG){  
+    HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_RESET_PROG, 0x00); // сбрасывавем флаг
+  }
+  else{
+    // Если сброс не из за выходжа из сна
+    if (__HAL_PWR_GET_FLAG(PWR_FLAG_SB) == RESET){
+      EEPROM.Mode = 0;
+    }
+  }
+  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB); // Сброс флага пробуждения из сна, для корректной работы сна
+  HAL_PWR_DisableBkUpAccess();
+
   // Запуск в режиме настройки (экран вкл)
   if (EEPROM.Mode == 0){
     // Включение переферии
@@ -271,36 +299,21 @@ int main(void)
   }
 
   // Инициализация переферии
-  W25_Ini();
-  id = W25_Read_ID();
-  // Добавить обработку ошибки flash, если id неверный
-  MS5193T_Init();
-  //WriteToSDCard();
-  
-
-
-
-  /*
-  
-  data_read_adc_in = ADC1_Read_PC0();
-  MX_DMA_Init();
   MX_SDMMC1_SD_Init();
-  HAL_StatusTypeDef res = HAL_SD_Init(&hsd1);
-  HAL_SD_CardInfoTypeDef CardInfo;
-  FRESULT res_2 = HAL_SD_GetCardInfo(&hsd1, &CardInfo);
-  HAL_SD_CardStateTypeDef res_1 = HAL_SD_GetCardState(&hsd1);
-  res = HAL_SD_ConfigWideBusOperation(&hsd1, SDMMC_BUS_WIDE_4B);
-  res_1 = HAL_SD_GetCardState(&hsd1);
-  HAL_Delay(200);
   MX_FATFS_Init();
-  WriteToSDCard();
+  MX_DMA_Init();
+
+
+  W25_Ini();
+  MS5193T_Init();
   
-  
-  if (Check_Wakeup_Reason() == 1) {
-    Enter_StandbyMode(0, 30);// Если не аппаратный сброс. не работает, нужно переписать
-  } 
-  */
- 
+  if (HAL_I2C_IsDeviceReady(&hi2c1, EEPROM_I2C_ADDRESS, 2, 100) != HAL_OK)
+  {
+    // EEPROM недоступна
+    ERRCODE.STATUS |= STATUS_EEPROM_INIT_ERROR;
+  }
+
+
 
   osKernelInitialize();
 
@@ -313,6 +326,7 @@ int main(void)
     MainHandle = osThreadNew(Main, NULL, &Main_attributes); // Задача для настроечного режима
     Keyboard_taskHandle = osThreadNew(Keyboard_task, NULL, &Keyboard_task_attributes);
     Display_I2CHandle = osThreadNew(Display_I2C, NULL, &Display_I2C_attributes);
+    ERROR_INDICATE_taskHandle = osThreadNew(Erroe_indicate, NULL, &Erroe_indicate_task_attributes);
   }
   if (EEPROM.Mode == 1)
   {
@@ -759,7 +773,7 @@ static void MX_I2C2_Init(void)
 }
 
 
-__attribute__((unused)) static void MX_SDMMC1_SD_Init(void)
+void MX_SDMMC1_SD_Init(void)
 {
   hsd1.Instance = SDMMC1;
   hsd1.Init.ClockEdge = SDMMC_CLOCK_EDGE_RISING;
@@ -836,7 +850,7 @@ static void MX_UART4_Init(void)
 /**
   * Enable DMA controller clock
   */
-__attribute__((unused)) static void MX_DMA_Init(void)
+static void MX_DMA_Init(void)
 {
 
   /* DMA controller clock enable */
@@ -846,9 +860,6 @@ __attribute__((unused)) static void MX_DMA_Init(void)
   /* DMA2_Channel4_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Channel4_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA2_Channel4_IRQn);
-  /* DMA2_Channel5_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Channel5_IRQn, 5, 0);
-  HAL_NVIC_EnableIRQ(DMA2_Channel5_IRQn);
 
 }
 /**
@@ -991,13 +1002,11 @@ void Main(void *argument)
   vSemaphoreCreateBinary(Display_cursor_semaphore);
   vSemaphoreCreateBinary(USB_COM_semaphore);
   vSemaphoreCreateBinary(Main_semaphore);
-
     // Запуск глобального таймера для обновления экрана
   HAL_NVIC_SetPriority(TIM5_IRQn, 8, 0); // Установите приоритет
   HAL_NVIC_EnableIRQ(TIM5_IRQn);        // Включите прерывание
   HAL_TIM_Base_Start_IT(&htim5);
 
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1); // ВКЛЮЧИТЬ СИГНАЛЬНЫЙ СВЕТОДИОД
 
   for (;;)
   {
@@ -1010,10 +1019,61 @@ void Main(void *argument)
 void Main_Cycle(void *argument)
 {
     UNUSED(argument);
+    vSemaphoreCreateBinary(ADC_READY);
+    // 1. Уже все включено к текущему моменту
+    // 2. Уже конфигурация EEPROM прочитана
+    osDelay(100);
 
+    // 3. Выключить EEPROM
+    HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);           // Выключение Памяти на плате
+
+    // ! 4. Запрос настроек с сайта для текущей конфигурации, запуск задачи параллельно, если фатальная ошибка - отключить GSM
+
+    // 6. Получения показаний АЦП
+    osThreadResume(ADC_readHandle); //Запуск потока АЦП
+    // Ждем появления флага об окончании выполнения преобразования
+    if (xSemaphoreTake(ADC_READY, 5000) != pdTRUE)
+    {
+      ERRCODE.STATUS |= STATUS_ADC_EXTERNAL_INIT_ERROR; 
+      ADC_data.Status = 0;
+    }
+
+    // 7. Отключить АЦП (датчик)
+    HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
+
+    // 8. Начать отправку данных на сайт и смс
 
     
+    // Вызов функции отправки и полчучения настроек
+
+    // 9. Отключить GSM и включить память
+    HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
+    HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);
+    osDelay(10);
+
+    // 10. Запись новго конфига, ели есть изменения (checksum)
+    // Если получилось получить настройки с сайта
+    if (!(ERRCODE.STATUS & STATUS_UART_SERVER_COMM_ERROR)){
+      if (!(EEPROM_IsDataExists()))
+      {
+        // Данных нету или идентификатор изменился
+        if (!EEPROM_SaveSettings(&EEPROM))
+        {
+          // Сохранение не вышло - нет связи с EEPROM
+          ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR; 
+          
+        }
+      }
+      // Если условие не выполняется - значит с данными все ОК
+    }
+
+    // 11. Записать на flash
+    WriteToSDCard();
+    
+    // 12. Сон
     Enter_StandbyMode(EEPROM.time_sleep_h, EEPROM.time_sleep_m);
+    osDelay(10000);
+    ERRCODE.STATUS |= STATUS_CRITICAL_ERROR;
 }
 
 /* USER CODE BEGIN Header_ADC_read */
@@ -1030,8 +1090,12 @@ void ADC_read(void *argument)
   {
     ADC_data.update_value();
     osDelay(300);
-    //xSemaphoreGive(Display_semaphore);
-    if (EEPROM.Mode != 0) osThreadSuspend(ADC_readHandle); // Остановить, если циклический режим (для однократного выполнения)
+    
+    // Остановить, если циклический режим (для однократного выполнения)
+    if (EEPROM.Mode != 0){ 
+      osThreadSuspend(ADC_readHandle); 
+      xSemaphoreGive(ADC_READY);
+    }
   }
 }
 
@@ -1105,6 +1169,57 @@ void USB_COM_task(void *argument)
         USB_COM();
     }
 }
+
+void BlinkLED(GPIO_TypeDef *LEDPort, uint16_t LEDPin, uint8_t blinkCount, uint32_t onTime, uint32_t offTime, uint32_t cycleDelay)
+{
+    for (uint8_t i = 0; i < blinkCount; i++)
+    {
+        // Включаем светодиод
+        HAL_GPIO_WritePin(LEDPort, LEDPin, GPIO_PIN_SET);
+        osDelay(onTime);
+        
+        // Выключаем светодиод
+        HAL_GPIO_WritePin(LEDPort, LEDPin, GPIO_PIN_RESET);
+        osDelay(offTime);
+    }
+    
+    // Задержка между циклами моргания
+    osDelay(cycleDelay);
+}
+// Индикация ошибок
+void Erroe_indicate(void *argument){
+  UNUSED(argument);
+  SD_check();
+  for (;;)
+  {
+
+    // Ошибка инициализации EEPROM
+    if (ERRCODE.STATUS & STATUS_EEPROM_INIT_ERROR){
+      BlinkLED(GPIOC, GPIO_PIN_13, 1, 500, 500, 0);
+      goto skip;
+    }
+    // Ошибка инициализации АЦП
+    if (ERRCODE.STATUS & STATUS_ADC_EXTERNAL_INIT_ERROR){
+      BlinkLED(GPIOC, GPIO_PIN_13, 2, 500, 500, 0);
+      goto skip;
+    }
+    
+    // Ошибка инициализации Flash
+    if (ERRCODE.STATUS & STATUS_FLASH_INIT_ERROR){
+      BlinkLED(GPIOC, GPIO_PIN_13, 3, 500, 500, 0);
+      goto skip;
+    }
+    
+    // Ошибка инициализации SD
+    if ((ERRCODE.STATUS & STATUS_SD_INIT_ERROR) || (ERRCODE.STATUS & STATUS_SD_READ_ERROR)){
+      BlinkLED(GPIOC, GPIO_PIN_13, 4, 500, 500, 0);
+      goto skip;
+    }
+    skip:
+    osDelay(5000);
+  }
+}
+
 
 int a = 0;
 

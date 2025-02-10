@@ -20,6 +20,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32l4xx_it.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 /* USER CODE END Includes */
@@ -56,8 +57,6 @@
 
 /* External variables --------------------------------------------------------*/
 extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
-extern DMA_HandleTypeDef hdma_sdmmc1_rx;
-extern DMA_HandleTypeDef hdma_sdmmc1_tx;
 extern SD_HandleTypeDef hsd1;
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim5;
@@ -252,17 +251,26 @@ void SDMMC1_IRQHandler(void)
 /**
   * @brief This function handles DMA2 channel4 global interrupt.
   */
-void DMA2_Channel4_IRQHandler(void)
-{
-  /* USER CODE BEGIN DMA2_Channel4_IRQn 0 */
-
-  /* USER CODE END DMA2_Channel4_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_sdmmc1_rx);
-  /* USER CODE BEGIN DMA2_Channel4_IRQn 1 */
-
-  /* USER CODE END DMA2_Channel4_IRQn 1 */
-}
-
+ extern DMA_HandleTypeDef hdma_sdmmc1;
+ void DMA2_Channel4_IRQHandler(void)
+ {
+   /* USER CODE BEGIN DMA2_Channel4_IRQn 0 */
+     if((hsd1.Context == (SD_CONTEXT_DMA | SD_CONTEXT_READ_SINGLE_BLOCK)) ||
+        (hsd1.Context == (SD_CONTEXT_DMA | SD_CONTEXT_READ_MULTIPLE_BLOCK)))
+     {
+       BSP_SD_DMA_Rx_IRQHandler();
+     }
+     else if((hsd1.Context == (SD_CONTEXT_DMA | SD_CONTEXT_WRITE_SINGLE_BLOCK)) ||
+             (hsd1.Context == (SD_CONTEXT_DMA | SD_CONTEXT_WRITE_MULTIPLE_BLOCK)))
+     {
+       BSP_SD_DMA_Tx_IRQHandler();
+     }
+   /* USER CODE END DMA2_Channel4_IRQn 0 */
+   HAL_DMA_IRQHandler(&hdma_sdmmc1);
+   /* USER CODE BEGIN DMA2_Channel4_IRQn 1 */
+   /* USER CODE END DMA2_Channel4_IRQn 1 */
+ }
+ 
 
 void UART4_IRQHandler(void)
 {
@@ -278,16 +286,6 @@ void UART4_IRQHandler(void)
 /**
   * @brief This function handles DMA2 channel5 global interrupt.
   */
-void DMA2_Channel5_IRQHandler(void)
-{
-  /* USER CODE BEGIN DMA2_Channel5_IRQn 0 */
-
-  /* USER CODE END DMA2_Channel5_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_sdmmc1_tx);
-  /* USER CODE BEGIN DMA2_Channel5_IRQn 1 */
-
-  /* USER CODE END DMA2_Channel5_IRQn 1 */
-}
 
 
 void OTG_FS_IRQHandler(void)

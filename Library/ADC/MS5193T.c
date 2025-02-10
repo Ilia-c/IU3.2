@@ -72,11 +72,12 @@ void MS5193T_Init(void) {
 
     // Сброс устройства
     MS5193T_Reset();
-
+    HAL_Delay(1);
     // Проверка ID регистра
     uint8_t deviceID = SPI2_Read_OneByte(0x60); // Ожидается 0x0B
     if ((deviceID & 0x0F) != 0x0B) {
-        // Ошибка: Неверный ID устройства
+        // Ошибка инициализации
+        ERRCODE.STATUS |= STATUS_ADC_EXTERNAL_INIT_ERROR;
         return;
     }
 
@@ -88,12 +89,13 @@ void MS5193T_Init(void) {
 
     // Настройка IO-регистра
     //SPI2_Write_buf(0x28, IoRegisterMsg, 1);
-    //HAL_Delay(1);
+    HAL_Delay(100);
 
     // Проверка режима
     uint8_t status = SPI2_Read_OneByte(0x40); // Проверка флага RDY
     if (status & 0x80) {
         // Ошибка: Устройство не готово
+        ERRCODE.STATUS |= STATUS_ADC_EXTERNAL_INIT_ERROR;
     }
 }
 

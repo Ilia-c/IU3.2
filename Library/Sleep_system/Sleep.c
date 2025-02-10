@@ -2,6 +2,51 @@
 
 extern RTC_HandleTypeDef hrtc;
 
+#include "stm32l4xx.h"
+#include "stdint.h"
+
+
+/**
+ * @brief  Функция анализа флагов сброса и возврата кода сброса.
+ * @return uint8_t: код сброса, один из RESET_CODE_XXX.
+ *
+ * Функция проверяет флаги в регистре RCC->CSR. Приоритет проверки можно задать
+ * так, что если установлено несколько флагов, выбирается первый по порядку.
+ * Здесь проверяется сначала внешний сброс (PINRST), затем программный (SFTRST),
+ * потом сбросы от watchdog и т.д.
+ */
+uint8_t GetResetCode(void)
+{
+    uint32_t flags = RCC->CSR;
+    uint8_t resetCode = RESET_CODE_UNKNOWN;
+
+    if (flags & RCC_CSR_PINRSTF) {
+        resetCode = RESET_CODE_PINRST;
+    }
+    else if (flags & RCC_CSR_SFTRSTF) {
+        resetCode = RESET_CODE_SFTRST;
+    }
+    else if (flags & RCC_CSR_IWDGRSTF) {
+        resetCode = RESET_CODE_IWDG;
+    }
+    else if (flags & RCC_CSR_WWDGRSTF) {
+        resetCode = RESET_CODE_WWDG;
+    }
+    else if (flags & RCC_CSR_LPWRRSTF) {
+        resetCode = RESET_CODE_LPWR;
+    }
+    else if (flags & RCC_CSR_BORRSTF) {
+        resetCode = RESET_CODE_BOR;
+    }
+
+    // Очистка флагов сброса: установка бита RMVF в регистре RCC->CSR
+    RCC->CSR |= RCC_CSR_RMVF;
+
+    return resetCode;
+}
+
+
+
 static inline uint8_t IsLeapYear(uint8_t rtcYear)
 {
     uint16_t fullYear = 2000 + rtcYear;
