@@ -220,10 +220,6 @@ int main(void)
   HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);         // Общее питание 3.3В (АЦП, темп., и т.д.)
   HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);           // Включение Памяти на плате
   
- 
-
-
-
   HAL_Delay(10);
   // Чтение данных из EEPROM
   if (!(EEPROM_IsDataExists()))
@@ -299,9 +295,9 @@ int main(void)
   }
 
   // Инициализация переферии
+  MX_DMA_Init();
   MX_SDMMC1_SD_Init();
   MX_FATFS_Init();
-  MX_DMA_Init();
 
 
   W25_Ini();
@@ -1189,34 +1185,57 @@ void BlinkLED(GPIO_TypeDef *LEDPort, uint16_t LEDPin, uint8_t blinkCount, uint32
 // Индикация ошибок
 void Erroe_indicate(void *argument){
   UNUSED(argument);
+  uint64_t ErrorMask = 0;
   SD_check();
   for (;;)
   {
-
     // Ошибка инициализации EEPROM
-    if (ERRCODE.STATUS & STATUS_EEPROM_INIT_ERROR){
+    ErrorMask = STATUS_EEPROM_INIT_ERROR
+    | STATUS_EEPROM_WRITE_ERROR
+    | STATUS_EEPROM_READ_ERROR
+    | STATUS_EEPROM_CRC_ERROR;
+    if (ERRCODE.STATUS & ErrorMask){
       BlinkLED(GPIOC, GPIO_PIN_13, 1, 500, 500, 0);
       goto skip;
     }
     // Ошибка инициализации АЦП
-    if (ERRCODE.STATUS & STATUS_ADC_EXTERNAL_INIT_ERROR){
+    ErrorMask = STATUS_ADC_EXTERNAL_INIT_ERROR
+    | STATUS_ADC_EXTERNAL_SENSOR_ERROR
+    | STATUS_ADC_BOARD_TEMP_ERROR
+    | STATUS_ADC_RANGE_ERROR;
+    if (ERRCODE.STATUS & ErrorMask){
       BlinkLED(GPIOC, GPIO_PIN_13, 2, 500, 500, 0);
       goto skip;
     }
     
     // Ошибка инициализации Flash
-    if (ERRCODE.STATUS & STATUS_FLASH_INIT_ERROR){
+    ErrorMask = STATUS_FLASH_INIT_ERROR
+    | STATUS_FLASH_WRITE_ERROR
+    | STATUS_FLASH_READ_ERROR
+    | STATUS_FLASH_CRC_ERROR;
+    if (ERRCODE.STATUS & ErrorMask){
       BlinkLED(GPIOC, GPIO_PIN_13, 3, 500, 500, 0);
       goto skip;
     }
     
+    
     // Ошибка инициализации SD
-    if ((ERRCODE.STATUS & STATUS_SD_INIT_ERROR) || (ERRCODE.STATUS & STATUS_SD_READ_ERROR)){
+    ErrorMask = STATUS_SD_INIT_ERROR
+                     | STATUS_SD_MOUNT_ERROR
+                     | STATUS_SD_WRITE_ERROR
+                     | STATUS_SD_READ_ERROR
+                     | STATUS_SD_CORRUPTED_DATA
+                     | STATUS_SD_CRC_MISMATCH
+                     | STATUS_SD_FILE_OPEN_ERROR
+                     | STATUS_SD_TEMP_OUT_OF_RANGE;
+    if (ERRCODE.STATUS & ErrorMask) {
       BlinkLED(GPIOC, GPIO_PIN_13, 4, 500, 500, 0);
       goto skip;
     }
     skip:
-    osDelay(5000);
+      osDelay(4000);
+      BlinkLED(GPIOC, GPIO_PIN_13, 5, 50, 50, 0);
+      osDelay(1000);
   }
 }
 
