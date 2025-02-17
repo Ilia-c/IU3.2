@@ -382,6 +382,7 @@ void sleep(){
     }
     HAL_PWR_EnableBkUpAccess();
     HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_RESET_PROG, DATA_RESET_PROG);
+    HAL_PWR_DisableBkUpAccess();
     NVIC_SystemReset();
     osDelay(1000);
     ERRCODE.STATUS |= STATUS_CRITICAL_ERROR;

@@ -103,40 +103,30 @@ uint8_t DaysInMonth(uint8_t month, uint8_t rtcYear)
  */
 void RTC_SetAlarm_HoursMinutes(uint8_t hours, uint8_t minutes)
 {
-    // 1) Подстрахуемся: если minutes < 5 — ставим 5,
-    //    чтобы не было "меньше 5 минут"
-    if (minutes < 5)
-        minutes = 5;
+    //if (minutes < 5)
+    //    minutes = 5;
     if (minutes > 59)
         minutes = 59;
     if (hours > 99)
-        hours = 99; // на всякий случай
+        hours = 99; 
 
-    // 2) Деактивируем Alarm A на случай, если он был установлен
     HAL_RTC_DeactivateAlarm(&hrtc, RTC_ALARM_A);
 
-    // 3) Считываем ТЕКУЩИЕ время и дату
     RTC_TimeTypeDef sTime;
     RTC_DateTypeDef sDate;
     HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
     HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 
-    // 4) Преобразуем текущее время в «минуты с начала суток»
-    //    и прибавим желаемое количество минут
     uint16_t currentDayMinutes = sTime.Hours * 60 + sTime.Minutes;
     uint16_t addMinutes = (uint16_t)(hours * 60 + minutes);
     uint32_t totalMinutes = (uint32_t)currentDayMinutes + addMinutes;
 
-    // 5) Сколько дней прибавляется (каждые 1440 мин = сутки)
     uint32_t daysToAdd = totalMinutes / 1440;
     uint16_t futureDayMinutes = totalMinutes % 1440;
 
-    // Выделяем новые часы и минуты в будущем
     uint8_t newHours = (uint8_t)(futureDayMinutes / 60);
     uint8_t newMinutes = (uint8_t)(futureDayMinutes % 60);
 
-    // 6) Прибавляем daysToAdd к текущей дате (sDate.Date)
-    //    с учётом перехода месяцев и лет (в 20xx диапазоне)
     while (daysToAdd > 0)
     {
         sDate.Date++;
@@ -149,39 +139,32 @@ void RTC_SetAlarm_HoursMinutes(uint8_t hours, uint8_t minutes)
             {
                 sDate.Month = 1;
                 sDate.Year++;
-                // Если Year==100 => 2100 год => календарь RTC уже не совсем корректен,
-                // но в данной задаче предположим, что столько не спим :)
             }
         }
         daysToAdd--;
     }
 
-    // 7) Заполняем структуру Alarm A
     RTC_AlarmTypeDef sAlarm = {0};
     sAlarm.Alarm = RTC_ALARM_A;
 
-    // AlarmDateWeekDaySel = DATE => указываем число месяца
     sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
     sAlarm.AlarmDateWeekDay = sDate.Date;
 
-    // Маски нет => сравниваем по дате, часам, минутам, секундам
     sAlarm.AlarmMask = RTC_ALARMMASK_NONE;
     sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
 
-    // Заполняем время
     sAlarm.AlarmTime.Hours = newHours;
     sAlarm.AlarmTime.Minutes = newMinutes;
     sAlarm.AlarmTime.Seconds = 0;
     sAlarm.AlarmTime.SubSeconds = 0;
-    // Если RTC у вас в 24-часовом формате, TimeFormat=0
-    // (в STM32L4 обычно так)
-    sAlarm.AlarmTime.TimeFormat = RTC_HOURFORMAT12_AM;
+    sAlarm.AlarmTime.TimeFormat = RTC_HOURFORMAT_24;
 
-    // 8) Устанавливаем Alarm с прерыванием
+    __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
     if (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK)
     {
         Error_Handler();
     }
+
 }
 
 void GPIO_AnalogConfig(void)
@@ -198,16 +181,18 @@ void GPIO_AnalogConfig(void)
     GPIO_InitStruct.Pin = GPIO_PIN_All;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = GPIO_PIN_All;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+    //GPIO_InitStruct.Pin = GPIO_PIN_All;
+    //HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = GPIO_PIN_All;
-    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+    //GPIO_InitStruct.Pin = GPIO_PIN_All;
+    //HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
     __HAL_RCC_GPIOA_CLK_DISABLE();
     __HAL_RCC_GPIOB_CLK_DISABLE();
     __HAL_RCC_GPIOC_CLK_DISABLE();
 }
+
+
 
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc3;
@@ -221,28 +206,20 @@ extern HCD_HandleTypeDef hhcd_USB_OTG_FS; // для режима Host
 void Enter_StandbyMode(uint8_t hours, uint8_t minutes)
 {
     vTaskSuspendAll();
-    // Отключим всё лишнее, остановим таймер SysTick и т.д.
+
     HAL_RCC_DeInit();
     HAL_SuspendTick();
-
-    // Переводим GPIO в аналоговый режим
     GPIO_AnalogConfig();
-
-    // Обязательно включить тактирование PWR и доступ к Backup-домену
     __HAL_RCC_PWR_CLK_ENABLE();
     HAL_PWR_EnableBkUpAccess();
 
-    // Очистим все возможные флаги пробуждения (WUFx),
-    // чтобы "старые" не выдернули нас из Standby сразу же
-    PWR->SCR |= (PWR_SCR_CWUF1 | PWR_SCR_CWUF2 | PWR_SCR_CWUF3 |
-                 PWR_SCR_CWUF4 | PWR_SCR_CWUF5);
+    PWR->SCR |= (PWR_SCR_CWUF1 | PWR_SCR_CWUF2 | PWR_SCR_CWUF3 | PWR_SCR_CWUF4 | PWR_SCR_CWUF5);
+    __HAL_RTC_ALARM_CLEAR_FLAG(&hrtc, RTC_FLAG_ALRAF);
 
-    // Настраиваем Alarm A на «hours:minutes» от текущего момента
-    RTC_SetAlarm_HoursMinutes(hours, minutes);
 
-    // Входим в Standby
+    //RTC_SetAlarm_HoursMinutes(hours, minutes);
+    RTC_SetAlarm_HoursMinutes(0, 2);
     HAL_PWR_EnterSTANDBYMode();
-    // После этого МК «засыпает», а проснётся (Reset) при срабатывании Alarm
 }
 
 // Для отладки FreeRTOS

@@ -2,6 +2,7 @@
 #include "usb_host.h"
 #include "usb_device.h"
 #include "usbd_cdc_if.h"
+#include "RTC_data.h"
 // Определяем коды сброса
 #define RESET_CODE_BOR      0x01  // Сброс из-за понижения напряжения (Brown-Out Reset)
 #define RESET_CODE_PINRST   0x02  // Внешний сброс (сброс по пину NRST)

@@ -1043,17 +1043,19 @@ void Main_Cycle(void *argument)
     
     // 12. Сон
 
+
+
     HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, 1);
     HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ADC_Pin, 1);
     HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
     HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);     // Не включаем RS по умолчанию
-    HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 0);
-    HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 0);
+    HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);
+    HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);
     HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
     HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 0);
-    HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);
+    HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);
     osDelay(10);
-    Enter_StandbyMode(0, 1);
+    Enter_StandbyMode(EEPROM.time_sleep_h, EEPROM.time_sleep_m);
     osDelay(10000);
     ERRCODE.STATUS |= STATUS_CRITICAL_ERROR;
 }
