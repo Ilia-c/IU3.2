@@ -1,4 +1,7 @@
 #include "main.h"
+#include "usb_host.h"
+#include "usb_device.h"
+#include "usbd_cdc_if.h"
 // Определяем коды сброса
 #define RESET_CODE_BOR      0x01  // Сброс из-за понижения напряжения (Brown-Out Reset)
 #define RESET_CODE_PINRST   0x02  // Внешний сброс (сброс по пину NRST)
@@ -10,11 +13,9 @@
 
 
 uint8_t GetResetCode(void);
-static inline uint8_t IsLeapYear(uint8_t rtcYear);
-static uint8_t DaysInMonth(uint8_t month, uint8_t rtcYear);
+uint8_t IsLeapYear(uint8_t rtcYear);
+uint8_t DaysInMonth(uint8_t month, uint8_t rtcYear);
 void RTC_SetAlarm_HoursMinutes(uint8_t hours, uint8_t minutes);
 void GPIO_AnalogConfig(void);
 void Enter_StandbyMode(uint8_t hours, uint8_t minutes);
-uint8_t Check_Wakeup_Reason(void);
 void DWT_Init(void);
-void None_func();

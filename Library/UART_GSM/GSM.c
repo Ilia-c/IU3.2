@@ -197,10 +197,9 @@ void SendSomeCommandAndSetFlag()
 }
 
 // Если хотите включить USB:
-void EnableUsbCDC_UART(void (*cb)(const char *resp))
+void EnableUsbCDC_UART()
 {
     usbEnabled = 0xFF;
-    commandDoneCallback = cb;
 }
 
 // Если хотите выключить USB:

@@ -75,9 +75,7 @@ TIM_HandleTypeDef htim6;
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart4;
-
-DMA_HandleTypeDef hdma_sdmmc1_rx;
-DMA_HandleTypeDef hdma_sdmmc1_tx;
+DMA_HandleTypeDef hdma_sdmmc1;
 
 /* Definitions for Main */
 osThreadId_t MainHandle;
@@ -151,20 +149,20 @@ const osThreadAttr_t Erroe_indicate_task_attributes = {
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 void PeriphCommonClock_Config(void);
-static void MX_GPIO_Init(void);
-static void MX_DMA_Init(void);
-static void MX_ADC1_Init(void);
-static void MX_ADC3_Init(void);
-static void MX_I2C1_Init(void);        //
-static void MX_I2C2_Init(void);        //
-void MX_SDMMC1_SD_Init(void);   //
-static void MX_SPI2_Init(void);        //
-//static void MX_UART1_Init(void);     //
-static void MX_UART4_Init(void);       //
+static void MX_GPIO_Init(void);       
+static void MX_DMA_Init(void);        // ДЛЯ SD
+static void MX_ADC1_Init(void);       // 
+static void MX_ADC3_Init(void);        // 
+static void MX_I2C1_Init(void);        // 
+static void MX_I2C2_Init(void);        // 
+void MX_SDMMC1_SD_Init(void);   //  SD
+static void MX_SPI2_Init(void);        // АЦП+FLASH
+//static void MX_UART1_Init(void);     // RS-485
+static void MX_UART4_Init(void);       // GSM
 static void MX_TIM5_Init(void);
 static void MX_TIM6_Init(void);
 
-
+void BlinkLED(GPIO_TypeDef *LEDPort, uint16_t LEDPin, uint8_t blinkCount, uint32_t onTime, uint32_t offTime, uint32_t cycleDelay);
 void Display_I2C(void *argument);
 void ADC_read(void *argument);
 void RS485_data(void *argument);
@@ -184,20 +182,26 @@ extern RTC_HandleTypeDef hrtc;
 int main(void)
 {
   __HAL_RCC_PWR_CLK_ENABLE();
-  HAL_PWR_EnableBkUpAccess(); 
 
   HAL_Init();
   SystemClock_Config();
   PeriphCommonClock_Config();
   MX_GPIO_Init();
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+  HAL_Delay(500);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+  HAL_Delay(500);
+
   MX_ADC1_Init();
-  //MX_ADC3_Init();
+  MX_ADC3_Init();
   MX_I2C1_Init();
   MX_I2C2_Init();
   MX_SPI2_Init();
   MX_UART4_Init();
   MX_TIM5_Init();
   MX_TIM6_Init();
+
+
 
   RTC_Init();
   RTC_read();
@@ -220,6 +224,7 @@ int main(void)
   HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);         // Общее питание 3.3В (АЦП, темп., и т.д.)
   HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);           // Включение Памяти на плате
   
+  
   HAL_Delay(10);
   // Чтение данных из EEPROM
   if (!(EEPROM_IsDataExists()))
@@ -241,21 +246,28 @@ int main(void)
       }
     }
   }
-
+  
+  //EEPROM.Mode = 0;
   HAL_PWR_EnableBkUpAccess();
   uint32_t value = HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_INDEX_RESET_PROG);
-  // Если сброс из перехода в цикл
   if (value == DATA_RESET_PROG){  
+    // Если сброс из перехода в цикл
     HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_RESET_PROG, 0x00); // сбрасывавем флаг
   }
   else{
-    // Если сброс не из за выходжа из сна
+    EEPROM.Mode = 0;
     if (__HAL_PWR_GET_FLAG(PWR_FLAG_SB) == RESET){
+      // Если сброс не из перехода в цикл и не из за wakeup
       EEPROM.Mode = 0;
+      // !! Добавить проверку на флаг доступности EEPROM
+      if (!EEPROM_CheckDataValidity()){
+        ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
+      }
     }
   }
   __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB); // Сброс флага пробуждения из сна, для корректной работы сна
   HAL_PWR_DisableBkUpAccess();
+  
 
   // Запуск в режиме настройки (экран вкл)
   if (EEPROM.Mode == 0){
@@ -272,7 +284,7 @@ int main(void)
     //if (EEPROM.USB_mode == 0) MX_USB_DEVICE_Init_COMPORT(); // Режим работы в USB_FLASH (перефброс фалов с данными на внешний USB)
     if (EEPROM.USB_mode == 1){
       MX_USB_DEVICE_Init_COMPORT(); // Режим работы в VirtualComPort
-      EnableUsbCDC_UART(*None_func); // Включение передачи данных UART-USB (ответы от модуля GSM)
+      EnableUsbCDC_UART(); // Включение передачи данных UART-USB (ответы от модуля GSM)
       HAL_NVIC_SetPriority(OTG_FS_IRQn, 5, 0); // Приоритет прерывания
       HAL_NVIC_EnableIRQ(OTG_FS_IRQn);         // Включение прерывания
     }
@@ -951,45 +963,6 @@ static void MX_GPIO_Init(void)
   __HAL_SYSCFG_FASTMODEPLUS_ENABLE(SYSCFG_FASTMODEPLUS_PB6);
 }
 
-
-
-int32_t ADC1_Read_PC0(void) { 
-    // --- Калибровка АЦП ---
-    if (HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED) != HAL_OK) {
-        Error_Handler();
-    }
-
-    // --- Чтение VREFINT ---
-    ADC_ChannelConfTypeDef sConfig = {0};
-    sConfig.Channel = ADC_CHANNEL_VREFINT;  // VREFINT
-    sConfig.Rank = ADC_REGULAR_RANK_1;
-    sConfig.SamplingTime = ADC_SAMPLETIME_640CYCLES_5;
-    if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
-        Error_Handler();
-    }
-
-    HAL_ADC_Start(&hadc1);
-    if (HAL_ADC_PollForConversion(&hadc1, 100) != HAL_OK) {
-        Error_Handler();
-    }
-    uint32_t vrefint_raw = HAL_ADC_GetValue(&hadc1);
-    HAL_ADC_Stop(&hadc1);
-    
-    // --- Чтение PC0 ---
-    sConfig.Channel = ADC_CHANNEL_1;  // PC0
-    if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
-        Error_Handler();
-    }
-
-    HAL_ADC_Start(&hadc1);
-    if (HAL_ADC_PollForConversion(&hadc1, 100) != HAL_OK) {
-        Error_Handler();
-    }
-    uint32_t measurement_raw = HAL_ADC_GetValue(&hadc1);
-    HAL_ADC_Stop(&hadc1);
-    return measurement_raw;  // Возвращаем скорректированное значение АЦП
-}
-
 void Main(void *argument)
 {
   UNUSED(argument);
@@ -1003,12 +976,14 @@ void Main(void *argument)
   HAL_NVIC_EnableIRQ(TIM5_IRQn);        // Включите прерывание
   HAL_TIM_Base_Start_IT(&htim5);
 
+  //int32_t adc =  ADC1_Read_PC0();
 
   for (;;)
   {
     RTC_read();
     xSemaphoreGive(Display_semaphore);
     xSemaphoreTake(Main_semaphore, portMAX_DELAY);
+    osDelay(10);
   }
 }
 // Запускается только при циклическом режиме
@@ -1064,10 +1039,21 @@ void Main_Cycle(void *argument)
     }
 
     // 11. Записать на flash
-    WriteToSDCard();
+    //WriteToSDCard();
     
     // 12. Сон
-    Enter_StandbyMode(EEPROM.time_sleep_h, EEPROM.time_sleep_m);
+
+    HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, 1);
+    HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ADC_Pin, 1);
+    HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
+    HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);     // Не включаем RS по умолчанию
+    HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 0);
+    HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 0);
+    HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
+    HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 0);
+    HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);
+    osDelay(10);
+    Enter_StandbyMode(0, 1);
     osDelay(10000);
     ERRCODE.STATUS |= STATUS_CRITICAL_ERROR;
 }
@@ -1189,6 +1175,8 @@ void Erroe_indicate(void *argument){
   SD_check();
   for (;;)
   {
+    BlinkLED(GPIOC, GPIO_PIN_13, 5, 50, 50, 0);
+    osDelay(1000);
     // Ошибка инициализации EEPROM
     ErrorMask = STATUS_EEPROM_INIT_ERROR
     | STATUS_EEPROM_WRITE_ERROR
@@ -1234,8 +1222,6 @@ void Erroe_indicate(void *argument){
     }
     skip:
       osDelay(4000);
-      BlinkLED(GPIOC, GPIO_PIN_13, 5, 50, 50, 0);
-      osDelay(1000);
   }
 }
 
@@ -1259,7 +1245,7 @@ void Error_Handler(void)
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
-  while (1)
+   while (1)
   {
   }
   /* USER CODE END Error_Handler_Debug */

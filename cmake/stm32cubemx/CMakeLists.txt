@@ -116,6 +116,7 @@ target_sources(stm32cubemx INTERFACE
     ../../Library/Internal_per/RTC_data.c
     ../../Library/w25q128/w25q128.c
     ../../Library/ADC/MS5193T.c
+    ../../Library/ADC/Internal_ADC.c
     ../../Library/SD_card/SD.c
     ../../Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_core.c
     ../../Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ctlreq.c

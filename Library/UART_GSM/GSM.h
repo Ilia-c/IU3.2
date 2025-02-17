@@ -12,5 +12,5 @@ void ParseGsmLine(char *line);
 void ProcessGsmChar(uint8_t c);
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart);
 void SendSomeCommandAndSetFlag();
-void EnableUsbCDC_UART(void (*cb)(const char *resp));
+void EnableUsbCDC_UART();
 void DisableUsbCDC_UART();

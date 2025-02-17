@@ -20,7 +20,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-DMA_HandleTypeDef hdma_sdmmc1;
+extern DMA_HandleTypeDef hdma_sdmmc1;
 // Если вы более не используете DMA для SD, можно убрать эти extern'ы:
 // extern DMA_HandleTypeDef hdma_sdmmc1_rx;
 // extern DMA_HandleTypeDef hdma_sdmmc1_tx;

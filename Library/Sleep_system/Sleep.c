@@ -47,7 +47,7 @@ uint8_t GetResetCode(void)
 
 
 
-static inline uint8_t IsLeapYear(uint8_t rtcYear)
+uint8_t IsLeapYear(uint8_t rtcYear)
 {
     uint16_t fullYear = 2000 + rtcYear;
     if ((fullYear % 400) == 0)
@@ -60,7 +60,7 @@ static inline uint8_t IsLeapYear(uint8_t rtcYear)
 }
 
 // Возвращает количество дней в месяце (month=1..12) для года (20xx)
-static uint8_t DaysInMonth(uint8_t month, uint8_t rtcYear)
+uint8_t DaysInMonth(uint8_t month, uint8_t rtcYear)
 {
     switch (month)
     {
@@ -209,8 +209,18 @@ void GPIO_AnalogConfig(void)
     __HAL_RCC_GPIOC_CLK_DISABLE();
 }
 
+extern ADC_HandleTypeDef hadc1;
+extern ADC_HandleTypeDef hadc3;
+extern DMA_HandleTypeDef hdma_sdmmc1;
+
+// Если USB может работать как в режиме Device, так и в режиме Host,
+// объявите оба дескриптора (если они используются):
+extern PCD_HandleTypeDef hpcd_USB_OTG_FS; // для режима Device
+extern HCD_HandleTypeDef hhcd_USB_OTG_FS; // для режима Host
+
 void Enter_StandbyMode(uint8_t hours, uint8_t minutes)
 {
+    vTaskSuspendAll();
     // Отключим всё лишнее, остановим таймер SysTick и т.д.
     HAL_RCC_DeInit();
     HAL_SuspendTick();
@@ -235,46 +245,6 @@ void Enter_StandbyMode(uint8_t hours, uint8_t minutes)
     // После этого МК «засыпает», а проснётся (Reset) при срабатывании Alarm
 }
 
-uint8_t Check_Wakeup_Reason(void)
-{
-    // 1) Включаем клок PWR, разрешаем доступ к Backup (если RTC)
-    __HAL_RCC_PWR_CLK_ENABLE();
-    HAL_PWR_EnableBkUpAccess();
-
-    // 2) Проверяем, установлен ли флаг Standby?
-    if (__HAL_PWR_GET_FLAG(PWR_FLAG_SB) != RESET)
-    {
-        // Да, мы вышли из Standby
-
-        // Теперь проверяем флаги пробуждения
-        if (__HAL_PWR_GET_FLAG(PWR_FLAG_WUF2) != RESET)
-        {
-            // Пробуждение по RTC Alarm (или WKUP2, но чаще Alarm)
-            __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WUF2);
-            __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB);
-            return 1; // «проснулись» из Standby по RTC
-        }
-        else if (__HAL_PWR_GET_FLAG(PWR_FLAG_WUF1) != RESET)
-        {
-            // Возможно, сработал WKUP1
-            __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WUF1);
-            __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB);
-            return 2; // «проснулись» из Standby по WKUP1
-        }
-        else
-        {
-            // Ни WUF1, ни WUF2... Может WUF3..WUF5
-            __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB);
-            return 3; // Некий другой вариант
-        }
-    }
-    else
-    {
-        // SB=0 => это обычный холодный сброс
-        return 0;
-    }
-}
-
 // Для отладки FreeRTOS
 void DWT_Init(void)
 {
@@ -282,5 +252,3 @@ void DWT_Init(void)
     DWT->CYCCNT = 0;
     DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 }
-
-void None_func() {}
