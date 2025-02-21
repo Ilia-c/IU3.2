@@ -51,6 +51,7 @@ xSemaphoreHandle Display_semaphore;
 xSemaphoreHandle Display_cursor_semaphore;
 xSemaphoreHandle USB_COM_semaphore;
 xSemaphoreHandle Main_semaphore;
+xSemaphoreHandle UART_PARSER_semaphore;
 xSemaphoreHandle ADC_READY; // Окончания преобразования при работе в циклическом режиме
 
 extern const uint16_t Timer_key_one_press;
@@ -142,6 +143,13 @@ const osThreadAttr_t Erroe_indicate_task_attributes = {
     .stack_size = 1024 * 1,
     .priority = (osPriority_t)osPriorityLow,
 };
+
+osThreadId_t  UART_PARSER_taskHandle;
+const osThreadAttr_t UART_PARSER_task_attributes = {
+    .name = "UART_PARSER_task",
+    .stack_size = 1024 * 1,
+    .priority = (osPriority_t)osPriorityNormal6,
+};
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -171,6 +179,7 @@ void Main(void *argument);
 void Main_Cycle(void *argument); // основной режим в циклическом режиме
 void Keyboard_task(void *argument);
 void USB_COM_task(void *argument);
+void UART_PARSER_task(void *argument);
 void Erroe_indicate(void *argument);
 void HAL_TIM6_Callback(void);
 void SetTimerPeriod(uint32_t period_ms);
@@ -200,9 +209,7 @@ int main(void)
   MX_UART4_Init();
   MX_TIM5_Init();
   MX_TIM6_Init();
-
-
-
+  
   RTC_Init();
   RTC_read();
   // Начальные состояния переферии - ВСЕ ОТКЛЮЧЕНО
@@ -223,30 +230,36 @@ int main(void)
   HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);             // Общее питание 5В
   HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);         // Общее питание 3.3В (АЦП, темп., и т.д.)
   HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);           // Включение Памяти на плате
-  
-  
+
   HAL_Delay(10);
-  // Чтение данных из EEPROM
-  if (!(EEPROM_IsDataExists()))
+  if (HAL_I2C_IsDeviceReady(&hi2c1, EEPROM_I2C_ADDRESS, 2, 100) != HAL_OK)
   {
-    // Данных нету - первый запуск 
-    if (!EEPROM_SaveSettings(&EEPROM))
-    {
-      // Сохранение не вышло - нет связи с EEPROM
-    }
+    // EEPROM недоступна
+    ERRCODE.STATUS |= STATUS_EEPROM_INIT_ERROR;
   }
   else
   {
-    if (!EEPROM_LoadSettings(&EEPROM))
+    // Чтение данных из EEPROM
+    if (!(EEPROM_IsDataExists()))
     {
-      // Ошибка - неверный идентификатор данных
+      // Данных нету - первый запуск
       if (!EEPROM_SaveSettings(&EEPROM))
       {
-        // Сохранение не вышло - нет связи с EEPROM
+        // Сохранение не вышло
+      }
+    }
+    else
+    {
+      if (!EEPROM_LoadSettings(&EEPROM))
+      {
+        // Ошибка - неверный идентификатор данных
+        if (!EEPROM_SaveSettings(&EEPROM))
+        {
+          // Сохранение не вышло
+        }
       }
     }
   }
-  
   //EEPROM.Mode = 0;
   HAL_PWR_EnableBkUpAccess();
   uint32_t value = HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_INDEX_RESET_PROG);
@@ -267,7 +280,9 @@ int main(void)
   }
   __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB); // Сброс флага пробуждения из сна, для корректной работы сна
   HAL_PWR_DisableBkUpAccess();
-  
+  HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
+  HAL_NVIC_SetPriority(UART4_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(UART4_IRQn);
 
   // Запуск в режиме настройки (экран вкл)
   if (EEPROM.Mode == 0){
@@ -277,14 +292,10 @@ int main(void)
     HAL_Delay(10);
     OLED_Init(&hi2c2);
     HAL_Delay(20);
-    HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
-    HAL_NVIC_SetPriority(UART4_IRQn, 5, 0);
-    HAL_NVIC_EnableIRQ(UART4_IRQn);
 
     //if (EEPROM.USB_mode == 0) MX_USB_DEVICE_Init_COMPORT(); // Режим работы в USB_FLASH (перефброс фалов с данными на внешний USB)
     if (EEPROM.USB_mode == 1){
       MX_USB_DEVICE_Init_COMPORT(); // Режим работы в VirtualComPort
-      EnableUsbCDC_UART(); // Включение передачи данных UART-USB (ответы от модуля GSM)
       HAL_NVIC_SetPriority(OTG_FS_IRQn, 5, 0); // Приоритет прерывания
       HAL_NVIC_EnableIRQ(OTG_FS_IRQn);         // Включение прерывания
     }
@@ -314,12 +325,7 @@ int main(void)
 
   W25_Ini();
   MS5193T_Init();
-  
-  if (HAL_I2C_IsDeviceReady(&hi2c1, EEPROM_I2C_ADDRESS, 2, 100) != HAL_OK)
-  {
-    // EEPROM недоступна
-    ERRCODE.STATUS |= STATUS_EEPROM_INIT_ERROR;
-  }
+
 
 
 
@@ -328,6 +334,7 @@ int main(void)
   ADC_readHandle = osThreadNew(ADC_read, NULL, &ADC_read_attributes);
   RS485_dataHandle = osThreadNew(RS485_data, NULL, &RS485_data_attributes);
   SIM800_dataHandle = osThreadNew(SIM800_data, NULL, &SIM800_data_attributes);
+  UART_PARSER_taskHandle = osThreadNew(UART_PARSER_task, NULL, &UART_PARSER_task_attributes);
 
   if (EEPROM.Mode == 0){
     USB_COM_taskHandle = osThreadNew(USB_COM_task, NULL, &USB_COM_task_attributes);
@@ -970,6 +977,7 @@ void Main(void *argument)
   vSemaphoreCreateBinary(Display_semaphore);
   vSemaphoreCreateBinary(Display_cursor_semaphore);
   vSemaphoreCreateBinary(USB_COM_semaphore);
+  vSemaphoreCreateBinary(UART_PARSER_semaphore);
   vSemaphoreCreateBinary(Main_semaphore);
     // Запуск глобального таймера для обновления экрана
   HAL_NVIC_SetPriority(TIM5_IRQn, 8, 0); // Установите приоритет
@@ -991,6 +999,7 @@ void Main_Cycle(void *argument)
 {
     UNUSED(argument);
     vSemaphoreCreateBinary(ADC_READY);
+    vSemaphoreCreateBinary(UART_PARSER_semaphore);
     // 1. Уже все включено к текущему моменту
     // 2. Уже конфигурация EEPROM прочитана
     osDelay(100);
@@ -999,6 +1008,8 @@ void Main_Cycle(void *argument)
     HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);           // Выключение Памяти на плате
 
     // ! 4. Запрос настроек с сайта для текущей конфигурации, запуск задачи параллельно, если фатальная ошибка - отключить GSM
+
+
 
     // 6. Получения показаний АЦП
     osThreadResume(ADC_readHandle); //Запуск потока АЦП
@@ -1097,6 +1108,7 @@ void RS485_data(void *argument)
 void SIM800_data(void *argument)
 {
   UNUSED(argument);
+  HAL_Delay(2000);
   for (;;)
   {
     // Если GSM должен быть включен
@@ -1109,11 +1121,13 @@ void SIM800_data(void *argument)
         osDelay(600);
         HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 0);
       }
+      
       // Тут добавить проверку на статус (отправка AT раз в N секунд) и статуса регистрации в сети
+      
     } 
     // Если GSM должен быть выключен
     if (EEPROM.Communication == 0) HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0); 
-    if (EEPROM.Mode != 0) osThreadSuspend(SIM800_dataHandle); // Остановить, если циклический режим (для однократного выполнения)
+    //if (EEPROM.Mode != 0) osThreadSuspend(SIM800_dataHandle); // Остановить, если циклический режим (для однократного выполнения)
     osDelay(5000);
   }
   /* USER CODE END SIM800_data */
@@ -1177,6 +1191,7 @@ void Erroe_indicate(void *argument){
   SD_check();
   for (;;)
   {
+    int32_t test = ADC1_Read_PC0();
     BlinkLED(GPIOC, GPIO_PIN_13, 5, 50, 50, 0);
     osDelay(1000);
     // Ошибка инициализации EEPROM
@@ -1224,9 +1239,20 @@ void Erroe_indicate(void *argument){
     }
     skip:
       osDelay(4000);
+      int a = CPIN(1000);
   }
 }
-
+void UART_PARSER_task(void *argument)
+{
+    UNUSED(argument);
+    HAL_Delay(600);
+    for (;;)
+    {
+        // Ожидаем семафор (данные готовы к обработке)
+        xSemaphoreTake(UART_PARSER_semaphore, portMAX_DELAY);
+        osDelay(100);
+    }
+}
 
 int a = 0;
 

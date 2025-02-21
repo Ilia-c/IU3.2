@@ -1,7 +1,8 @@
 #include "main.h"
 #include "string.h"     // для strlen, strstr, strcpy и т.д.
 #include "usbd_cdc_if.h" // для CDC_Transmit_FS (если есть)
-
+#define MAX_LINE_LEN    512
+#define CMD_BUFFER_SIZE 512
 // Машина состояний для CR/LF
 typedef enum {
     PARSE_IDLE,   // Обычный режим (нет ожидания LF)

@@ -88,8 +88,7 @@ void USB_COM(void)
     if (command_un == 0) CDC_Transmit_FS((uint8_t *)"Invalid command prefix\r\n", 25);
     memset(UserRxBufferFS, 0, RX_BUFFER_SIZE);
     memset(g_myRxBuffer, 0, RX_BUFFER_SIZE);
-
-
+    
 }
 
 void USB_Send_Status_Report(void)

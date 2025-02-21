@@ -123,17 +123,25 @@ extern "C"
   } ADC_MS5193T_item;
 
   ////////////////////////////////////////////////////////////////////////////////
-  //               Описание структуры GSM_STATUS
+  //     Описание структуры GSM_STATUS
   ////////////////////////////////////////////////////////////////////////////////
+
+#define SIM_PRESENT (1UL << 0)          // SIM-карта установлена
+#define NETWORK_REGISTERED (1UL << 1)   // Устройство зарегистрировано в сети
+#define SIGNAL_PRESENT (1UL << 2)       // Сигнал сети присутствует
+#define OPERATOR_IDENTIFIED (1UL << 3)  // Оператор сети опознан
+#define SMS_SENT_SUCCESS (1UL << 4)     // Отправка SMS успешна
+#define DATA_REQUEST_SUCCESS (1UL << 5) // Запрос данных выполнен успешно
+#define OPERATION_SEND_COMPLETED (1UL << 6)  // Операция успешно отправлена !!!
+#define RESPONSE_RECEIVED (1UL << 7)    // Получен ответ на команду
+#define GPRS_CONNECTED (1UL << 8)       // GPRS соединение установлено
+#define GPRS_DISCONNECTED (1UL << 9)    // GPRS соединение разорвано
   typedef struct GSM_STATUS
   {
-    uint8_t Status; // Статус работы GSM - 0 - ERR,  1 - WAR, 2 - OK, 3 - выкл
-    uint8_t mode;   // Режим работы GSM, 0 - вкл, 2 - выкл
-
+    uint16_t Status; // Статус работы в виде кода (коды выше)
     // Значение Связи (регистрация в сети, уровень сигнала GSM, уровень сигнала (палочки), оператор)
-    uint8_t GSM_Signal;      // Код сигнала от самого модуля GSM (0-31 и 99)
-    int8_t GSM_Signal_Level; // Уровень сигнала GSM (0..3) или -1, если нет регистрации
-
+    uint8_t GSM_Signal;            // Код сигнала от самого модуля GSM (0-31 и 99)
+    int8_t GSM_Signal_Level;       // Уровень сигнала GSM (0..3) или -1, если нет регистрации
     char GSM_status_char[5];       // Статус GSM
     char GSM_SIMCARD_char[5];      // Видит ли GSM SIM?
     char GSM_status_ready_char[5]; // Готов ли GSM?
@@ -141,8 +149,7 @@ extern "C"
     char GSM_operator_char[10];    // Название оператора MTS, Beeline и т.д.
     char GSM_signal_lvl_char[2];   // Уровень сигнала 0-99
     char GSM_gprs_on_char[3];      // Включен ли gprs?
-
-    void (*update_value)(void); // Ссылка на функцию обновления GSM (перевод в текст)
+    void (*update_value)(void);    // Ссылка на функцию обновления GSM (перевод статусов в текст)
   } GSM_STATUS_item;
   
   ////////////////////////////////////////////////////////////////////////////////

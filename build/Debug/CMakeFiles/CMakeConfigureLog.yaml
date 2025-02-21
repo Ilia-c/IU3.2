@@ -9,18 +9,6 @@ events:
     message: |
       The target system is: Generic -  - arm
       The host system is: Windows - 10.0.19045 - AMD64
-...
-
----
-events:
-  -
-    kind: "message-v1"
-    backtrace:
-      - "C:/ST/STM32CubeCLT_1.16.0/CMake/share/cmake-3.28/Modules/CMakeDetermineSystem.cmake:228 (message)"
-      - "CMakeLists.txt:31 (enable_language)"
-    message: |
-      The target system is: Generic -  - arm
-      The host system is: Windows - 10.0.19045 - AMD64
   -
     kind: "message-v1"
     backtrace:

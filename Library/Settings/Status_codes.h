@@ -63,6 +63,8 @@
 #define STATUS_NBIOT_REG_ERROR             (1ULL << 33)  // Ошибка регистрации в сети NB-IoT
 #define STATUS_GSM_NET_ERROR               (1ULL << 34)  // Ошибка выхода в интернет по GSM
 #define STATUS_GSM_NO_SIM                  (1ULL << 35)  // SIM-карта отсутствует
+// ОШИБКА - слабый уровень сигнала
+// ОШИБКА - большой процент потери пакетов
 #define STATUS_UART_SMS_SEND_ERROR         (1ULL << 36)  // Ошибка отправки SMS
 #define STATUS_UART_SERVER_COMM_ERROR      (1ULL << 37)  // Ошибка связи с сервером
 #define STATUS_UART_SERVER_UNAVAILABLE     (1ULL << 38)  // Сервер недоступен

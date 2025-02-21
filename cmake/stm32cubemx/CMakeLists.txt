@@ -138,6 +138,7 @@ target_sources(stm32cubemx INTERFACE
     ../../Library/USB/USB_FLASH.c
     ../../Library/USB/USB_COMPORT.c
     ../../Library/UART_GSM/GSM.c
+    ../../Library/UART_GSM/Parser.c
     ../../Library/Sleep_system/Sleep.c
     ../../Library/EEPROM/AT24C02.c
 )

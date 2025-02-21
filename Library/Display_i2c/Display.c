@@ -93,8 +93,8 @@ void NULL_F(){}
 menuSelect_item Communication_DATA = { 
     .data = (uint8_t *)&EEPROM.Communication,
     .Name = {
-        {"GSM/NB-IoT", "GSM/NB-IoT"},
-        {"Выкл", "Off"}
+        {"Выкл", "Off"},
+        {"GSM/NB-IoT", "GSM/NB-IoT"}
     },
 }; 
 menuSelect_item RS485_MODE_DATA = {
@@ -716,7 +716,6 @@ void Display_TopBar(menuItem *CurrentMenu)
         right_ot -= 12;
     }
 
-
     OLED_DrawStr(str, right_ot, top_akb_status + 1, 1);
     right_ot -= width_akb_status;
 
@@ -732,12 +731,18 @@ void Display_TopBar(menuItem *CurrentMenu)
     right_ot -= width_GSM_status;
 
 
+
+    if (GSM_data.GSM_Signal_Level == -2)
+    {
+        right_ot -= 7;
+        OLED_DrawStr("SIM?\0", right_ot, top_GSM_status, 1);
+    }
     if (GSM_data.GSM_Signal_Level == -1)
     {
         right_ot += 3;
         OLED_DrawXBM(right_ot, top_GSM_status, no_signal);
     }
-
+    
     const uint8_t* signal_icons[] = {signal_0, signal_1, signal_2, signal_3};
     //GSM_data.GSM_Signal_Level = 3;
     if (GSM_data.GSM_Signal_Level >= 0 && GSM_data.GSM_Signal_Level <= 3) {
