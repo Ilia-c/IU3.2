@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "RTC_data.h"
 #include "MS5193T.h"
+#include "GSM.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -125,81 +126,114 @@ extern "C"
   ////////////////////////////////////////////////////////////////////////////////
   //     Описание структуры GSM_STATUS
   ////////////////////////////////////////////////////////////////////////////////
+#define GSM_RDY (1UL << 0)              // Модуль включился
+#define SIM_PRESENT (1UL << 1)          // SIM-карта установлена
+#define NETWORK_REGISTERED (1UL << 2)   // Устройство зарегистрировано в сети
+#define SIGNAL_PRESENT (1UL << 3)       // Сигнал сети присутствует
+#define OPERATOR_IDENTIFIED (1UL << 4)  // Оператор сети опознан
+#define SMS_SENT_SUCCESS (1UL << 5)     // Отправка SMS успешна
+#define DATA_REQUEST_SUCCESS (1UL << 6) // Запрос данных выполнен успешно
+#define OPERATION_SEND_COMPLETED (1UL << 7)  // Операция успешно отправлена !!!
+#define RESPONSE_RECEIVED (1UL << 8)    // Получен ответ на команду
+#define GPRS_CONNECTED (1UL << 9)       // GPRS соединение установлено
+#define GPRS_DISCONNECTED (1UL << 10)    // GPRS соединение разорвано
+#define HTTP_SEND (1UL << 11)    // отправить http запрос
+#define HTTP_READ (1UL << 12)    // отправить http запрос (чтение данных)
+#define SMS_SEND (1UL << 13)    // ОТПРАВИТЬ SMS
 
-#define SIM_PRESENT (1UL << 0)          // SIM-карта установлена
-#define NETWORK_REGISTERED (1UL << 1)   // Устройство зарегистрировано в сети
-#define SIGNAL_PRESENT (1UL << 2)       // Сигнал сети присутствует
-#define OPERATOR_IDENTIFIED (1UL << 3)  // Оператор сети опознан
-#define SMS_SENT_SUCCESS (1UL << 4)     // Отправка SMS успешна
-#define DATA_REQUEST_SUCCESS (1UL << 5) // Запрос данных выполнен успешно
-#define OPERATION_SEND_COMPLETED (1UL << 6)  // Операция успешно отправлена !!!
-#define RESPONSE_RECEIVED (1UL << 7)    // Получен ответ на команду
-#define GPRS_CONNECTED (1UL << 8)       // GPRS соединение установлено
-#define GPRS_DISCONNECTED (1UL << 9)    // GPRS соединение разорвано
-  typedef struct GSM_STATUS
+  typedef struct GSM_STATUS_item
   {
-    uint16_t Status; // Статус работы в виде кода (коды выше)
-    // Значение Связи (регистрация в сети, уровень сигнала GSM, уровень сигнала (палочки), оператор)
-    uint8_t GSM_Signal;            // Код сигнала от самого модуля GSM (0-31 и 99)
-    int8_t GSM_Signal_Level;       // Уровень сигнала GSM (0..3) или -1, если нет регистрации
-    char GSM_status_char[5];       // Статус GSM
-    char GSM_SIMCARD_char[5];      // Видит ли GSM SIM?
-    char GSM_status_ready_char[5]; // Готов ли GSM?
-    char GSM_status_reg_char[5];   // Зарегистрирован ли GSM в сети
-    char GSM_operator_char[10];    // Название оператора MTS, Beeline и т.д.
-    char GSM_signal_lvl_char[2];   // Уровень сигнала 0-99
-    char GSM_gprs_on_char[3];      // Включен ли gprs?
-    void (*update_value)(void);    // Ссылка на функцию обновления GSM (перевод статусов в текст)
+    uint16_t Status;                // Статус работы в виде битовой маски
+    int8_t GSM_Signal_Level;        // Уровень сигнала GSM или -1, если нет регистрации
+    int8_t GSM_Signal_Level_3;      // Уровень сигнала GSM или для отображения в виде значков
+    int8_t GSM_Signal_Errors;       // Ошибки сигнала GSM или -1, если нет регистрации
+    uint32_t Operator_code;         // Ошибки сигнала GSM или -1, если нет регистрации
+
+    char *GSM_status_char;          // "OK", "ERR", "WAR", "ND" – индикатор статуса блока
+    char *Modem_mode;
+    char *GSM_SIMCARD_char;         // Например, SIM_STATUS[0] для PRESENT или SIM_STATUS[1] для ABSENT
+    char *GSM_status_ready_char;    // Например, GSM_READY_STATUS[0] для RDY
+    char *GSM_status_reg_char;      // Например, GSM_REG_STATUS[0] для REG
+    char *GSM_region_char;          // Строка, определяющая регион (например, ISO код страны)
+    char *GSM_operator_char;        // Название оператора (будет меняться во время работы)
+    char GSM_signal_lvl_char[3];    // Текстовое представление уровня сигнала
+    char GSM_err_lvl_char[3];       // Текстовое представление ошибок сигнала
+    char *GSM_gprs_on_char;         // Например, GPRS_STATUS[0] или GPRS_STATUS[1]
+
+    uint32_t GSM_LastResponseTime;  // Время последнего ответа (секунды)
+    void (*update_value)(void);     // Функция обновления значений
   } GSM_STATUS_item;
-  
-  ////////////////////////////////////////////////////////////////////////////////
-  //  Структуры с данными
-  ////////////////////////////////////////////////////////////////////////////////
-  extern ADC_MS5193T_item ADC_data;
-  extern GSM_STATUS_item GSM_data;
-  extern ERRCODE_item ERRCODE;
 
-  ////////////////////////////////////////////////////////////////////////////////
-  // Глобальные переменные РЕЖИМЫ
-  ////////////////////////////////////////////////////////////////////////////////
-  extern uint8_t Mode;
-  extern uint8_t Communication;
-  extern uint8_t RS485_prot;
-  extern uint8_t units_mes;
-  extern uint8_t screen_sever_mode;
-  extern uint8_t USB_mode;
+typedef struct GSM_Operator_item
+{
+  const uint16_t code;    // Код оператора, получаемый от модема
+  const char name[10]; // Название оператора (например, "MTS", "Beeline")
+} GSM_Operator_item;
 
-  ////////////////////////////////////////////////////////////////////////////////
-  // Глобальные переменные КОНФИГУРАЦИИ
-  ////////////////////////////////////////////////////////////////////////////////
-  extern uint16_t time_update_display; // Время обновления экрана (для обновления времени и курсора)
+typedef struct Country_operator_item
+{
+  const uint16_t mcc;         // Мобильный код страны (MCC)
+  const char iso[10]; // ISO 3166-1 alpha-3 код страны
+}Country_operator_item;
 
-  ////////////////////////////////////////////////////////////////////////////////
-  // Глобальные переменные ДЛЯ ФУНКЦИОНИРОВАНИЯ
-  ////////////////////////////////////////////////////////////////////////////////
-  extern char Keyboard_press_code;   // Код нажатой клавиши на клавиатуре
-  extern float ADC_AKB_volts;        //-
-  extern int ADC_AKB_Proc;           //-
-  extern int ADC_AKB_cell;           //- ------------- Статус акб и батарейки
-  extern char ADC_AKB_volts_char[4]; //-
-  extern char ADC_AKB_Proc_char[4];  //-
-  extern char error_code[4];         // Код глобальной ошибки
-  extern double OneWire_temp;        // Температура OneWire
-  extern char OneWire_temp_char[5];  // Температура OneWire в виде строки
+////////////////////////////////////////////////////////////////////////////////
+//  Структуры с данными
+////////////////////////////////////////////////////////////////////////////////
+extern ADC_MS5193T_item ADC_data;
+extern GSM_STATUS_item GSM_data;
+extern ERRCODE_item ERRCODE;
 
-  extern char EEPROM_status_char[3]; // Статус доступности EEPROM
-  extern char FLASH_status_char[3];  // Статус доступности FLASH
-  extern char SD_status_char[3];     // Статус доступности SD
+////////////////////////////////////////////////////////////////////////////////
+// Глобальные переменные РЕЖИМЫ
+////////////////////////////////////////////////////////////////////////////////
+extern uint8_t Mode;
+extern uint8_t Communication;
+extern uint8_t RS485_prot;
+extern uint8_t units_mes;
+extern uint8_t screen_sever_mode;
+extern uint8_t USB_mode;
 
-  extern RTC_TimeTypeDef Time; // Дата
-  extern RTC_DateTypeDef Date; // Время
-  ////////////////////////////////////////////////////////////////////////////////
-  // Глобальные КОНСТАНТЫ
-  ////////////////////////////////////////////////////////////////////////////////
-  extern const char STATUS_CHAR[4][5]; // Индикация статуса блока
-  extern const uint16_t Timer_key_one_press;
-  extern const uint16_t Timer_key_press;
-  extern const uint16_t Timer_key_press_fast;
+////////////////////////////////////////////////////////////////////////////////
+// Глобальные переменные КОНФИГУРАЦИИ
+////////////////////////////////////////////////////////////////////////////////
+extern uint16_t time_update_display; // Время обновления экрана (для обновления времени и курсора)
+
+////////////////////////////////////////////////////////////////////////////////
+// Глобальные переменные ДЛЯ ФУНКЦИОНИРОВАНИЯ
+////////////////////////////////////////////////////////////////////////////////
+extern char Keyboard_press_code;   // Код нажатой клавиши на клавиатуре
+extern float ADC_AKB_volts;        //-
+extern int ADC_AKB_Proc;           //-
+extern int ADC_AKB_cell;           //- ------------- Статус акб и батарейки
+extern char ADC_AKB_volts_char[4]; //-
+extern char ADC_AKB_Proc_char[4];  //-
+extern char error_code[4];         // Код глобальной ошибки
+extern double OneWire_temp;        // Температура OneWire
+extern char OneWire_temp_char[5];  // Температура OneWire в виде строки
+
+extern char EEPROM_status_char[3]; // Статус доступности EEPROM
+extern char FLASH_status_char[3];  // Статус доступности FLASH
+extern char SD_status_char[3];     // Статус доступности SD
+
+extern RTC_TimeTypeDef Time; // Дата
+extern RTC_DateTypeDef Date; // Время
+////////////////////////////////////////////////////////////////////////////////
+// Глобальные КОНСТАНТЫ
+////////////////////////////////////////////////////////////////////////////////
+extern const char STATUS_CHAR[4][5]; // Индикация статуса блока
+extern const uint16_t Timer_key_one_press;
+extern const uint16_t Timer_key_press;
+extern const uint16_t Timer_key_press_fast;
+extern const char MODEM_STATUS[3][6]; // Индикация статуса блока "GSM", "NBIOT", "ND"
+extern const char STATUS_CHAR[4][5]; // Индикация статуса блока "OK", "ERR", "WAR", "ND"
+extern const char SIM_STATUS[3][8];// Статус SIM-карты: PRESENT – установлена, ABSENT – не установлена, UNKNOWN – неизвестно 
+extern const char GSM_READY_STATUS[2][5];// Статус готовности GSM: RDY – готов, NRDY – не готов
+extern const char GSM_REG_STATUS[3][8];// Статус регистрации в сети: REG – зарегистрирован, NREG – не зарегистрирован, UNKNOWN – неизвестно
+extern const char GPRS_STATUS[2][5]; // Статус GPRS соединения: CONNECTED – установлено, DISCONNECTED – разорвано
+extern const int GSM_OperatorsCount;
+extern const int CountriesCount;
+extern const Country_operator_item Countries[];
+extern const GSM_Operator_item GSM_Operators[];
 
 #ifdef __cplusplus
 }

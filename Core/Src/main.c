@@ -40,6 +40,7 @@
 #include "GSM.h"
 #include "Sleep.h"
 #include "AT24C02.h"
+#include "Parser.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -148,7 +149,7 @@ osThreadId_t  UART_PARSER_taskHandle;
 const osThreadAttr_t UART_PARSER_task_attributes = {
     .name = "UART_PARSER_task",
     .stack_size = 1024 * 1,
-    .priority = (osPriority_t)osPriorityNormal6,
+    .priority = (osPriority_t)osPriorityNormal,
 };
 /* USER CODE BEGIN PV */
 
@@ -209,7 +210,8 @@ int main(void)
   MX_UART4_Init();
   MX_TIM5_Init();
   MX_TIM6_Init();
-  
+
+  InitMenus();
   RTC_Init();
   RTC_read();
   // Начальные состояния переферии - ВСЕ ОТКЛЮЧЕНО
@@ -224,7 +226,7 @@ int main(void)
   HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);
   
   HAL_Delay(10);
-
+  
 
   // ЗАПУСКАЕТСЯ ВСЕГДА 
   HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);             // Общее питание 5В
@@ -1239,18 +1241,53 @@ void Erroe_indicate(void *argument){
     }
     skip:
       osDelay(4000);
-      int a = CPIN(1000);
   }
 }
 void UART_PARSER_task(void *argument)
 {
     UNUSED(argument);
-    HAL_Delay(600);
+    GSM_Init();
     for (;;)
-    {
-        // Ожидаем семафор (данные готовы к обработке)
-        xSemaphoreTake(UART_PARSER_semaphore, portMAX_DELAY);
-        osDelay(100);
+    { 
+      osDelay(10000);
+      if (!(GSM_data.Status & GSM_RDY)){
+        int result = SendCommandAndParse("AT\r", parse_ERROR_OK, 1000);
+        if (result == 1){
+          GSM_data.Status |= GSM_RDY;
+        }
+      }
+      if (GSM_data.Status & GSM_RDY)
+      {
+        SendCommandAndParse("AT+CPIN?\r", parse_CPIN, 1000);
+        SendCommandAndParse("AT+CSQ\r", parse_CSQ, 1000);
+        SendCommandAndParse("AT+CEREG?\r", parse_CEREG, 1000);
+        SendCommandAndParse("AT+COPS?\r", parse_COPS, 1000);
+        GSM_data.update_value();
+        xSemaphoreGive(Display_semaphore);
+      }
+      if (GSM_data.Status & SMS_SEND)
+      {
+        // флаг того что нужно отправить смс
+        GSM_data.Status &= ~SMS_SEND;
+        if (SendCommandAndParse("AT+CMGF=1\r", waitForOKResponse, 1000)!= 1) break;
+        if (SendCommandAndParse("AT+CSCS=\"GSM\"\r", waitForOKResponse, 1000)!= 1) break;
+        if (SendCommandAndParse("AT+CMGS=\"+79150305966\"\r", waitForGreaterThanResponse, 1000)!= 1) break;
+        if (SendCommandAndParse("Test sms\x1A\r", waitForOKResponse, 1000) != 1) break;
+        //HAL_UART_Transmit(&huart4, 0x1A, 1, 1000);
+        //HAL_UART_Transmit(&huart4, '\r', 1, 1000);
+      }
+      if (GSM_data.Status & HTTP_SEND)
+      {
+        // флаг того что нужно отправить HTTPA
+        GSM_data.Status &= ~HTTP_SEND;
+        
+      }
+      if (GSM_data.Status & HTTP_READ)
+      {
+        // флаг того что нужно отправить HTTP
+        GSM_data.Status &= ~HTTP_READ;
+        
+      }
     }
 }
 

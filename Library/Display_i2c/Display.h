@@ -73,7 +73,7 @@ typedef struct MAKE_MENU
 } menuItem;
 
 
-
+void InitMenus(void);
 void Display_all_menu();
 void Display_punkt_menu(menuItem *menu, int pos_y);
 void Display_TopBar();
