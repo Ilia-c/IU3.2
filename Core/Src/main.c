@@ -112,7 +112,7 @@ const osThreadAttr_t RS485_data_attributes = {
 osThreadId_t SIM800_dataHandle;
 const osThreadAttr_t SIM800_data_attributes = {
     .name = "SIM800_data",
-    .stack_size = 256 * 4,
+    .stack_size = 512 * 3,
     .priority = (osPriority_t)osPriorityLow7,
 };
 /* Definitions for Keyboard_task */
@@ -126,7 +126,7 @@ const osThreadAttr_t Keyboard_task_attributes = {
 osThreadId_t USB_COM_taskHandle;
 const osThreadAttr_t USB_COM_task_attributes = {
     .name = "USB_COM_task",
-    .stack_size = 1024 * 8,
+    .stack_size = 1024 * 5,
     .priority = (osPriority_t)osPriorityLow2,
 };
 
@@ -149,7 +149,7 @@ osThreadId_t  UART_PARSER_taskHandle;
 const osThreadAttr_t UART_PARSER_task_attributes = {
     .name = "UART_PARSER_task",
     .stack_size = 1024 * 1,
-    .priority = (osPriority_t)osPriorityNormal,
+    .priority = (osPriority_t)osPriorityLow6,
 };
 /* USER CODE BEGIN PV */
 
@@ -363,26 +363,7 @@ int main(void)
 
 }
 
-/**
- * @brief System Clock Configuration
- * @retval None
- */
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-  if ((GPIO_Pin == STR_B1_Pin) || (GPIO_Pin == STR_B2_Pin) || (GPIO_Pin == STR_B3_Pin) || (GPIO_Pin == STR_B4_Pin))
-  {
-    uint8_t B1 = HAL_GPIO_ReadPin(STR_B1_GPIO_Port, STR_B1_Pin);
-    uint8_t B2 = HAL_GPIO_ReadPin(STR_B2_GPIO_Port, STR_B2_Pin);
-    uint8_t B3 = HAL_GPIO_ReadPin(STR_B2_GPIO_Port, STR_B3_Pin);
-    uint8_t B4 = HAL_GPIO_ReadPin(STR_B4_GPIO_Port, STR_B4_Pin);
-    osDelay(1);
-    if ((HAL_GPIO_ReadPin(STR_B1_GPIO_Port, STR_B1_Pin) == B1) && (HAL_GPIO_ReadPin(STR_B2_GPIO_Port, STR_B2_Pin) == B2) && (HAL_GPIO_ReadPin(STR_B3_GPIO_Port, STR_B3_Pin) == B3) && (HAL_GPIO_ReadPin(STR_B4_GPIO_Port, STR_B4_Pin) == B4))
-    {
-      static portBASE_TYPE xTaskWoken;
-      xSemaphoreGiveFromISR(Keyboard_semapfore, &xTaskWoken);
-    }
-  }
-}
+
 
 void SetTimerPeriod(uint32_t period_ms)
 {
@@ -431,15 +412,7 @@ void HAL_TIM5_Callback(void)
   xSemaphoreGiveFromISR(Main_semaphore, &xTaskWoken); 
 }
 
-void HAL_TIM6_Callback(void)
-{
-  //HAL_TIM_Base_Stop_IT(&htim6);
-  //__HAL_TIM_SET_AUTORELOAD(&htim6, Timer_key_press-1);
-  //TIM6->CNT = 0;
-  __HAL_TIM_SET_AUTORELOAD(&htim6, Timer_key_press_fast);
-  static portBASE_TYPE xTaskWoken;
-  xSemaphoreGiveFromISR(Keyboard_semapfore, &xTaskWoken); 
-}
+
 
 void SystemClock_Config(void)
 {
@@ -1110,7 +1083,6 @@ void RS485_data(void *argument)
 void SIM800_data(void *argument)
 {
   UNUSED(argument);
-  HAL_Delay(2000);
   for (;;)
   {
     // Если GSM должен быть включен
@@ -1123,14 +1095,11 @@ void SIM800_data(void *argument)
         osDelay(600);
         HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 0);
       }
-      
-      // Тут добавить проверку на статус (отправка AT раз в N секунд) и статуса регистрации в сети
-      
     } 
     // Если GSM должен быть выключен
-    if (EEPROM.Communication == 0) HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0); 
-    //if (EEPROM.Mode != 0) osThreadSuspend(SIM800_dataHandle); // Остановить, если циклический режим (для однократного выполнения)
-    osDelay(5000);
+    if (EEPROM.Communication == 0) HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
+    if (EEPROM.Mode != 0) osThreadSuspend(SIM800_dataHandle); // Остановить, если циклический режим (для однократного выполнения)
+    osDelay(20000);
   }
   /* USER CODE END SIM800_data */
 }

@@ -167,8 +167,8 @@ RTC_DateTypeDef Date = {0}; // Время
 // Глобальные константы
 ////////////////////////////////////////////////////////////////////////////////
 const uint16_t Timer_key_one_press = 20;                   // Время одного нажатия клавиши (таймер)
-const uint16_t Timer_key_press = 600;                      // Время удержания клавиши
-const uint16_t Timer_key_press_fast = 80;                  // Время быстрого нажатия клавиши
+const uint16_t Timer_key_press = 1000;                      // Время удержания клавиши
+const uint16_t Timer_key_press_fast = 150;                  // Время быстрого нажатия клавиши
 
 // Буфер для приёма данных по USB
 uint8_t g_myRxBuffer[MY_USB_RX_BUFFER_SIZE]; // Максимальное количество байт для сбора данных по USB
