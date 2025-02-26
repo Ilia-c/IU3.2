@@ -884,7 +884,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pins : RESERVED_Pin EN_5V_Pin EN_3P3V_Pin ON_N25_Pin
                            COL_B4_Pin SPI2_CS_ADC_Pin One_Wire_Pin */
   GPIO_InitStruct.Pin = RESERVED_Pin|EN_5V_Pin|EN_3P8V_Pin|ON_N25_Pin
-                          |COL_B4_Pin|SPI2_CS_ADC_Pin|One_Wire_Pin;
+                          |COL_B4_Pin|SPI2_CS_ADC_Pin|One_Wire_Pin|EN_3P3V_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;

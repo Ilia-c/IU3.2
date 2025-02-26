@@ -667,8 +667,8 @@ Discarded input sections
  .debug_macro   0x00000000       0xb5 CMakeFiles/CubeMX.dir/Core/Src/freertos.c.obj
  .debug_macro   0x00000000       0xaa CMakeFiles/CubeMX.dir/Core/Src/freertos.c.obj
  .debug_macro   0x00000000      0x142 CMakeFiles/CubeMX.dir/Core/Src/freertos.c.obj
- .debug_line    0x00000000      0xa3b CMakeFiles/CubeMX.dir/Core/Src/freertos.c.obj
- .debug_str     0x00000000   0x10fa6e CMakeFiles/CubeMX.dir/Core/Src/freertos.c.obj
+ .debug_line    0x00000000      0x9bb CMakeFiles/CubeMX.dir/Core/Src/freertos.c.obj
+ .debug_str     0x00000000   0x10fa79 CMakeFiles/CubeMX.dir/Core/Src/freertos.c.obj
  .comment       0x00000000       0x44 CMakeFiles/CubeMX.dir/Core/Src/freertos.c.obj
  .ARM.attributes
                 0x00000000       0x34 CMakeFiles/CubeMX.dir/Core/Src/freertos.c.obj
@@ -2606,8 +2606,8 @@ Discarded input sections
  .debug_macro   0x00000000      0x5cf CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash.c.obj
  .debug_macro   0x00000000       0x44 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash.c.obj
  .debug_macro   0x00000000      0x330 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash.c.obj
- .debug_line    0x00000000      0xc6e CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash.c.obj
- .debug_str     0x00000000   0x10bc83 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash.c.obj
+ .debug_line    0x00000000      0xc0e CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash.c.obj
+ .debug_str     0x00000000   0x10bc8e CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash.c.obj
  .comment       0x00000000       0x44 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash.c.obj
  .debug_frame   0x00000000      0x204 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash.c.obj
  .ARM.attributes
@@ -2754,8 +2754,8 @@ Discarded input sections
  .debug_macro   0x00000000      0x5cf CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash_ex.c.obj
  .debug_macro   0x00000000       0x44 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash_ex.c.obj
  .debug_macro   0x00000000      0x330 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash_ex.c.obj
- .debug_line    0x00000000      0xf14 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash_ex.c.obj
- .debug_str     0x00000000   0x10bce1 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash_ex.c.obj
+ .debug_line    0x00000000      0xeb4 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash_ex.c.obj
+ .debug_str     0x00000000   0x10bcec CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash_ex.c.obj
  .comment       0x00000000       0x44 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash_ex.c.obj
  .debug_frame   0x00000000      0x248 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash_ex.c.obj
  .ARM.attributes
@@ -2873,8 +2873,8 @@ Discarded input sections
  .debug_macro   0x00000000      0x5cf CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash_ramfunc.c.obj
  .debug_macro   0x00000000       0x44 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash_ramfunc.c.obj
  .debug_macro   0x00000000      0x330 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash_ramfunc.c.obj
- .debug_line    0x00000000      0x8e8 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash_ramfunc.c.obj
- .debug_str     0x00000000   0x10b8c3 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash_ramfunc.c.obj
+ .debug_line    0x00000000      0x888 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash_ramfunc.c.obj
+ .debug_str     0x00000000   0x10b8ce CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash_ramfunc.c.obj
  .comment       0x00000000       0x44 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash_ramfunc.c.obj
  .debug_frame   0x00000000       0x50 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash_ramfunc.c.obj
  .ARM.attributes
@@ -3573,8 +3573,8 @@ Discarded input sections
  .debug_macro   0x00000000      0x5cf CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_dma_ex.c.obj
  .debug_macro   0x00000000       0x44 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_dma_ex.c.obj
  .debug_macro   0x00000000      0x330 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_dma_ex.c.obj
- .debug_line    0x00000000      0x8bc CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_dma_ex.c.obj
- .debug_str     0x00000000   0x10b7b1 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_dma_ex.c.obj
+ .debug_line    0x00000000      0x85c CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_dma_ex.c.obj
+ .debug_str     0x00000000   0x10b7bc CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_dma_ex.c.obj
  .comment       0x00000000       0x44 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_dma_ex.c.obj
  .ARM.attributes
                 0x00000000       0x34 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_dma_ex.c.obj
@@ -4165,8 +4165,8 @@ Discarded input sections
  .debug_macro   0x00000000      0x5cf CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_exti.c.obj
  .debug_macro   0x00000000       0x44 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_exti.c.obj
  .debug_macro   0x00000000      0x330 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_exti.c.obj
- .debug_line    0x00000000      0xc39 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_exti.c.obj
- .debug_str     0x00000000   0x10ba90 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_exti.c.obj
+ .debug_line    0x00000000      0xbd9 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_exti.c.obj
+ .debug_str     0x00000000   0x10ba9b CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_exti.c.obj
  .comment       0x00000000       0x44 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_exti.c.obj
  .debug_frame   0x00000000      0x174 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_exti.c.obj
  .ARM.attributes
@@ -5227,8 +5227,8 @@ Discarded input sections
  .debug_macro   0x00000000      0x5cf CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_sd_ex.c.obj
  .debug_macro   0x00000000       0x44 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_sd_ex.c.obj
  .debug_macro   0x00000000      0x330 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_sd_ex.c.obj
- .debug_line    0x00000000      0x8bb CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_sd_ex.c.obj
- .debug_str     0x00000000   0x10b7b0 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_sd_ex.c.obj
+ .debug_line    0x00000000      0x85b CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_sd_ex.c.obj
+ .debug_str     0x00000000   0x10b7bb CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_sd_ex.c.obj
  .comment       0x00000000       0x44 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_sd_ex.c.obj
  .ARM.attributes
                 0x00000000       0x34 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_sd_ex.c.obj
@@ -5547,8 +5547,8 @@ Discarded input sections
  .debug_macro   0x00000000      0x5cf CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi_ex.c.obj
  .debug_macro   0x00000000       0x44 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi_ex.c.obj
  .debug_macro   0x00000000      0x330 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi_ex.c.obj
- .debug_line    0x00000000      0x8ff CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi_ex.c.obj
- .debug_str     0x00000000   0x10bc25 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi_ex.c.obj
+ .debug_line    0x00000000      0x89f CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi_ex.c.obj
+ .debug_str     0x00000000   0x10bc30 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi_ex.c.obj
  .comment       0x00000000       0x44 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi_ex.c.obj
  .debug_frame   0x00000000       0x38 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi_ex.c.obj
  .ARM.attributes
@@ -6561,8 +6561,8 @@ Discarded input sections
  .debug_macro   0x00000000      0x5cf CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_hcd.c.obj
  .debug_macro   0x00000000       0x44 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_hcd.c.obj
  .debug_macro   0x00000000      0x330 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_hcd.c.obj
- .debug_line    0x00000000     0x1390 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_hcd.c.obj
- .debug_str     0x00000000   0x10c22d CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_hcd.c.obj
+ .debug_line    0x00000000     0x1330 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_hcd.c.obj
+ .debug_str     0x00000000   0x10c238 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_hcd.c.obj
  .comment       0x00000000       0x44 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_hcd.c.obj
  .debug_frame   0x00000000      0x478 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_hcd.c.obj
  .ARM.attributes
@@ -7409,8 +7409,8 @@ Discarded input sections
  .debug_macro   0x00000000       0xb5 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/croutine.c.obj
  .debug_macro   0x00000000       0xaa CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/croutine.c.obj
  .debug_macro   0x00000000       0x43 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/croutine.c.obj
- .debug_line    0x00000000      0xa5e CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/croutine.c.obj
- .debug_str     0x00000000   0x10fb71 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/croutine.c.obj
+ .debug_line    0x00000000      0x9de CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/croutine.c.obj
+ .debug_str     0x00000000   0x10fb7c CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/croutine.c.obj
  .comment       0x00000000       0x44 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/croutine.c.obj
  .ARM.attributes
                 0x00000000       0x34 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/croutine.c.obj
@@ -7606,8 +7606,8 @@ Discarded input sections
  .debug_macro   0x00000000       0xb5 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/event_groups.c.obj
  .debug_macro   0x00000000       0xaa CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/event_groups.c.obj
  .debug_macro   0x00000000       0x91 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/event_groups.c.obj
- .debug_line    0x00000000      0xfdf CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/event_groups.c.obj
- .debug_str     0x00000000   0x1130c3 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/event_groups.c.obj
+ .debug_line    0x00000000      0xf5f CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/event_groups.c.obj
+ .debug_str     0x00000000   0x1130ce CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/event_groups.c.obj
  .comment       0x00000000       0x44 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/event_groups.c.obj
  .debug_frame   0x00000000      0x23c CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/event_groups.c.obj
  .ARM.attributes
@@ -8169,8 +8169,8 @@ Discarded input sections
  .debug_macro   0x00000000       0xb5 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/stream_buffer.c.obj
  .debug_macro   0x00000000       0xaa CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/stream_buffer.c.obj
  .debug_macro   0x00000000       0x18 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/stream_buffer.c.obj
- .debug_line    0x00000000     0x149c CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/stream_buffer.c.obj
- .debug_str     0x00000000   0x113173 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/stream_buffer.c.obj
+ .debug_line    0x00000000     0x141c CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/stream_buffer.c.obj
+ .debug_str     0x00000000   0x11317e CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/stream_buffer.c.obj
  .comment       0x00000000       0x44 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/stream_buffer.c.obj
  .debug_frame   0x00000000      0x3c8 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/stream_buffer.c.obj
  .ARM.attributes
@@ -11415,8 +11415,8 @@ Discarded input sections
  .debug_macro   0x00000000       0x2e CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_core.c.obj
  .debug_macro   0x00000000       0x2e CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_core.c.obj
  .debug_macro   0x00000000       0x28 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_core.c.obj
- .debug_line    0x00000000     0x15b0 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_core.c.obj
- .debug_str     0x00000000   0x115c91 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_core.c.obj
+ .debug_line    0x00000000     0x1500 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_core.c.obj
+ .debug_str     0x00000000   0x115c9c CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_core.c.obj
  .comment       0x00000000       0x44 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_core.c.obj
  .debug_frame   0x00000000      0x370 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_core.c.obj
  .ARM.attributes
@@ -11649,8 +11649,8 @@ Discarded input sections
  .debug_macro   0x00000000       0x2e CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ctlreq.c.obj
  .debug_macro   0x00000000       0x28 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ctlreq.c.obj
  .debug_macro   0x00000000       0x28 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ctlreq.c.obj
- .debug_line    0x00000000     0x1521 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ctlreq.c.obj
- .debug_str     0x00000000   0x115701 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ctlreq.c.obj
+ .debug_line    0x00000000     0x1471 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ctlreq.c.obj
+ .debug_str     0x00000000   0x11570c CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ctlreq.c.obj
  .comment       0x00000000       0x44 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ctlreq.c.obj
  .debug_frame   0x00000000      0x28c CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ctlreq.c.obj
  .ARM.attributes
@@ -11867,8 +11867,8 @@ Discarded input sections
  .debug_macro   0x00000000       0x2e CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ioreq.c.obj
  .debug_macro   0x00000000       0x28 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ioreq.c.obj
  .debug_macro   0x00000000       0x2e CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ioreq.c.obj
- .debug_line    0x00000000      0xe2a CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ioreq.c.obj
- .debug_str     0x00000000   0x115424 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ioreq.c.obj
+ .debug_line    0x00000000      0xd7a CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ioreq.c.obj
+ .debug_str     0x00000000   0x11542f CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ioreq.c.obj
  .comment       0x00000000       0x44 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ioreq.c.obj
  .debug_frame   0x00000000      0x154 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ioreq.c.obj
  .ARM.attributes
@@ -12077,8 +12077,8 @@ Discarded input sections
  .debug_macro   0x00000000       0x2e CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_pipes.c.obj
  .debug_macro   0x00000000       0x2e CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_pipes.c.obj
  .debug_macro   0x00000000       0x28 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_pipes.c.obj
- .debug_line    0x00000000      0xdd7 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_pipes.c.obj
- .debug_str     0x00000000   0x1153ba CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_pipes.c.obj
+ .debug_line    0x00000000      0xd27 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_pipes.c.obj
+ .debug_str     0x00000000   0x1153c5 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_pipes.c.obj
  .comment       0x00000000       0x44 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_pipes.c.obj
  .debug_frame   0x00000000       0xcc CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_pipes.c.obj
  .ARM.attributes
@@ -12310,8 +12310,8 @@ Discarded input sections
  .debug_macro   0x00000000       0x65 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc.c.obj
  .debug_macro   0x00000000       0xeb CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc.c.obj
  .debug_macro   0x00000000       0x34 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc.c.obj
- .debug_line    0x00000000     0x1450 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc.c.obj
- .debug_str     0x00000000   0x11618b CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc.c.obj
+ .debug_line    0x00000000     0x1390 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc.c.obj
+ .debug_str     0x00000000   0x116196 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc.c.obj
  .comment       0x00000000       0x44 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc.c.obj
  .debug_frame   0x00000000      0x1e4 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc.c.obj
  .ARM.attributes
@@ -12528,8 +12528,8 @@ Discarded input sections
  .debug_macro   0x00000000       0x5f CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc_bot.c.obj
  .debug_macro   0x00000000       0xeb CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc_bot.c.obj
  .debug_macro   0x00000000       0x34 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc_bot.c.obj
- .debug_line    0x00000000     0x10ff CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc_bot.c.obj
- .debug_str     0x00000000   0x1160ff CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc_bot.c.obj
+ .debug_line    0x00000000     0x103f CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc_bot.c.obj
+ .debug_str     0x00000000   0x11610a CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc_bot.c.obj
  .comment       0x00000000       0x44 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc_bot.c.obj
  .debug_frame   0x00000000       0xf0 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc_bot.c.obj
  .ARM.attributes
@@ -12746,8 +12746,8 @@ Discarded input sections
  .debug_macro   0x00000000       0x65 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc_scsi.c.obj
  .debug_macro   0x00000000       0xeb CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc_scsi.c.obj
  .debug_macro   0x00000000       0x34 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc_scsi.c.obj
- .debug_line    0x00000000     0x10d7 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc_scsi.c.obj
- .debug_str     0x00000000   0x115ee7 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc_scsi.c.obj
+ .debug_line    0x00000000     0x1017 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc_scsi.c.obj
+ .debug_str     0x00000000   0x115ef2 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc_scsi.c.obj
  .comment       0x00000000       0x44 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc_scsi.c.obj
  .debug_frame   0x00000000       0xe8 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc_scsi.c.obj
  .ARM.attributes
@@ -13592,8 +13592,8 @@ Discarded input sections
  .debug_macro   0x00000000       0x65 CMakeFiles/CubeMX.dir/USB_HOST/App/usb_host.c.obj
  .debug_macro   0x00000000       0xeb CMakeFiles/CubeMX.dir/USB_HOST/App/usb_host.c.obj
  .debug_macro   0x00000000       0x34 CMakeFiles/CubeMX.dir/USB_HOST/App/usb_host.c.obj
- .debug_line    0x00000000      0xe16 CMakeFiles/CubeMX.dir/USB_HOST/App/usb_host.c.obj
- .debug_str     0x00000000   0x115a6f CMakeFiles/CubeMX.dir/USB_HOST/App/usb_host.c.obj
+ .debug_line    0x00000000      0xd56 CMakeFiles/CubeMX.dir/USB_HOST/App/usb_host.c.obj
+ .debug_str     0x00000000   0x115a7a CMakeFiles/CubeMX.dir/USB_HOST/App/usb_host.c.obj
  .comment       0x00000000       0x44 CMakeFiles/CubeMX.dir/USB_HOST/App/usb_host.c.obj
  .debug_frame   0x00000000       0x54 CMakeFiles/CubeMX.dir/USB_HOST/App/usb_host.c.obj
  .ARM.attributes
@@ -13842,8 +13842,8 @@ Discarded input sections
  .debug_macro   0x00000000       0x2e CMakeFiles/CubeMX.dir/USB_HOST/Target/usbh_conf.c.obj
  .debug_macro   0x00000000       0x2e CMakeFiles/CubeMX.dir/USB_HOST/Target/usbh_conf.c.obj
  .debug_macro   0x00000000       0x28 CMakeFiles/CubeMX.dir/USB_HOST/Target/usbh_conf.c.obj
- .debug_line    0x00000000     0x1084 CMakeFiles/CubeMX.dir/USB_HOST/Target/usbh_conf.c.obj
- .debug_str     0x00000000   0x11638a CMakeFiles/CubeMX.dir/USB_HOST/Target/usbh_conf.c.obj
+ .debug_line    0x00000000      0xfd4 CMakeFiles/CubeMX.dir/USB_HOST/Target/usbh_conf.c.obj
+ .debug_str     0x00000000   0x116395 CMakeFiles/CubeMX.dir/USB_HOST/Target/usbh_conf.c.obj
  .comment       0x00000000       0x44 CMakeFiles/CubeMX.dir/USB_HOST/Target/usbh_conf.c.obj
  .debug_frame   0x00000000      0x384 CMakeFiles/CubeMX.dir/USB_HOST/Target/usbh_conf.c.obj
  .ARM.attributes
@@ -14572,8 +14572,8 @@ Discarded input sections
                 0x00000000       0x18 CMakeFiles/CubeMX.dir/Library/USB/USB_FLASH.c.obj
  .debug_macro   0x00000000       0x11 CMakeFiles/CubeMX.dir/Library/USB/USB_FLASH.c.obj
  .debug_macro   0x00000000      0xab4 CMakeFiles/CubeMX.dir/Library/USB/USB_FLASH.c.obj
- .debug_line    0x00000000       0x6e CMakeFiles/CubeMX.dir/Library/USB/USB_FLASH.c.obj
- .debug_str     0x00000000     0x2e3f CMakeFiles/CubeMX.dir/Library/USB/USB_FLASH.c.obj
+ .debug_line    0x00000000       0x5e CMakeFiles/CubeMX.dir/Library/USB/USB_FLASH.c.obj
+ .debug_str     0x00000000     0x2e4a CMakeFiles/CubeMX.dir/Library/USB/USB_FLASH.c.obj
  .comment       0x00000000       0x44 CMakeFiles/CubeMX.dir/Library/USB/USB_FLASH.c.obj
  .ARM.attributes
                 0x00000000       0x34 CMakeFiles/CubeMX.dir/Library/USB/USB_FLASH.c.obj
@@ -20498,275 +20498,275 @@ LOAD C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/
  .debug_macro   0x0003a28a      0x536 CMakeFiles/CubeMX.dir/Library/Sleep_system/Sleep.c.obj
  .debug_macro   0x0003a7c0      0x51d CMakeFiles/CubeMX.dir/Library/EEPROM/AT24C02.c.obj
 
-.debug_line     0x00000000    0x5a45e
- .debug_line    0x00000000     0x1e61 CMakeFiles/CubeMX.dir/Core/Src/main.c.obj
- .debug_line    0x00001e61     0x11ad CMakeFiles/CubeMX.dir/Core/Src/stm32l4xx_it.c.obj
- .debug_line    0x0000300e      0xc96 CMakeFiles/CubeMX.dir/Core/Src/stm32l4xx_hal_msp.c.obj
- .debug_line    0x00003ca4      0x93c CMakeFiles/CubeMX.dir/Core/Src/stm32l4xx_hal_timebase_tim.c.obj
- .debug_line    0x000045e0      0xb3f CMakeFiles/CubeMX.dir/FATFS/Target/bsp_driver_sd.c.obj
- .debug_line    0x0000511f      0xf0d CMakeFiles/CubeMX.dir/FATFS/Target/sd_diskio.c.obj
- .debug_line    0x0000602c      0x8d9 CMakeFiles/CubeMX.dir/FATFS/Target/fatfs_platform.c.obj
- .debug_line    0x00006905      0xc54 CMakeFiles/CubeMX.dir/FATFS/App/fatfs.c.obj
- .debug_line    0x00007559     0x151c CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pcd.c.obj
- .debug_line    0x00008a75      0xad1 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pcd_ex.c.obj
- .debug_line    0x00009546     0x1cbc CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_usb.c.obj
- .debug_line    0x0000b202      0xcb9 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal.c.obj
- .debug_line    0x0000bebb     0x1130 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rcc.c.obj
- .debug_line    0x0000cfeb     0x16a4 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rcc_ex.c.obj
- .debug_line    0x0000e68f      0xd45 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_gpio.c.obj
- .debug_line    0x0000f3d4     0x3b35 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_i2c.c.obj
- .debug_line    0x00012f09      0xae1 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_i2c_ex.c.obj
- .debug_line    0x000139ea      0xebe CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_dma.c.obj
- .debug_line    0x000148a8      0xa90 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pwr.c.obj
- .debug_line    0x00015338      0xeab CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pwr_ex.c.obj
- .debug_line    0x000161e3      0xe58 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_cortex.c.obj
- .debug_line    0x0001703b     0x20d2 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_adc.c.obj
- .debug_line    0x0001910d     0x1adf CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_adc_ex.c.obj
- .debug_line    0x0001abec     0x12d1 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rtc.c.obj
- .debug_line    0x0001bebd     0x161e CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rtc_ex.c.obj
- .debug_line    0x0001d4db     0x1166 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_sdmmc.c.obj
- .debug_line    0x0001e641     0x20d6 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_sd.c.obj
- .debug_line    0x00020717     0x216b CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi.c.obj
- .debug_line    0x00022882     0x3fb1 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_tim.c.obj
- .debug_line    0x00026833     0x1dc2 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_tim_ex.c.obj
- .debug_line    0x000285f5     0x33a3 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart.c.obj
- .debug_line    0x0002b998      0xdbf CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart_ex.c.obj
- .debug_line    0x0002c757      0x95e CMakeFiles/CubeMX.dir/Core/Src/system_stm32l4xx.c.obj
- .debug_line    0x0002d0b5      0xc7a CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FatFs/src/diskio.c.obj
- .debug_line    0x0002dd2f     0x39be CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FatFs/src/ff.c.obj
- .debug_line    0x000316ed      0xc98 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FatFs/src/ff_gen_drv.c.obj
- .debug_line    0x00032385      0xc7f CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FatFs/src/option/syscall.c.obj
- .debug_line    0x00033004      0xbe4 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/list.c.obj
- .debug_line    0x00033be8     0x1bae CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/queue.c.obj
- .debug_line    0x00035796     0x22ae CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/tasks.c.obj
- .debug_line    0x00037a44     0x126c CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/timers.c.obj
- .debug_line    0x00038cb0     0x24df CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.c.obj
- .debug_line    0x0003b18f      0xe0f CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c.obj
- .debug_line    0x0003bf9e      0xdac CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c.obj
- .debug_line    0x0003cd4a      0x350 CMakeFiles/CubeMX.dir/Core/Src/sysmem.c.obj
- .debug_line    0x0003d09a      0x67f CMakeFiles/CubeMX.dir/Core/Src/syscalls.c.obj
- .debug_line    0x0003d719       0x7a CMakeFiles/CubeMX.dir/startup_stm32l476xx.s.obj
- .debug_line    0x0003d793     0x25de CMakeFiles/CubeMX.dir/Library/Display_i2c/Display.c.obj
- .debug_line    0x0003fd71      0x2f5 CMakeFiles/CubeMX.dir/Library/Display_i2c/hardware/OLED_Fonst.c.obj
- .debug_line    0x00040066      0x2bb CMakeFiles/CubeMX.dir/Library/Display_i2c/hardware/OLED_Icons.c.obj
- .debug_line    0x00040321     0x1217 CMakeFiles/CubeMX.dir/Library/Display_i2c/hardware/OLED.c.obj
- .debug_line    0x00041538     0x1302 CMakeFiles/CubeMX.dir/Library/Keyboard/Keyboard.c.obj
- .debug_line    0x0004283a     0x1096 CMakeFiles/CubeMX.dir/Library/Settings/Settings.c.obj
- .debug_line    0x000438d0     0x1320 CMakeFiles/CubeMX.dir/Library/Internal_per/RTC_data.c.obj
- .debug_line    0x00044bf0     0x10ae CMakeFiles/CubeMX.dir/Library/w25q128/w25q128.c.obj
- .debug_line    0x00045c9e     0x11d0 CMakeFiles/CubeMX.dir/Library/ADC/MS5193T.c.obj
- .debug_line    0x00046e6e     0x1045 CMakeFiles/CubeMX.dir/Library/ADC/Internal_ADC.c.obj
- .debug_line    0x00047eb3     0x131b CMakeFiles/CubeMX.dir/Library/SD_card/SD.c.obj
- .debug_line    0x000491ce     0x108f CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.c.obj
- .debug_line    0x0004a25d     0x12bc CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c.obj
- .debug_line    0x0004b519      0xba9 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.c.obj
- .debug_line    0x0004c0c2     0x1060 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.c.obj
- .debug_line    0x0004d122     0x103a CMakeFiles/CubeMX.dir/USB_DEVICE/App/usb_device.c.obj
- .debug_line    0x0004e15c      0xc49 CMakeFiles/CubeMX.dir/USB_DEVICE/App/usbd_desc.c.obj
- .debug_line    0x0004eda5     0x1108 CMakeFiles/CubeMX.dir/USB_DEVICE/App/usbd_cdc_if.c.obj
- .debug_line    0x0004fead     0x1166 CMakeFiles/CubeMX.dir/USB_DEVICE/Target/usbd_conf.c.obj
- .debug_line    0x00051013     0x10be CMakeFiles/CubeMX.dir/Library/USB/USB_COMPORT.c.obj
- .debug_line    0x000520d1     0x1237 CMakeFiles/CubeMX.dir/Library/UART_GSM/GSM.c.obj
- .debug_line    0x00053308     0x12b4 CMakeFiles/CubeMX.dir/Library/UART_GSM/Parser.c.obj
- .debug_line    0x000545bc     0x124f CMakeFiles/CubeMX.dir/Library/Sleep_system/Sleep.c.obj
- .debug_line    0x0005580b     0x1203 CMakeFiles/CubeMX.dir/Library/EEPROM/AT24C02.c.obj
- .debug_line    0x00056a0e      0x1ee C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-atoi.o)
- .debug_line    0x00056bfc      0x467 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strtol.o)
- .debug_line    0x00057063      0x335 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-snprintf.o)
- .debug_line    0x00057398      0x2b0 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-sprintf.o)
- .debug_line    0x00057648      0x2db C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-sscanf.o)
- .debug_line    0x00057923      0x125 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strcat.o)
- .debug_line    0x00057a48      0x114 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strchr.o)
- .debug_line    0x00057b5c      0x198 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strncmp.o)
- .debug_line    0x00057cf4      0x1a4 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strncpy.o)
- .debug_line    0x00057e98      0x1be C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strstr.o)
- .debug_line    0x00058056      0x185 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-errno.o)
- .debug_line    0x000581db       0xf6 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strcpy.o)
- .debug_line    0x000582d1      0x882 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-svfprintf.o)
- .debug_line    0x00058b53      0x7a1 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-svfscanf.o)
- .debug_line    0x000592f4      0x6f6 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-vfscanf_i.o)
- .debug_line    0x000599ea      0x1d2 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-sccl.o)
- .debug_line    0x00059bbc      0x46a C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-ungetc.o)
- .debug_line    0x0005a026      0x438 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strtoul.o)
+.debug_line     0x00000000    0x57aee
+ .debug_line    0x00000000     0x1c91 CMakeFiles/CubeMX.dir/Core/Src/main.c.obj
+ .debug_line    0x00001c91     0x109d CMakeFiles/CubeMX.dir/Core/Src/stm32l4xx_it.c.obj
+ .debug_line    0x00002d2e      0xc36 CMakeFiles/CubeMX.dir/Core/Src/stm32l4xx_hal_msp.c.obj
+ .debug_line    0x00003964      0x8dc CMakeFiles/CubeMX.dir/Core/Src/stm32l4xx_hal_timebase_tim.c.obj
+ .debug_line    0x00004240      0xadf CMakeFiles/CubeMX.dir/FATFS/Target/bsp_driver_sd.c.obj
+ .debug_line    0x00004d1f      0xe5d CMakeFiles/CubeMX.dir/FATFS/Target/sd_diskio.c.obj
+ .debug_line    0x00005b7c      0x879 CMakeFiles/CubeMX.dir/FATFS/Target/fatfs_platform.c.obj
+ .debug_line    0x000063f5      0xba4 CMakeFiles/CubeMX.dir/FATFS/App/fatfs.c.obj
+ .debug_line    0x00006f99     0x14bc CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pcd.c.obj
+ .debug_line    0x00008455      0xa71 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pcd_ex.c.obj
+ .debug_line    0x00008ec6     0x1c5c CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_usb.c.obj
+ .debug_line    0x0000ab22      0xc59 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal.c.obj
+ .debug_line    0x0000b77b     0x10d0 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rcc.c.obj
+ .debug_line    0x0000c84b     0x1644 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rcc_ex.c.obj
+ .debug_line    0x0000de8f      0xce5 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_gpio.c.obj
+ .debug_line    0x0000eb74     0x3ad5 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_i2c.c.obj
+ .debug_line    0x00012649      0xa81 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_i2c_ex.c.obj
+ .debug_line    0x000130ca      0xe5e CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_dma.c.obj
+ .debug_line    0x00013f28      0xa30 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pwr.c.obj
+ .debug_line    0x00014958      0xe4b CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pwr_ex.c.obj
+ .debug_line    0x000157a3      0xdf8 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_cortex.c.obj
+ .debug_line    0x0001659b     0x2072 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_adc.c.obj
+ .debug_line    0x0001860d     0x1a7f CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_adc_ex.c.obj
+ .debug_line    0x0001a08c     0x1271 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rtc.c.obj
+ .debug_line    0x0001b2fd     0x15be CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rtc_ex.c.obj
+ .debug_line    0x0001c8bb     0x1106 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_sdmmc.c.obj
+ .debug_line    0x0001d9c1     0x2076 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_sd.c.obj
+ .debug_line    0x0001fa37     0x210b CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi.c.obj
+ .debug_line    0x00021b42     0x3f51 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_tim.c.obj
+ .debug_line    0x00025a93     0x1d62 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_tim_ex.c.obj
+ .debug_line    0x000277f5     0x3343 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart.c.obj
+ .debug_line    0x0002ab38      0xd5f CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart_ex.c.obj
+ .debug_line    0x0002b897      0x8fe CMakeFiles/CubeMX.dir/Core/Src/system_stm32l4xx.c.obj
+ .debug_line    0x0002c195      0xbda CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FatFs/src/diskio.c.obj
+ .debug_line    0x0002cd6f     0x391e CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FatFs/src/ff.c.obj
+ .debug_line    0x0003068d      0xbf8 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FatFs/src/ff_gen_drv.c.obj
+ .debug_line    0x00031285      0xbcf CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FatFs/src/option/syscall.c.obj
+ .debug_line    0x00031e54      0xb64 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/list.c.obj
+ .debug_line    0x000329b8     0x1b2e CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/queue.c.obj
+ .debug_line    0x000344e6     0x222e CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/tasks.c.obj
+ .debug_line    0x00036714     0x11ec CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/timers.c.obj
+ .debug_line    0x00037900     0x245f CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.c.obj
+ .debug_line    0x00039d5f      0xd8f CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c.obj
+ .debug_line    0x0003aaee      0xd2c CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c.obj
+ .debug_line    0x0003b81a      0x340 CMakeFiles/CubeMX.dir/Core/Src/sysmem.c.obj
+ .debug_line    0x0003bb5a      0x66f CMakeFiles/CubeMX.dir/Core/Src/syscalls.c.obj
+ .debug_line    0x0003c1c9       0x7a CMakeFiles/CubeMX.dir/startup_stm32l476xx.s.obj
+ .debug_line    0x0003c243     0x24ae CMakeFiles/CubeMX.dir/Library/Display_i2c/Display.c.obj
+ .debug_line    0x0003e6f1      0x2e5 CMakeFiles/CubeMX.dir/Library/Display_i2c/hardware/OLED_Fonst.c.obj
+ .debug_line    0x0003e9d6      0x2ab CMakeFiles/CubeMX.dir/Library/Display_i2c/hardware/OLED_Icons.c.obj
+ .debug_line    0x0003ec81     0x11b7 CMakeFiles/CubeMX.dir/Library/Display_i2c/hardware/OLED.c.obj
+ .debug_line    0x0003fe38     0x11f2 CMakeFiles/CubeMX.dir/Library/Keyboard/Keyboard.c.obj
+ .debug_line    0x0004102a      0xf86 CMakeFiles/CubeMX.dir/Library/Settings/Settings.c.obj
+ .debug_line    0x00041fb0     0x11e0 CMakeFiles/CubeMX.dir/Library/Internal_per/RTC_data.c.obj
+ .debug_line    0x00043190      0xf9e CMakeFiles/CubeMX.dir/Library/w25q128/w25q128.c.obj
+ .debug_line    0x0004412e     0x10c0 CMakeFiles/CubeMX.dir/Library/ADC/MS5193T.c.obj
+ .debug_line    0x000451ee      0xf35 CMakeFiles/CubeMX.dir/Library/ADC/Internal_ADC.c.obj
+ .debug_line    0x00046123     0x11db CMakeFiles/CubeMX.dir/Library/SD_card/SD.c.obj
+ .debug_line    0x000472fe     0x100f CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.c.obj
+ .debug_line    0x0004830d     0x123c CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c.obj
+ .debug_line    0x00049549      0xb29 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.c.obj
+ .debug_line    0x0004a072      0xfd0 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.c.obj
+ .debug_line    0x0004b042      0xf2a CMakeFiles/CubeMX.dir/USB_DEVICE/App/usb_device.c.obj
+ .debug_line    0x0004bf6c      0xbc9 CMakeFiles/CubeMX.dir/USB_DEVICE/App/usbd_desc.c.obj
+ .debug_line    0x0004cb35      0xff8 CMakeFiles/CubeMX.dir/USB_DEVICE/App/usbd_cdc_if.c.obj
+ .debug_line    0x0004db2d     0x10d6 CMakeFiles/CubeMX.dir/USB_DEVICE/Target/usbd_conf.c.obj
+ .debug_line    0x0004ec03      0xfae CMakeFiles/CubeMX.dir/Library/USB/USB_COMPORT.c.obj
+ .debug_line    0x0004fbb1     0x1127 CMakeFiles/CubeMX.dir/Library/UART_GSM/GSM.c.obj
+ .debug_line    0x00050cd8     0x11a4 CMakeFiles/CubeMX.dir/Library/UART_GSM/Parser.c.obj
+ .debug_line    0x00051e7c     0x112f CMakeFiles/CubeMX.dir/Library/Sleep_system/Sleep.c.obj
+ .debug_line    0x00052fab     0x10f3 CMakeFiles/CubeMX.dir/Library/EEPROM/AT24C02.c.obj
+ .debug_line    0x0005409e      0x1ee C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-atoi.o)
+ .debug_line    0x0005428c      0x467 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strtol.o)
+ .debug_line    0x000546f3      0x335 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-snprintf.o)
+ .debug_line    0x00054a28      0x2b0 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-sprintf.o)
+ .debug_line    0x00054cd8      0x2db C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-sscanf.o)
+ .debug_line    0x00054fb3      0x125 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strcat.o)
+ .debug_line    0x000550d8      0x114 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strchr.o)
+ .debug_line    0x000551ec      0x198 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strncmp.o)
+ .debug_line    0x00055384      0x1a4 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strncpy.o)
+ .debug_line    0x00055528      0x1be C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strstr.o)
+ .debug_line    0x000556e6      0x185 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-errno.o)
+ .debug_line    0x0005586b       0xf6 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strcpy.o)
+ .debug_line    0x00055961      0x882 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-svfprintf.o)
+ .debug_line    0x000561e3      0x7a1 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-svfscanf.o)
+ .debug_line    0x00056984      0x6f6 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-vfscanf_i.o)
+ .debug_line    0x0005707a      0x1d2 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-sccl.o)
+ .debug_line    0x0005724c      0x46a C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-ungetc.o)
+ .debug_line    0x000576b6      0x438 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strtoul.o)
 
-.debug_str      0x00000000   0x12fcc4
- .debug_str     0x00000000   0x11b394 CMakeFiles/CubeMX.dir/Core/Src/main.c.obj
-                             0x11bda1 (size before relaxing)
- .debug_str     0x0011b394      0x5d3 CMakeFiles/CubeMX.dir/Core/Src/stm32l4xx_it.c.obj
-                             0x11838b (size before relaxing)
- .debug_str     0x0011b967      0x1d7 CMakeFiles/CubeMX.dir/Core/Src/stm32l4xx_hal_msp.c.obj
-                             0x10da24 (size before relaxing)
- .debug_str     0x0011bb3e      0x10c CMakeFiles/CubeMX.dir/Core/Src/stm32l4xx_hal_timebase_tim.c.obj
-                             0x10c487 (size before relaxing)
- .debug_str     0x0011bc4a      0x2cb CMakeFiles/CubeMX.dir/FATFS/Target/bsp_driver_sd.c.obj
-                             0x10c5d2 (size before relaxing)
- .debug_str     0x0011bf15      0x301 CMakeFiles/CubeMX.dir/FATFS/Target/sd_diskio.c.obj
-                             0x11447a (size before relaxing)
- .debug_str     0x0011c216       0x54 CMakeFiles/CubeMX.dir/FATFS/Target/fatfs_platform.c.obj
-                             0x10b8cf (size before relaxing)
- .debug_str     0x0011c26a      0x146 CMakeFiles/CubeMX.dir/FATFS/App/fatfs.c.obj
-                             0x110fca (size before relaxing)
- .debug_str     0x0011c3b0      0x83d CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pcd.c.obj
-                             0x10c458 (size before relaxing)
- .debug_str     0x0011cbed      0x1b3 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pcd_ex.c.obj
-                             0x10be26 (size before relaxing)
- .debug_str     0x0011cda0      0x4a2 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_usb.c.obj
-                             0x10c330 (size before relaxing)
- .debug_str     0x0011d242      0x5ec CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal.c.obj
-                             0x10c56a (size before relaxing)
- .debug_str     0x0011d82e      0x3fd CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rcc.c.obj
-                             0x10c01d (size before relaxing)
- .debug_str     0x0011dc2b      0x406 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rcc_ex.c.obj
-                             0x10c196 (size before relaxing)
- .debug_str     0x0011e031       0xdc CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_gpio.c.obj
-                             0x10bb50 (size before relaxing)
- .debug_str     0x0011e10d      0xddb CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_i2c.c.obj
-                             0x10cbe6 (size before relaxing)
- .debug_str     0x0011eee8       0xeb CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_i2c_ex.c.obj
-                             0x10bf0e (size before relaxing)
- .debug_str     0x0011efd3      0x216 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_dma.c.obj
-                             0x10bc41 (size before relaxing)
- .debug_str     0x0011f1e9      0x342 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pwr.c.obj
-                             0x10bd42 (size before relaxing)
- .debug_str     0x0011f52b      0x3ff CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pwr_ex.c.obj
-                             0x10bf32 (size before relaxing)
- .debug_str     0x0011f92a      0x338 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_cortex.c.obj
-                             0x10c21e (size before relaxing)
- .debug_str     0x0011fc62      0xa79 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_adc.c.obj
-                             0x10c81e (size before relaxing)
- .debug_str     0x001206db      0x698 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_adc_ex.c.obj
-                             0x10c7c7 (size before relaxing)
- .debug_str     0x00120d73      0x359 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rtc.c.obj
-                             0x10be62 (size before relaxing)
- .debug_str     0x001210cc      0x5a0 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rtc_ex.c.obj
-                             0x10c17d (size before relaxing)
- .debug_str     0x0012166c      0x518 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_sdmmc.c.obj
-                             0x10be33 (size before relaxing)
- .debug_str     0x00121b84      0x608 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_sd.c.obj
-                             0x10c6e0 (size before relaxing)
- .debug_str     0x0012218c      0x599 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi.c.obj
-                             0x10c1f8 (size before relaxing)
- .debug_str     0x00122725      0xdf0 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_tim.c.obj
-                             0x10cd17 (size before relaxing)
- .debug_str     0x00123515      0x5ac CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_tim_ex.c.obj
-                             0x10c62b (size before relaxing)
- .debug_str     0x00123ac1      0x888 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart.c.obj
-                             0x10c72f (size before relaxing)
- .debug_str     0x00124349      0x22a CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart_ex.c.obj
-                             0x10bf5b (size before relaxing)
- .debug_str     0x00124573       0x73 CMakeFiles/CubeMX.dir/Core/Src/system_stm32l4xx.c.obj
-                             0x10b9d7 (size before relaxing)
- .debug_str     0x001245e6       0x8a CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FatFs/src/diskio.c.obj
-                             0x110eb6 (size before relaxing)
- .debug_str     0x00124670     0x1206 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FatFs/src/ff.c.obj
-                             0x1121d1 (size before relaxing)
- .debug_str     0x00125876       0xc4 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FatFs/src/ff_gen_drv.c.obj
-                             0x110f1b (size before relaxing)
- .debug_str     0x0012593a       0xb0 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FatFs/src/option/syscall.c.obj
-                             0x110da7 (size before relaxing)
- .debug_str     0x001259ea      0x160 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/list.c.obj
-                             0x111c2a (size before relaxing)
- .debug_str     0x00125b4a      0xbe8 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/queue.c.obj
-                             0x11376a (size before relaxing)
- .debug_str     0x00126732     0x1454 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/tasks.c.obj
-                             0x11432a (size before relaxing)
- .debug_str     0x00127b86      0x6ac CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/timers.c.obj
-                             0x113caf (size before relaxing)
- .debug_str     0x00128232      0xdc9 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.c.obj
-                             0x115fd4 (size before relaxing)
- .debug_str     0x00128ffb      0x357 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c.obj
-                             0x11256c (size before relaxing)
- .debug_str     0x00129352      0x7b6 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c.obj
-                             0x10fe8a (size before relaxing)
- .debug_str     0x00129b08      0x38f CMakeFiles/CubeMX.dir/Core/Src/sysmem.c.obj
-                               0x5b1c (size before relaxing)
- .debug_str     0x00129e97     0x1b4c CMakeFiles/CubeMX.dir/Core/Src/syscalls.c.obj
-                               0x93a9 (size before relaxing)
- .debug_str     0x0012b9e3       0x68 CMakeFiles/CubeMX.dir/startup_stm32l476xx.s.obj
-                                 0xaa (size before relaxing)
- .debug_str     0x0012ba4b     0x108f CMakeFiles/CubeMX.dir/Library/Display_i2c/Display.c.obj
-                             0x119847 (size before relaxing)
- .debug_str     0x0012cada       0xf8 CMakeFiles/CubeMX.dir/Library/Display_i2c/hardware/OLED_Fonst.c.obj
-                               0x3e95 (size before relaxing)
- .debug_str     0x0012cbd2       0x8b CMakeFiles/CubeMX.dir/Library/Display_i2c/hardware/OLED_Icons.c.obj
-                               0x3e43 (size before relaxing)
- .debug_str     0x0012cc5d      0x2d9 CMakeFiles/CubeMX.dir/Library/Display_i2c/hardware/OLED.c.obj
-                             0x10fc76 (size before relaxing)
- .debug_str     0x0012cf36       0xfa CMakeFiles/CubeMX.dir/Library/Keyboard/Keyboard.c.obj
-                             0x118188 (size before relaxing)
- .debug_str     0x0012d030      0x1a8 CMakeFiles/CubeMX.dir/Library/Settings/Settings.c.obj
-                             0x11853e (size before relaxing)
- .debug_str     0x0012d1d8       0x9e CMakeFiles/CubeMX.dir/Library/Internal_per/RTC_data.c.obj
-                             0x117f17 (size before relaxing)
- .debug_str     0x0012d276      0x16d CMakeFiles/CubeMX.dir/Library/w25q128/w25q128.c.obj
-                             0x117a01 (size before relaxing)
- .debug_str     0x0012d3e3      0x1e0 CMakeFiles/CubeMX.dir/Library/ADC/MS5193T.c.obj
-                             0x117c81 (size before relaxing)
- .debug_str     0x0012d5c3       0x6d CMakeFiles/CubeMX.dir/Library/ADC/Internal_ADC.c.obj
-                             0x1179b6 (size before relaxing)
- .debug_str     0x0012d630       0xb2 CMakeFiles/CubeMX.dir/Library/SD_card/SD.c.obj
-                             0x118b56 (size before relaxing)
- .debug_str     0x0012d6e2      0x77f CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.c.obj
-                             0x11024b (size before relaxing)
- .debug_str     0x0012de61      0x18b CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c.obj
-                             0x110076 (size before relaxing)
- .debug_str     0x0012dfec       0xbd CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.c.obj
-                             0x10ff4b (size before relaxing)
- .debug_str     0x0012e0a9      0x2c2 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.c.obj
-                             0x11093c (size before relaxing)
- .debug_str     0x0012e36b       0xf9 CMakeFiles/CubeMX.dir/USB_DEVICE/App/usb_device.c.obj
-                             0x117982 (size before relaxing)
- .debug_str     0x0012e464      0x2cb CMakeFiles/CubeMX.dir/USB_DEVICE/App/usbd_desc.c.obj
-                             0x10fe75 (size before relaxing)
- .debug_str     0x0012e72f      0x10f CMakeFiles/CubeMX.dir/USB_DEVICE/App/usbd_cdc_if.c.obj
-                             0x117a81 (size before relaxing)
- .debug_str     0x0012e83e       0xa0 CMakeFiles/CubeMX.dir/USB_DEVICE/Target/usbd_conf.c.obj
-                             0x111512 (size before relaxing)
- .debug_str     0x0012e8de       0xaf CMakeFiles/CubeMX.dir/Library/USB/USB_COMPORT.c.obj
-                             0x1179bd (size before relaxing)
- .debug_str     0x0012e98d      0x115 CMakeFiles/CubeMX.dir/Library/UART_GSM/GSM.c.obj
-                             0x117e67 (size before relaxing)
- .debug_str     0x0012eaa2       0xde CMakeFiles/CubeMX.dir/Library/UART_GSM/Parser.c.obj
-                             0x117bbe (size before relaxing)
- .debug_str     0x0012eb80      0x152 CMakeFiles/CubeMX.dir/Library/Sleep_system/Sleep.c.obj
-                             0x117d11 (size before relaxing)
- .debug_str     0x0012ecd2      0x103 CMakeFiles/CubeMX.dir/Library/EEPROM/AT24C02.c.obj
-                             0x117cbe (size before relaxing)
- .debug_str     0x0012edd5      0x422 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-atoi.o)
+.debug_str      0x00000000   0x12f86f
+ .debug_str     0x00000000   0x11b39f CMakeFiles/CubeMX.dir/Core/Src/main.c.obj
+                             0x11bdac (size before relaxing)
+ .debug_str     0x0011b39f      0x5c3 CMakeFiles/CubeMX.dir/Core/Src/stm32l4xx_it.c.obj
+                             0x118396 (size before relaxing)
+ .debug_str     0x0011b962      0x1c7 CMakeFiles/CubeMX.dir/Core/Src/stm32l4xx_hal_msp.c.obj
+                             0x10da2f (size before relaxing)
+ .debug_str     0x0011bb29       0xfc CMakeFiles/CubeMX.dir/Core/Src/stm32l4xx_hal_timebase_tim.c.obj
+                             0x10c492 (size before relaxing)
+ .debug_str     0x0011bc25      0x2bb CMakeFiles/CubeMX.dir/FATFS/Target/bsp_driver_sd.c.obj
+                             0x10c5dd (size before relaxing)
+ .debug_str     0x0011bee0      0x2f1 CMakeFiles/CubeMX.dir/FATFS/Target/sd_diskio.c.obj
+                             0x114485 (size before relaxing)
+ .debug_str     0x0011c1d1       0x44 CMakeFiles/CubeMX.dir/FATFS/Target/fatfs_platform.c.obj
+                             0x10b8da (size before relaxing)
+ .debug_str     0x0011c215      0x136 CMakeFiles/CubeMX.dir/FATFS/App/fatfs.c.obj
+                             0x110fd5 (size before relaxing)
+ .debug_str     0x0011c34b      0x82d CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pcd.c.obj
+                             0x10c463 (size before relaxing)
+ .debug_str     0x0011cb78      0x1a3 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pcd_ex.c.obj
+                             0x10be31 (size before relaxing)
+ .debug_str     0x0011cd1b      0x492 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_usb.c.obj
+                             0x10c33b (size before relaxing)
+ .debug_str     0x0011d1ad      0x5dc CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal.c.obj
+                             0x10c575 (size before relaxing)
+ .debug_str     0x0011d789      0x3ed CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rcc.c.obj
+                             0x10c028 (size before relaxing)
+ .debug_str     0x0011db76      0x3f6 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rcc_ex.c.obj
+                             0x10c1a1 (size before relaxing)
+ .debug_str     0x0011df6c       0xcc CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_gpio.c.obj
+                             0x10bb5b (size before relaxing)
+ .debug_str     0x0011e038      0xdcb CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_i2c.c.obj
+                             0x10cbf1 (size before relaxing)
+ .debug_str     0x0011ee03       0xdb CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_i2c_ex.c.obj
+                             0x10bf19 (size before relaxing)
+ .debug_str     0x0011eede      0x206 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_dma.c.obj
+                             0x10bc4c (size before relaxing)
+ .debug_str     0x0011f0e4      0x332 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pwr.c.obj
+                             0x10bd4d (size before relaxing)
+ .debug_str     0x0011f416      0x3ef CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pwr_ex.c.obj
+                             0x10bf3d (size before relaxing)
+ .debug_str     0x0011f805      0x328 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_cortex.c.obj
+                             0x10c229 (size before relaxing)
+ .debug_str     0x0011fb2d      0xa69 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_adc.c.obj
+                             0x10c829 (size before relaxing)
+ .debug_str     0x00120596      0x688 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_adc_ex.c.obj
+                             0x10c7d2 (size before relaxing)
+ .debug_str     0x00120c1e      0x349 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rtc.c.obj
+                             0x10be6d (size before relaxing)
+ .debug_str     0x00120f67      0x590 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rtc_ex.c.obj
+                             0x10c188 (size before relaxing)
+ .debug_str     0x001214f7      0x508 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_sdmmc.c.obj
+                             0x10be3e (size before relaxing)
+ .debug_str     0x001219ff      0x5f8 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_sd.c.obj
+                             0x10c6eb (size before relaxing)
+ .debug_str     0x00121ff7      0x589 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi.c.obj
+                             0x10c203 (size before relaxing)
+ .debug_str     0x00122580      0xde0 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_tim.c.obj
+                             0x10cd22 (size before relaxing)
+ .debug_str     0x00123360      0x59c CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_tim_ex.c.obj
+                             0x10c636 (size before relaxing)
+ .debug_str     0x001238fc      0x878 CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart.c.obj
+                             0x10c73a (size before relaxing)
+ .debug_str     0x00124174      0x21a CMakeFiles/CubeMX.dir/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart_ex.c.obj
+                             0x10bf66 (size before relaxing)
+ .debug_str     0x0012438e       0x63 CMakeFiles/CubeMX.dir/Core/Src/system_stm32l4xx.c.obj
+                             0x10b9e2 (size before relaxing)
+ .debug_str     0x001243f1       0x7a CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FatFs/src/diskio.c.obj
+                             0x110ec1 (size before relaxing)
+ .debug_str     0x0012446b     0x11f6 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FatFs/src/ff.c.obj
+                             0x1121dc (size before relaxing)
+ .debug_str     0x00125661       0xb4 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FatFs/src/ff_gen_drv.c.obj
+                             0x110f26 (size before relaxing)
+ .debug_str     0x00125715       0xa0 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FatFs/src/option/syscall.c.obj
+                             0x110db2 (size before relaxing)
+ .debug_str     0x001257b5      0x150 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/list.c.obj
+                             0x111c35 (size before relaxing)
+ .debug_str     0x00125905      0xbd8 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/queue.c.obj
+                             0x113775 (size before relaxing)
+ .debug_str     0x001264dd     0x1444 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/tasks.c.obj
+                             0x114335 (size before relaxing)
+ .debug_str     0x00127921      0x69c CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/timers.c.obj
+                             0x113cba (size before relaxing)
+ .debug_str     0x00127fbd      0xdb9 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.c.obj
+                             0x115fdf (size before relaxing)
+ .debug_str     0x00128d76      0x347 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c.obj
+                             0x112577 (size before relaxing)
+ .debug_str     0x001290bd      0x7a6 CMakeFiles/CubeMX.dir/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c.obj
+                             0x10fe95 (size before relaxing)
+ .debug_str     0x00129863      0x37f CMakeFiles/CubeMX.dir/Core/Src/sysmem.c.obj
+                               0x5b27 (size before relaxing)
+ .debug_str     0x00129be2     0x1b3c CMakeFiles/CubeMX.dir/Core/Src/syscalls.c.obj
+                               0x93b4 (size before relaxing)
+ .debug_str     0x0012b71e       0x58 CMakeFiles/CubeMX.dir/startup_stm32l476xx.s.obj
+                                 0x8a (size before relaxing)
+ .debug_str     0x0012b776     0x107f CMakeFiles/CubeMX.dir/Library/Display_i2c/Display.c.obj
+                             0x119852 (size before relaxing)
+ .debug_str     0x0012c7f5       0xe8 CMakeFiles/CubeMX.dir/Library/Display_i2c/hardware/OLED_Fonst.c.obj
+                               0x3ea0 (size before relaxing)
+ .debug_str     0x0012c8dd       0x7b CMakeFiles/CubeMX.dir/Library/Display_i2c/hardware/OLED_Icons.c.obj
+                               0x3e4e (size before relaxing)
+ .debug_str     0x0012c958      0x2c9 CMakeFiles/CubeMX.dir/Library/Display_i2c/hardware/OLED.c.obj
+                             0x10fc81 (size before relaxing)
+ .debug_str     0x0012cc21       0xea CMakeFiles/CubeMX.dir/Library/Keyboard/Keyboard.c.obj
+                             0x118193 (size before relaxing)
+ .debug_str     0x0012cd0b      0x198 CMakeFiles/CubeMX.dir/Library/Settings/Settings.c.obj
+                             0x118549 (size before relaxing)
+ .debug_str     0x0012cea3       0x8e CMakeFiles/CubeMX.dir/Library/Internal_per/RTC_data.c.obj
+                             0x117f22 (size before relaxing)
+ .debug_str     0x0012cf31      0x15d CMakeFiles/CubeMX.dir/Library/w25q128/w25q128.c.obj
+                             0x117a0c (size before relaxing)
+ .debug_str     0x0012d08e      0x1d0 CMakeFiles/CubeMX.dir/Library/ADC/MS5193T.c.obj
+                             0x117c8c (size before relaxing)
+ .debug_str     0x0012d25e       0x5d CMakeFiles/CubeMX.dir/Library/ADC/Internal_ADC.c.obj
+                             0x1179c1 (size before relaxing)
+ .debug_str     0x0012d2bb       0xa2 CMakeFiles/CubeMX.dir/Library/SD_card/SD.c.obj
+                             0x118b61 (size before relaxing)
+ .debug_str     0x0012d35d      0x76f CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.c.obj
+                             0x110256 (size before relaxing)
+ .debug_str     0x0012dacc      0x17b CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c.obj
+                             0x110081 (size before relaxing)
+ .debug_str     0x0012dc47       0xad CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.c.obj
+                             0x10ff56 (size before relaxing)
+ .debug_str     0x0012dcf4      0x2b2 CMakeFiles/CubeMX.dir/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.c.obj
+                             0x110947 (size before relaxing)
+ .debug_str     0x0012dfa6       0xe9 CMakeFiles/CubeMX.dir/USB_DEVICE/App/usb_device.c.obj
+                             0x11798d (size before relaxing)
+ .debug_str     0x0012e08f      0x2bb CMakeFiles/CubeMX.dir/USB_DEVICE/App/usbd_desc.c.obj
+                             0x10fe80 (size before relaxing)
+ .debug_str     0x0012e34a       0xff CMakeFiles/CubeMX.dir/USB_DEVICE/App/usbd_cdc_if.c.obj
+                             0x117a8c (size before relaxing)
+ .debug_str     0x0012e449       0x90 CMakeFiles/CubeMX.dir/USB_DEVICE/Target/usbd_conf.c.obj
+                             0x11151d (size before relaxing)
+ .debug_str     0x0012e4d9       0x9f CMakeFiles/CubeMX.dir/Library/USB/USB_COMPORT.c.obj
+                             0x1179c8 (size before relaxing)
+ .debug_str     0x0012e578      0x105 CMakeFiles/CubeMX.dir/Library/UART_GSM/GSM.c.obj
+                             0x117e72 (size before relaxing)
+ .debug_str     0x0012e67d       0xce CMakeFiles/CubeMX.dir/Library/UART_GSM/Parser.c.obj
+                             0x117bc9 (size before relaxing)
+ .debug_str     0x0012e74b      0x142 CMakeFiles/CubeMX.dir/Library/Sleep_system/Sleep.c.obj
+                             0x117d1c (size before relaxing)
+ .debug_str     0x0012e88d       0xf3 CMakeFiles/CubeMX.dir/Library/EEPROM/AT24C02.c.obj
+                             0x117cc9 (size before relaxing)
+ .debug_str     0x0012e980      0x422 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-atoi.o)
                                 0x535 (size before relaxing)
- .debug_str     0x0012f1f7      0x21b C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strtol.o)
+ .debug_str     0x0012eda2      0x21b C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strtol.o)
                                 0x7b2 (size before relaxing)
- .debug_str     0x0012f412       0x74 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-snprintf.o)
+ .debug_str     0x0012efbd       0x74 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-snprintf.o)
                                 0x57f (size before relaxing)
- .debug_str     0x0012f486       0x65 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-sprintf.o)
+ .debug_str     0x0012f031       0x65 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-sprintf.o)
                                 0x570 (size before relaxing)
- .debug_str     0x0012f4eb       0x7c C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-sscanf.o)
+ .debug_str     0x0012f096       0x7c C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-sscanf.o)
                                 0x587 (size before relaxing)
- .debug_str     0x0012f567       0x5a C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strcat.o)
+ .debug_str     0x0012f112       0x5a C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strcat.o)
                                 0x20a (size before relaxing)
- .debug_str     0x0012f5c1       0x61 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strchr.o)
+ .debug_str     0x0012f16c       0x61 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strchr.o)
                                 0x20a (size before relaxing)
- .debug_str     0x0012f622       0x5b C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strncmp.o)
+ .debug_str     0x0012f1cd       0x5b C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strncmp.o)
                                 0x213 (size before relaxing)
- .debug_str     0x0012f67d       0x71 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strncpy.o)
+ .debug_str     0x0012f228       0x71 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strncpy.o)
                                 0x22f (size before relaxing)
- .debug_str     0x0012f6ee       0x5a C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strstr.o)
+ .debug_str     0x0012f299       0x5a C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strstr.o)
                                 0x211 (size before relaxing)
- .debug_str     0x0012f748       0x58 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-errno.o)
+ .debug_str     0x0012f2f3       0x58 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-errno.o)
                                 0x52b (size before relaxing)
- .debug_str     0x0012f7a0       0x5f C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strcpy.o)
+ .debug_str     0x0012f34b       0x5f C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strcpy.o)
                                 0x20f (size before relaxing)
- .debug_str     0x0012f7ff      0x153 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-svfprintf.o)
+ .debug_str     0x0012f3aa      0x153 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-svfprintf.o)
                                 0x87a (size before relaxing)
- .debug_str     0x0012f952      0x12e C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-svfscanf.o)
+ .debug_str     0x0012f4fd      0x12e C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-svfscanf.o)
                                 0x85c (size before relaxing)
- .debug_str     0x0012fa80       0xad C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-vfscanf_i.o)
+ .debug_str     0x0012f62b       0xad C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-nano-vfscanf_i.o)
                                 0x829 (size before relaxing)
- .debug_str     0x0012fb2d       0x60 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-sccl.o)
+ .debug_str     0x0012f6d8       0x60 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-sccl.o)
                                 0x217 (size before relaxing)
- .debug_str     0x0012fb8d       0xc9 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-ungetc.o)
+ .debug_str     0x0012f738       0xc9 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-ungetc.o)
                                 0x5d2 (size before relaxing)
- .debug_str     0x0012fc56       0x6e C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strtoul.o)
+ .debug_str     0x0012f801       0x6e C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strtoul.o)
                                 0x7af (size before relaxing)
 
 .comment        0x00000000       0x43
@@ -20861,9 +20861,9 @@ LOAD C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/
  .comment       0x00000043       0x44 C:/ST/STM32CubeCLT_1.16.0/GNU-tools-for-STM32/bin/../lib/gcc/arm-none-eabi/12.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libg_nano.a(libc_a-strtoul.o)
 
 .debug_line_str
-                0x00000000       0x8e
+                0x00000000       0x6e
  .debug_line_str
-                0x00000000       0x8e CMakeFiles/CubeMX.dir/startup_stm32l476xx.s.obj
+                0x00000000       0x6e CMakeFiles/CubeMX.dir/startup_stm32l476xx.s.obj
 
 .debug_loclists
                 0x00000000     0x1853
