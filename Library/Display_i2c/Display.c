@@ -337,19 +337,37 @@ menuSelect_item_char GVL_Correct = {
 }; // Промежуточная переменная, куда сохраняется настройка до сохранения (char)
 
 menuSelect_item_char Serial_number = {
-    {'.', '\0', '\0'},   // разделители, если нету, то '\0', последний может использоваться в качестве приписки
-    3,                  // колтичество ячеек данных
+    {'\0', '\0', '\0'},   // разделители, если нету, то '\0', последний может использоваться в качестве приписки
+    1,                  // колтичество ячеек данных
     0,                  // завершение редактирования при нажатии вправо на краю данных 1-включено, 0-выключено 
     '\0',
     //  ЯЧЕЙКИ
-    {&EEPROM.version.VER_PCB_IDEOLOGY, &EEPROM.version.VER_PCB_VERSION, &EEPROM.version.VER_PCB_INDEX},  // исходные значения
-    {0, 0, 3},                   // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов)
+    {&EEPROM.version.VERSION_PCB, '\0', '\0'},  // исходные значения
+    {3, 0, 0},                   // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов)
     {0, 0},                      // знаковые данные или беззнаковые
-    {2, 2, 4},                   // ширина ячеек (001 - ширина 3, 23 - ширина 2)
-    {2, 2, 0},                   // ширина ячеек вне редактирования (001 - ширина 3, 23 - ширина 2)
+    {8, 0, 0},                   // ширина ячеек (001 - ширина 3, 23 - ширина 2)
+    {0, 0, 0},                   // ширина ячеек вне редактирования (001 - ширина 3, 23 - ширина 2)
     {"\0", "\0", "\0"},          // промежуточное значение
-    {99, 99, '\0'},              // максимальные значения
-    {0, 0, '\0'},                // минимальные значения
+    {'\0', '\0', '\0'},              // максимальные значения
+    {'\0', '\0', '\0'},                // минимальные значения
+    Save_general_format,                    // ссылка на функцию завершения работы
+    '\0'
+}; // Промежуточная переменная, куда сохраняется настройка до сохранения (char)
+
+menuSelect_item_char Password = {
+    {'\0', '\0', '\0'},   // разделители, если нету, то '\0', последний может использоваться в качестве приписки
+    1,                  // колтичество ячеек данных
+    0,                  // завершение редактирования при нажатии вправо на краю данных 1-включено, 0-выключено 
+    '\0',
+    //  ЯЧЕЙКИ
+    {&EEPROM.version.password, '\0', '\0'},  // исходные значения
+    {3, 0, 0},                   // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов)
+    {0, 0},                      // знаковые данные или беззнаковые
+    {5, 0, 0},                   // ширина ячеек (001 - ширина 3, 23 - ширина 2)
+    {0, 0, 0},                   // ширина ячеек вне редактирования (001 - ширина 3, 23 - ширина 2)
+    {"\0", "\0", "\0"},          // промежуточное значение
+    {'\0', '\0', '\0'},              // максимальные значения
+    {'\0', '\0', '\0'},                // минимальные значения
     Save_general_format,                    // ссылка на функцию завершения работы
     '\0'
 }; // Промежуточная переменная, куда сохраняется настройка до сохранения (char)
@@ -428,7 +446,7 @@ MAKE_MENU(Menu_1, "Режимы", "Modes", 0, UPTADE_OFF, NO_SIGNED, Menu_2, PREVISION
     MAKE_MENU(Menu_1_2, "Диагностика", "Test check", 0, UPTADE_OFF, NO_SIGNED, Menu_1_3, Menu_1_1, Menu_1, Menu_1_2_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
         MAKE_MENU(Menu_1_2_1, "Код ошибки", "Error code", 0, UPTADE_OFF, NO_SIGNED, Menu_1_2_2, PREVISION_MENU, Menu_1_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
         MAKE_MENU(Menu_1_2_2, "Полный тест", "Full test", 0, UPTADE_OFF, NO_SIGNED, Menu_1_2_3, Menu_1_2_1, Menu_1_2, CHILD_MENU, full_test, SELECT_BAR, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_1_2_3, "АКБ", "BAT", 0, UPTADE_OFF, Unit_voltage, Menu_1_2_4, Menu_1_2_2, Menu_1_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_AKB_volts_char);
+        MAKE_MENU(Menu_1_2_3, "АКБ", "BAT", 0, UPTADE_OFF, Unit_voltage, Menu_1_2_4, Menu_1_2_2, Menu_1_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, IntADC.ADC_AKB_volts_char);
         MAKE_MENU(Menu_1_2_4, "АЦП", "ADC", 0, UPTADE_OFF, NO_SIGNED, Menu_1_2_5, Menu_1_2_3, Menu_1_2, Menu_1_2_4_1, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_status_char);
             MAKE_MENU(Menu_1_2_4_1, "АЦП", "ADC", 0, UPTADE_OFF, NO_SIGNED, Menu_1_2_4_2, PREVISION_MENU, Menu_1_2_4, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_value_char);
             MAKE_MENU(Menu_1_2_4_2, "Показания", "Metering values", 0, UPTADE_ON, UNITS_MODE_DATA, Menu_1_2_4_3, Menu_1_2_4_1, Menu_1_2_4, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char);
@@ -451,7 +469,7 @@ MAKE_MENU(Menu_1, "Режимы", "Modes", 0, UPTADE_OFF, NO_SIGNED, Menu_2, PREVISION
         MAKE_MENU(Menu_1_2_8, "FLASH", "FLASH", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_1_2_7, Menu_1_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, SD_status_char);
         MAKE_MENU(Menu_1_3, "Показания", "Sensor reading", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_1_2, Menu_1, Menu_1_3_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
         MAKE_MENU(Menu_1_3_1, "Тепература", "Temperature ", 0, UPTADE_ON, Unit_degree, Menu_1_3_2, PREVISION_MENU, Menu_1_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_MS5193T_temp_char);
-        MAKE_MENU(Menu_1_3_2, "Глубина", "Data", 0, UPTADE_ON, UNITS_MODE_DATA, Menu_1_3_3, Menu_1_3_1, Menu_1_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_value_char);
+        MAKE_MENU(Menu_1_3_2, "Глубина", "Data", 0, UPTADE_ON, UNITS_MODE_DATA, Menu_1_3_3, Menu_1_3_1, Menu_1_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char);
         MAKE_MENU(Menu_1_3_3, "УГВ", "GWL", 0, UPTADE_ON, UNITS_MODE_DATA, NEXT_MENU, Menu_1_3_2, Menu_1_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_correct_char);
 MAKE_MENU(Menu_2, "Настройки", "Settings", 0, UPTADE_OFF, NO_SIGNED, Menu_3, Menu_1, PARENT_MENU, Menu_2_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
     MAKE_MENU(Menu_2_1, "Дата", "Date", 0, UPTADE_OFF, NO_SIGNED, Menu_2_2, PREVISION_MENU, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Date_redact, DATA_OUT);
@@ -469,23 +487,25 @@ MAKE_MENU(Menu_2, "Настройки", "Settings", 0, UPTADE_OFF, NO_SIGNED, Menu_3, Men
     MAKE_MENU(Menu_2_13, "Инжен. меню", "Administration menu", 0, UPTADE_OFF, NO_SIGNED, Menu_2_14, Menu_2_12, Menu_2, Menu_2_13_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
         MAKE_MENU(Menu_2_13_1, "Заставка", "Startup screen", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13_2, PREVISION_MENU, Menu_2_13, CHILD_MENU, ACTION_MENU, SCREENSAVER, DATA_IN, DATA_OUT);
         MAKE_MENU(Menu_2_13_2, "ID устр.", "ID Device", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13_3, Menu_2_13_1, Menu_2_13, CHILD_MENU, ACTION_MENU, SELECT_BAR, Serial_number, DATA_OUT);
-        MAKE_MENU(Menu_2_13_3, "Обновление ПО", "Update of software", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13_4, Menu_2_13_2, Menu_2_13, CHILD_MENU, Programm_Update_USB, SELECT_BAR, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_13_4, "Режим USB", "USB mode", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13_5, Menu_2_13_3, Menu_2_13, CHILD_MENU, ACTION_MENU, USB_MODE_STRUCT, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_13_5, "Калибровка шутна(верх)", "Shunt calibration(up)", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13_6, Menu_2_13_4, Menu_2_13, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_13_6, "Калибровка шутна(низ)", "Shunt calibration(low)", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13_7, Menu_2_13_5, Menu_2_13, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_13_7, "Сопр. шунта", "Shunt resistance", 0, UPTADE_OFF, Unit_resistance, Menu_2_13_8, Menu_2_13_6, Menu_2_13, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_13_8, "Темп. корр.", "Offset temperature", 0, UPTADE_OFF, Unit_degree, Menu_2_13_9, Menu_2_13_7, Menu_2_13, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_13_9, "Кол. пит 24", "Col. DC In 24", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13_10, Menu_2_13_8, Menu_2_13, CHILD_MENU, Colibrate_dc, SELECT_BAR, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_13_10, "Темп. МК", "MCU temp.", 0, UPTADE_OFF, Unit_degree, Menu_2_13_11, Menu_2_13_9, Menu_2_13, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_13_11, "Темп. анал.", "Analog temp.", 0, UPTADE_OFF, Unit_degree, Menu_2_13_12, Menu_2_13_10, Menu_2_13, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_13_12, "Темп. цифр.", "Digital sensor temp.", 0, UPTADE_OFF, Unit_degree, Menu_2_13_13, Menu_2_13_11, Menu_2_13, CHILD_MENU, SELECT_BAR, SELECT_BAR, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_13_13, "Тест FLASH", "FLASH test", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13_14, Menu_2_13_12, Menu_2_13, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_13_14, "Тест EEPROM", "EEPROM test", 0, 0, NO_SIGNED, Menu_2_13_15, Menu_2_13_13, Menu_2_13, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_13_15, "Тест SD-карты", "SD-card test", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13_16, Menu_2_13_14, Menu_2_13, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_13_16, "Режим БЛОКИРОВКА", "BLOCK mode", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_13_15, Menu_2_13, CHILD_MENU, ACTION_MENU, DATA_IN, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_14, "Язык", "Language", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15, Menu_2_13, Menu_2, CHILD_MENU, ACTION_MENU, LANGUAGE, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_15, "Сброс настроек", "Factory reset", 0, UPTADE_OFF, NO_SIGNED, Menu_2_16, Menu_2_14, Menu_2, CHILD_MENU, Reset_settings, SELECT_BAR, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_16, "Формат. SD", "SD formatting", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_15, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_13_3, "Пароль", "Password", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13_4, Menu_2_13_2, Menu_2_13, CHILD_MENU, ACTION_MENU, SELECT_BAR, Password, DATA_OUT);
+        MAKE_MENU(Menu_2_13_4, "Обновление ПО", "Update of software", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13_5, Menu_2_13_3, Menu_2_13, CHILD_MENU, Programm_Update_USB, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_13_5, "Режим USB", "USB mode", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13_6, Menu_2_13_4, Menu_2_13, CHILD_MENU, ACTION_MENU, USB_MODE_STRUCT, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_13_6, "Калибровка шутна(верх)", "Shunt calibration(up)", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13_7, Menu_2_13_5, Menu_2_13, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_13_7, "Калибровка шутна(низ)", "Shunt calibration(low)", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13_8, Menu_2_13_6, Menu_2_13, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_13_8, "Сопр. шунта", "Shunt resistance", 0, UPTADE_OFF, Unit_resistance, Menu_2_13_9, Menu_2_13_7, Menu_2_13, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_13_9, "Темп. корр.", "Offset temperature", 0, UPTADE_OFF, Unit_degree, Menu_2_13_10, Menu_2_13_8, Menu_2_13, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_13_10, "Кол. пит 24", "Col. DC In 24", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13_11, Menu_2_13_9, Menu_2_13, CHILD_MENU, Colibrate_dc, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_13_11, "Темп. МК", "MCU temp.", 0, UPTADE_OFF, Unit_degree, Menu_2_13_12, Menu_2_13_10, Menu_2_13, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_13_12, "Темп. анал.", "Analog temp.", 0, UPTADE_OFF, Unit_degree, Menu_2_13_13, Menu_2_13_11, Menu_2_13, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_13_13, "Темп. цифр.", "Digital sensor temp.", 0, UPTADE_OFF, Unit_degree, Menu_2_13_14, Menu_2_13_12, Menu_2_13, CHILD_MENU, SELECT_BAR, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_13_14, "Тест FLASH", "FLASH test", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13_15, Menu_2_13_13, Menu_2_13, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_13_15, "Тест EEPROM", "EEPROM test", 0, 0, NO_SIGNED, Menu_2_13_16, Menu_2_13_14, Menu_2_13, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_13_16, "Тест SD-карты", "SD-card test", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13_17, Menu_2_13_15, Menu_2_13, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_13_17, "Колибровка 24в", "Colibrate 24v", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13_18, Menu_2_13_16, Menu_2_13, CHILD_MENU, Read_ADC_Colibrate_24V, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_13_18, "Режим БЛОКИРОВКА", "BLOCK mode", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_13_17, Menu_2_13, CHILD_MENU, ACTION_MENU, DATA_IN, DATA_IN, DATA_OUT);
+            MAKE_MENU(Menu_2_14, "Язык", "Language", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15, Menu_2_13, Menu_2, CHILD_MENU, ACTION_MENU, LANGUAGE, DATA_IN, DATA_OUT);
+            MAKE_MENU(Menu_2_15, "Сброс настроек", "Factory reset", 0, UPTADE_OFF, NO_SIGNED, Menu_2_16, Menu_2_14, Menu_2, CHILD_MENU, Reset_settings, SELECT_BAR, DATA_IN, DATA_OUT);
+            MAKE_MENU(Menu_2_16, "Формат. SD", "SD formatting", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_15, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
 MAKE_MENU(Menu_3, "Сведения", "Info", 0, UPTADE_OFF, NO_SIGNED, Menu_4, Menu_2, PARENT_MENU, Menu_3_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
     MAKE_MENU(Menu_3_1, "ID устр.", "ID Device", 0, UPTADE_OFF, NO_SIGNED, Menu_3_2, PREVISION_MENU, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, EEPROM.version.VERSION_PCB);
     MAKE_MENU(Menu_3_2, "Вер. ПО", "Software version", 0, UPTADE_OFF, NO_SIGNED, Menu_3_3, Menu_3_1, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, EEPROM.version.VERSION_PROGRAMM);
@@ -722,10 +742,10 @@ void Display_TopBar(menuItem *CurrentMenu)
 */
 
 
-    sprintf(str, "%d", ADC_AKB_Proc);
-    if (ADC_AKB_Proc < 10)
+    sprintf(str, "%d", IntADC.ADC_AKB_Proc);
+    if (IntADC.ADC_AKB_Proc < 10)
         str[1] = '%';
-    else if (ADC_AKB_Proc < 100)
+    else if (IntADC.ADC_AKB_Proc < 100)
     {
         str[2] = '%';
         right_ot -= 6;
@@ -739,8 +759,8 @@ void Display_TopBar(menuItem *CurrentMenu)
     OLED_DrawStr(str, right_ot, top_akb_status + 1, 1);
     right_ot -= width_akb_status;
 
-    int c = ADC_AKB_Proc * 5 / 100 + 1;
-    if (ADC_AKB_Proc == 0)
+    int c = IntADC.ADC_AKB_Proc * 5 / 100 + 1;
+    if (IntADC.ADC_AKB_Proc == 0)
         c = 0;
     // OLED_DrawRectangle(right_ot+2, top_akb_status+7-c, right_ot+3, top_akb_status+2+c);
     for (; c > 0; c--)

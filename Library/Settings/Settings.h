@@ -23,14 +23,16 @@ extern "C"
   ////////////////////////////////////////////////////////////////////////////////
   //               Описание структур EEPROM_Settings и Prgramm_version
   ////////////////////////////////////////////////////////////////////////////////
+  extern char save_data[CMD_BUFFER_SIZE];
+
+
+
   typedef struct Prgramm_version
   {
     char VERSION_PROGRAMM[10];
     char VERSION_PCB[10];
+    char password[10];
     char time_work_char[10];
-    uint8_t VER_PCB_IDEOLOGY;
-    uint8_t VER_PCB_VERSION;
-    char VER_PCB_INDEX[5];
   } Prgramm_version_item;
 
   // Структура сохраняемая в EEPROM
@@ -56,6 +58,7 @@ extern "C"
     // коррекция температуры (смещение) //
     double Crorrect_TEMP_A; // Смещение датчика аналогового температуры
     double Crorrect_TEMP_D; // Смещение датчика цифрового температуры
+    double Colibrate_koeff;
 
     /*-----------------*/
     // select_bar      //
@@ -123,6 +126,18 @@ extern "C"
     void (*update_value)(void); // Ссылка на функцию обновления (чтение данных с АЦП)
   } ADC_MS5193T_item;
 
+  typedef struct Internal_ADC
+  {
+    float ADC_AKB_volts; // Напряжение на АКБ
+    uint8_t ADC_AKB_Proc;    // Процент заряда на акб
+    double *Colibrate_koeff; // Колибровочный коэффициэнт
+    uint16_t R1;
+    uint16_t R2;
+    float VBAT;          // Напряжение на CR2032
+    char ADC_AKB_volts_char[6]; // Напряжение на АКБ строка
+    char ADC_AKB_Proc_char[6];  // Процент заряда на акб строка
+  } Internal_ADC_item;
+  extern Internal_ADC_item IntADC;
   ////////////////////////////////////////////////////////////////////////////////
   //     Описание структуры GSM_STATUS
   ////////////////////////////////////////////////////////////////////////////////
@@ -202,11 +217,6 @@ extern uint16_t time_update_display; // Время обновления экра
 // Глобальные переменные ДЛЯ ФУНКЦИОНИРОВАНИЯ
 ////////////////////////////////////////////////////////////////////////////////
 extern char Keyboard_press_code;   // Код нажатой клавиши на клавиатуре
-extern float ADC_AKB_volts;        //-
-extern int ADC_AKB_Proc;           //-
-extern int ADC_AKB_cell;           //- ------------- Статус акб и батарейки
-extern char ADC_AKB_volts_char[4]; //-
-extern char ADC_AKB_Proc_char[4];  //-
 extern char error_code[4];         // Код глобальной ошибки
 extern double OneWire_temp;        // Температура OneWire
 extern char OneWire_temp_char[5];  // Температура OneWire в виде строки

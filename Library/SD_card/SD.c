@@ -102,38 +102,7 @@ void WriteToSDCard(void)
     FRESULT res;
     UINT bytesWritten;
 
-    char string[80] = {'\0'};
-    char buffer[50] = {'\0'};
-    char dw[2] = ":";
-    char rz[2] = ";";
-    char po[2] = ".";
-    char end[2] = "\n";
-    format_uint8_t_2(buffer, sizeof(buffer), Time.Hours);
-    strcat(string, buffer);
-    strcat(string, dw);
-    format_uint8_t_2(buffer, sizeof(buffer), Time.Minutes);
-    strcat(string, buffer);
-    strcat(string, rz);
-
-    format_uint8_t_2(buffer, sizeof(buffer), Date.Date);
-    strcat(string, buffer);
-    strcat(string, po);
-    format_uint8_t_2(buffer, sizeof(buffer), Date.Month);
-    strcat(string, buffer);
-    strcat(string, po);
-    format_uint8_t_2(buffer, sizeof(buffer), Date.Year);
-    strcat(string, buffer);
-    strcat(string, rz);
-
-    strcat(string, ADC_data.ADC_MS5193T_temp_char);
-    strcat(string, rz);
-    strcat(string, ADC_data.ADC_value_char);
-    strcat(string, rz);
-
-    sprintf(buffer, "%lu", data_read_adc_in);
-    strcat(string, buffer);
-    strcat(string, rz);
-    strcat(string, end);
+    Collect_DATA();
 
     // Монтируем файловую систему
     res = f_mount(&SDFatFS, (TCHAR const*)SDPath, 1);
@@ -166,8 +135,8 @@ void WriteToSDCard(void)
     }
 
     // Записываем данные
-    res = f_write(&SDFile, string, strlen(string), &bytesWritten);
-    if (res != FR_OK || bytesWritten < strlen(string)) {
+    res = f_write(&SDFile, save_data, strlen(save_data), &bytesWritten);
+    if (res != FR_OK || bytesWritten < strlen(save_data)) {
         // Ошибка записи
         ERRCODE.STATUS |= STATUS_SD_WRITE_ERROR;
         f_close(&SDFile);
@@ -180,4 +149,31 @@ void WriteToSDCard(void)
 
     // Отмонтируем
     f_mount(NULL, SDPath, 1);
+}
+
+
+extern char save_data[CMD_BUFFER_SIZE];
+extern RTC_HandleTypeDef hrtc;
+extern EEPROM_Settings_item EEPROM;
+
+void Collect_DATA(){
+    HAL_RTC_GetDate(&hrtc, &Date, RTC_FORMAT_BIN);
+    HAL_RTC_GetTime(&hrtc, &Time, RTC_FORMAT_BIN);
+    uint64_to_hex_str(ERRCODE.STATUS, ERRCODE.STATUSCHAR, sizeof(ERRCODE.STATUSCHAR));
+
+    snprintf(save_data, CMD_BUFFER_SIZE,
+        "[%s; %s; %s; %s; %s; %s; %s; %s; %02d/%02d/%02d,%02d:%02d:%02d; %s; %u; %u]",
+        EEPROM.version.VERSION_PCB,              // строка
+        EEPROM.version.password,                 // строка
+        ADC_data.ADC_value_char,         // строка
+        ADC_data.ADC_SI_value_char,      // строка
+        ADC_data.ADC_SI_value_correct_char, // строка
+        IntADC.ADC_AKB_volts_char,              // строка
+        IntADC.ADC_AKB_Proc_char,               // строка
+        ERRCODE.STATUSCHAR,              // строка
+        Date.Date, Date.Month, Date.Year, // форматируем дату (день, месяц, год)
+        Time.Hours, Time.Minutes, Time.Seconds, // форматируем время (часы, минуты, секунды)
+        "0",                             // time_sleep_mode всегда "0"
+        EEPROM.time_sleep_m,             // число
+        EEPROM.time_sleep_h);            // число
 }

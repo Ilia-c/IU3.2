@@ -148,7 +148,7 @@ const osThreadAttr_t Erroe_indicate_task_attributes = {
 osThreadId_t  UART_PARSER_taskHandle;
 const osThreadAttr_t UART_PARSER_task_attributes = {
     .name = "UART_PARSER_task",
-    .stack_size = 1024 * 1,
+    .stack_size = 1024 * 2,
     .priority = (osPriority_t)osPriorityLow6,
 };
 /* USER CODE BEGIN PV */
@@ -203,7 +203,7 @@ int main(void)
   HAL_Delay(500);
 
   MX_ADC1_Init();
-  MX_ADC3_Init();
+  //MX_ADC3_Init();
   MX_I2C1_Init();
   MX_I2C2_Init();
   MX_SPI2_Init();
@@ -226,7 +226,6 @@ int main(void)
   HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);
   
   HAL_Delay(10);
-  
 
   // ЗАПУСКАЕТСЯ ВСЕГДА 
   HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);             // Общее питание 5В
@@ -234,6 +233,7 @@ int main(void)
   HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);           // Включение Памяти на плате
 
   HAL_Delay(10);
+  //EEPROM_SaveSettings(&EEPROM);
   if (HAL_I2C_IsDeviceReady(&hi2c1, EEPROM_I2C_ADDRESS, 2, 100) != HAL_OK)
   {
     // EEPROM недоступна
@@ -327,10 +327,7 @@ int main(void)
 
   W25_Ini();
   MS5193T_Init();
-
-
-
-
+  HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
   osKernelInitialize();
 
   ADC_readHandle = osThreadNew(ADC_read, NULL, &ADC_read_attributes);
@@ -501,76 +498,59 @@ void PeriphCommonClock_Config(void)
  * @param None
  * @retval None
  */
-static void MX_ADC1_Init(void)
+ADC_HandleTypeDef hadc1; // Глобальный или статический, как у вас заведено
+
+void MX_ADC1_Init(void)
 {
+    ADC_ChannelConfTypeDef sConfig = {0};
 
-  /* USER CODE BEGIN ADC1_Init 0 */
+    // Включаем тактирование АЦП1 и порта PC0
+    __HAL_RCC_ADC_CLK_ENABLE();
+    __HAL_RCC_GPIOC_CLK_ENABLE();
 
-  /* USER CODE END ADC1_Init 0 */
+    // Настраиваем PC0 как аналоговый вход (без подтяжки)
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    GPIO_InitStruct.Pin = GPIO_PIN_0;
+    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG_ADC_CONTROL;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  ADC_MultiModeTypeDef multimode = {0};
-  ADC_ChannelConfTypeDef sConfig = {0};
+    // Настраиваем ADC1: 12-битное разрешение, одиночное преобразование, программный запуск
+    hadc1.Instance = ADC1;
+    hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;    // Асинхронный клок без предделителя
+    hadc1.Init.Resolution = ADC_RESOLUTION_12B;          // 12-битное разрешение АЦП (значения от 0 до 4095)
+    hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;          // Выравнивание результата по правому краю
+    hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;          // Отключаем сканирование (одноканальный режим)
+    hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;       // Флаг конца каждого одиночного преобразования
+    hadc1.Init.LowPowerAutoWait = DISABLE;
+    hadc1.Init.ContinuousConvMode = DISABLE;             // Непрерывный режим отключен (однократное преобразование)
+    hadc1.Init.NbrOfConversion = 1;
+    hadc1.Init.DiscontinuousConvMode = DISABLE;
+    hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;    // Преобразование запускается программно (софтверный триггер)
+    hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+    hadc1.Init.DMAContinuousRequests = DISABLE;
+    hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
+    hadc1.Init.OversamplingMode = DISABLE;
+    if (HAL_ADC_Init(&hadc1) != HAL_OK)
+    {
+        // Обработка ошибки инициализации
+        Error_Handler();
+    }
 
-  /* USER CODE BEGIN ADC1_Init 1 */
-
-  /* USER CODE END ADC1_Init 1 */
-
-  /** Common config
-  */
-  hadc1.Instance = ADC1;
-  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV6;
-  hadc1.Init.Resolution = ADC_RESOLUTION_12B;
-  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
-  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
-  hadc1.Init.LowPowerAutoWait = DISABLE;
-  hadc1.Init.ContinuousConvMode = ENABLE;
-  hadc1.Init.NbrOfConversion = 2;
-  hadc1.Init.DiscontinuousConvMode = DISABLE;
-  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
-  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-  hadc1.Init.DMAContinuousRequests = DISABLE;
-  hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
-  hadc1.Init.OversamplingMode = DISABLE;
-  if (HAL_ADC_Init(&hadc1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure the ADC multi-mode
-  */
-  multimode.Mode = ADC_MODE_INDEPENDENT;
-  if (HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure Regular Channel
-  */
-  sConfig.Channel = ADC_CHANNEL_VREFINT;
-  sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_247CYCLES_5;
-  sConfig.SingleDiff = ADC_SINGLE_ENDED;
-  sConfig.OffsetNumber = ADC_OFFSET_NONE;
-  sConfig.Offset = 0;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure Regular Channel
-  */
-  sConfig.Channel = ADC_CHANNEL_1;
-  sConfig.Rank = ADC_REGULAR_RANK_2;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN ADC1_Init 2 */
-
-  /* USER CODE END ADC1_Init 2 */
-
+    // Выбираем канал, соответствующий PC0 (канал 1 ADC1)
+    sConfig.Channel = ADC_CHANNEL_1;         // PC0 подключен к Channel 1 АЦП1
+    sConfig.Rank = ADC_REGULAR_RANK_1;
+    sConfig.SingleDiff = ADC_SINGLE_ENDED;
+    sConfig.SamplingTime = ADC_SAMPLETIME_47CYCLES_5;  // Время выборки канала (47.5 тактов, пример)
+    sConfig.OffsetNumber = ADC_OFFSET_NONE;
+    sConfig.Offset = 0;
+    if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+    {
+        // Обработка ошибки настройки канала
+        Error_Handler();
+    }
 }
+
 
 static void MX_TIM5_Init(void)
 {
@@ -884,7 +864,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pins : RESERVED_Pin EN_5V_Pin EN_3P3V_Pin ON_N25_Pin
                            COL_B4_Pin SPI2_CS_ADC_Pin One_Wire_Pin */
   GPIO_InitStruct.Pin = RESERVED_Pin|EN_5V_Pin|EN_3P8V_Pin|ON_N25_Pin
-                          |COL_B4_Pin|SPI2_CS_ADC_Pin|One_Wire_Pin;
+                          |COL_B4_Pin|SPI2_CS_ADC_Pin|One_Wire_Pin|EN_3P3V_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -910,13 +890,13 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pins : STR_B1_Pin STR_B2_Pin STR_B3_Pin */
   GPIO_InitStruct.Pin = STR_B1_Pin|STR_B2_Pin|STR_B3_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : STR_B4_Pin */
   GPIO_InitStruct.Pin = STR_B4_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(STR_B4_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : COL_B3_Pin COL_B2_Pin COL_B1_Pin ON_DISP_Pin
@@ -1162,7 +1142,6 @@ void Erroe_indicate(void *argument){
   SD_check();
   for (;;)
   {
-    int32_t test = ADC1_Read_PC0();
     BlinkLED(GPIOC, GPIO_PIN_13, 5, 50, 50, 0);
     osDelay(1000);
     // Ошибка инициализации EEPROM
@@ -1218,6 +1197,7 @@ void UART_PARSER_task(void *argument)
     GSM_Init();
     for (;;)
     { 
+      Read_ADC_Voltage();
       osDelay(10000);
       if (!(GSM_data.Status & GSM_RDY)){
         int result = SendCommandAndParse("AT\r", parse_ERROR_OK, 1000);
@@ -1238,18 +1218,44 @@ void UART_PARSER_task(void *argument)
       {
         // флаг того что нужно отправить смс
         GSM_data.Status &= ~SMS_SEND;
+        Collect_DATA();
+        size_t len = strlen(save_data);
+        if (len + 2 < CMD_BUFFER_SIZE) {
+            save_data[len]   = '\x1A';
+            save_data[len+1] = '\r';
+            save_data[len+2] = '\0';
+        }
+
         if (SendCommandAndParse("AT+CMGF=1\r", waitForOKResponse, 1000)!= 1) break;
         if (SendCommandAndParse("AT+CSCS=\"GSM\"\r", waitForOKResponse, 1000)!= 1) break;
         if (SendCommandAndParse("AT+CMGS=\"+79150305966\"\r", waitForGreaterThanResponse, 1000)!= 1) break;
-        if (SendCommandAndParse("Test sms\x1A\r", waitForOKResponse, 1000) != 1) break;
-        //HAL_UART_Transmit(&huart4, 0x1A, 1, 1000);
-        //HAL_UART_Transmit(&huart4, '\r', 1, 1000);
+        //if (SendCommandAndParse(save_data, waitForOKResponse, 1000) != 1) break;
+        HAL_UART_Transmit(&huart4, save_data, strlen(save_data), 1000);
+        //save_data[len] = '\0';
       }
+
       if (GSM_data.Status & HTTP_SEND)
       {
         // флаг того что нужно отправить HTTPA
         GSM_data.Status &= ~HTTP_SEND;
+        if (SendCommandAndParse("AT+CGDCONT=1,\"IP\",\"internet.mts.ru\"\r", waitForOKResponse, 1000)!= 1) break;
+        if (SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 1000)!= 1) break;
+        if (SendCommandAndParse("AT+CDNSCFG=\"8.8.8.8\",\"77.88.8.8\"\r", waitForOKResponse, 1000)!= 1) break;
         
+        if (SendCommandAndParse("AT+HTTPINIT\r", waitForOKResponse, 1000)!= 1) break;
+        if (SendCommandAndParse("AT+HTTPPARA=\"CID\",\"1\"\r", waitForOKResponse, 1000)!= 1) break;
+
+        //char send[] = "http://geosp-data.ru/api/save-data?data="+ +"\"";
+
+        // if (SendCommandAndParse("AT+HTTPPARA=\"URL\",\"http://geosp-data.ru/api/save-data?data=\"\r", waitForOKResponse, 20000)!= 1) break;
+        
+        if (SendCommandAndParse("AT+HTTPACTION=0\r", waitForOKResponse, 1000)!= 1) break; // проверить что ответ 0 200 n
+        if (SendCommandAndParse("AT+HTTPSTATUS\r", waitForOKResponse, 1000)!= 1) break;
+        
+        // получение данных
+        if (SendCommandAndParse("AT+HTTREAD = 0, 200\r", waitForOKResponse, 1000)!= 1) break;
+        // анализ ответа
+        if (SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000)!= 1) break;
       }
       if (GSM_data.Status & HTTP_READ)
       {

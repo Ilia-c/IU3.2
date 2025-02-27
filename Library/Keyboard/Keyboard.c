@@ -33,20 +33,6 @@ const char keyMap[4][4] = {
     {'0', 'P', 'O', 'R'}
 };
 
-/*
-  ret_keyboard() вызывается после сканирования матрицы.
-  
-  Если никакая клавиша не нажата (Prot_Keyboard_press_code == 0xFF):
-    – Если мы были в STATE_PRESSED (короткое нажатие) – выдаём событие.
-    – В любом случае останавливаем таймер и сбрасываем автомат в STATE_IDLE.
-    
-  Если клавиша нажата:
-    – Если автомат в STATE_IDLE, фиксируем нажатие (last_key = текущий код).
-        При этом, если mode_redact==1 и нажата клавиша 'R' или 'L' – выдаём событие сразу
-        (сброс автоповтора), иначе переходим в STATE_PRESSED и запускаем таймер с задержкой Timer_key_press.
-    – Если автомат уже в STATE_PRESSED или STATE_AUTOREPEAT, и обнаружена другая клавиша (current_key != last_key),
-        то сбрасываем автоповтор и начинаем обработку нового нажатия (аналогично предыдущему пункту).
-*/
 void ret_keyboard(void)
 {
     char current_key = Prot_Keyboard_press_code;
@@ -130,18 +116,6 @@ void ret_keyboard(void)
     HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 }
 
-/*
-  HAL_TIM6_Callback() – вызывается по прерыванию таймера.
-  
-  Здесь выполняется быстрый опрос клавиатуры (без задержек) для обновления Prot_Keyboard_press_code.
-  Если в состоянии STATE_PRESSED (начальная задержка истекла) и клавиша всё ещё нажата,
-  происходит переход в STATE_AUTOREPEAT: генерируется первое событие автоповтора, а период
-  таймера переключается на быстрый (100 мс).
-  
-  В состоянии STATE_AUTOREPEAT каждое срабатывание таймера генерирует событие автоповтора.
-  
-  Если клавиша отпущена, производится сброс автомата в STATE_IDLE.
-*/
 void HAL_TIM6_Callback(void)
 {
     char key = 0xFF;
@@ -250,11 +224,6 @@ void HAL_TIM6_Callback(void)
     }
 }
 
-/*
-  ScanKeypad() – функция сканирования матрицы клавиатуры.
-  По окончании сканирования вызывается ret_keyboard() для обновления автомата.
-  (Функция вызывается по семафору из внешних прерываний или таймера.)
-*/
 void ScanKeypad(void)
 {
     HAL_TIM_Base_Stop_IT(&htim6);
@@ -387,26 +356,12 @@ void ScanKeypad(void)
     ret_keyboard();
 }
 
-/*
-  HAL_GPIO_EXTI_Callback() – обработчик внешних прерываний по линиям строк (антидребезг).
-*/
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
     if ((GPIO_Pin == STR_B1_Pin) || (GPIO_Pin == STR_B2_Pin) ||
         (GPIO_Pin == STR_B3_Pin) || (GPIO_Pin == STR_B4_Pin))
     {
-        uint8_t B1 = HAL_GPIO_ReadPin(STR_B1_GPIO_Port, STR_B1_Pin);
-        uint8_t B2 = HAL_GPIO_ReadPin(STR_B2_GPIO_Port, STR_B2_Pin);
-        uint8_t B3 = HAL_GPIO_ReadPin(STR_B3_GPIO_Port, STR_B3_Pin);
-        uint8_t B4 = HAL_GPIO_ReadPin(STR_B4_GPIO_Port, STR_B4_Pin);
-        osDelay(1);
-        if ((HAL_GPIO_ReadPin(STR_B1_GPIO_Port, STR_B1_Pin) == B1) &&
-            (HAL_GPIO_ReadPin(STR_B2_GPIO_Port, STR_B2_Pin) == B2) &&
-            (HAL_GPIO_ReadPin(STR_B3_GPIO_Port, STR_B3_Pin) == B3) &&
-            (HAL_GPIO_ReadPin(STR_B4_GPIO_Port, STR_B4_Pin) == B4))
-        {
-            static portBASE_TYPE xTaskWoken;
-            xSemaphoreGiveFromISR(Keyboard_semapfore, &xTaskWoken);
-        }
+        static portBASE_TYPE xTaskWoken;
+        xSemaphoreGiveFromISR(Keyboard_semapfore, &xTaskWoken);
     }
 }

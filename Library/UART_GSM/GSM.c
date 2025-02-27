@@ -9,8 +9,8 @@ extern EEPROM_Settings_item EEPROM;
 uint8_t gsmRxChar;
 
 // Двойное буферирование: буферы размещаются в области ОЗУ ".ram2"
-static char buffer1[CMD_BUFFER_SIZE] __attribute__((section(".ram2")));
-static char buffer2[CMD_BUFFER_SIZE] __attribute__((section(".ram2")));
+static char buffer1[CMD_BUFFER_SIZE] = ""; __attribute__((section(".ram2")));
+static char buffer2[CMD_BUFFER_SIZE] = ""; __attribute__((section(".ram2")));
 
 // Указатели на активный и обрабатываемый (парсера) буферы
 static char *activeBuffer = buffer1;

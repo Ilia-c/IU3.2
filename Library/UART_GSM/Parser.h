@@ -25,3 +25,4 @@ int parse_ERROR_OK(void);
 int waitForOKResponse();
 int waitForGreaterThanResponse(void);
 int waitForHTTPResponse();
+void ND();

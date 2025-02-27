@@ -160,14 +160,16 @@ void calculate_ADC_data_temp(int32_t adValue) {
 }
 
 void calculate_ADC_data_heigh(int32_t adValue) {
-    double koeff = 0.0000000697; 
-    koeff = adValue*koeff-0.4;
-    koeff *= 9.375; 
-    ADC_data.ADC_SI_value = koeff;
-    for (int i = 0; i<11; i++) ADC_data.ADC_value_char[i] = '\0';
-    //gcvt(ADC_data.ADC_SI_value, 6, ADC_data.ADC_value_char);
-    snprintf(ADC_data.ADC_value_char, sizeof(ADC_data.ADC_value_char), "%4g", ADC_data.ADC_SI_value);
+    snprintf(ADC_data.ADC_value_char, sizeof(ADC_data.ADC_value_char), "%" PRId32, adValue);
 
+    double koeff = 0.0000000697;
+    koeff = adValue*koeff-0.4;
+    koeff *= 9.375;
+    ADC_data.ADC_SI_value = koeff;
+    ADC_data.ADC_SI_value_correct = koeff + *ADC_data.GVL_correct;
+    for (int i = 0; i<11; i++) ADC_data.ADC_SI_value_char[i] = '\0';
+    snprintf(ADC_data.ADC_SI_value_char, sizeof(ADC_data.ADC_SI_value_char), "%4g", ADC_data.ADC_SI_value);
+    snprintf(ADC_data.ADC_SI_value_correct_char, sizeof(ADC_data.ADC_SI_value_correct_char), "%4g", ADC_data.ADC_SI_value_correct);
 
     //uint8_t ModeRegisterMsg[2] = {0b00100000, 0b00000111};  
     //uint8_t ConfigRegisterMsg[2] = {0b00010000, 0b10000001}; //

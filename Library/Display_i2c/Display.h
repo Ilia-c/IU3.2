@@ -12,6 +12,7 @@
 #include "RTC_data.h"
 #include "AT24C02.h"
 #include "Status_codes.h"
+#include "Internal_ADC.h"
 
 typedef struct Menu_item
 {

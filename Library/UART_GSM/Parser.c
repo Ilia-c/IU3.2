@@ -38,7 +38,9 @@ int SendCommandAndParse(const char *command, int (*parser)(), uint32_t timeout)
     return -1;
 }
 
-
+void ND(){
+    osDelay(100);
+}
 
 int parse_CPIN()
 {
