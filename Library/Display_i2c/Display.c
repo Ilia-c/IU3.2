@@ -39,7 +39,7 @@ extern ERRCODE_item ERRCODE;
 extern RTC_HandleTypeDef hrtc;
 
 
-char str[4];
+char str[5];
 int right_ot = winth_display - 12 - 2; // Ширина экрана минус 2 символа - процент заряда (0-9%) и - 2 отступ справа
 
 char trans_str[11];
@@ -388,7 +388,9 @@ void GSM_sms_test(){
 }
 
 // Тест 
-void GSM_internet_test(){}
+void GSM_internet_test(){
+    GSM_data.Status |= HTTP_SEND;
+}
 
 // Обновление ПО 
 void Programm_Update_USB(){}
@@ -743,16 +745,20 @@ void Display_TopBar(menuItem *CurrentMenu)
 
 
     sprintf(str, "%d", IntADC.ADC_AKB_Proc);
-    if (IntADC.ADC_AKB_Proc < 10)
+    if (IntADC.ADC_AKB_Proc < 10){
         str[1] = '%';
+        str[2] = '\0';
+    }
     else if (IntADC.ADC_AKB_Proc < 100)
     {
         str[2] = '%';
+        str[3] = '\0';
         right_ot -= 6;
     }
     else
     {
         str[3] = '%';
+        str[4] = '\0';
         right_ot -= 12;
     }
 

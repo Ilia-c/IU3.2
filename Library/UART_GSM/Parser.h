@@ -26,3 +26,6 @@ int waitForOKResponse();
 int waitForGreaterThanResponse(void);
 int waitForHTTPResponse();
 void ND();
+void sendSMS(void);
+int waitAndParseSiteResponse(void);
+void sendHTTP(void);

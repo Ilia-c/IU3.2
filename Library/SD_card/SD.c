@@ -162,18 +162,20 @@ void Collect_DATA(){
     uint64_to_hex_str(ERRCODE.STATUS, ERRCODE.STATUSCHAR, sizeof(ERRCODE.STATUSCHAR));
 
     snprintf(save_data, CMD_BUFFER_SIZE,
-        "[%s; %s; %s; %s; %s; %s; %s; %s; %02d/%02d/%02d,%02d:%02d:%02d; %s; %u; %u]",
-        EEPROM.version.VERSION_PCB,              // строка
-        EEPROM.version.password,                 // строка
-        ADC_data.ADC_value_char,         // строка
-        ADC_data.ADC_SI_value_char,      // строка
-        ADC_data.ADC_SI_value_correct_char, // строка
-        IntADC.ADC_AKB_volts_char,              // строка
-        IntADC.ADC_AKB_Proc_char,               // строка
-        ERRCODE.STATUSCHAR,              // строка
-        Date.Date, Date.Month, Date.Year, // форматируем дату (день, месяц, год)
-        Time.Hours, Time.Minutes, Time.Seconds, // форматируем время (часы, минуты, секунды)
-        "0",                             // time_sleep_mode всегда "0"
-        EEPROM.time_sleep_m,             // число
-        EEPROM.time_sleep_h);            // число
+    "[%s;%s;%s;%s;%s;%s;%s;%s;%02d/%02d/%02d%s%02d:%02d:%02d;%s;%s;%u;%u]",
+    EEPROM.version.VERSION_PCB,              // строка
+    EEPROM.version.password,                 // строка
+    ADC_data.ADC_value_char,                   // строка
+    ADC_data.ADC_SI_value_char,                // строка
+    ADC_data.ADC_SI_value_correct_char,        // строка
+    IntADC.ADC_AKB_volts_char,                 // строка
+    IntADC.ADC_AKB_Proc_char,                  // строка
+    ERRCODE.STATUSCHAR,                        // строка
+    Date.Date, Date.Month, Date.Year,          // форматируем дату (день, месяц, год)
+    ".", 
+    Time.Hours, Time.Minutes, Time.Seconds,     // форматируем время (часы, минуты, секунды)
+    "0",                                       // time_sleep_mode всегда "0"
+    "0", 
+    EEPROM.time_sleep_m,                       // число
+    EEPROM.time_sleep_h);                      // число
 }

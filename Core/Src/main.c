@@ -148,7 +148,7 @@ const osThreadAttr_t Erroe_indicate_task_attributes = {
 osThreadId_t  UART_PARSER_taskHandle;
 const osThreadAttr_t UART_PARSER_task_attributes = {
     .name = "UART_PARSER_task",
-    .stack_size = 1024 * 2,
+    .stack_size = 1024 * 3,
     .priority = (osPriority_t)osPriorityLow6,
 };
 /* USER CODE BEGIN PV */
@@ -979,8 +979,8 @@ void Main_Cycle(void *argument)
     HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
 
     // 8. Начать отправку данных на сайт и смс
-
-    
+    osDelay(30000);
+    sendHTTP();
     // Вызов функции отправки и полчучения настроек
 
     // 9. Отключить GSM и включить память
@@ -1005,7 +1005,7 @@ void Main_Cycle(void *argument)
     }
 
     // 11. Записать на flash
-    //WriteToSDCard();
+    WriteToSDCard();
     
     // 12. Сон
 
@@ -1054,7 +1054,8 @@ void RS485_data(void *argument)
   UNUSED(argument);
   for (;;)
   {
-    osDelay(10000);
+    osDelay(3000);
+    Read_ADC_Voltage();
     if (EEPROM.Mode != 0) osThreadSuspend(RS485_dataHandle); // Остановить, если циклический режим (для однократного выполнения)
   }
 }
@@ -1197,12 +1198,20 @@ void UART_PARSER_task(void *argument)
     GSM_Init();
     for (;;)
     { 
-      Read_ADC_Voltage();
+      
       osDelay(10000);
       if (!(GSM_data.Status & GSM_RDY)){
         int result = SendCommandAndParse("AT\r", parse_ERROR_OK, 1000);
         if (result == 1){
           GSM_data.Status |= GSM_RDY;
+          if (SendCommandAndParse("AT+CFUN=0\r", waitForOKResponse, 1000) != 1){}
+          osDelay(300);
+          if (SendCommandAndParse("AT+CFGDUALMODE=1,0\r", waitForOKResponse, 1000) != 1){}
+          osDelay(300);
+          if (SendCommandAndParse("AT+CFGRATPRIO=2\r", waitForOKResponse, 1000) != 1){}
+          osDelay(300);
+          if (SendCommandAndParse("AT+CFUN=1\r", waitForOKResponse, 1000) != 1){}
+          if (SendCommandAndParse("AT&W\r", waitForOKResponse, 1000) != 1){}
         }
       }
       if (GSM_data.Status & GSM_RDY)
@@ -1218,44 +1227,14 @@ void UART_PARSER_task(void *argument)
       {
         // флаг того что нужно отправить смс
         GSM_data.Status &= ~SMS_SEND;
-        Collect_DATA();
-        size_t len = strlen(save_data);
-        if (len + 2 < CMD_BUFFER_SIZE) {
-            save_data[len]   = '\x1A';
-            save_data[len+1] = '\r';
-            save_data[len+2] = '\0';
-        }
-
-        if (SendCommandAndParse("AT+CMGF=1\r", waitForOKResponse, 1000)!= 1) break;
-        if (SendCommandAndParse("AT+CSCS=\"GSM\"\r", waitForOKResponse, 1000)!= 1) break;
-        if (SendCommandAndParse("AT+CMGS=\"+79150305966\"\r", waitForGreaterThanResponse, 1000)!= 1) break;
-        //if (SendCommandAndParse(save_data, waitForOKResponse, 1000) != 1) break;
-        HAL_UART_Transmit(&huart4, save_data, strlen(save_data), 1000);
+        sendSMS();
         //save_data[len] = '\0';
       }
 
       if (GSM_data.Status & HTTP_SEND)
       {
-        // флаг того что нужно отправить HTTPA
         GSM_data.Status &= ~HTTP_SEND;
-        if (SendCommandAndParse("AT+CGDCONT=1,\"IP\",\"internet.mts.ru\"\r", waitForOKResponse, 1000)!= 1) break;
-        if (SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 1000)!= 1) break;
-        if (SendCommandAndParse("AT+CDNSCFG=\"8.8.8.8\",\"77.88.8.8\"\r", waitForOKResponse, 1000)!= 1) break;
-        
-        if (SendCommandAndParse("AT+HTTPINIT\r", waitForOKResponse, 1000)!= 1) break;
-        if (SendCommandAndParse("AT+HTTPPARA=\"CID\",\"1\"\r", waitForOKResponse, 1000)!= 1) break;
-
-        //char send[] = "http://geosp-data.ru/api/save-data?data="+ +"\"";
-
-        // if (SendCommandAndParse("AT+HTTPPARA=\"URL\",\"http://geosp-data.ru/api/save-data?data=\"\r", waitForOKResponse, 20000)!= 1) break;
-        
-        if (SendCommandAndParse("AT+HTTPACTION=0\r", waitForOKResponse, 1000)!= 1) break; // проверить что ответ 0 200 n
-        if (SendCommandAndParse("AT+HTTPSTATUS\r", waitForOKResponse, 1000)!= 1) break;
-        
-        // получение данных
-        if (SendCommandAndParse("AT+HTTREAD = 0, 200\r", waitForOKResponse, 1000)!= 1) break;
-        // анализ ответа
-        if (SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000)!= 1) break;
+        sendHTTP();
       }
       if (GSM_data.Status & HTTP_READ)
       {

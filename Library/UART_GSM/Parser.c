@@ -3,39 +3,36 @@
 
 #define NUM_AT_COMMANDS (sizeof(atCommandList)/sizeof(atCommandList[0]))
 
-/**
- * @brief Отправляет AT-команду, ожидает ответа и анализирует его.
- * @param command AT-команда для отправки.
- * @param timeout Таймаут ожидания ответа в миллисекундах.
- * @param parser Функция для разбора ответа.
- * @return Результат анализа ответа.
- */
+
 int SendCommandAndParse(const char *command, int (*parser)(), uint32_t timeout)
 {
-    SendSomeCommandAndSetFlag();
+    // Сброс текущего буфера перед отправкой
+    SendSomeCommandAndSetFlag();  
+
+    // Отправка команды
     HAL_UART_Transmit(&huart4, (uint8_t *)command, strlen(command), 1000);
-    if (xSemaphoreTake(UART_PARSER_semaphore, 0) == pdTRUE){}
+
+    // Включаем приём (если data_read=0, то ничего не придёт)
+    data_read = 1;
+
+    // Сбрасываем висящий семафор, если он есть
+    xSemaphoreTake(UART_PARSER_semaphore, 0);
+
+    // Ждём прихода данных (по прерыванию) до заданного таймаута
     if (xSemaphoreTake(UART_PARSER_semaphore, timeout) == pdFALSE)
     {
+        // Не дождались завершения приёма в течение timeout
+        data_read = 0;
         return -1; 
     }
-    char *echo = strstr(parseBuffer, command);
-    if (echo != NULL)
-    {
-        echo += strlen(command);
-        while (*echo == '\r' || *echo == '\n' || *echo == ' ')
-        {
-            echo++;
-        }
-        memmove(parseBuffer, echo, strlen(echo) + 1);
-        if (parser() == 1){
-            return 1;
-        }
-        else{
-            return 0;
-        }
-    }
-    return -1;
+
+    // Здесь parseBuffer уже содержит принятые данные (полностью или частично)
+    // Вызываем парсер, который ищет OK/ERROR/что угодно
+    int result = parser();  // ваш parse_ERROR_OK или любой другой
+
+    // После разбора можно отключить приём
+    data_read = 0;
+    return result;
 }
 
 void ND(){
@@ -142,19 +139,15 @@ int parse_COPS(void)
 }
 int parse_ERROR_OK(void)
 {
-
-    // Если обнаружен код ERROR, возвращаем 0
     if (strstr(parseBuffer, "ERROR") != NULL)
     {
-        return 0;
+        return 0; // Нашли "ERROR"
     }
-    // Если обнаружен код OK, возвращаем 1
-    else if (strstr(parseBuffer, "OK") != NULL)
+    if (strstr(parseBuffer, "OK") != NULL)
     {
-        return 1;
+        return 1; // Нашли "OK"
     }
-    // Если ни ERROR, ни OK не найдены, возвращаем -1 (неопределённое состояние)
-    return -1;
+    return -1;     // Не нашли ни "ERROR", ни "OK"
 }
 
 int waitForOKResponse()
@@ -250,4 +243,301 @@ int waitForHTTPResponse()
         }
     }
     return -1; // Таймаут: ответ не получен или не соответствует формату
+}
+
+
+#define MAX_SMS_ATTEMPTS 3
+
+void sendSMS(void)
+{
+    int attempt;
+    uint8_t smsSent = 0; // Флаг успешной отправки SMS
+    Collect_DATA();
+    size_t len = strlen(save_data);
+    if (len + 2 < CMD_BUFFER_SIZE)
+    {
+        save_data[len] = '\x1A';
+        save_data[len + 1] = '\r';
+        save_data[len + 2] = '\0';
+    }
+
+    if (SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000) != 1)
+    {
+    };
+    if (SendCommandAndParse("AT+CGACT=0\r", waitForOKResponse, 1000) != 1)
+    {
+    };
+    if (SendCommandAndParse("AT+CGDCONT=1\r", waitForOKResponse, 1000) != 1)
+    {
+    };
+
+    for (attempt = 0; attempt < MAX_SMS_ATTEMPTS; attempt++)
+    {
+        // Команда для выбора текстового режима
+        if (SendCommandAndParse("AT+CMGF=1\r", waitForOKResponse, 1000) != 1)
+        {
+            osDelay(5000); // Задержка 5 секунд перед повторной попыткой
+            continue;      // Переходим к следующей попытке
+        }
+
+        // Команда для выбора кодировки символов
+        if (SendCommandAndParse("AT+CSCS=\"GSM\"\r", waitForOKResponse, 1000) != 1)
+        {
+            osDelay(5000);
+            continue;
+        }
+
+        // Команда для начала отправки SMS
+        if (SendCommandAndParse("AT+CMGS=\"+79150305966\"\r", waitForGreaterThanResponse, 1000) != 1)
+        {
+            osDelay(5000);
+            continue;
+        }
+        HAL_UART_Transmit(&huart4, save_data, strlen(save_data), 1000);
+
+        // Если все команды выполнены успешно, считаем, что SMS отправлена
+        smsSent = 1;
+        break;
+    }
+
+    // Если ни одна из попыток не увенчалась успехом, выставляем флаг ошибки
+    if (!smsSent) {
+        ERRCODE.STATUS |= STATUS_UART_SMS_SEND_ERROR;
+    }
+}
+
+#define MAX_HTTP_ATTEMPTS 3
+
+void sendHTTP(void) {
+    int attempt;
+    uint8_t httpSent = 0; // Флаг успешной отправки HTTP
+    Collect_DATA();
+    char send[512] = "AT+HTTPPARA=\"URL\",\"http://geosp-data.ru/api/save-data?data=";
+    size_t len = strlen(save_data);
+    if (len + 2 < 512) {
+        save_data[len] = '"';
+        save_data[len + 1] = '\r';
+        save_data[len + 2] = '\0';
+    }
+    strcat(send, save_data);
+
+    for (attempt = 0; attempt < MAX_HTTP_ATTEMPTS; attempt++) {
+        // Предварительная очистка состояния перед началом
+        //SendCommandAndParse("AT+HTTPTERM\r", parse_ERROR_OK, 1000);
+        //SendCommandAndParse("AT+CGACT=0\r", parse_ERROR_OK, 1000);
+        //SendCommandAndParse("AT+CGDCONT=1\r", parse_ERROR_OK, 1000);
+        // Начало настройки соединения
+        if (SendCommandAndParse("AT+CGDCONT=1,\"IP\",\"internet.mts.ru\"\r", waitForOKResponse, 1000) != 1) {
+            goto http_error;
+        }
+        osDelay(500);
+        if (SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 1000) != 1) {
+            goto http_error;
+        }
+        osDelay(500);
+        if (SendCommandAndParse("AT+CDNSCFG=\"8.8.8.8\",\"77.88.8.8\"\r", waitForOKResponse, 1000) != 1) {
+            goto http_error;
+        }
+        osDelay(500);
+        if (SendCommandAndParse("AT+HTTPINIT\r", waitForOKResponse, 1000) != 1) {
+            goto http_error;
+        }
+        osDelay(500);
+        if (SendCommandAndParse("AT+HTTPPARA=\"CID\",\"1\"\r", waitForOKResponse, 1000) != 1) {
+            goto http_error;
+        }
+        osDelay(500);
+        // Отправка HTTP запроса (send - строка с корректно сформированным URL)
+        if (SendCommandAndParse(send, waitForOKResponse, 20000) != 1) {
+            goto http_error;
+        }
+        osDelay(500);
+        // Выполнение HTTPACTION, проверка ответа
+        if (SendCommandAndParse("AT+HTTPACTION=0\r", waitForHTTPResponse, 20000) != 1) {
+            goto http_error;
+        }
+        osDelay(2000);
+        int readResult = SendCommandAndParse("AT+HTTPREAD=0,200\r", waitAndParseSiteResponse, 1000);
+        if (readResult != 1) {
+            readResult = SendCommandAndParse("AT+HTTPREAD=0,200\r", waitAndParseSiteResponse, 1000);
+        }
+        osDelay(300);
+        // После попыток, вне зависимости от результата, завершаем HTTP сессию
+        SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000);
+        // Если данные так и не получены, считаем попытку неуспешной
+        if (readResult != 1) {
+            ERRCODE.STATUS |= STATUS_UART_NO_RESPONSE;
+        }
+
+        // Если до сюда дошли, значит все команды выполнены успешно
+        httpSent = 1;
+        break;
+
+http_error:
+        // В случае ошибки выполняем «очистку» состояния:
+        SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000);
+        SendCommandAndParse("AT+CGACT=0\r", waitForOKResponse, 1000);
+        SendCommandAndParse("AT+CGDCONT=1\r", waitForOKResponse, 1000);
+        osDelay(5000);  // Задержка 5 секунд перед следующей попыткой
+    }
+
+    // Если ни одна из попыток не увенчалась успехом, выставляем флаг ошибки
+    if (!httpSent) {
+        ERRCODE.STATUS |= STATUS_UART_SERVER_COMM_ERROR;
+    }
+}
+
+
+
+
+
+int parse_site_response(void) {
+    // Если в ответе содержится слово NO_BINDING, считаем, что данных нет
+    if (strstr(parseBuffer, "NO_BINDING") != NULL) {
+        return 0;
+    }
+    
+    // Ищем открывающую и закрывающую квадратные скобки
+    char *start = strchr(parseBuffer, '[');
+    char *end = strrchr(parseBuffer, ']');
+    if (start == NULL || end == NULL || start > end) {
+        return -1;
+    }
+    
+    // Извлекаем содержимое между скобками
+    size_t len = end - start - 1;
+    if (len == 0 || len >= 128) {  // 128 – размер временного буфера, можно настроить
+        return -1;
+    }
+    char dataStr[128] = {0};
+    memcpy(dataStr, start + 1, len);
+    dataStr[len] = '\0';
+
+    /* Разбиваем строку на поля, разделённые символом ';'
+       Ожидается 7 полей:
+         1. Номер устройства (строка)
+         2. Режим работы (целое число)
+         3. Режим работы сна (целое число)
+         4. Время сна (целое число)
+         5. Корректировка (double)
+         6. Максимальная глубина измерений (double)
+         7. Номер телефона (строка)
+    */
+   #define BUFFER_SIZE 128
+    char dataCopy[BUFFER_SIZE];
+    strncpy(dataCopy, dataStr, BUFFER_SIZE - 1);
+    dataCopy[BUFFER_SIZE - 1] = '\0';
+
+    char devNum[32] = {0};
+    unsigned int mode = 0;
+    unsigned int sleepMode = 0;
+    unsigned int sleepTime = 0;
+    double correct = 0.0;
+    double maxLvl = 0.0;
+    char phone[32] = {0};
+
+    int tokenCount = 0;
+    char *token = strtok(dataCopy, ";");
+    while (token != NULL)
+    {
+        tokenCount++;
+        switch (tokenCount)
+        {
+        case 1:
+            strncpy(devNum, token, sizeof(devNum) - 1);
+            devNum[sizeof(devNum) - 1] = '\0';
+            break;
+        case 2:
+            mode = (unsigned int)strtoul(token, NULL, 10);
+            break;
+        case 3:
+            sleepMode = (unsigned int)strtoul(token, NULL, 10);
+            break;
+        case 4:
+            sleepTime = (unsigned int)strtoul(token, NULL, 10);
+            break;
+        case 5:
+            correct = strtod(token, NULL);
+            break;
+        case 6:
+            maxLvl = strtod(token, NULL);
+            break;
+        case 7:
+            strncpy(phone, token, sizeof(phone) - 1);
+            phone[sizeof(phone) - 1] = '\0';
+            break;
+        default:
+            break;
+        }
+        token = strtok(NULL, ";");
+    }
+
+    if (tokenCount != 7)
+    {
+        // Если число токенов отличается от 7, данные считаются неверными
+        return -1;
+    }
+
+    // Проверяем, совпадает ли полученный номер устройства с ожидаемым
+    if (strcmp(devNum, EEPROM.version.VERSION_PCB) != 0) {
+        return -1;
+    }
+    
+    // Сохраняем разобранные данные в EEPROM
+    EEPROM.Mode = (uint8_t)mode;
+    // Если режим сна равен 0, время сна трактуем как минуты, иначе как часы
+    if (sleepMode == 0) {
+        EEPROM.time_sleep_m = (uint16_t)sleepTime;
+    } else {
+        EEPROM.time_sleep_h = (uint16_t)sleepTime;
+    }
+    EEPROM.GVL_correct = correct;
+    EEPROM.MAX_LVL = maxLvl;
+    // Копируем номер телефона, гарантируя наличие завершающего нуля
+    strncpy(EEPROM.Phone, phone, sizeof(EEPROM.Phone) - 1);
+    EEPROM.Phone[sizeof(EEPROM.Phone) - 1] = '\0';
+
+    if (!EEPROM_SaveSettings(&EEPROM))
+    {
+        ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
+    }
+
+    return 1;
+}
+
+int waitAndParseSiteResponse(void)
+{
+    uint32_t timeout = 20000;  // Таймаут ожидания в мс
+    TickType_t startTick = xTaskGetTickCount();
+    TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
+    
+    if (strstr(parseBuffer, "NO_BINDING") != NULL) {
+        return 0;
+    }
+    char *start = strchr(parseBuffer, '[');
+    if (start != NULL && strchr(start, ']') != NULL) {
+        int res = parse_site_response();
+        return res;  // 1 при успехе, -1 при ошибке
+    }
+    
+    // Цикл ожидания поступления данных
+    while ((xTaskGetTickCount() - startTick) < timeoutTicks)
+    {
+        // Ожидаем появления новых данных с периодом до 5 секунд
+        if (xSemaphoreTake(UART_PARSER_semaphore, pdMS_TO_TICKS(5000)) == pdTRUE)
+        {
+            // При каждом получении новых данных проверяем:
+            if (strstr(parseBuffer, "NO_BINDING") != NULL) {
+                return 0;
+            }
+            start = strchr(parseBuffer, '[');
+            if (start != NULL && strchr(start, ']') != NULL)
+            {
+                int res = parse_site_response();
+                return res;
+            }
+        }
+    }
+    // Если за время ожидания нужный пакет так и не обнаружен, возвращаем -1
+    return -1;
 }

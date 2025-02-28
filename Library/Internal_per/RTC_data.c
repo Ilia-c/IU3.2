@@ -18,6 +18,8 @@ void RTC_Init(void)
 	hrtc.Init.OutPutRemap = RTC_OUTPUT_REMAP_NONE;
 	hrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
 	hrtc.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
+
+	
 	if (HAL_RTC_Init(&hrtc) != HAL_OK)
 	{
 		Error_Handler();
@@ -36,12 +38,12 @@ int day_in_mount(int mount, int year)
 
 void RTC_set_date()
 {
-
+	HAL_PWR_EnableBkUpAccess();
 	RTC_DateTypeDef DateToUpdate = {0};
 
 	if (Date.Date>day_in_mount(Date.Month, Date.Year)) Date.Date = day_in_mount(Date.Month, Date.Year); //  коррекция дня
 
-	DateToUpdate.WeekDay = 0;
+	DateToUpdate.WeekDay = RTC_WEEKDAY_MONDAY;
 	DateToUpdate.Month = Date.Month;
 	DateToUpdate.Date = Date.Date;
 	DateToUpdate.Year = Date.Year;
@@ -56,6 +58,7 @@ void RTC_set_date()
 
 void RTC_set_time()
 {
+	HAL_PWR_EnableBkUpAccess();
 	RTC_TimeTypeDef sTime = {0};
 
 	sTime.Hours = Time.Hours;

@@ -13,6 +13,8 @@
 #define MAX_LINE_LEN    512
 #define CMD_BUFFER_SIZE 512
 
+extern uint8_t data_read;
+
 static void GSM_TimerCallback(TimerHandle_t xTimer);
 void Update_Data(void);
 int determineRegionAndOperator(void);
