@@ -7,5 +7,6 @@
 
 
 void ret_keyboard();
-void ScanKeypad();
+char ScanKeypad(void);
 void exit_key_no_press();
+void Keyboard(void);

@@ -596,7 +596,7 @@ static void MX_TIM6_Init(void)
   htim6.Init.Prescaler = 40000 - 1;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim6.Init.Period = Timer_key_press - 1;
-  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
     Error_Handler();
@@ -889,13 +889,13 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : STR_B1_Pin STR_B2_Pin STR_B3_Pin */
   GPIO_InitStruct.Pin = STR_B1_Pin|STR_B2_Pin|STR_B3_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : STR_B4_Pin */
   GPIO_InitStruct.Pin = STR_B4_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(STR_B4_GPIO_Port, &GPIO_InitStruct);
 
@@ -1103,7 +1103,8 @@ void Keyboard_task(void *argument)
   for (;;)
   {
     xSemaphoreTake(Keyboard_semapfore, portMAX_DELAY);
-    ScanKeypad();
+    Keyboard();
+    //Keyboard_processing();
     //osDelay(Timer_key_one_press);
   }
 }

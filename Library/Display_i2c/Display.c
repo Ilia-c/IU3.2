@@ -1311,6 +1311,7 @@ void Keyboard_processing()
                 key_press_data_write(Keyboard_press_code);
             }
         }
+        //xSemaphoreGive(Display_semaphore);
         Keyboard_press_code = 0xFF;
     }
 }
