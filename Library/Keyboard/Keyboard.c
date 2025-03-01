@@ -9,6 +9,7 @@ char Prot_Keyboard_press_code;    // Сырые данные при сканир
 extern TIM_HandleTypeDef htim6;
 extern const uint16_t Timer_key_press;
 extern const uint16_t Timer_key_press_fast;
+uint8_t Timer = 0;
 
 extern int mode_redact;  // Режим редактирования
 static char last_key = 0xFF;  // Запоминаем последнюю нажатую клавишу
@@ -58,26 +59,52 @@ void ret_keyboard(void)
 
 void Keyboard(void)
 {
-    // Сканируем клавиатуру
     Keyboard_press_code = ScanKeypad();
-    
-    // Остановка таймера, если клавиша не нажата
-    HAL_TIM_Base_Stop_IT(&htim6);
-    TIM6->SR &= ~TIM_SR_UIF;
-    TIM6->CNT = 0;
-    //__HAL_TIM_SET_AUTORELOAD(&htim6, Timer_key_press);
-    //TIM6->EGR |= TIM_EGR_UG;
-
-    if (Keyboard_press_code != 0xFF)
-    {
+    if ((mode_redact == 0) && ((Keyboard_press_code == 'L') || (Keyboard_press_code == 'R')) && ((Keyboard_press_code != 0xFF))){
+        HAL_TIM_Base_Stop_IT(&htim6);
+        TIM6->SR &= ~TIM_SR_UIF;
+        TIM6->CNT = 0;
+        ret_keyboard();
         xSemaphoreGive(Display_semaphore);
-        // Запуск таймера автоповтора
-        HAL_TIM_Base_Start_IT(&htim6);
-        //__HAL_TIM_SET_AUTORELOAD(&htim6, Timer_key_press_fast);
+        return;
     }
+    
+    if (Timer == 1){
+        Timer = 0;
+        // Если клавиша не нажата — останавливаем таймер
+        if ((Keyboard_press_code == 0xFF))
+        {
+            HAL_TIM_Base_Stop_IT(&htim6);
+            TIM6->SR &= ~TIM_SR_UIF;
+            TIM6->CNT = 0;
+            ret_keyboard();
+            return;
+        }
 
-    ret_keyboard();
-    last_key = Keyboard_press_code;
+        xSemaphoreGive(Display_semaphore);
+        ret_keyboard();
+    }
+    else
+    {
+
+        // Остановка таймера, если клавиша не нажата
+        HAL_TIM_Base_Stop_IT(&htim6);
+        TIM6->SR &= ~TIM_SR_UIF;
+        TIM6->CNT = 0;
+        __HAL_TIM_SET_AUTORELOAD(&htim6, Timer_key_press);
+        //TIM6->EGR |= TIM_EGR_UG;
+
+        if (Keyboard_press_code != 0xFF)
+        {
+            xSemaphoreGive(Display_semaphore);
+            // Запуск таймера автоповтора
+            HAL_TIM_Base_Start_IT(&htim6);
+            //__HAL_TIM_SET_AUTORELOAD(&htim6, Timer_key_press_fast);
+        }
+
+        ret_keyboard();
+        last_key = Keyboard_press_code;
+    }
 }
 
 char ScanKeypad(void)
@@ -115,6 +142,7 @@ char ScanKeypad(void)
 
 void HAL_TIM6_Callback(void)
 {
+    /*
     Keyboard_press_code = ScanKeypad();
     
     // Если клавиша не нажата — останавливаем таймер
@@ -126,12 +154,12 @@ void HAL_TIM6_Callback(void)
         ret_keyboard();
         return;
     }
-
+    */
     // Отправляем сигнал для обновления дисплея
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    xSemaphoreGiveFromISR(Display_semaphore, &xHigherPriorityTaskWoken);
-    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-    ret_keyboard();
+    __HAL_TIM_SET_AUTORELOAD(&htim6, Timer_key_press_fast);
+    Timer = 1;
+    static portBASE_TYPE xTaskWoken;
+    xSemaphoreGiveFromISR(Keyboard_semapfore, &xTaskWoken);
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)

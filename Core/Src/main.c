@@ -84,7 +84,7 @@ osThreadId_t MainHandle;
 const osThreadAttr_t Main_attributes = {
     .name = "Main",
     .stack_size = 256 * 1,
-    .priority = (osPriority_t)osPriorityHigh,
+    .priority = (osPriority_t)osPriorityHigh5,
 };
 
 /* Definitions for Display_I2C */
@@ -92,7 +92,7 @@ osThreadId_t Display_I2CHandle;
 const osThreadAttr_t Display_I2C_attributes = {
     .name = "Display_I2C",
     .stack_size = 1024 * 1,
-    .priority = (osPriority_t)osPriorityNormal3,
+    .priority = (osPriority_t)osPriorityHigh,
 };
 /* Definitions for ADC_read */
 osThreadId_t ADC_readHandle;
@@ -120,7 +120,7 @@ osThreadId_t Keyboard_taskHandle;
 const osThreadAttr_t Keyboard_task_attributes = {
     .name = "Keyboard_task",
     .stack_size = 256 * 2,
-    .priority = (osPriority_t)osPriorityNormal1,
+    .priority = (osPriority_t)osPriorityHigh1,
 };
 
 osThreadId_t USB_COM_taskHandle;
@@ -596,7 +596,7 @@ static void MX_TIM6_Init(void)
   htim6.Init.Prescaler = 40000 - 1;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim6.Init.Period = Timer_key_press - 1;
-  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
     Error_Handler();
@@ -963,7 +963,7 @@ void Main_Cycle(void *argument)
     HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);           // Выключение Памяти на плате
 
     // ! 4. Запрос настроек с сайта для текущей конфигурации, запуск задачи параллельно, если фатальная ошибка - отключить GSM
-
+    
 
 
     // 6. Получения показаний АЦП

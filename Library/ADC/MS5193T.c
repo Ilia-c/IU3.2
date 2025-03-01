@@ -113,7 +113,7 @@ uint32_t Read_MS5193T_Data(void)
         calculate_ADC_data_temp(adValue);
         read_por++;
         uint8_t ModeRegisterMsg[2] = {0b00100000, 0b00000111};  
-        uint8_t ConfigRegisterMsg[2] = {0b00010001, 0b10010000}; // канал на АЦП
+        uint8_t ConfigRegisterMsg[2] = {0b00010000, 0b10010000}; // канал на АЦП
         // Настройка регистра режима
         SPI2_Write_buf(0x08, ModeRegisterMsg, 2);
         //osDelay(1);
@@ -125,7 +125,7 @@ uint32_t Read_MS5193T_Data(void)
         calculate_ADC_data_heigh(adValue);
         read_por = 0;
         uint8_t ModeRegisterMsg[2] = {0b00100000, 0b00000111};  
-        uint8_t ConfigRegisterMsg[2] = {0b00010001, 0b10010001}; // канал на АЦП
+        uint8_t ConfigRegisterMsg[2] = {0b00010000, 0b10010001}; // канал на АЦП
         // Настройка регистра режима
         SPI2_Write_buf(0x08, ModeRegisterMsg, 2);
         //osDelay(1);
@@ -158,15 +158,27 @@ void calculate_ADC_data_temp(int32_t adValue) {
     // Настройка регистра конфигурации
     //SPI2_Write_buf(0x10, ConfigRegisterMsg, 2);
 }
-
+extern EEPROM_Settings_item EEPROM;
 void calculate_ADC_data_heigh(int32_t adValue) {
     snprintf(ADC_data.ADC_value_char, sizeof(ADC_data.ADC_value_char), "%" PRId32, adValue);
+    //adValue = adValue & 0x00FFFFFF;
+    double koeff = 0.00000006973743;
+    ADC_data.ADC_Volts = adValue * koeff; // Вольты
+    ADC_data.ADC_Current = ADC_data.ADC_Volts / *ADC_data.ADC_RESISTOR; // Амеперы
+    double Imin = 0;
+    double Imax = EEPROM.GVL_correct_20m;
+    if (EEPROM.mode_ADC == 0) Imin = EEPROM.GVL_correct_4m;
+    double Imax_Imin = Imax-Imin;
+    double VPI_NPI = *ADC_data.MAX_LVL - *ADC_data.ZERO_LVL;
+    ADC_data.ADC_SI_value = (ADC_data.ADC_Current-Imin)/Imax_Imin*VPI_NPI+*ADC_data.ZERO_LVL;
 
+    /*
     double koeff = 0.0000000697;
     koeff = adValue*koeff-0.4;
     koeff *= 9.375;
     ADC_data.ADC_SI_value = koeff;
     ADC_data.ADC_SI_value_correct = koeff + *ADC_data.GVL_correct;
+    */
     for (int i = 0; i<11; i++) ADC_data.ADC_SI_value_char[i] = '\0';
     snprintf(ADC_data.ADC_SI_value_char, sizeof(ADC_data.ADC_SI_value_char), "%4g", ADC_data.ADC_SI_value);
     snprintf(ADC_data.ADC_SI_value_correct_char, sizeof(ADC_data.ADC_SI_value_correct_char), "%4g", ADC_data.ADC_SI_value_correct);

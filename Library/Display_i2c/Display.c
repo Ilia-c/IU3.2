@@ -130,7 +130,7 @@ menuSelect_item LANGUAGE = {
 
 
 menuSelect_item CURRENT_LOOP = {
-    (uint8_t *)&ADC_data.mode,
+    (uint8_t *)&EEPROM.mode_ADC,
     {
         {"4-20мА", "4-20mA"},
         {"0-20мА", "0-20mA"},
@@ -418,7 +418,8 @@ extern EEPROM_Settings_item EEPROM;
 void Reset_settings(){
     EEPROM.time_sleep_h = 1; // Время сна устройства (часы)
     EEPROM.time_sleep_m = 0; // Время сна устройства (минуты)
-    EEPROM.GVL_correct = 0; // Коррекция нулевой точки (смещение ± от текущего значения) УГВ
+    EEPROM.GVL_correct_4m = 0.004;    // Реальные 4мА
+    EEPROM.GVL_correct_20m = 0.02;   // Реальные 20мА
     EEPROM.MAX_LVL = 15;    // Максимальный уровень (например, 15 метров) ВПИ
     EEPROM.ZERO_LVL = 7;    // Нулевое значение (например, 0 метров) НПИ
     EEPROM.Mode = 0;              // Текущий режим работы
@@ -429,6 +430,22 @@ void Reset_settings(){
     EEPROM.USB_mode = 0;          // Режим работы USB
     EEPROM.len = 0;               // Язык меню
     EEPROM.mode_ADC = 1;           // Режим работы АЦП, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
+    EEPROM_SaveSettings(&EEPROM);
+    if (!EEPROM_CheckDataValidity()){
+        ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
+    }
+}
+
+void colibrate_4ma(){
+    EEPROM.GVL_correct_4m = ADC_data.ADC_Current;
+    EEPROM_SaveSettings(&EEPROM);
+    if (!EEPROM_CheckDataValidity()){
+        ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
+    }
+}
+
+void colibrate_20ma(){
+    EEPROM.GVL_correct_20m = ADC_data.ADC_Current;
     EEPROM_SaveSettings(&EEPROM);
     if (!EEPROM_CheckDataValidity()){
         ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
@@ -492,8 +509,8 @@ MAKE_MENU(Menu_2, "Настройки", "Settings", 0, UPTADE_OFF, NO_SIGNED, Menu_3, Men
         MAKE_MENU(Menu_2_13_3, "Пароль", "Password", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13_4, Menu_2_13_2, Menu_2_13, CHILD_MENU, ACTION_MENU, SELECT_BAR, Password, DATA_OUT);
         MAKE_MENU(Menu_2_13_4, "Обновление ПО", "Update of software", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13_5, Menu_2_13_3, Menu_2_13, CHILD_MENU, Programm_Update_USB, SELECT_BAR, DATA_IN, DATA_OUT);
         MAKE_MENU(Menu_2_13_5, "Режим USB", "USB mode", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13_6, Menu_2_13_4, Menu_2_13, CHILD_MENU, ACTION_MENU, USB_MODE_STRUCT, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_13_6, "Калибровка шутна(верх)", "Shunt calibration(up)", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13_7, Menu_2_13_5, Menu_2_13, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_13_7, "Калибровка шутна(низ)", "Shunt calibration(low)", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13_8, Menu_2_13_6, Menu_2_13, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_13_6, "Калибровка 20мА", "Calibration(up)", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13_7, Menu_2_13_5, Menu_2_13, CHILD_MENU, colibrate_20ma, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_13_7, "Калибровка 4мА", "Calibration(low)", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13_8, Menu_2_13_6, Menu_2_13, CHILD_MENU, colibrate_4ma, SELECT_BAR, DATA_IN, DATA_OUT);
         MAKE_MENU(Menu_2_13_8, "Сопр. шунта", "Shunt resistance", 0, UPTADE_OFF, Unit_resistance, Menu_2_13_9, Menu_2_13_7, Menu_2_13, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
         MAKE_MENU(Menu_2_13_9, "Темп. корр.", "Offset temperature", 0, UPTADE_OFF, Unit_degree, Menu_2_13_10, Menu_2_13_8, Menu_2_13, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
         MAKE_MENU(Menu_2_13_10, "Кол. пит 24", "Col. DC In 24", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13_11, Menu_2_13_9, Menu_2_13, CHILD_MENU, Colibrate_dc, SELECT_BAR, DATA_IN, DATA_OUT);
