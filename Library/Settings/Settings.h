@@ -30,7 +30,7 @@ extern "C"
   typedef struct Prgramm_version
   {
     char VERSION_PROGRAMM[10];
-    char VERSION_PCB[10];
+    char VERSION_PCB[11];
     char password[10];
     char time_work_char[10];
   } Prgramm_version_item;
@@ -213,6 +213,9 @@ extern uint8_t units_mes;
 extern uint8_t screen_sever_mode;
 extern uint8_t USB_mode;
 
+
+extern char password[5];
+extern uint8_t time_counter;
 ////////////////////////////////////////////////////////////////////////////////
 // Глобальные переменные КОНФИГУРАЦИИ
 ////////////////////////////////////////////////////////////////////////////////

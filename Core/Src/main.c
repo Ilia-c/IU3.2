@@ -189,6 +189,7 @@ void SetTimerPeriod(uint32_t period_ms);
 
 unsigned int id = 0x00;
 extern RTC_HandleTypeDef hrtc;
+uint8_t units = 0;
 
 int main(void)
 {
@@ -1133,12 +1134,14 @@ void BlinkLED(GPIO_TypeDef *LEDPort, uint16_t LEDPin, uint8_t blinkCount, uint32
     osDelay(cycleDelay);
 }
 // Индикация ошибок
+
+
 void Erroe_indicate(void *argument){
   UNUSED(argument);
   uint64_t ErrorMask = 0;
-  SD_check();
   for (;;)
   {
+    //SD_check();
     Diagnostics();
     BlinkLED(GPIOC, GPIO_PIN_13, 1, 2000, 2000, 0);
     // Ошибка инициализации EEPROM
@@ -1186,6 +1189,12 @@ void Erroe_indicate(void *argument){
     }
     skip:
       osDelay(1000);
+
+      time_counter++;
+      if (time_counter>120){
+        time_counter = 0;
+        //Screen_saver();
+      }
   }
 }
 void UART_PARSER_task(void *argument)

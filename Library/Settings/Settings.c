@@ -20,7 +20,7 @@ EEPROM_Settings_item EEPROM = {
     .version = {
         // Текущая версия устройства
         .VERSION_PROGRAMM = "0.15b", // Версия программы
-        .VERSION_PCB = "3.7-001",    // Версия печатной платы
+        .VERSION_PCB = "3.75-A001V",    // Версия печатной платы
         .password = "1234",
         .time_work_char = "0",       // Время работы в виде строки
     },
@@ -49,10 +49,10 @@ EEPROM_Settings_item EEPROM = {
 
     // Параметры select_bar:
     .Mode = 0,              // Текущий режим работы (0 - режим текущие показания, 1 - циклический режим 2 - режим выставки)
-    .Communication = 0,     // Включен GSM или нет
+    .Communication = 1,     // Включен GSM или нет
     .RS485_prot = 0,        // Протокол RS-485
     .units_mes = 1,         // Единицы измерения (по умолчанию метры)
-    .screen_sever_mode = 0, // Включить или нет заставку при включении
+    .screen_sever_mode = 1, // Включить или нет заставку при включении
     .USB_mode = 0,          // Режим работы USB
     .Save_in = 0,          // Куда сохранять данные 0 - FLASH, 1 - SD, 2 - USB, 3 - Сайт
     .len = 0,               // Язык меню
@@ -169,6 +169,8 @@ RTC_DateTypeDef Date = {0}; // Время
 ////////////////////////////////////////////////////////////////////////////////
 const uint16_t Timer_key_press = 400;                      // Время ожидания до быстрого проматывания
 const uint16_t Timer_key_press_fast = 150;                 // Время быстрого нажатия клавиши
+char password[5] = "U37O";
+uint8_t time_counter = 0;
 
 // Буфер для приёма данных по USB
 uint8_t g_myRxBuffer[MY_USB_RX_BUFFER_SIZE]; // Максимальное количество байт для сбора данных по USB

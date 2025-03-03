@@ -30,6 +30,7 @@ void OLED_SendData(uint8_t data)
 
 /* public: */
 
+
 uint8_t OLED_Init(I2C_HandleTypeDef* i2c_handleTypeDef)
 {
 	hi2c = i2c_handleTypeDef;
@@ -41,7 +42,7 @@ uint8_t OLED_Init(I2C_HandleTypeDef* i2c_handleTypeDef)
 	
 	OLED_SendCommand(OLED_DISPLAY_OFF);
 	OLED_SendCommand(OLED_SET_DISPLAY_CLOCK_DIV_RATIO);
-	OLED_SendCommand(0x80);
+	OLED_SendCommand(0xF0);
 	OLED_SendCommand(OLED_SET_MULTIPLEX_RATIO);
 	OLED_SendCommand(0x3F);
 	OLED_SendCommand(OLED_SET_DISPLAY_OFFSET);
@@ -58,7 +59,7 @@ uint8_t OLED_Init(I2C_HandleTypeDef* i2c_handleTypeDef)
 	OLED_SendCommand(OLED_SET_CONTRAST_CONTROL);
 	OLED_SendCommand(0xFF);
 	OLED_SendCommand(OLED_SET_PRECHARGE_PERIOD);
-	OLED_SendCommand(0xF1);
+	OLED_SendCommand(0x22);
 	OLED_SendCommand(OLED_SET_VCOM_DESELECT);
 	OLED_SendCommand(0x40);
 	OLED_SendCommand(OLED_DISPLAY_ALL_ON_RESUME);

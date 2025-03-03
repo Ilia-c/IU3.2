@@ -1,3 +1,4 @@
+
 #include "main.h"
 #include "Settings.h"
 #include "Status_codes.h"
@@ -6,7 +7,9 @@
 #include <stdlib.h>
 #include "FreeRTOS.h"
 #include "task.h"
+#include <math.h>
 
+extern uint8_t units;
 uint8_t SPI2_TransmitByte(uint8_t TxData);
 uint8_t SPI2_Read_OneByte(uint8_t reg);
 void SPI2_Read_buf(uint8_t reg, uint8_t *pbuf, uint8_t len);
@@ -16,3 +19,5 @@ void MS5193T_Init(void);
 uint32_t Read_MS5193T_Data(void);
 void calculate_ADC_data_temp(int32_t adValue);
 void calculate_ADC_data_heigh(int32_t adValue);
+
+

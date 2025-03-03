@@ -1,3 +1,5 @@
+
+
 #include "OLED.h"
 #include "OLED_Fonts.h"
 #include "OLED_Icons.h"
@@ -13,6 +15,8 @@
 #include "AT24C02.h"
 #include "Status_codes.h"
 #include "Internal_ADC.h"
+
+
 
 typedef struct Menu_item
 {
@@ -50,7 +54,7 @@ typedef struct MAKE_MENU
     const char Name_en[26];   // Название пункта меню на английском
     int Num_menu;             // Номер вкладки сверху при переходе
     const int data_update;             // Обновлять или нет этот пункт меню каждые 100мс (1/0 вкл/выкл)
-    menuSelect_item *add_signat;       // дополнительная надпись справа (режим) 0 - отключено 1 - select_bar
+    menuSelect_item *add_signat;       // дополнительная надпись справа
 
     /*  тип меню (char)0b543210
         6 - вкладка                                             0x40
@@ -91,3 +95,26 @@ void Save_date_format();
 void Programm_GVL_CORRECT();
 void split_double(double *number, int32_t *int_part, int32_t *frac_part, uint8_t precision);
 void SAVE_DOUBLE(double **save_data, int32_t *value_int, int32_t *value_float, int size_float, uint8_t _signed);
+void Add_units(void);
+void Remove_units(void);
+void Display_TopBar(menuItem *CurrentMenu);
+void full_test();
+void USB_FLASH_SAVE();
+void GSM_sms_test();
+void flash_test();
+void SD_test();
+void EEPROM_test();
+void SAVE_IZM();
+void SD_Format();
+void Flash_Format();
+void GSM_internet_test();
+void Programm_Update_USB();
+void sleep();
+void Instruction();
+void Reset_settings();
+void colibrate_4ma();
+void colibrate_20ma();
+void temperature_colibrate();
+void PASSWORD();
+void Screen_saver();
+
