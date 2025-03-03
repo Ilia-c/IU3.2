@@ -19,6 +19,10 @@ extern char SDPath[4]; // Предположим, что здесь лежит "
 extern RTC_TimeTypeDef Time;
 extern RTC_DateTypeDef Date;
 
+void SD_check_conect(){
+
+}
+
 void SD_check(){
     if (ERRCODE.STATUS & STATUS_SD_TEMP_OUT_OF_RANGE) return;
     char read_buff[20] = {0};
@@ -58,7 +62,7 @@ void SD_check(){
     strcat(string, ". КОД:");
     format_uint8_t_2(buffer, sizeof(buffer), Date.Year);
     strcat(string, buffer);
-    uint64_to_hex_str(ERRCODE.STATUS, buffer, sizeof(buffer));
+    base62_encode(ERRCODE.STATUS, buffer, sizeof(buffer));
     strcat(string, buffer);
     strcat(string, "\n");
 
@@ -90,10 +94,33 @@ void format_uint8_t_2(char *buffer, size_t size, uint8_t data) {
     snprintf(buffer, size, "%u", data);
 }
 
-void uint64_to_hex_str(uint64_t value, char *buffer, size_t bufferSize)
-{
-    snprintf(buffer, bufferSize, "0x%016l", (unsigned long long)value);
+void base62_encode(uint64_t value, char *buffer, size_t bufferSize) {
+    if (bufferSize < 12) {
+        // Недостаточно места в буфере
+        return;
+    }
+
+    char result[12];
+    result[11] = '\0';
+
+    // Алфавит Base62: цифры, заглавные и строчные буквы.
+    const char *alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+    int pos = 10;  // Индекс для заполнения с конца (11 символов, индексы 0..10, где 10 – последний символ до '\0')
+    do {
+        result[pos--] = alphabet[value % 62];
+        value /= 62;
+    } while (value > 0);
+
+    // Если число меньше максимального, заполним оставшиеся позиции ведущими '0'
+    while (pos >= 0) {
+        result[pos--] = '0';
+    }
+
+    // Копируем результат в выходной буфер
+    strncpy(buffer, result, bufferSize);
 }
+
 
 extern uint32_t data_read_adc_in;
 void WriteToSDCard(void)
@@ -159,7 +186,7 @@ extern EEPROM_Settings_item EEPROM;
 void Collect_DATA(){
     HAL_RTC_GetDate(&hrtc, &Date, RTC_FORMAT_BIN);
     HAL_RTC_GetTime(&hrtc, &Time, RTC_FORMAT_BIN);
-    uint64_to_hex_str(ERRCODE.STATUS, ERRCODE.STATUSCHAR, sizeof(ERRCODE.STATUSCHAR));
+    base62_encode(ERRCODE.STATUS, ERRCODE.STATUSCHAR, sizeof(ERRCODE.STATUSCHAR));
 
     snprintf(save_data, CMD_BUFFER_SIZE,
     "[%s;%s;%s;%s;%s;%s;%s;%s;%02d/%02d/%02d%s%02d:%02d:%02d;%s;%s;%u;%u]",

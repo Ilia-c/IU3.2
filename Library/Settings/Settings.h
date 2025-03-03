@@ -61,7 +61,6 @@ extern "C"
     double ZERO_LVL;    // Нулевое значение     (например 0 метров)  НПИ
     // коррекция температуры (смещение) //
     double Crorrect_TEMP_A; // Смещение датчика аналогового температуры
-    double Crorrect_TEMP_D; // Смещение датчика цифрового температуры
     double Colibrate_koeff;
 
     /*-----------------*/
@@ -73,8 +72,10 @@ extern "C"
     uint8_t units_mes;         // по умолчанию метры, еденицы измерения
     uint8_t screen_sever_mode; // Включить или нет заставку при включении
     uint8_t USB_mode;          // режим работы USB
+    uint8_t Save_in;          // режим работы USB
     uint8_t len;               // Язык меню
     uint8_t mode_ADC;          // Режим работы АЦП, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
+    uint8_t block;            // Блокировка устройства
   } EEPROM_Settings_item;
 
 
@@ -92,7 +93,7 @@ extern "C"
   ////////////////////////////////////////////////////////////////////////////////
   typedef struct ADC_MS5193T
   {
-    char ADC_status_char[5];       // Статус GSM
+    char ADC_status_char[10];       // Статус GSM
     int32_t ADC_value;           // Значение АЦП
     double ADC_Volts;            // Напряжение на токовом шунте
     double ADC_Current;          // Ток на токовом шунте
@@ -100,6 +101,7 @@ extern "C"
     double ADC_SI_value_correct; // Выходное значение с корректировкой по уровню
     uint8_t Status;              // Статус работы АЦП - 0 - ERR,  1 - WAR, 2 - OK, 3 - выкл
 
+    double *Temp_correct_A; // Коррекция температуры (смещение)
     double *ADC_ION;
     float *ADC_RESISTOR;
     int32_t PPM;
@@ -114,9 +116,8 @@ extern "C"
     // Вывод значений (отображение)
     int32_t MAX_LVL_char[2];            // Установка максиального уровня (1 - до запятой | 2 - после запятой)
     int32_t ZERO_LVL_char[2];           // Установка минимального уровня (1 - 0мА/4мА  | 2 - до запятой | 3 - после запятой)
-    int32_t UP_LEVEL_CORRECT_char[2];   // Коррекция максиального уровня (20мА) - учитывает смещение от этого уровня
-    int32_t DOWN_LEVEL_CORRECT_char[2]; // Коррекция минимального уровня (0мА/4мА)  - учитывает смещение от этого уровня
     int32_t GVL_correct_char[2];        // Коррекция нулевой точки (смещение +- от текущего значения) дробная часть
+    int32_t Temp_correct[2];        // Коррекция нулевой точки термометра (смещение +- от текущего значения) дробная часть
 
     char ADC_value_char[15];            // Значение АЦП в виде строки
     char ADC_Volts_char[15];            // Напряжение на токовом шунте в виде строки
@@ -225,9 +226,9 @@ extern char error_code[4];         // Код глобальной ошибки
 extern double OneWire_temp;        // Температура OneWire
 extern char OneWire_temp_char[5];  // Температура OneWire в виде строки
 
-extern char EEPROM_status_char[3]; // Статус доступности EEPROM
-extern char FLASH_status_char[3];  // Статус доступности FLASH
-extern char SD_status_char[3];     // Статус доступности SD
+extern char EEPROM_status_char[10]; // Статус доступности EEPROM
+extern char FLASH_status_char[10];  // Статус доступности FLASH
+extern char SD_status_char[10];     // Статус доступности SD
 
 extern RTC_TimeTypeDef Time; // Дата
 extern RTC_DateTypeDef Date; // Время

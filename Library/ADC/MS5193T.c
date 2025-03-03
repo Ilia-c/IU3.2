@@ -11,7 +11,7 @@ extern SPI_HandleTypeDef hspi2;
 uint8_t SPI2_TransmitByte(uint8_t TxData)
 {
     uint8_t RxData = 0;
-    HAL_SPI_TransmitReceive(&hspi2, &TxData, &RxData, 1, 1000);
+    HAL_SPI_TransmitReceive(&hspi2, &TxData, &RxData, 1, 100);
     return RxData;
 }
 

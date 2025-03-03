@@ -41,6 +41,7 @@
 #include "Sleep.h"
 #include "AT24C02.h"
 #include "Parser.h"
+#include "Diagnostics.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -283,7 +284,7 @@ int main(void)
   __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB); // Сброс флага пробуждения из сна, для корректной работы сна
   HAL_PWR_DisableBkUpAccess();
   HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
-  HAL_NVIC_SetPriority(UART4_IRQn, 5, 0);
+  HAL_NVIC_SetPriority(UART4_IRQn, 7, 0);
   HAL_NVIC_EnableIRQ(UART4_IRQn);
 
   // Запуск в режиме настройки (экран вкл)
@@ -298,7 +299,7 @@ int main(void)
     //if (EEPROM.USB_mode == 0) MX_USB_DEVICE_Init_COMPORT(); // Режим работы в USB_FLASH (перефброс фалов с данными на внешний USB)
     if (EEPROM.USB_mode == 1){
       MX_USB_DEVICE_Init_COMPORT(); // Режим работы в VirtualComPort
-      HAL_NVIC_SetPriority(OTG_FS_IRQn, 5, 0); // Приоритет прерывания
+      HAL_NVIC_SetPriority(OTG_FS_IRQn, 10, 0); // Приоритет прерывания
       HAL_NVIC_EnableIRQ(OTG_FS_IRQn);         // Включение прерывания
     }
     //if (EEPROM.USB_mode == 2) MX_USB_DEVICE_Init_COMPORT(); // Режим работы в USB-FLASH с внутренней flash
@@ -323,7 +324,6 @@ int main(void)
   MX_DMA_Init();
   MX_SDMMC1_SD_Init();
   MX_FATFS_Init();
-
 
   W25_Ini();
   MS5193T_Init();
@@ -470,9 +470,8 @@ void PeriphCommonClock_Config(void)
   RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Initializes the peripherals clock
-  */
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB|RCC_PERIPHCLK_SDMMC1
-                              |RCC_PERIPHCLK_ADC;
+   */
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB | RCC_PERIPHCLK_SDMMC1 | RCC_PERIPHCLK_ADC;
   PeriphClkInit.AdcClockSelection = RCC_ADCCLKSOURCE_PLLSAI1;
   PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLLSAI1;
   PeriphClkInit.Sdmmc1ClockSelection = RCC_SDMMC1CLKSOURCE_PLLSAI1;
@@ -482,16 +481,12 @@ void PeriphCommonClock_Config(void)
   PeriphClkInit.PLLSAI1.PLLSAI1P = RCC_PLLP_DIV7;
   PeriphClkInit.PLLSAI1.PLLSAI1Q = RCC_PLLQ_DIV2;
   PeriphClkInit.PLLSAI1.PLLSAI1R = RCC_PLLR_DIV2;
-  PeriphClkInit.PLLSAI1.PLLSAI1ClockOut = RCC_PLLSAI1_48M2CLK|RCC_PLLSAI1_ADC1CLK;
+  PeriphClkInit.PLLSAI1.PLLSAI1ClockOut = RCC_PLLSAI1_48M2CLK | RCC_PLLSAI1_ADC1CLK;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
   }
 }
-
-
-
-
 
 /**
  * @brief ADC1 Initialization Function
@@ -1112,13 +1107,13 @@ void Keyboard_task(void *argument)
 
 void USB_COM_task(void *argument)
 {
-    UNUSED(argument);
-    for (;;)
-    {
-        // Ожидаем семафор (данные готовы к обработке)
-        xSemaphoreTake(USB_COM_semaphore, portMAX_DELAY);
-        USB_COM();
-    }
+  UNUSED(argument);
+  for (;;)
+  {
+    // Ожидаем семафор (данные готовы к обработке)
+    xSemaphoreTake(USB_COM_semaphore, portMAX_DELAY);
+    USB_COM();
+  }
 }
 
 void BlinkLED(GPIO_TypeDef *LEDPort, uint16_t LEDPin, uint8_t blinkCount, uint32_t onTime, uint32_t offTime, uint32_t cycleDelay)
@@ -1144,8 +1139,8 @@ void Erroe_indicate(void *argument){
   SD_check();
   for (;;)
   {
-    BlinkLED(GPIOC, GPIO_PIN_13, 5, 50, 50, 0);
-    osDelay(1000);
+    Diagnostics();
+    BlinkLED(GPIOC, GPIO_PIN_13, 1, 2000, 2000, 0);
     // Ошибка инициализации EEPROM
     ErrorMask = STATUS_EEPROM_INIT_ERROR
     | STATUS_EEPROM_WRITE_ERROR
@@ -1190,7 +1185,7 @@ void Erroe_indicate(void *argument){
       goto skip;
     }
     skip:
-      osDelay(4000);
+      osDelay(1000);
   }
 }
 void UART_PARSER_task(void *argument)

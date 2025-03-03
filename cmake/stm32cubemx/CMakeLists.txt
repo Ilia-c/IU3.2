@@ -45,6 +45,7 @@ target_include_directories(stm32cubemx INTERFACE
     ../../Library/Sleep_system
     ../../Library/Sleep_system
     ../../Library/EEPROM
+    ../../Library/Diagnostics
 )
 
 target_sources(stm32cubemx INTERFACE
@@ -141,6 +142,7 @@ target_sources(stm32cubemx INTERFACE
     ../../Library/UART_GSM/Parser.c
     ../../Library/Sleep_system/Sleep.c
     ../../Library/EEPROM/AT24C02.c
+    ../../Library/Diagnostics/Diagnostics.c
 )
 
 target_link_directories(stm32cubemx INTERFACE

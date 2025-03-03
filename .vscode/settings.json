@@ -33,7 +33,10 @@
         "stm32l4xx.h": "c",
         "cmsis_os2.h": "c",
         "internal_adc.h": "c",
-        "status_codes.h": "c"
+        "status_codes.h": "c",
+        "diagnostics.h": "c",
+        "sd.h": "c",
+        "stdbool.h": "c"
     },
     "cortex-debug.variableUseNaturalFormat": true
 }
