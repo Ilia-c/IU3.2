@@ -116,8 +116,6 @@ uint32_t Read_MS5193T_Data(void)
         uint8_t ConfigRegisterMsg[2] = {0b00010000, 0b10010000}; // канал на АЦП
         // Настройка регистра режима
         SPI2_Write_buf(0x08, ModeRegisterMsg, 2);
-        //osDelay(1);
-        // Настройка регистра конфигурации
         SPI2_Write_buf(0x10, ConfigRegisterMsg, 2);
     }
     else
@@ -128,8 +126,6 @@ uint32_t Read_MS5193T_Data(void)
         uint8_t ConfigRegisterMsg[2] = {0b00010000, 0b10010001}; // канал на АЦП
         // Настройка регистра режима
         SPI2_Write_buf(0x08, ModeRegisterMsg, 2);
-        //osDelay(1);
-        // Настройка регистра конфигурации
         SPI2_Write_buf(0x10, ConfigRegisterMsg, 2);
     }
     taskEXIT_CRITICAL();
@@ -147,8 +143,6 @@ void calculate_ADC_data_temp(int32_t adValue) {
     ADC_data.ADC_MS5193T_temp = koeff+*ADC_data.Temp_correct_A;
     for (int i = 0; i<11; i++) ADC_data.ADC_MS5193T_temp_char[i] = '\0';
     snprintf(ADC_data.ADC_MS5193T_temp_char, sizeof(ADC_data.ADC_MS5193T_temp_char), "%4.1f", ADC_data.ADC_MS5193T_temp);
-    
-    
     
     //uint8_t ModeRegisterMsg[2] = {0b00000000, 0b00000111};  
     //uint8_t ConfigRegisterMsg[2] = {0b00010000, 0b10000000}; // канал на АЦП
@@ -168,26 +162,6 @@ double round_to_n(double value, int n) {
 extern EEPROM_Settings_item EEPROM;
 void calculate_ADC_data_heigh(int32_t adValue) {
     snprintf(ADC_data.ADC_value_char, sizeof(ADC_data.ADC_value_char), "%" PRId32, adValue);
-    //adValue = adValue & 0x00FFFFFF;
-    /*
-    const double koeff = 0.00000006973743;
-    ADC_data.ADC_Volts = adValue * koeff; // Вольты
-    ADC_data.ADC_Current = ADC_data.ADC_Volts / *ADC_data.ADC_RESISTOR; // Амеперы
-    double Imin = 0;
-    double Imax = EEPROM.GVL_correct_20m;
-    if (EEPROM.mode_ADC == 0) Imin = EEPROM.GVL_correct_4m;
-    double Imax_Imin = Imax-Imin;
-    double VPI_NPI = *ADC_data.MAX_LVL - *ADC_data.ZERO_LVL;
-    double ADC_min = ADC_data.ADC_Current-Imin;
-    double ADC_d_Imm = ADC_min/Imax_Imin;
-    ADC_data.ADC_SI_value = ADC_d_Imm*VPI_NPI;
-    ADC_data.ADC_SI_value+=+*ADC_data.ZERO_LVL;
-
-    double H_correct = ADC_data.ADC_SI_value-EEPROM.ZERO_LVL;
-    double H_Imm = H_correct*Imax_Imin;
-    double ADC_Current_new = (H_Imm)/(VPI_NPI)+EEPROM.GVL_correct_4m;
-    ADC_Current_new*=1000;
-    */
     const long double koeff = 0.00000006973743438720703125;
     // Вычисляем напряжение ADC с использованием long double
     long double ADC_Volts_ld = adValue * koeff;

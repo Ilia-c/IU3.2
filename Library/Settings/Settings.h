@@ -160,6 +160,9 @@ extern "C"
 #define HTTP_SEND (1UL << 11)    // отправить http запрос
 #define HTTP_READ (1UL << 12)    // отправить http запрос (чтение данных)
 #define SMS_SEND (1UL << 13)    // ОТПРАВИТЬ SMS
+#define HTTP_SEND_Successfully  (1UL << 14)    //  http запрос успешен
+#define HTTP_READ_Successfully (1UL << 15)    // http запрос (чтение данных) успешен
+#define SMS_SEND_Successfully (1UL << 16)    //  SMS успешено отправлено
 
   typedef struct GSM_STATUS_item
   {

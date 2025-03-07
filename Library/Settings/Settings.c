@@ -172,6 +172,7 @@ const uint16_t Timer_key_press_fast = 150;                 // Время быс�
 char password[5] = "U37O";
 uint8_t time_counter = 0;
 
+
 // Буфер для приёма данных по USB
 uint8_t g_myRxBuffer[MY_USB_RX_BUFFER_SIZE]; // Максимальное количество байт для сбора данных по USB
 

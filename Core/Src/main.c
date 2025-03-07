@@ -109,13 +109,7 @@ const osThreadAttr_t RS485_data_attributes = {
     .stack_size = 256 * 4,
     .priority = (osPriority_t)osPriorityLow3,
 };
-/* Definitions for SIM800_data */
-osThreadId_t SIM800_dataHandle;
-const osThreadAttr_t SIM800_data_attributes = {
-    .name = "SIM800_data",
-    .stack_size = 512 * 3,
-    .priority = (osPriority_t)osPriorityLow7,
-};
+
 /* Definitions for Keyboard_task */
 osThreadId_t Keyboard_taskHandle;
 const osThreadAttr_t Keyboard_task_attributes = {
@@ -135,8 +129,8 @@ const osThreadAttr_t USB_COM_task_attributes = {
 osThreadId_t Main_Cycle_taskHandle;
 const osThreadAttr_t Main_Cycle_task_attributes = {
     .name = "Main_Cycle_task",
-    .stack_size = 128 * 1,
-    .priority = (osPriority_t)osPriorityLow5,
+    .stack_size = 1024 * 5,
+    .priority = (osPriority_t)osPriorityHigh5,
 };
 
 osThreadId_t  ERROR_INDICATE_taskHandle;
@@ -176,7 +170,6 @@ void BlinkLED(GPIO_TypeDef *LEDPort, uint16_t LEDPin, uint8_t blinkCount, uint32
 void Display_I2C(void *argument);
 void ADC_read(void *argument);
 void RS485_data(void *argument);
-void SIM800_data(void *argument);
 void Main(void *argument);
 void Main_Cycle(void *argument); // основной режим в циклическом режиме
 void Keyboard_task(void *argument);
@@ -235,6 +228,14 @@ int main(void)
   HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);           // Включение Памяти на плате
 
   HAL_Delay(10);
+  /*
+  uint8_t state = 0;
+  for( uint8_t i=1; i<128; i++ ){
+    state = HAL_I2C_IsDeviceReady(&hi2c1, (uint16_t)(i<<1), 3, 5);
+    if(state == HAL_OK){
+      uint8_t test = 0;
+    }
+  }*/
   //EEPROM_SaveSettings(&EEPROM);
   if (HAL_I2C_IsDeviceReady(&hi2c1, EEPROM_I2C_ADDRESS, 2, 100) != HAL_OK)
   {
@@ -333,7 +334,6 @@ int main(void)
 
   ADC_readHandle = osThreadNew(ADC_read, NULL, &ADC_read_attributes);
   RS485_dataHandle = osThreadNew(RS485_data, NULL, &RS485_data_attributes);
-  SIM800_dataHandle = osThreadNew(SIM800_data, NULL, &SIM800_data_attributes);
   UART_PARSER_taskHandle = osThreadNew(UART_PARSER_task, NULL, &UART_PARSER_task_attributes);
 
   if (EEPROM.Mode == 0){
@@ -349,7 +349,6 @@ int main(void)
     // Приостановка всех задач
     osThreadSuspend(ADC_readHandle);
     osThreadSuspend(RS485_dataHandle);
-    osThreadSuspend(SIM800_dataHandle);
   }
 
   osKernelStart();
@@ -948,69 +947,169 @@ void Main(void *argument)
 // Запускается только при циклическом режиме
 void Main_Cycle(void *argument)
 {
-    UNUSED(argument);
-    vSemaphoreCreateBinary(ADC_READY);
-    vSemaphoreCreateBinary(UART_PARSER_semaphore);
-    // 1. Уже все включено к текущему моменту
-    // 2. Уже конфигурация EEPROM прочитана
-    osDelay(100);
-
+  UNUSED(argument);
+  vSemaphoreCreateBinary(ADC_READY);
+  vSemaphoreCreateBinary(Keyboard_semapfore);
+  vSemaphoreCreateBinary(Display_semaphore);
+  vSemaphoreCreateBinary(Display_cursor_semaphore);
+  vSemaphoreCreateBinary(USB_COM_semaphore);
+  vSemaphoreCreateBinary(UART_PARSER_semaphore);
+  vSemaphoreCreateBinary(Main_semaphore);
+  // 1. Включено -  АЦП, flash, EEPROM
+  // 2. Уже конфигурация EEPROM прочитана
+  for (;;)
+  {
+    osDelay(10);
     // 3. Выключить EEPROM
-    HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);           // Выключение Памяти на плате
+    HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0); // Выключение Памяти на плате
+    Read_ADC_Voltage();
 
-    // ! 4. Запрос настроек с сайта для текущей конфигурации, запуск задачи параллельно, если фатальная ошибка - отключить GSM
-    
-
-
-    // 6. Получения показаний АЦП
-    osThreadResume(ADC_readHandle); //Запуск потока АЦП
-    // Ждем появления флага об окончании выполнения преобразования
-    if (xSemaphoreTake(ADC_READY, 5000) != pdTRUE)
+    uint8_t status = 0;
+    // 4. Запрос настроек с сайта для текущей конфигурации, запуск задачи параллельно, если фатальная ошибка - отключить GSM
+    if (EEPROM.Communication != 0)
     {
-      ERRCODE.STATUS |= STATUS_ADC_EXTERNAL_INIT_ERROR; 
-      ADC_data.Status = 0;
+      // 60 секунд на попытки зарагистрироваться
+      for (int i = 0; i < 60; i++)
+      {
+        if ((GSM_data.Status & NETWORK_REGISTERED) && (GSM_data.Status & SIGNAL_PRESENT))
+        {
+          status = 1;
+          break;
+        }
+        osDelay(1000);
+      }
+      if (status == 1)
+      {
+        GSM_data.Status |= HTTP_READ;
+        for (int i = 0; i < 120; i++)
+        {
+          if (GSM_data.Status & HTTP_READ_Successfully)
+          {
+            status = 1;
+            break;
+          }
+          if (ERRCODE.STATUS & STATUS_UART_SERVER_COMM_ERROR)
+          {
+            status = 0;
+            break;
+          }
+          osDelay(1000);
+        }
+      }
     }
 
-    // 7. Отключить АЦП (датчик)
-    HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
+    osDelay(10);
+    // 5. Получения показаний АЦП
 
-    // 8. Начать отправку данных на сайт и смс
-    osDelay(30000);
-    sendHTTP();
+    // Читаем текущее напряжение питания
+    for (int i = 0; i < 10; i++)
+    {
+      Read_ADC_Voltage();
+    }
+    osDelay(10);
+    //  Запускаем преобразования
+    if (!(ERRCODE.STATUS & STATUS_ADC_EXTERNAL_INIT_ERROR))
+    {
+      osThreadResume(ADC_readHandle);
+
+      status = 0;
+      for (int i = 0; i < 5; i++)
+      {
+        if (ADC_data.ADC_SI_value_char != 'N')
+          if (ADC_data.ADC_MS5193T_temp_char != 'N')
+          {
+            status = 1;
+            break;
+          }
+      }
+      if (status == 0)
+      {
+        ERRCODE.STATUS |= STATUS_ADC_EXTERNAL_SENSOR_ERROR;
+      }
+    }
+
+    // 6. Отключить АЦП (датчик)
+    osThreadSuspend(ADC_readHandle);
+    osDelay(10);
+    HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
     // Вызов функции отправки и полчучения настроек
 
-    // 9. Отключить GSM и включить память
-    HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
+    // 7.  включить память
     HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);
     osDelay(10);
 
-    // 10. Запись новго конфига, ели есть изменения (checksum)
-    // Если получилось получить настройки с сайта
-    if (!(ERRCODE.STATUS & STATUS_UART_SERVER_COMM_ERROR)){
+    // 8.  Сохранение данных
+    WriteToSDCard();
+
+    // 8. Запись новго конфига, ели есть изменения (checksum)
+    if (!(ERRCODE.STATUS & STATUS_UART_SERVER_COMM_ERROR))
+    {
       if (!(EEPROM_IsDataExists()))
       {
         // Данных нету или идентификатор изменился
         if (!EEPROM_SaveSettings(&EEPROM))
         {
           // Сохранение не вышло - нет связи с EEPROM
-          ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR; 
-          
+          ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
         }
       }
       // Если условие не выполняется - значит с данными все ОК
     }
 
-    // 11. Записать на flash
-    WriteToSDCard();
-    
-    // 12. Сон
-
-
-
+    if (EEPROM.Communication != 0)
+    {
+      uint8_t status = 0;
+      // 60 секунд на попытки зарагистрироваться
+      for (int i = 0; i < 60; i++)
+      {
+        if ((GSM_data.Status & NETWORK_REGISTERED) && (GSM_data.Status & SIGNAL_PRESENT))
+        {
+          status = 1;
+          break;
+        }
+        osDelay(1000);
+      }
+      if (status == 1)
+      {
+        GSM_data.Status |= HTTP_SEND;
+        for (int i = 0; i < 120; i++)
+        {
+          if (GSM_data.Status & HTTP_SEND_Successfully)
+          {
+            status = 1;
+            break;
+          }
+          if (ERRCODE.STATUS & STATUS_UART_SERVER_COMM_ERROR)
+          {
+            status = 0;
+            break;
+          }
+          osDelay(1000);
+        }
+        if (status == 0)
+        {
+          GSM_data.Status |= SMS_SEND;
+          for (int i = 0; i < 120; i++)
+          {
+            if (GSM_data.Status & SMS_SEND_Successfully)
+            {
+              status = 1;
+              break;
+            }
+            if (ERRCODE.STATUS & STATUS_UART_SMS_SEND_ERROR)
+            {
+              status = 0;
+              break;
+            }
+            osDelay(1000);
+          }
+        }
+      }
+    }
     HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, 1);
     HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ADC_Pin, 1);
     HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
-    HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);     // Не включаем RS по умолчанию
+    HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0); // Не включаем RS по умолчанию
     HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);
     HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);
     HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
@@ -1020,6 +1119,7 @@ void Main_Cycle(void *argument)
     Enter_StandbyMode(EEPROM.time_sleep_h, EEPROM.time_sleep_m);
     osDelay(10000);
     ERRCODE.STATUS |= STATUS_CRITICAL_ERROR;
+  }
 }
 
 /* USER CODE BEGIN Header_ADC_read */
@@ -1036,12 +1136,6 @@ void ADC_read(void *argument)
   {
     ADC_data.update_value();
     osDelay(300);
-    
-    // Остановить, если циклический режим (для однократного выполнения)
-    if (EEPROM.Mode != 0){ 
-      osThreadSuspend(ADC_readHandle); 
-      xSemaphoreGive(ADC_READY);
-    }
   }
 }
 
@@ -1052,34 +1146,11 @@ void RS485_data(void *argument)
   {
     osDelay(3000);
     Read_ADC_Voltage();
-    if (EEPROM.Mode != 0) osThreadSuspend(RS485_dataHandle); // Остановить, если циклический режим (для однократного выполнения)
+    if (EEPROM.Mode == 1) osThreadSuspend(RS485_dataHandle); // Остановить, если циклический режим (для однократного выполнения)
   }
 }
 
 
-void SIM800_data(void *argument)
-{
-  UNUSED(argument);
-  for (;;)
-  {
-    // Если GSM должен быть включен
-    if (EEPROM.Communication == 1){
-      // Если GSM был выключен
-      if (HAL_GPIO_ReadPin(EN_3P8V_GPIO_Port, EN_3P8V_Pin) == 0){
-        HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 1); // Включение GSM
-        osDelay(100);
-        HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 1);
-        osDelay(600);
-        HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 0);
-      }
-    } 
-    // Если GSM должен быть выключен
-    if (EEPROM.Communication == 0) HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
-    if (EEPROM.Mode != 0) osThreadSuspend(SIM800_dataHandle); // Остановить, если циклический режим (для однократного выполнения)
-    osDelay(20000);
-  }
-  /* USER CODE END SIM800_data */
-}
 
 uint32_t data_read_adc_in = 0;
 void Display_I2C(void *argument)
@@ -1136,12 +1207,13 @@ void BlinkLED(GPIO_TypeDef *LEDPort, uint16_t LEDPin, uint8_t blinkCount, uint32
 // Индикация ошибок
 
 
-void Erroe_indicate(void *argument){
+void Erroe_indicate(void *argument)
+{
   UNUSED(argument);
   uint64_t ErrorMask = 0;
+  SD_check();
   for (;;)
   {
-    //SD_check();
     Diagnostics();
     BlinkLED(GPIOC, GPIO_PIN_13, 1, 2000, 2000, 0);
     // Ошибка инициализации EEPROM
@@ -1203,8 +1275,27 @@ void UART_PARSER_task(void *argument)
     GSM_Init();
     for (;;)
     { 
-      
-      osDelay(10000);
+    osDelay(5000);
+    // Если GSM должен быть включен
+    if (EEPROM.Communication == 1){
+      // Если GSM был выключен
+      if (HAL_GPIO_ReadPin(EN_3P8V_GPIO_Port, EN_3P8V_Pin) == 0){
+        HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 1); // Включение GSM
+        osDelay(100);
+        HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 1);
+        osDelay(600);
+        HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 0);
+      }
+    } 
+    // Если GSM должен быть выключен
+    if (EEPROM.Communication == 0){ 
+      HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0); 
+      continue;
+    }
+    //if (EEPROM.Mode != 0) osThreadSuspend(SIM800_dataHandle); // Остановить, если циклический режим (для однократного выполнения)
+    
+
+  
       if (!(GSM_data.Status & GSM_RDY)){
         int result = SendCommandAndParse("AT\r", parse_ERROR_OK, 1000);
         if (result == 1){
@@ -1228,27 +1319,36 @@ void UART_PARSER_task(void *argument)
         GSM_data.update_value();
         xSemaphoreGive(Display_semaphore);
       }
+
       if (GSM_data.Status & SMS_SEND)
       {
         // флаг того что нужно отправить смс
         GSM_data.Status &= ~SMS_SEND;
-        sendSMS();
+        Collect_DATA();
+        if (sendSMS() == HAL_OK)  GSM_data.Status|=SMS_SEND_Successfully;
+        else ERRCODE.STATUS |= STATUS_UART_SMS_SEND_ERROR;
         //save_data[len] = '\0';
       }
 
       if (GSM_data.Status & HTTP_SEND)
       {
         GSM_data.Status &= ~HTTP_SEND;
-        sendHTTP();
+        Collect_DATA();
+        if (sendHTTP() == HAL_OK)  GSM_data.Status|=HTTP_SEND_Successfully;
+        else ERRCODE.STATUS |= STATUS_UART_SERVER_COMM_ERROR;
       }
       if (GSM_data.Status & HTTP_READ)
       {
         // флаг того что нужно отправить HTTP
         GSM_data.Status &= ~HTTP_READ;
-        
+        SETTINGS_REQUEST_DATA();
+        if (READ_Settings_sendHTTP() == HAL_OK)  GSM_data.Status|=HTTP_READ_Successfully;
+        else ERRCODE.STATUS |= STATUS_UART_SERVER_COMM_ERROR;
       }
     }
 }
+
+
 
 int a = 0;
 

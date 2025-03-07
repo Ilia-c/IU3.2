@@ -117,4 +117,6 @@ void colibrate_20ma();
 void temperature_colibrate();
 void PASSWORD();
 void Screen_saver();
-
+void ALL_Reset_settings();
+void GSM_HTTP_READ();
+void Save_time_sleep_format();

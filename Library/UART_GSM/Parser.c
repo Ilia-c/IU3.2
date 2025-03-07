@@ -248,11 +248,10 @@ int waitForHTTPResponse()
 
 #define MAX_SMS_ATTEMPTS 3
 
-void sendSMS(void)
+int sendSMS(void)
 {
     int attempt;
     uint8_t smsSent = 0; // Флаг успешной отправки SMS
-    Collect_DATA();
     size_t len = strlen(save_data);
     if (len + 2 < CMD_BUFFER_SIZE)
     {
@@ -303,15 +302,16 @@ void sendSMS(void)
     // Если ни одна из попыток не увенчалась успехом, выставляем флаг ошибки
     if (!smsSent) {
         ERRCODE.STATUS |= STATUS_UART_SMS_SEND_ERROR;
+        return -1;
     }
+    return 0;
 }
 
 #define MAX_HTTP_ATTEMPTS 3
 
-void sendHTTP(void) {
+int sendHTTP(void) {
     int attempt;
     uint8_t httpSent = 0; // Флаг успешной отправки HTTP
-    Collect_DATA();
     char send[512] = "AT+HTTPPARA=\"URL\",\"http://geosp-data.ru/api/save-data?data=";
     size_t len = strlen(save_data);
     if (len + 2 < 512) {
@@ -330,38 +330,31 @@ void sendHTTP(void) {
         if (SendCommandAndParse("AT+CGDCONT=1,\"IP\",\"internet.mts.ru\"\r", waitForOKResponse, 1000) != 1) {
             goto http_error;
         }
-        osDelay(500);
         if (SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 1000) != 1) {
             goto http_error;
         }
-        osDelay(500);
         if (SendCommandAndParse("AT+CDNSCFG=\"8.8.8.8\",\"77.88.8.8\"\r", waitForOKResponse, 1000) != 1) {
             goto http_error;
         }
-        osDelay(500);
         if (SendCommandAndParse("AT+HTTPINIT\r", waitForOKResponse, 1000) != 1) {
             goto http_error;
         }
-        osDelay(500);
         if (SendCommandAndParse("AT+HTTPPARA=\"CID\",\"1\"\r", waitForOKResponse, 1000) != 1) {
             goto http_error;
         }
-        osDelay(500);
         // Отправка HTTP запроса (send - строка с корректно сформированным URL)
         if (SendCommandAndParse(send, waitForOKResponse, 20000) != 1) {
             goto http_error;
         }
-        osDelay(500);
         // Выполнение HTTPACTION, проверка ответа
         if (SendCommandAndParse("AT+HTTPACTION=0\r", waitForHTTPResponse, 20000) != 1) {
             goto http_error;
         }
-        osDelay(2000);
         int readResult = SendCommandAndParse("AT+HTTPREAD=0,200\r", waitAndParseSiteResponse, 1000);
         if (readResult != 1) {
             readResult = SendCommandAndParse("AT+HTTPREAD=0,200\r", waitAndParseSiteResponse, 1000);
         }
-        osDelay(300);
+        osDelay(100);
         // После попыток, вне зависимости от результата, завершаем HTTP сессию
         SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000);
         // Если данные так и не получены, считаем попытку неуспешной
@@ -384,7 +377,92 @@ http_error:
     // Если ни одна из попыток не увенчалась успехом, выставляем флаг ошибки
     if (!httpSent) {
         ERRCODE.STATUS |= STATUS_UART_SERVER_COMM_ERROR;
+        return -1;
     }
+    return 0;
+}
+
+int READ_Settings_sendHTTP(void) {
+    int attempt;
+    uint8_t httpSent = 0; // Флаг успешной отправки HTTP
+    char send[512] = "AT+HTTPPARA=\"URL\",\"http://geosp-data.ru/api/save-data?request=";
+    
+    size_t len = strlen(save_data);
+    if (len + 2 < 512) {
+        save_data[len] = '"';
+        save_data[len + 1] = '\r';
+        save_data[len + 2] = '\0';
+    }
+    strcat(send, save_data);
+
+    for (attempt = 0; attempt < MAX_HTTP_ATTEMPTS; attempt++) {
+        // Предварительная очистка состояния перед началом
+        //SendCommandAndParse("AT+HTTPTERM\r", parse_ERROR_OK, 1000);
+        //SendCommandAndParse("AT+CGACT=0\r", parse_ERROR_OK, 1000);
+        //SendCommandAndParse("AT+CGDCONT=1\r", parse_ERROR_OK, 1000);
+        // Начало настройки соединения
+        if (SendCommandAndParse("AT+CGDCONT=1,\"IP\",\"internet.mts.ru\"\r", waitForOKResponse, 1000) != 1) {
+            goto http_error;
+        }
+        if (SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 1000) != 1) {
+            goto http_error;
+        }
+        if (SendCommandAndParse("AT+CDNSCFG=\"8.8.8.8\",\"77.88.8.8\"\r", waitForOKResponse, 1000) != 1) {
+            goto http_error;
+        }
+        if (SendCommandAndParse("AT+HTTPINIT\r", waitForOKResponse, 1000) != 1) {
+            goto http_error;
+        }
+        if (SendCommandAndParse("AT+HTTPPARA=\"CID\",\"1\"\r", waitForOKResponse, 1000) != 1) {
+            goto http_error;
+        }
+        // Отправка HTTP запроса (send - строка с корректно сформированным URL)
+        if (SendCommandAndParse(send, waitForOKResponse, 20000) != 1) {
+            goto http_error;
+        }
+        // Выполнение HTTPACTION, проверка ответа
+        if (SendCommandAndParse("AT+HTTPACTION=0\r", waitForHTTPResponse, 20000) != 1) {
+            goto http_error;
+        }
+        //osDelay(2000);
+        int readResult = SendCommandAndParse("AT+HTTPREAD=0,200\r", waitAndParseSiteResponse, 1000);
+        if (readResult != 1) {
+            readResult = SendCommandAndParse("AT+HTTPREAD=0,200\r", waitAndParseSiteResponse, 1000);
+        }
+        // После попыток, вне зависимости от результата, завершаем HTTP сессию
+        SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000);
+        // Если данные так и не получены, считаем попытку неуспешной
+        if (readResult != 1) {
+            ERRCODE.STATUS |= STATUS_UART_NO_RESPONSE;
+        }
+
+        // Если до сюда дошли, значит все команды выполнены успешно
+        httpSent = 1;
+        break;
+
+http_error:
+        // В случае ошибки выполняем «очистку» состояния:
+        SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000);
+        SendCommandAndParse("AT+CGACT=0\r", waitForOKResponse, 1000);
+        SendCommandAndParse("AT+CGDCONT=1\r", waitForOKResponse, 1000);
+        osDelay(5000);  // Задержка 5 секунд перед следующей попыткой
+    }
+
+    // Если ни одна из попыток не увенчалась успехом, выставляем флаг ошибки
+    if (!httpSent) {
+        ERRCODE.STATUS |= STATUS_UART_SERVER_COMM_ERROR;
+        return -1;
+    }
+    return 0;
+}
+
+int Send_data(){
+    Collect_DATA();
+    if (sendHTTP() == 0) return 0;
+    ERRCODE.STATUS |= STATUS_UART_SERVER_COMM_ERROR;
+    if (sendSMS() == 0) return 0;
+    ERRCODE.STATUS |= STATUS_UART_SMS_SEND_ERROR;
+    return -1;
 }
 
 
@@ -486,10 +564,12 @@ int parse_site_response(void) {
     // Сохраняем разобранные данные в EEPROM
     EEPROM.Mode = (uint8_t)mode;
     // Если режим сна равен 0, время сна трактуем как минуты, иначе как часы
-    if (sleepMode == 0) {
+    if (sleepMode == 1) {
         EEPROM.time_sleep_m = (uint16_t)sleepTime;
+        EEPROM.time_sleep_h = 0;
     } else {
         EEPROM.time_sleep_h = (uint16_t)sleepTime;
+        EEPROM.time_sleep_m = 0;
     }
     EEPROM.GVL_correct = correct;
     EEPROM.MAX_LVL = maxLvl;

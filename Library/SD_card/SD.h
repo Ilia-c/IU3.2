@@ -10,3 +10,4 @@
 void WriteToSDCard(void);
 void SD_check();
 void base62_encode(uint64_t value, char *buffer, size_t bufferSize);
+void SETTINGS_REQUEST_DATA();

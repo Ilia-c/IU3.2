@@ -206,3 +206,12 @@ void Collect_DATA(){
     EEPROM.time_sleep_m,                       // число
     EEPROM.time_sleep_h);                      // число
 }
+
+void SETTINGS_REQUEST_DATA(){
+    base62_encode(ERRCODE.STATUS, ERRCODE.STATUSCHAR, sizeof(ERRCODE.STATUSCHAR));
+    
+    snprintf(save_data, CMD_BUFFER_SIZE,
+    "[%s;%s]",
+    EEPROM.version.VERSION_PCB,              // строка
+    EEPROM.version.password);                      // число
+}
