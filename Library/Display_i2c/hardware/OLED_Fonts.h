@@ -31,14 +31,14 @@ typedef struct
 
 extern font_t Font;
 
-extern fontdatatype BigNumbers[];
-extern fontdatatype Segoe_UI_Rus_12[];
-extern fontdatatype Segoe_UI_Rus_10[];
-extern fontdatatype Segoe_UI_Rus_8[];
-extern fontdatatype Arial_Rus_7[];
-extern fontdatatype Segoe_UI_Eng_12[];
-extern fontdatatype Segoe_UI_Eng_10[];
-extern fontdatatype my5x7fonts[];
+extern const fontdatatype BigNumbers[];
+extern const fontdatatype Segoe_UI_Rus_12[];
+extern const fontdatatype Segoe_UI_Rus_10[];
+extern const fontdatatype Segoe_UI_Rus_8[];
+extern const fontdatatype Arial_Rus_7[];
+extern const fontdatatype Segoe_UI_Eng_12[];
+extern const fontdatatype Segoe_UI_Eng_10[];
+extern const fontdatatype my5x7fonts[];
 
 void FontSet(const uint8_t* font);
 

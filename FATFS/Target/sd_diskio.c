@@ -6,13 +6,12 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
-  * All rights reserved.</center></h2>
+  * Copyright (c) 2025 STMicroelectronics.
+  * All rights reserved.
   *
-  * This software component is licensed by ST under Ultimate Liberty license
-  * SLA0044, the "License"; You may not use this file except in compliance with
-  * the License. You may obtain a copy of the License at:
-  *                             www.st.com/SLA0044
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
   ******************************************************************************
   */
@@ -642,7 +641,7 @@ void BSP_SD_WriteCpltCallback(void)
    osMessagePut(SDQueueID, WRITE_CPLT_MSG, 0);
 #else
    const uint16_t msg = WRITE_CPLT_MSG;
-   osMessageQueuePut(SDQueueID, (const void *)&msg, NULL, 0);
+   osMessageQueuePut(SDQueueID, (const void *)&msg, 0, 0);
 #endif
 }
 
@@ -661,22 +660,20 @@ void BSP_SD_ReadCpltCallback(void)
    osMessagePut(SDQueueID, READ_CPLT_MSG, 0);
 #else
    const uint16_t msg = READ_CPLT_MSG;
-   osMessageQueuePut(SDQueueID, (const void *)&msg, NULL, 0);
+   osMessageQueuePut(SDQueueID, (const void *)&msg, 0, 0);
 #endif
 }
 
 /* USER CODE BEGIN ErrorAbortCallbacks */
 /*
-==============================================================================================
-  depending on the SD_HAL_Driver version, either the HAL_SD_ErrorCallback() or HAL_SD_AbortCallback()
-  or both could be defined, activate the callbacks below when suitable and needed
-==============================================================================================
 void BSP_SD_AbortCallback(void)
 {
-}
-
-void BSP_SD_ErrorCallback(void)
-{
+#if (osCMSIS < 0x20000U)
+   osMessagePut(SDQueueID, RW_ABORT_MSG, 0);
+#else
+   const uint16_t msg = RW_ABORT_MSG;
+   osMessageQueuePut(SDQueueID, (const void *)&msg, 0, 0);
+#endif
 }
 */
 /* USER CODE END ErrorAbortCallbacks */
@@ -684,6 +681,3 @@ void BSP_SD_ErrorCallback(void)
 /* USER CODE BEGIN lastSection */
 /* can be used to modify / undefine previous code or add new code */
 /* USER CODE END lastSection */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
-

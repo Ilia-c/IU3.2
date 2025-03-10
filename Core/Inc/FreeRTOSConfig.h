@@ -78,6 +78,9 @@
 #define configUSE_COUNTING_SEMAPHORES            1
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION  0
 
+#define configCHECK_FOR_STACK_OVERFLOW 2
+#define configUSE_MALLOC_FAILED_HOOK   1
+#define configASSERT(x) if((x) == 0) { taskDISABLE_INTERRUPTS(); for(;;); }
 
 
 #include "stm32l4xx.h"

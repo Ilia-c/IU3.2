@@ -4,7 +4,7 @@
 #define ABS(A) (((A) < 0) ? ((-1) * (A)) : (A))
 
 static uint8_t oled_start_column = 2;		// Display shift
-static uint8_t oled_buffer[1024] = {0};			// Display buffer
+static uint8_t oled_buffer[1024] __attribute__((section(".ram2"))) = {0};			// Display buffer
 static I2C_HandleTypeDef* hi2c;				// Pointer I2C structure
 
 /* private: */

@@ -93,6 +93,16 @@ void NULL_F(){}
 const char Clear[2][40] = {"Отчистка FLASH",  "CLEAR FLASH"};
 const char POWER_NOT[2][40] = {"НЕ ОТКЛЮЧАЙТЕ ПИТАНИЕ",  "НЕ ОТКЛЮЧАЙТЕ ПИТАНИЕ"};
 const char READY[2][40] = {"Готово",  "Ready"};
+const char PASSWORD_IN[2][40] = {"Введите пароль",  "Password in"};
+const char ERROR_TEXT[2][40] = {"Ошибка",  "Error"};
+const char DIAPASON_ERR[2][40] = {"Вне диапазона",  "Error"};
+const char CALIBRATE_4ma_CORRECT[2][40] = {"Калибровка 4мА успешна",  "correct"};
+const char CALIBRATE_20ma_CORRECT[2][40] = {"Калибровка 4мА успешна",  "correct"};
+const char ERROR_EEROM[2][40] = {"Ошибка EEPROM",  "EEPROM Error"};
+const char SAVE_DATA_IZM[2][40] = {"Сохранение...",  "SAVE..."};
+const char ZAPISEY[2][40] = {"Записей ",  "Log "};
+const char SAVE_USB_DATA[2][40] = {"Выгрузка... ",  "Upload..."};
+const char USB_RES_ERR[2][40] = {"USB не найден",  "USB not found"};
 
 // Выбираемые значения и статус
 menuSelect_item Communication_DATA = { 
@@ -432,8 +442,6 @@ menuSelect_item NO_SIGNED = {
     {{"", ""}}
 };
 
-
-
 MAKE_MENU(Menu_1, "Режимы", "Modes", 0, UPTADE_OFF, NO_SIGNED, Menu_2, PREVISION_MENU, PARENT_MENU, Menu_1_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
 	MAKE_MENU(Menu_1_1, "Цикл", "Cycle", 0, UPTADE_OFF, NO_SIGNED, Menu_1_2, PREVISION_MENU, Menu_1, CHILD_MENU, sleep, SELECT_BAR, DATA_IN, DATA_OUT);
 	MAKE_MENU(Menu_1_2, "Диагностика", "Test check", 0, UPTADE_OFF, NO_SIGNED, Menu_1_3, Menu_1_1, Menu_1, Menu_1_2_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
@@ -553,7 +561,11 @@ void PROGRESS_BAR(uint8_t procent){
     OLED_DrawRectangle(first_point, Y+15, leight+first_point, Y+25);
     OLED_DrawRectangleFill(first_point, Y+15, procent_len+first_point, Y+25, 1);
 }
-
+void OLED_DrawCenteredString(const char strArray[][40], uint16_t Y_pos) {
+    uint8_t len = OLED_GetWidthStr(strArray[EEPROM.len]);
+    uint16_t x = (winth_display - len) / 2;
+    OLED_DrawStr(strArray[EEPROM.len], x, Y_pos, 1);
+}
 
 // полный тест при нажатии кнопки
 void full_test(){}
@@ -574,22 +586,22 @@ void SAVE_IZM(){
     OLED_Clear(0);
     FontSet(font);
     Display_TopBar(selectedMenuItem);
-    #define X 20
     #define Y 25
-    OLED_DrawStr("Сохранение...", X, Y, 1);
+    OLED_DrawCenteredString(SAVE_DATA_IZM, Y);
     OLED_UpdateScreen();
 
     Collect_DATA();
     update_flash_end_ptr();
     flash_append_record(save_data);
 
-    //flash_read_record_by_index(flash_end_ptr, save_data);
-
     char flash_end_ptr_char[30] = {0};
-    snprintf(flash_end_ptr_char, 30, "Записей: %ld", flash_end_ptr);
-    
-    OLED_DrawStr("Готово", X+5, Y+10, 1);
-    OLED_DrawStr(flash_end_ptr_char, X+5, Y+20, 1);
+    snprintf(flash_end_ptr_char, 30, "%s %ld", ZAPISEY[EEPROM.len], flash_end_ptr);
+    OLED_DrawRectangleFill(0, 15, winth_display, 60, 0);
+    OLED_DrawCenteredString(READY, Y);
+
+    uint8_t len = OLED_GetWidthStr(flash_end_ptr_char);
+    uint16_t x = (winth_display - len) / 2;
+    OLED_DrawStr(flash_end_ptr_char, x, Y+10, 1);
     //OLED_DrawStr(save_data, X-15, Y+30, 1);
     OLED_UpdateScreen();
     osDelay(200);
@@ -602,12 +614,15 @@ void SAVE_USB(){
     Display_TopBar(selectedMenuItem);
     #define X 20
     #define Y 25
-    OLED_DrawStr("Сохранение...", X, Y, 1);
+
+    OLED_DrawCenteredString(SAVE_USB_DATA, Y);
     OLED_UpdateScreen();
 
-    backup_records_to_external();
-    
-    OLED_DrawStr("Готово", X+5, Y+10, 1);
+    int res = backup_records_to_external();
+    OLED_DrawRectangleFill(0, 15, winth_display, 60, 0);
+    if (res != 1) OLED_DrawCenteredString(USB_RES_ERR, Y);
+    else OLED_DrawCenteredString(READY, Y);
+
     OLED_UpdateScreen();
     osDelay(200);
 }
@@ -630,14 +645,14 @@ void PASSWORD(){
     OLED_Clear(0);
     FontSet(font);
     Display_TopBar(selectedMenuItem);
-    #define X 25
-    #define Y 25
-    OLED_DrawStr("Введите пароль", X, Y, 1);
+    OLED_DrawCenteredString(PASSWORD_IN, 35);
     OLED_UpdateScreen();
     osDelay(200);
 }
 
 void SD_Format(){}
+
+
 
 void Flash_Format(){
     mode_redact = 2;
@@ -645,19 +660,13 @@ void Flash_Format(){
     FontSet(font);
     Display_TopBar(selectedMenuItem);
     //W25_Chip_Erase();
-    uint8_t len = OLED_GetWidthStr(Clear[EEPROM.len]);
-    OLED_DrawStr(Clear[EEPROM.len], (winth_display-len)/2, Y, 1);
-    len = OLED_GetWidthStr(POWER_NOT[EEPROM.len]);
-    OLED_DrawStr(POWER_NOT[EEPROM.len], (winth_display-len)/2, Y+10, 1);
-
-
+    OLED_DrawCenteredString(Clear, Y);
+    OLED_DrawCenteredString(POWER_NOT, Y+10);
     OLED_UpdateScreen();
-
     W25_Chip_Erase();
     update_flash_end_ptr();
     OLED_DrawRectangleFill(0, 15, winth_display, 60, 0);
-    len = OLED_GetWidthStr(READY[EEPROM.len]);
-    OLED_DrawStr(READY[EEPROM.len], (winth_display-len)/2, Y, 1);
+    OLED_DrawCenteredString(READY, Y);
     OLED_UpdateScreen();
     osDelay(200);
 }
@@ -712,13 +721,12 @@ void Reset_settings(){
     OLED_Clear(0);
     FontSet(font);
     Display_TopBar(selectedMenuItem);
-    #define X 20
     #define Y 33
     if (!EEPROM_CheckDataValidity()){
         ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
-        OLED_DrawStr("Ошибка сброса", X, Y, 1);
+        OLED_DrawCenteredString(ERROR, Y);
     }
-    else OLED_DrawStr("Сброс успешен", X, Y, 1);
+    else OLED_DrawCenteredString(READY, Y);
     OLED_UpdateScreen();
     osDelay(200);
 }
@@ -781,13 +789,12 @@ void ALL_Reset_settings(){
     OLED_Clear(0);
     FontSet(font);
     Display_TopBar(selectedMenuItem);
-    #define X 20
     #define Y 33
     if (!EEPROM_CheckDataValidity()){
         ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
-        OLED_DrawStr("Ошибка сброса", X, Y, 1);
+        OLED_DrawCenteredString(ERROR_TEXT, Y);
     }
-    else OLED_DrawStr("Сброс успешен", X, Y, 1);
+    else OLED_DrawCenteredString(READY, Y);
     OLED_UpdateScreen();
     osDelay(200);
 }
@@ -803,19 +810,20 @@ void colibrate_4ma(){
     Display_TopBar(selectedMenuItem);
     if ((ADC_data.ADC_Current < 0.0035) || (ADC_data.ADC_Current > 0.0045)){
         // Ошибка
-        OLED_DrawStr("Вне диапазона", X_col, Y_col, 1);
+        OLED_DrawCenteredString(DIAPASON_ERR, Y_col);
         OLED_UpdateScreen();
         return;
     }
     EEPROM.GVL_correct_4m = ADC_data.ADC_Current;
-    OLED_DrawStr("Калибровка 4мА успешна", X_col, Y_col, 1);
+    OLED_DrawCenteredString(CALIBRATE_4ma_CORRECT, Y_col);
 
     EEPROM_SaveSettings(&EEPROM);
     if (!EEPROM_CheckDataValidity()){
         ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
-        OLED_DrawStr("Ошибка сохранения", X_col, Y_col+10, 1);
+        OLED_DrawCenteredString(ERROR_EEROM, Y_col+10);
     }
-    OLED_DrawStr("Сохранение успешно", X_col, Y_col+10, 1);
+
+    OLED_DrawCenteredString(READY, Y_col+10);
     OLED_UpdateScreen();
     osDelay(200);
 }
@@ -827,19 +835,19 @@ void colibrate_20ma(){
     Display_TopBar(selectedMenuItem);
     if ((ADC_data.ADC_Current < 0.019) || (ADC_data.ADC_Current > 0.025)){
         // Ошибка
-        OLED_DrawStr("Вне диапазона", X_col, Y_col, 1);
+        OLED_DrawCenteredString(DIAPASON_ERR, Y_col);
         OLED_UpdateScreen();
         return;
     }
     EEPROM.GVL_correct_20m = ADC_data.ADC_Current;
-    OLED_DrawStr("Калибровка 4мА успешна", X_col, Y_col, 1);
+    OLED_DrawCenteredString(CALIBRATE_20ma_CORRECT, Y_col);
 
     EEPROM_SaveSettings(&EEPROM);
     if (!EEPROM_CheckDataValidity()){
         ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
-        OLED_DrawStr("Ошибка сохранения", X_col, Y_col+10, 1);
+        OLED_DrawCenteredString(ERROR_EEROM, Y_col+10);
     }
-    OLED_DrawStr("Сохранение успешно", X_col, Y_col+10, 1);
+    OLED_DrawCenteredString(READY, Y_col+10);
     OLED_UpdateScreen();
     osDelay(200);
 }
@@ -1065,16 +1073,9 @@ void Display_TopBar(menuItem *CurrentMenu)
     {
         OLED_DrawTriangleFill(back_pic_pos_x, back_pic_pos_y, back_pic_pos_x + size_back_pic_x, back_pic_pos_y + size_back_pic_y, back_pic_pos_x + size_back_pic_x, back_pic_pos_y - size_back_pic_y);
         OLED_DrawPixel(back_pic_pos_x + 1, back_pic_pos_y);
-        OLED_DrawStr(CurrentMenu->Parent, left_pic_last_munu, top_pic_last_munu, 1);
+        if (EEPROM.len == 0) OLED_DrawStr(((menuItem *)CurrentMenu->Parent)->Name_rus, left_pic_last_munu, top_pic_last_munu, 1);
+        if (EEPROM.len == 1) OLED_DrawStr(((menuItem *)CurrentMenu->Parent)->Name_en, left_pic_last_munu, top_pic_last_munu, 1);
     }
-    //OLED_DrawStr("005ч08м", 1, 1, 1);
-/*
-    W25_Ini();
-    unsigned int id = W25_Read_ID();
-    sprintf(str, "ID Value: 0x%X\n", id);
-    OLED_DrawStr(str, 1, 1, 1);
-*/
-
 
     sprintf(str, "%d", IntADC.ADC_AKB_Proc);
     if (IntADC.ADC_AKB_Proc < 10){
@@ -1713,7 +1714,7 @@ extern const uint8_t frames[23][1026];
 extern const uint16_t frame_delays[];
 
 void UpdateFrameDiff(const uint8_t *new_frame) {
-    static uint8_t old_frame[1024] = {0}; // Старый кадр
+    static uint8_t old_frame[1024] __attribute__((section(".ram2"))) = {0}; // Старый кадр
     uint8_t temp_buffer[1024] = {0}; // Промежуточный буфер для нового кадра
 
     uint8_t width = new_frame[0];

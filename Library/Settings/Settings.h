@@ -20,6 +20,9 @@ extern "C"
 
 #define BKP_REG_INDEX_RESET_PROG  RTC_BKP_DR1 // Регистр для проверки, что сброс для входа в режим Цикл
 #define DATA_RESET_PROG  0xDEADBEEF
+
+
+#define RAM2_SECTION __attribute__((section(".ram2")))
   ////////////////////////////////////////////////////////////////////////////////
   //               Описание структур EEPROM_Settings и Prgramm_version
   ////////////////////////////////////////////////////////////////////////////////

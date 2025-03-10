@@ -101,9 +101,9 @@ static void USBH_UserProcess  (USBH_HandleTypeDef *phost, uint8_t id)
   break;
 
   case HOST_USER_DISCONNECTION:
-  //Appli_state = APPLICATION_DISCONNECT;
-  Appli_state = APPLICATION_IDLE;
-  f_mount(NULL, (TCHAR const* )"", 0);
+  Appli_state = APPLICATION_DISCONNECT;
+  //Appli_state = APPLICATION_IDLE;
+  //f_mount(NULL, (TCHAR const* )"", 0);
   break;
 
   case HOST_USER_CLASS_ACTIVE:

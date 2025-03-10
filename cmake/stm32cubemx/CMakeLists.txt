@@ -60,6 +60,7 @@ target_sources(stm32cubemx INTERFACE
     ../../FATFS/Target/bsp_driver_sd.c
     ../../FATFS/Target/sd_diskio.c
     ../../FATFS/Target/fatfs_platform.c
+    ../../FATFS/Target/usbh_diskio.c
     ../../FATFS/App/fatfs.c
     ../../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pcd.c
     ../../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pcd_ex.c

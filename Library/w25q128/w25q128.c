@@ -352,11 +352,56 @@ int flash_read_record_by_index(uint32_t record_block, char *buffer) {
     return 0;
 }
 
+void createFilename(char *dest, size_t destSize) {
+    const char *version = EEPROM.version.VERSION_PCB;  // например, "3.75-A001V"
+    char tmp[32];
+    int j = 0;
+    // Проходим по версии и копируем, если символ не '.' и не '-'
+    for (int i = 0; version[i] != '\0' && j < 8; i++) {
+        if (version[i] != '.' && version[i] != '-') {
+            tmp[j++] = version[i];
+        }
+    }
+    tmp[j] = '\0';
 
-void backup_records_to_external(void) {
+    // Формируем имя файла: префикс диска + полученная строка + ".csv"
+    // Предполагаем, что destSize достаточен (например, 16 байт)
+    snprintf(dest, destSize, "%s%s.csv", USBHPath, tmp);
+}
+
+// Возвраты: -1 - ошибка USB,  0 - Ошибка чтения 1 - все ок
+int backup_records_to_external(void) {
     // Обновляем flash_end_ptr (если требуется)
     update_flash_end_ptr();
-    
+    // Если запись успешно считана, вызываем резервное копирование (например, выводим в консоль).
+    FRESULT res;
+    UINT bw;
+    f_mount(NULL, USBHPath, 0);
+    osDelay(100);
+    if(disk_initialize(0) != RES_OK) {
+        // Если диск не инициализируется, возвращаем ошибку
+        return -1;
+    }
+    //f_mount(NULL, (TCHAR const* )"", 0);
+    res = f_mount(&USBFatFs, USBHPath, 0);
+    if (res != FR_OK)
+    {
+        // Если файловую систему не смонтировать, выходим
+        // ! Вывести сообщение об ошибке
+        f_mount(NULL, "", 0);
+        return -1;
+    }
+
+    char filename[16];
+    createFilename(filename, sizeof(filename));
+    res = f_open(&MyFile, filename, FA_OPEN_APPEND | FA_WRITE);
+    if (res != FR_OK)
+    {
+        f_close(&MyFile);
+        f_mount(NULL, USBHPath, 0);
+        return -1;
+    }
+
     // Определяем последний записанный фрагмент.
     uint32_t last_written;
     if (flash_end_ptr == 0)
@@ -395,15 +440,51 @@ void backup_records_to_external(void) {
                 break;
             
             // Считываем запись по индексу (функция flash_read_record_by_index не требует параметр размера)
-            if (flash_read_record_by_index(record_index, save_data) == 0) {
-                // Если запись успешно считана, вызываем резервное копирование (например, выводим в консоль).
-                // Здесь external_flash_write_record можно заменить на фактическую функцию копирования.
-               
-                //external_flash_write_record((const record_t *)save_data);
+            if (flash_read_record_by_index(record_index, save_data) == 0)
+            {
+                char *ptr = save_data;
+                // Если первый символ равен '[', пропускаем его, сдвигая указатель
+                if (ptr[0] == '[') {
+                    ptr++;
+                }
+                
+                // Если строка пустая после сдвига, пропускаем запись
+                if (strlen(ptr) == 0) continue;
+                // Определяем текущую длину строки, на которую указывает ptr
+                size_t len = strlen(ptr);
+                
+                // Если последний символ равен ']', заменяем его на перевод строки '\n'
+                if (len > 0 && ptr[len - 1] == ']') {
+                    ptr[len - 1] = '\n';
+                    // Если длина строки меньше размера буфера, гарантируем корректное завершение строки
+                    if (len < RECORD_OUTPUT_SIZE) {
+                        ptr[len] = '\0';
+                    }
+                    // На всякий случай, чтобы гарантировать, что последний символ в буфере – '\0'
+                    ptr[RECORD_OUTPUT_SIZE - 1] = '\0';
+                }
+                
+                // Пишем обработанную строку в файл
+                res = f_write(&MyFile, ptr, strlen(ptr), &bw);
+                if(res != FR_OK)
+                {
+                    f_close(&MyFile);
+                    f_mount(NULL, USBHPath, 0);
+                    return -1;
+                }
             }
         }
         // ! Подозрительно
     next_sector:
         current_sector = (current_sector + 1) % TOTAL_SECTORS;
     } while (current_sector != start_sector);
+
+    res = f_sync(&MyFile);
+    if (res != FR_OK) {
+        // Обработка ошибки синхронизации
+    }
+    osDelay(200);
+    f_close(&MyFile);
+    f_mount(NULL, USBHPath, 0);
+    return 1;
 }

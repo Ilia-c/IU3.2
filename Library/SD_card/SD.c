@@ -201,8 +201,8 @@ void Collect_DATA(){
     // Если в ADC_data.ADC_SI_value_char или ADC_data.ADC_SI_value_correct_char содержатся русские символы,
     // заменяем их на "cable break"
     if (containsRussian(ADC_data.ADC_SI_value_char) || containsRussian(ADC_data.ADC_SI_value_correct_char)) {
-        strcpy(ADC_data.ADC_SI_value_char, "cable break");
-        strcpy(ADC_data.ADC_SI_value_correct_char, "cable break");
+        strcpy(ADC_data.ADC_SI_value_char, "cable_break");
+        strcpy(ADC_data.ADC_SI_value_correct_char, "cable_break");
     }
 
     snprintf(save_data, CMD_BUFFER_SIZE,

@@ -42,6 +42,7 @@
 #include "AT24C02.h"
 #include "Parser.h"
 #include "Diagnostics.h"
+#include "USB_FATFS_SAVE.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -92,7 +93,7 @@ const osThreadAttr_t Main_attributes = {
 osThreadId_t Display_I2CHandle;
 const osThreadAttr_t Display_I2C_attributes = {
     .name = "Display_I2C",
-    .stack_size = 512 * 1,
+    .stack_size = 1024 * 2,
     .priority = (osPriority_t)osPriorityHigh,
 };
 /* Definitions for ADC_read */
@@ -106,7 +107,7 @@ const osThreadAttr_t ADC_read_attributes = {
 osThreadId_t RS485_dataHandle;
 const osThreadAttr_t RS485_data_attributes = {
     .name = "RS485_data",
-    .stack_size = 256 * 4,
+    .stack_size = 512 * 4,
     .priority = (osPriority_t)osPriorityLow3,
 };
 
@@ -114,14 +115,14 @@ const osThreadAttr_t RS485_data_attributes = {
 osThreadId_t Keyboard_taskHandle;
 const osThreadAttr_t Keyboard_task_attributes = {
     .name = "Keyboard_task",
-    .stack_size = 256 * 2,
+    .stack_size = 128 * 2,
     .priority = (osPriority_t)osPriorityHigh1,
 };
 
 osThreadId_t USB_COM_taskHandle;
 const osThreadAttr_t USB_COM_task_attributes = {
     .name = "USB_COM_task",
-    .stack_size = 1024 * 5,
+    .stack_size = 1024 * 3,
     .priority = (osPriority_t)osPriorityLow2,
 };
 
@@ -129,7 +130,7 @@ const osThreadAttr_t USB_COM_task_attributes = {
 osThreadId_t Main_Cycle_taskHandle;
 const osThreadAttr_t Main_Cycle_task_attributes = {
     .name = "Main_Cycle_task",
-    .stack_size = 1024 * 5,
+    .stack_size = 1024 * 3,
     .priority = (osPriority_t)osPriorityHigh5,
 };
 
@@ -137,13 +138,13 @@ osThreadId_t  ERROR_INDICATE_taskHandle;
 const osThreadAttr_t Erroe_indicate_task_attributes = {
     .name = "Erroe_indicate_task",
     .stack_size = 1024 * 1,
-    .priority = (osPriority_t)osPriorityLow,
+    .priority = (osPriority_t)osPriorityLow1,
 };
 
 osThreadId_t  UART_PARSER_taskHandle;
 const osThreadAttr_t UART_PARSER_task_attributes = {
     .name = "UART_PARSER_task",
-    .stack_size = 1024 * 2,
+    .stack_size = 1024 * 3,
     .priority = (osPriority_t)osPriorityLow6,
 };
 /* USER CODE BEGIN PV */
@@ -1177,6 +1178,8 @@ void ADC_read(void *argument)
   UNUSED(argument);
   for (;;)
   {
+    //MX_USB_HOST_Process();
+    
     ADC_data.update_value();
     osDelay(300);
   }
@@ -1254,8 +1257,9 @@ void Erroe_indicate(void *argument)
 {
   UNUSED(argument);
   uint64_t ErrorMask = 0;
-  MX_USB_HOST_Init();
-  Init_USB();
+  if (EEPROM.USB_mode == 2){
+    MX_USB_HOST_Init();
+  }
   SD_check();
   for (;;)
   {
@@ -1312,6 +1316,7 @@ void Erroe_indicate(void *argument)
         time_counter = 0;
         //Screen_saver();
       }
+      //Process_USB_Flash();
   }
 }
 void UART_PARSER_task(void *argument)
@@ -1362,7 +1367,7 @@ void UART_PARSER_task(void *argument)
         SendCommandAndParse("AT+CEREG?\r", parse_CEREG, 1000);
         SendCommandAndParse("AT+COPS?\r", parse_COPS, 1000);
         GSM_data.update_value();
-        xSemaphoreGive(Display_semaphore);
+        if (EEPROM.Mode == 0) xSemaphoreGive(Display_semaphore);
       }
 
       if (GSM_data.Status & SMS_SEND)

@@ -7,7 +7,10 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "FreeRTOS.h"
+#include "Settings.h"
 #include "stm32l4xx_hal.h"
+#include "USB_FATFS_SAVE.h"
+
 
 // Команды флеш-памяти
 #define W25_GET_JEDEC_ID    0x9F
@@ -43,6 +46,13 @@
 // Флаг завершённой записи (для поля rec_status_end)
 #define RECORD_COMPLETE_FLAG 0xAA
 
+
+extern USBH_HandleTypeDef hUsbHostFS;
+extern ApplicationTypeDef Appli_state;
+extern FATFS USBFatFs;    /* Объект файловой системы для USB диска */
+extern FIL MyFile;        /* Объект файла */
+extern char USBHPath[4];  /* Логический путь USB диска */
+extern EEPROM_Settings_item EEPROM;
 // Структура записи (128 байт)
 // Если фрагмент – первый в секторе, первые 2 байта содержат заголовок сектора.
 #pragma pack(push, 1)
@@ -74,6 +84,6 @@ void w25_init(void);
 int update_flash_end_ptr(void);
 int flash_append_record(const char *record_data);
 int flash_read_record_by_index(uint32_t record_block, char *buffer);
-void backup_records_to_external(void);
+int backup_records_to_external(void);
 
 #endif // W25Q128_H

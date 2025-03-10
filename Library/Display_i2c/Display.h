@@ -19,7 +19,7 @@
 typedef struct Menu_item
 {
     uint8_t *data;              // привязанное значение
-    const char Name[10][2][15]; // Название пункта меню на русском и английском
+    const char * const Name[10][2]; // Название пункта меню на русском и английском
 } menuSelect_item;
 
 typedef void (*DataFormatter)(char *buffer, size_t size, void *data);
@@ -48,8 +48,8 @@ typedef struct Menu_item_char
 
 typedef struct MAKE_MENU
 {
-    const char Name_rus[26];  // Название пункта меню на русском
-    const char Name_en[26];   // Название пункта меню на английском
+    const char *Name_rus;  // Название пункта меню на русском
+    const char *Name_en;   // Название пункта меню на английском
     int Num_menu;             // Номер вкладки сверху при переходе
     const int data_update;             // Обновлять или нет этот пункт меню каждые 100мс (1/0 вкл/выкл)
     menuSelect_item *add_signat;       // дополнительная надпись справа
