@@ -36,6 +36,8 @@ target_include_directories(stm32cubemx INTERFACE
     ../../Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Inc
     ../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc
     ../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc
+    ../../Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Inc
+    ../../Middlewares/ST/STM32_USB_Host_Library/Core/Inc
     ../../USB_HOST/App
     ../../USB_HOST/Target
     ../../USB_DEVICE/App
@@ -46,6 +48,7 @@ target_include_directories(stm32cubemx INTERFACE
     ../../Library/Sleep_system
     ../../Library/EEPROM
     ../../Library/Diagnostics
+    ../../Library/USB_FATFS_SAVE/
 )
 
 target_sources(stm32cubemx INTERFACE
@@ -123,6 +126,7 @@ target_sources(stm32cubemx INTERFACE
     ../../Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ctlreq.c
     ../../Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ioreq.c
     ../../Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_pipes.c
+    #../../Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_conf_template.c
     ../../Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc.c
     ../../Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc_bot.c
     ../../Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc_scsi.c
@@ -143,6 +147,7 @@ target_sources(stm32cubemx INTERFACE
     ../../Library/Sleep_system/Sleep.c
     ../../Library/EEPROM/AT24C02.c
     ../../Library/Diagnostics/Diagnostics.c
+    ../../Library/USB_FATFS_SAVE/USB_FATFS_SAVE.c
 )
 
 target_link_directories(stm32cubemx INTERFACE

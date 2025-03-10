@@ -238,6 +238,8 @@ extern char SD_status_char[10];     // Статус доступности SD
 
 extern RTC_TimeTypeDef Time; // Дата
 extern RTC_DateTypeDef Date; // Время
+extern RTC_TimeTypeDef Time_start; // Дата старта МК
+extern RTC_DateTypeDef Date_start; // Время старта МК
 ////////////////////////////////////////////////////////////////////////////////
 // Глобальные КОНСТАНТЫ
 ////////////////////////////////////////////////////////////////////////////////

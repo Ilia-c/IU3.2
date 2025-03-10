@@ -23,7 +23,7 @@
 #include "usb_host.h"
 #include "usbh_core.h"
 #include "usbh_msc.h"
-
+#include "ff_gen_drv.h"
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
@@ -101,15 +101,19 @@ static void USBH_UserProcess  (USBH_HandleTypeDef *phost, uint8_t id)
   break;
 
   case HOST_USER_DISCONNECTION:
-  Appli_state = APPLICATION_DISCONNECT;
+  //Appli_state = APPLICATION_DISCONNECT;
+  Appli_state = APPLICATION_IDLE;
+  f_mount(NULL, (TCHAR const* )"", 0);
   break;
 
   case HOST_USER_CLASS_ACTIVE:
-  Appli_state = APPLICATION_READY;
+  //Appli_state = APPLICATION_READY;
+  Appli_state = APPLICATION_START;
+
   break;
 
   case HOST_USER_CONNECTION:
-  Appli_state = APPLICATION_START;
+  //Appli_state = APPLICATION_START;
   break;
 
   default:

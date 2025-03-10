@@ -22,7 +22,8 @@ void Diagnostics()
         ERRCODE.STATUS |= STATUS_EEPROM_INIT_ERROR;
     osDelay(300);
     // FLASH
-    unsigned int id = W25_Read_ID();
+    uint32_t id = 0;
+    W25_Read_ID(&id);
     if (id != 0xef4018)
     {
         // Сброс ошибоки Инициализации (потом проверить чтение)

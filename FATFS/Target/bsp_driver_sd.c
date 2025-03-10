@@ -11,13 +11,12 @@
  ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
-  * All rights reserved.</center></h2>
+  * Copyright (c) 2025 STMicroelectronics.
+  * All rights reserved.
   *
-  * This software component is licensed by ST under Ultimate Liberty license
-  * SLA0044, the "License"; You may not use this file except in compliance with
-  * the License. You may obtain a copy of the License at:
-  *                             www.st.com/SLA0044
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
  ******************************************************************************
  */
@@ -38,10 +37,9 @@
 /* Extern variables ---------------------------------------------------------*/
 
 extern SD_HandleTypeDef hsd1;
-
-/* USER CODE BEGIN BeforeInitSection */
 static HAL_StatusTypeDef SD_DMAConfigRx(SD_HandleTypeDef *hsd);
 static HAL_StatusTypeDef SD_DMAConfigTx(SD_HandleTypeDef *hsd);
+/* USER CODE BEGIN BeforeInitSection */
 /* can be used to modify / undefine following code or add code */
 /* USER CODE END BeforeInitSection */
 /**
@@ -122,6 +120,69 @@ __weak uint8_t BSP_SD_ReadBlocks(uint32_t *pData, uint32_t ReadAddr, uint32_t Nu
   * @param  Timeout: Timeout for write operation
   * @retval SD status
   */
+
+  void BSP_SD_DMA_Rx_IRQHandler(void)
+  {
+    HAL_DMA_IRQHandler(hsd1.hdmarx);
+  }
+  /* USER CODE BEGIN AdditionalCode */
+  void BSP_SD_DMA_Tx_IRQHandler(void)
+  {
+    HAL_DMA_IRQHandler(hsd1.hdmatx);
+  }
+  
+  uint8_t BSP_SD_WriteBlocks_DMA(uint32_t *pData, uint32_t WriteAddr, uint32_t NumOfBlocks)
+  {
+    uint8_t sd_state = MSD_OK;
+  
+    // Invalidate the dma rx handle
+    hsd1.hdmarx = NULL;
+  
+    // Prepare the dma channel for a read operation
+    sd_state = SD_DMAConfigTx(&hsd1);
+  
+    if(sd_state == HAL_OK)
+    {
+      /* Write block(s) in DMA transfer mode */
+      sd_state = HAL_SD_WriteBlocks_DMA(&hsd1, (uint8_t *)pData, WriteAddr, NumOfBlocks);
+    }
+  
+    if( sd_state == HAL_OK)
+    {
+      return MSD_OK;
+    }
+    else
+    {
+      return MSD_ERROR;
+    }
+  
+    return sd_state;
+  }
+  uint8_t BSP_SD_ReadBlocks_DMA(uint32_t *pData, uint32_t ReadAddr, uint32_t NumOfBlocks)
+  {
+    uint8_t sd_state = MSD_OK;
+    /* Invalidate the dma tx handle*/
+    hsd1.hdmatx = NULL;
+  
+    /* Prepare the dma channel for a read operation */
+    sd_state = SD_DMAConfigRx(&hsd1);
+  
+    if(sd_state == HAL_OK)
+    {
+      /* Read block(s) in DMA transfer mode */
+      sd_state = HAL_SD_ReadBlocks_DMA(&hsd1, (uint8_t *)pData, ReadAddr, NumOfBlocks);
+    }
+  
+    if( sd_state == HAL_OK)
+    {
+      return MSD_OK;
+    }
+    else
+    {
+      return MSD_ERROR;
+    }
+  }
+
 __weak uint8_t BSP_SD_WriteBlocks(uint32_t *pData, uint32_t WriteAddr, uint32_t NumOfBlocks, uint32_t Timeout)
 {
   uint8_t sd_state = MSD_OK;
@@ -135,31 +196,7 @@ __weak uint8_t BSP_SD_WriteBlocks(uint32_t *pData, uint32_t WriteAddr, uint32_t 
 }
 
 /* USER CODE BEGIN BeforeReadDMABlocksSection */
-uint8_t BSP_SD_ReadBlocks_DMA(uint32_t *pData, uint32_t ReadAddr, uint32_t NumOfBlocks)
-{
-	uint8_t sd_state = MSD_OK;
-	/* Invalidate the dma tx handle*/
-	hsd1.hdmatx = NULL;
-
-	/* Prepare the dma channel for a read operation */
-	sd_state = SD_DMAConfigRx(&hsd1);
-
-	if(sd_state == HAL_OK)
-	{
-		/* Read block(s) in DMA transfer mode */
-		sd_state = HAL_SD_ReadBlocks_DMA(&hsd1, (uint8_t *)pData, ReadAddr, NumOfBlocks);
-	}
-
-	if( sd_state == HAL_OK)
-	{
-		return MSD_OK;
-	}
-	else
-	{
-		return MSD_ERROR;
-	}
-}
-#if(false)
+/* can be used to modify previous code / undefine following code / add code */
 /* USER CODE END BeforeReadDMABlocksSection */
 /**
   * @brief  Reads block(s) from a specified address in an SD card, in DMA mode.
@@ -168,49 +205,10 @@ uint8_t BSP_SD_ReadBlocks_DMA(uint32_t *pData, uint32_t ReadAddr, uint32_t NumOf
   * @param  NumOfBlocks: Number of SD blocks to read
   * @retval SD status
   */
-__weak uint8_t BSP_SD_ReadBlocks_DMA(uint32_t *pData, uint32_t ReadAddr, uint32_t NumOfBlocks)
-{
-  uint8_t sd_state = MSD_OK;
 
-  /* Read block(s) in DMA transfer mode */
-  if (HAL_SD_ReadBlocks_DMA(&hsd1, (uint8_t *)pData, ReadAddr, NumOfBlocks) != HAL_OK)
-  {
-    sd_state = MSD_ERROR;
-  }
-
-  return sd_state;
-}
 
 /* USER CODE BEGIN BeforeWriteDMABlocksSection */
-#endif
-uint8_t BSP_SD_WriteBlocks_DMA(uint32_t *pData, uint32_t WriteAddr, uint32_t NumOfBlocks)
-{
-	uint8_t sd_state = MSD_OK;
-
-	// Invalidate the dma rx handle
-	hsd1.hdmarx = NULL;
-
-	// Prepare the dma channel for a read operation
-	sd_state = SD_DMAConfigTx(&hsd1);
-
-	if(sd_state == HAL_OK)
-	{
-		/* Write block(s) in DMA transfer mode */
-		sd_state = HAL_SD_WriteBlocks_DMA(&hsd1, (uint8_t *)pData, WriteAddr, NumOfBlocks);
-	}
-
-	if( sd_state == HAL_OK)
-	{
-		return MSD_OK;
-	}
-	else
-	{
-		return MSD_ERROR;
-	}
-
-	return sd_state;
-}
-#if(false)
+/* can be used to modify previous code / undefine following code / add code */
 /* USER CODE END BeforeWriteDMABlocksSection */
 /**
   * @brief  Writes block(s) to a specified address in an SD card, in DMA mode.
@@ -219,21 +217,9 @@ uint8_t BSP_SD_WriteBlocks_DMA(uint32_t *pData, uint32_t WriteAddr, uint32_t Num
   * @param  NumOfBlocks: Number of SD blocks to write
   * @retval SD status
   */
-__weak uint8_t BSP_SD_WriteBlocks_DMA(uint32_t *pData, uint32_t WriteAddr, uint32_t NumOfBlocks)
-{
-  uint8_t sd_state = MSD_OK;
-
-  /* Write block(s) in DMA transfer mode */
-  if (HAL_SD_WriteBlocks_DMA(&hsd1, (uint8_t *)pData, WriteAddr, NumOfBlocks) != HAL_OK)
-  {
-    sd_state = MSD_ERROR;
-  }
-
-  return sd_state;
-}
 
 /* USER CODE BEGIN BeforeEraseSection */
-#endif
+/* can be used to modify previous code / undefine following code / add code */
 /* USER CODE END BeforeEraseSection */
 /**
   * @brief  Erases the specified memory area of the given SD card.
@@ -365,28 +351,43 @@ __weak uint8_t BSP_SD_IsDetected(void)
 }
 
 /* USER CODE BEGIN AdditionalCode */
-void BSP_SD_DMA_Tx_IRQHandler(void)
+/* user code can be inserted here */
+/* USER CODE END AdditionalCode */
+
+static HAL_StatusTypeDef SD_DMAConfigTx(SD_HandleTypeDef *hsd)
 {
-  HAL_DMA_IRQHandler(hsd1.hdmatx);
+  static DMA_HandleTypeDef hdma_tx;
+  HAL_StatusTypeDef status;
+
+  /* Configure DMA Tx parameters */
+  hdma_tx.Init.Request             = DMA_REQUEST_7;
+  hdma_tx.Init.Direction           = DMA_MEMORY_TO_PERIPH;
+  hdma_tx.Init.PeriphInc           = DMA_PINC_DISABLE;
+  hdma_tx.Init.MemInc              = DMA_MINC_ENABLE;
+  hdma_tx.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
+  hdma_tx.Init.MemDataAlignment    = DMA_MDATAALIGN_WORD;
+  hdma_tx.Init.Priority            = DMA_PRIORITY_VERY_HIGH;
+
+  hdma_tx.Instance = DMA2_Channel4;
+
+  /* Associate the DMA handle */
+  __HAL_LINKDMA(hsd, hdmatx, hdma_tx);
+
+  /* Stop any ongoing transfer and reset the state*/
+  HAL_DMA_Abort(&hdma_tx);
+
+  /* Deinitialize the Channel for new transfer */
+  HAL_DMA_DeInit(&hdma_tx);
+
+  /* Configure the DMA Channel */
+  status = HAL_DMA_Init(&hdma_tx);
+
+  /* NVIC configuration for DMA transfer complete interrupt */
+  HAL_NVIC_SetPriority(DMA2_Channel4_IRQn, 6, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Channel4_IRQn);
+
+  return (status);
 }
-
-/**
-  * @brief  Handles SD DMA Rx transfer interrupt request.
-  * @retval None
-  */
-void BSP_SD_DMA_Rx_IRQHandler(void)
-{
-  HAL_DMA_IRQHandler(hsd1.hdmarx);
-}
-
-
-
-
-/**
-  * @brief Configure the DMA to receive data from the SD card
-  * @retval
-  *  HAL_ERROR or HAL_OK
-  */
 static HAL_StatusTypeDef SD_DMAConfigRx(SD_HandleTypeDef *hsd)
 {
   static DMA_HandleTypeDef hdma_rx;
@@ -422,46 +423,3 @@ static HAL_StatusTypeDef SD_DMAConfigRx(SD_HandleTypeDef *hsd)
   return (status);
 }
 
-/**
-  * @brief Configure the DMA to transmit data to the SD card
-  * @retval
-  *  HAL_ERROR or HAL_OK
-  */
-static HAL_StatusTypeDef SD_DMAConfigTx(SD_HandleTypeDef *hsd)
-{
-  static DMA_HandleTypeDef hdma_tx;
-  HAL_StatusTypeDef status;
-
-  /* Configure DMA Tx parameters */
-  hdma_tx.Init.Request             = DMA_REQUEST_7;
-  hdma_tx.Init.Direction           = DMA_MEMORY_TO_PERIPH;
-  hdma_tx.Init.PeriphInc           = DMA_PINC_DISABLE;
-  hdma_tx.Init.MemInc              = DMA_MINC_ENABLE;
-  hdma_tx.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
-  hdma_tx.Init.MemDataAlignment    = DMA_MDATAALIGN_WORD;
-  hdma_tx.Init.Priority            = DMA_PRIORITY_VERY_HIGH;
-
-  hdma_tx.Instance = DMA2_Channel4;
-
-  /* Associate the DMA handle */
-  __HAL_LINKDMA(hsd, hdmatx, hdma_tx);
-
-  /* Stop any ongoing transfer and reset the state*/
-  HAL_DMA_Abort(&hdma_tx);
-
-  /* Deinitialize the Channel for new transfer */
-  HAL_DMA_DeInit(&hdma_tx);
-
-  /* Configure the DMA Channel */
-  status = HAL_DMA_Init(&hdma_tx);
-
-  /* NVIC configuration for DMA transfer complete interrupt */
-  HAL_NVIC_SetPriority(DMA2_Channel4_IRQn, 6, 0);
-  HAL_NVIC_EnableIRQ(DMA2_Channel4_IRQn);
-
-  return (status);
-}
-
-/* USER CODE END AdditionalCode */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

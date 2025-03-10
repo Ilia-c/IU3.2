@@ -103,30 +103,33 @@ uint8_t DaysInMonth(uint8_t month, uint8_t rtcYear)
  */
 void RTC_SetAlarm_HoursMinutes(uint8_t hours, uint8_t minutes)
 {
-    //if (minutes < 5)
-    //    minutes = 5;
+    __HAL_RCC_PWR_CLK_ENABLE();
+    // Ограничение параметров
     if (minutes > 59)
         minutes = 59;
     if (hours > 99)
-        hours = 99; 
+        hours = 99;
 
     HAL_RTC_DeactivateAlarm(&hrtc, RTC_ALARM_A);
 
-    RTC_TimeTypeDef sTime;
-    RTC_DateTypeDef sDate;
-    HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-    HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+    // Используем сохранённое опорное время и дату
+    RTC_TimeTypeDef sTime = Time_start;
+    RTC_DateTypeDef sDate = Date_start;
 
-    uint16_t currentDayMinutes = sTime.Hours * 60 + sTime.Minutes;
-    uint16_t addMinutes = (uint16_t)(hours * 60 + minutes);
-    uint32_t totalMinutes = (uint32_t)currentDayMinutes + addMinutes;
+    // Вычисляем минуты от начала дня по опорному времени
+    uint16_t startMinutes = sTime.Hours * 60 + sTime.Minutes;
+    uint16_t deltaMinutes = (uint16_t)(hours * 60 + minutes);
+    uint32_t totalMinutes = startMinutes + deltaMinutes;
 
+    // Определяем, сколько дней надо прибавить, если время переходит за границу суток
     uint32_t daysToAdd = totalMinutes / 1440;
     uint16_t futureDayMinutes = totalMinutes % 1440;
+    uint8_t newHours = futureDayMinutes / 60;
+    uint8_t newMinutes = futureDayMinutes % 60;
+    // Сохраняем секунды из опорного времени
+    uint8_t newSeconds = sTime.Seconds;
 
-    uint8_t newHours = (uint8_t)(futureDayMinutes / 60);
-    uint8_t newMinutes = (uint8_t)(futureDayMinutes % 60);
-
+    // Прибавляем дни к дате, если необходимо
     while (daysToAdd > 0)
     {
         sDate.Date++;
@@ -144,28 +147,78 @@ void RTC_SetAlarm_HoursMinutes(uint8_t hours, uint8_t minutes)
         daysToAdd--;
     }
 
+    // Вычисляем общее число секунд от начала суток для нового времени будильника
+    uint32_t computedAlarmSeconds = newHours * 3600 + newMinutes * 60 + newSeconds;
+
+    // Получаем текущее время и дату для проверки
+    RTC_TimeTypeDef nowTime;
+    RTC_DateTypeDef nowDate;
+    HAL_RTC_GetTime(&hrtc, &nowTime, RTC_FORMAT_BIN);
+    HAL_RTC_GetDate(&hrtc, &nowDate, RTC_FORMAT_BIN);
+
+    // Флаг, показывающий, что вычисленное время находится в прошлом (0 – нет, 1 – да)
+    int alarmInPast = 0;
+    if ((nowDate.Year > sDate.Year) ||
+        (nowDate.Year == sDate.Year && nowDate.Month > sDate.Month) ||
+        (nowDate.Year == sDate.Year && nowDate.Month == sDate.Month && nowDate.Date > sDate.Date))
+    {
+        alarmInPast = 1;
+    }
+    else if (nowDate.Year == sDate.Year && nowDate.Month == sDate.Month && nowDate.Date == sDate.Date)
+    {
+        uint32_t nowSeconds = nowTime.Hours * 3600 + nowTime.Minutes * 60 + nowTime.Seconds;
+        if (computedAlarmSeconds <= nowSeconds)
+            alarmInPast = 1;
+    }
+
+    // Если рассчитанное время уже прошло, прибавляем 10 минут
+    if (alarmInPast == 1)
+    {
+        uint32_t newTotalSeconds = computedAlarmSeconds + (10 * 60);
+        // Если новое время выходит за пределы суток, определяем количество дополнительных дней
+        uint32_t extraDays = newTotalSeconds / 86400;
+        uint32_t secondsOfDay = newTotalSeconds % 86400;
+        newHours   = secondsOfDay / 3600;
+        newMinutes = (secondsOfDay % 3600) / 60;
+        newSeconds = secondsOfDay % 60;
+        while (extraDays > 0)
+        {
+            sDate.Date++;
+            uint8_t mdays = DaysInMonth(sDate.Month, sDate.Year);
+            if (sDate.Date > mdays)
+            {
+                sDate.Date = 1;
+                sDate.Month++;
+                if (sDate.Month > 12)
+                {
+                    sDate.Month = 1;
+                    sDate.Year++;
+                }
+            }
+            extraDays--;
+        }
+    }
+
+    // Формируем структуру будильника
     RTC_AlarmTypeDef sAlarm = {0};
     sAlarm.Alarm = RTC_ALARM_A;
-
     sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
     sAlarm.AlarmDateWeekDay = sDate.Date;
-
-    sAlarm.AlarmMask = RTC_ALARMMASK_NONE;
-    sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
-
-    sAlarm.AlarmTime.Hours = newHours;
+    sAlarm.AlarmTime.Hours   = newHours;
     sAlarm.AlarmTime.Minutes = newMinutes;
-    sAlarm.AlarmTime.Seconds = 0;
+    sAlarm.AlarmTime.Seconds = newSeconds;
     sAlarm.AlarmTime.SubSeconds = 0;
     sAlarm.AlarmTime.TimeFormat = RTC_HOURFORMAT_24;
+    sAlarm.AlarmMask = RTC_ALARMMASK_NONE;
+    sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
 
     __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
     if (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK)
     {
         Error_Handler();
     }
-
 }
+
 
 void GPIO_AnalogConfig(void)
 {
@@ -217,8 +270,8 @@ void Enter_StandbyMode(uint8_t hours, uint8_t minutes)
     __HAL_RTC_ALARM_CLEAR_FLAG(&hrtc, RTC_FLAG_ALRAF);
 
 
-    //RTC_SetAlarm_HoursMinutes(hours, minutes);
-    RTC_SetAlarm_HoursMinutes(0, 2);
+    RTC_SetAlarm_HoursMinutes(hours, minutes);
+    //RTC_SetAlarm_HoursMinutes(0, 2);
     HAL_PWR_EnterSTANDBYMode();
 }
 

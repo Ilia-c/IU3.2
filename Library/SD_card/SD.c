@@ -183,28 +183,45 @@ extern char save_data[CMD_BUFFER_SIZE];
 extern RTC_HandleTypeDef hrtc;
 extern EEPROM_Settings_item EEPROM;
 
+int containsRussian(const char *str) {
+    while (*str) {
+        unsigned char ch = (unsigned char)*str;
+        if (ch >= 0xC0 && ch <= 0xFF) {
+            return 1; // Найден русский символ
+        }
+        str++;
+    }
+    return 0;
+}
 void Collect_DATA(){
     HAL_RTC_GetDate(&hrtc, &Date, RTC_FORMAT_BIN);
     HAL_RTC_GetTime(&hrtc, &Time, RTC_FORMAT_BIN);
     base62_encode(ERRCODE.STATUS, ERRCODE.STATUSCHAR, sizeof(ERRCODE.STATUSCHAR));
 
+    // Если в ADC_data.ADC_SI_value_char или ADC_data.ADC_SI_value_correct_char содержатся русские символы,
+    // заменяем их на "cable break"
+    if (containsRussian(ADC_data.ADC_SI_value_char) || containsRussian(ADC_data.ADC_SI_value_correct_char)) {
+        strcpy(ADC_data.ADC_SI_value_char, "cable break");
+        strcpy(ADC_data.ADC_SI_value_correct_char, "cable break");
+    }
+
     snprintf(save_data, CMD_BUFFER_SIZE,
-    "[%s;%s;%s;%s;%s;%s;%s;%s;%02d/%02d/%02d%s%02d:%02d:%02d;%s;%s;%u;%u]",
-    EEPROM.version.VERSION_PCB,              // строка
-    EEPROM.version.password,                 // строка
-    ADC_data.ADC_value_char,                   // строка
-    ADC_data.ADC_SI_value_char,                // строка
-    ADC_data.ADC_SI_value_correct_char,        // строка
-    IntADC.ADC_AKB_volts_char,                 // строка
-    IntADC.ADC_AKB_Proc_char,                  // строка
-    ERRCODE.STATUSCHAR,                        // строка
-    Date.Date, Date.Month, Date.Year,          // форматируем дату (день, месяц, год)
-    ".", 
-    Time.Hours, Time.Minutes, Time.Seconds,     // форматируем время (часы, минуты, секунды)
-    "0",                                       // time_sleep_mode всегда "0"
-    "0", 
-    EEPROM.time_sleep_m,                       // число
-    EEPROM.time_sleep_h);                      // число
+        "[%s;%s;%s;%s;%s;%s;%s;%s;%02d/%02d/%02d%s%02d:%02d:%02d;%s;%s;%u;%u]",
+        EEPROM.version.VERSION_PCB,              // строка
+        EEPROM.version.password,                 // строка
+        ADC_data.ADC_value_char,                   // строка
+        ADC_data.ADC_SI_value_char,                // строка (возможно заменённая)
+        ADC_data.ADC_SI_value_correct_char,        // строка (возможно заменённая)
+        IntADC.ADC_AKB_volts_char,                 // строка
+        IntADC.ADC_AKB_Proc_char,                  // строка
+        ERRCODE.STATUSCHAR,                        // строка
+        Date.Date, Date.Month, Date.Year,          // дата (день, месяц, год)
+        ".", 
+        Time.Hours, Time.Minutes, Time.Seconds,     // время (часы, минуты, секунды)
+        "0",                                       // time_sleep_mode всегда "0"
+        "0", 
+        EEPROM.time_sleep_m,                       // число
+        EEPROM.time_sleep_h);                      // число
 }
 
 void SETTINGS_REQUEST_DATA(){

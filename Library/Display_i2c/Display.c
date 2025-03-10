@@ -89,6 +89,10 @@ void NULL_F(){}
     extern menuItem Child;                                                                                                                             \
     menuItem Id = {Name_rus, Name_en, 0, data_uptade, (menuSelect_item *)&_add_signat, (void *)&Next, (void *)&Previous, (void *)&Parent, (void *)&Child, (void *)&action, (menuSelect_item *)&select_bar, (menuSelect_item_char *)&data_in, (char *)&Data_out}
 
+// Вывод на экран при действии
+const char Clear[2][40] = {"Отчистка FLASH",  "CLEAR FLASH"};
+const char POWER_NOT[2][40] = {"НЕ ОТКЛЮЧАЙТЕ ПИТАНИЕ",  "НЕ ОТКЛЮЧАЙТЕ ПИТАНИЕ"};
+const char READY[2][40] = {"Готово",  "Ready"};
 
 // Выбираемые значения и статус
 menuSelect_item Communication_DATA = { 
@@ -469,7 +473,7 @@ MAKE_MENU(Menu_2, "Настройки", "Settings", 0, UPTADE_OFF, NO_SIGNED, Menu_3, Men
 	MAKE_MENU(Menu_2_7, "Связь", "Network", 0, UPTADE_OFF, NO_SIGNED, Menu_2_8, Menu_2_6, Menu_2, CHILD_MENU, ACTION_MENU, Communication_DATA, DATA_IN, DATA_OUT);
 	MAKE_MENU(Menu_2_8, "Синхронизация", "Sin", 0, UPTADE_OFF, NO_SIGNED, Menu_2_9, Menu_2_7, Menu_2, CHILD_MENU, GSM_HTTP_READ, SELECT_BAR, DATA_IN, DATA_OUT);
 	MAKE_MENU(Menu_2_9, "Сохранить в", "Save in", 0, UPTADE_OFF, NO_SIGNED, Menu_2_10, Menu_2_8, Menu_2, CHILD_MENU, ACTION_MENU, SAVE_IN_STRUCT, DATA_IN, DATA_OUT); // ! Выбор куда сохранить (USB, SD, FLASH, сайт)
-	MAKE_MENU(Menu_2_10, "Выгрузка на USB", "USB write", 0, UPTADE_OFF, NO_SIGNED, Menu_2_11, Menu_2_9, Menu_2, CHILD_MENU, SAVE_IZM, SELECT_BAR, DATA_IN, DATA_OUT); // ! Выгрузка на USB
+	MAKE_MENU(Menu_2_10, "Выгрузка на USB", "USB write", 0, UPTADE_OFF, NO_SIGNED, Menu_2_11, Menu_2_9, Menu_2, CHILD_MENU, SAVE_USB, SELECT_BAR, DATA_IN, DATA_OUT); // ! Выгрузка на USB
 	MAKE_MENU(Menu_2_11, "Токовая петля", "Current loop ", 0, UPTADE_OFF, NO_SIGNED, Menu_2_12, Menu_2_10, Menu_2, CHILD_MENU, ACTION_MENU, CURRENT_LOOP, DATA_IN, DATA_OUT);
 	MAKE_MENU(Menu_2_12, "RS-485", "RS-485", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13, Menu_2_11, Menu_2, CHILD_MENU, ACTION_MENU, RS485_MODE_DATA, DATA_IN, DATA_OUT);
 	MAKE_MENU(Menu_2_13, "Ед. изм.", "Unit measure", 0, UPTADE_OFF, NO_SIGNED, Menu_2_14, Menu_2_12, Menu_2, CHILD_MENU, ACTION_MENU, UNITS_MODE_DATA, DATA_IN, DATA_OUT);
@@ -541,6 +545,15 @@ menuItem *selectedMenuItem = &Menu_1;
 //                  Пункты меню                   //
 ////////////////////////////////////////////////////
 
+void PROGRESS_BAR(uint8_t procent){
+    #define Y 25
+    #define leight 80
+    #define first_point (winth_display-leight)/2
+    uint8_t procent_len = (float)((float)leight/100)*procent;
+    OLED_DrawRectangle(first_point, Y+15, leight+first_point, Y+25);
+    OLED_DrawRectangleFill(first_point, Y+15, procent_len+first_point, Y+25, 1);
+}
+
 
 // полный тест при нажатии кнопки
 void full_test(){}
@@ -561,14 +574,44 @@ void SAVE_IZM(){
     OLED_Clear(0);
     FontSet(font);
     Display_TopBar(selectedMenuItem);
-    #define X 2
+    #define X 20
     #define Y 25
-    OLED_DrawStr("Сохранение недоступно", X, Y, 1);
-    OLED_DrawStr("в режиме демо", X+25, Y+10, 1);
+    OLED_DrawStr("Сохранение...", X, Y, 1);
+    OLED_UpdateScreen();
+
+    Collect_DATA();
+    update_flash_end_ptr();
+    flash_append_record(save_data);
+
+    //flash_read_record_by_index(flash_end_ptr, save_data);
+
+    char flash_end_ptr_char[30] = {0};
+    snprintf(flash_end_ptr_char, 30, "Записей: %ld", flash_end_ptr);
+    
+    OLED_DrawStr("Готово", X+5, Y+10, 1);
+    OLED_DrawStr(flash_end_ptr_char, X+5, Y+20, 1);
+    //OLED_DrawStr(save_data, X-15, Y+30, 1);
     OLED_UpdateScreen();
     osDelay(200);
-
 }
+
+void SAVE_USB(){
+    mode_redact = 2;
+    OLED_Clear(0);
+    FontSet(font);
+    Display_TopBar(selectedMenuItem);
+    #define X 20
+    #define Y 25
+    OLED_DrawStr("Сохранение...", X, Y, 1);
+    OLED_UpdateScreen();
+
+    backup_records_to_external();
+    
+    OLED_DrawStr("Готово", X+5, Y+10, 1);
+    OLED_UpdateScreen();
+    osDelay(200);
+}
+
 void Screen_saver(){
     mode_redact = 4;
     OLED_Clear(0);
@@ -595,7 +638,29 @@ void PASSWORD(){
 }
 
 void SD_Format(){}
-void Flash_Format(){}
+
+void Flash_Format(){
+    mode_redact = 2;
+    OLED_Clear(0);
+    FontSet(font);
+    Display_TopBar(selectedMenuItem);
+    //W25_Chip_Erase();
+    uint8_t len = OLED_GetWidthStr(Clear[EEPROM.len]);
+    OLED_DrawStr(Clear[EEPROM.len], (winth_display-len)/2, Y, 1);
+    len = OLED_GetWidthStr(POWER_NOT[EEPROM.len]);
+    OLED_DrawStr(POWER_NOT[EEPROM.len], (winth_display-len)/2, Y+10, 1);
+
+
+    OLED_UpdateScreen();
+
+    W25_Chip_Erase();
+    update_flash_end_ptr();
+    OLED_DrawRectangleFill(0, 15, winth_display, 60, 0);
+    len = OLED_GetWidthStr(READY[EEPROM.len]);
+    OLED_DrawStr(READY[EEPROM.len], (winth_display-len)/2, Y, 1);
+    OLED_UpdateScreen();
+    osDelay(200);
+}
 
 
 // Тест 
@@ -1208,7 +1273,7 @@ void Save_time_format(){
 void Save_time_sleep_format(){
     // Проверка на неверное значение
     int32_t result_1 = strtol(selectedMenuItem->data_in->data_temp[0], NULL, 10); 
-    int32_t result_2 = strtol(selectedMenuItem->data_in->data_temp[0], NULL, 10); 
+    int32_t result_2 = strtol(selectedMenuItem->data_in->data_temp[1], NULL, 10); 
     if (result_1 < selectedMenuItem->data_in->DOWN_data[0]) return;
     if ((result_2 < selectedMenuItem->data_in->DOWN_data[1]) && (result_1 == 0)) return;
 

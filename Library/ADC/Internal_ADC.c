@@ -1,7 +1,6 @@
 #include "Internal_ADC.h"
 
-const float alpha = 0.1f;
-static float filteredValue = 0.0f;
+const float alpha = 0.8f;
 static uint8_t initialized = 0;
 void Read_ADC_Voltage(void)
 {
@@ -14,17 +13,16 @@ void Read_ADC_Voltage(void)
         voltage *= *IntADC.Colibrate_koeff;
         if(!initialized)
         {
-            filteredValue = voltage;
+            IntADC.ADC_AKB_volts = voltage;
             initialized = 1;
         }
         else
         {
-            filteredValue = alpha * voltage + (1.0f - alpha) * filteredValue;
+            IntADC.ADC_AKB_volts = alpha * voltage + (1.0f - alpha) * IntADC.ADC_AKB_volts;
         }
-        
-        IntADC.ADC_AKB_volts = filteredValue;
-        IntADC.ADC_AKB_Proc = (uint8_t)voltageToSOC(filteredValue);
-        sprintf(IntADC.ADC_AKB_volts_char, "%.2f", filteredValue);
+
+        IntADC.ADC_AKB_Proc = (uint8_t)voltageToSOC(IntADC.ADC_AKB_volts);
+        sprintf(IntADC.ADC_AKB_volts_char, "%.2f", IntADC.ADC_AKB_volts);
         sprintf(IntADC.ADC_AKB_Proc_char, "%d", IntADC.ADC_AKB_Proc);
     }
 }

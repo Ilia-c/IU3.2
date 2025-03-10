@@ -1,5 +1,3 @@
-
-
 #include "OLED.h"
 #include "OLED_Fonts.h"
 #include "OLED_Icons.h"
@@ -15,7 +13,7 @@
 #include "AT24C02.h"
 #include "Status_codes.h"
 #include "Internal_ADC.h"
-
+#include "w25q128.h"
 
 
 typedef struct Menu_item
@@ -120,3 +118,5 @@ void Screen_saver();
 void ALL_Reset_settings();
 void GSM_HTTP_READ();
 void Save_time_sleep_format();
+void PROGRESS_BAR(uint8_t procent);
+void SAVE_USB();
