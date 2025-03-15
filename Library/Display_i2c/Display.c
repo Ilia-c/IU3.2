@@ -619,10 +619,22 @@ void SAVE_USB(){
     OLED_DrawCenteredString(SAVE_USB_DATA, Y);
     OLED_UpdateScreen();
 
+    osThreadSuspend(ADC_readHandle);
+    osThreadSuspend(ERROR_INDICATE_taskHandle);
+    HAL_SPI_DeInit(&hspi2);
+    hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2; // новое значение делителя
+    HAL_SPI_Init(&hspi2);
+
     int res = backup_records_to_external();
     OLED_DrawRectangleFill(0, 15, winth_display, 60, 0);
     if (res != 1) OLED_DrawCenteredString(USB_RES_ERR, Y);
     else OLED_DrawCenteredString(READY, Y);
+
+    HAL_SPI_DeInit(&hspi2);
+    hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16; // новое значение делителя
+    HAL_SPI_Init(&hspi2);
+    osThreadResume(ADC_readHandle);
+    osThreadResume(ERROR_INDICATE_taskHandle);
 
     OLED_UpdateScreen();
     osDelay(200);

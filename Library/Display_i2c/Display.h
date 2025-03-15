@@ -15,6 +15,9 @@
 #include "Internal_ADC.h"
 #include "w25q128.h"
 
+extern osThreadId_t  ADC_readHandle;
+extern osThreadId_t  ERROR_INDICATE_taskHandle;
+extern SPI_HandleTypeDef hspi2;
 
 typedef struct Menu_item
 {

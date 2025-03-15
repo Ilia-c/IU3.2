@@ -56,6 +56,7 @@ xSemaphoreHandle USB_COM_semaphore;
 xSemaphoreHandle Main_semaphore;
 xSemaphoreHandle UART_PARSER_semaphore;
 xSemaphoreHandle ADC_READY; // Окончания преобразования при работе в циклическом режиме
+xSemaphoreHandle SD_WRITE; // Окончания преобразования при работе в циклическом режиме
 
 extern const uint16_t Timer_key_one_press;
 extern const uint16_t Timer_key_press;
@@ -122,7 +123,7 @@ const osThreadAttr_t Keyboard_task_attributes = {
 osThreadId_t USB_COM_taskHandle;
 const osThreadAttr_t USB_COM_task_attributes = {
     .name = "USB_COM_task",
-    .stack_size = 1024 * 3,
+    .stack_size = 512 * 2,
     .priority = (osPriority_t)osPriorityLow2,
 };
 
@@ -147,9 +148,13 @@ const osThreadAttr_t UART_PARSER_task_attributes = {
     .stack_size = 1024 * 3,
     .priority = (osPriority_t)osPriorityLow6,
 };
-/* USER CODE BEGIN PV */
 
-/* USER CODE END PV */
+osThreadId_t SD_taskHandle;
+const osThreadAttr_t SD_task_attributes = {
+    .name = "SD_task",
+    .stack_size = 1024*2,
+    .priority = (osPriority_t)osPriorityLow5,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
@@ -176,6 +181,7 @@ void Main_Cycle(void *argument); // основной режим в циклич�
 void Keyboard_task(void *argument);
 void USB_COM_task(void *argument);
 void UART_PARSER_task(void *argument);
+void SD_Task(void *argument);
 void Erroe_indicate(void *argument);
 void HAL_TIM6_Callback(void);
 void SetTimerPeriod(uint32_t period_ms);
@@ -188,6 +194,7 @@ uint8_t units = 0;
 int main(void)
 {
   __HAL_RCC_PWR_CLK_ENABLE();
+
   HAL_Init();
   SystemClock_Config();
   PeriphCommonClock_Config();
@@ -304,12 +311,13 @@ int main(void)
     HAL_Delay(20);
 
     //if (EEPROM.USB_mode == 0) MX_USB_DEVICE_Init_COMPORT(); // Режим работы в USB_FLASH (перефброс фалов с данными на внешний USB)
-    if (EEPROM.USB_mode == 1 || EEPROM.USB_mode == 2){
+    if (EEPROM.USB_mode == 1){
       MX_USB_DEVICE_Init_COMPORT(); // Режим работы в VirtualComPort
       HAL_NVIC_SetPriority(OTG_FS_IRQn, 10, 0); // Приоритет прерывания
       HAL_NVIC_EnableIRQ(OTG_FS_IRQn);         // Включение прерывания
     }
-    //if (EEPROM.USB_mode == 3) MX_USB_DEVICE_Init_COMPORT();
+    //if (EEPROM.USB_mode == 2) MX_USB_DEVICE_Init_COMPORT(); // Режим работы в USB-FLASH с внутренней flash
+    //if (EEPROM.USB_mode == 3) MX_USB_DEVICE_Init_COMPORT(); // Режим работы в USB-FLASH с SD
 
     if (EEPROM.screen_sever_mode == 1) Start_video();
     HAL_GPIO_WritePin(COL_B1_GPIO_Port, COL_B1_Pin, 1);
@@ -348,6 +356,7 @@ int main(void)
   ADC_readHandle = osThreadNew(ADC_read, NULL, &ADC_read_attributes);
   RS485_dataHandle = osThreadNew(RS485_data, NULL, &RS485_data_attributes);
   UART_PARSER_taskHandle = osThreadNew(UART_PARSER_task, NULL, &UART_PARSER_task_attributes);
+  UART_PARSER_taskHandle = osThreadNew(SD_Task, NULL, &SD_task_attributes);
 
   if (EEPROM.Mode == 0){
     USB_COM_taskHandle = osThreadNew(USB_COM_task, NULL, &USB_COM_task_attributes);
@@ -942,6 +951,7 @@ void Main(void *argument)
   vSemaphoreCreateBinary(USB_COM_semaphore);
   vSemaphoreCreateBinary(UART_PARSER_semaphore);
   vSemaphoreCreateBinary(Main_semaphore);
+  vSemaphoreCreateBinary(SD_WRITE);
     // Запуск глобального таймера для обновления экрана
   HAL_NVIC_SetPriority(TIM5_IRQn, 8, 0); // Установите приоритет
   HAL_NVIC_EnableIRQ(TIM5_IRQn);        // Включите прерывание
@@ -967,6 +977,7 @@ void Main_Cycle(void *argument)
   vSemaphoreCreateBinary(USB_COM_semaphore);
   vSemaphoreCreateBinary(UART_PARSER_semaphore);
   vSemaphoreCreateBinary(Main_semaphore);
+  vSemaphoreCreateBinary(SD_WRITE);
   // 1. Включено -  АЦП, flash, EEPROM
   // 2. Уже конфигурация EEPROM прочитана
   for (;;)
@@ -1142,7 +1153,7 @@ void Main_Cycle(void *argument)
     // 8.  Сохранение данных
     // ! перенести в отдельную задачу
     Collect_DATA();
-    WriteToSDCard();
+    xSemaphoreGive(SD_WRITE);
     update_flash_end_ptr();
     flash_append_record(save_data);
 
@@ -1177,8 +1188,9 @@ void ADC_read(void *argument)
   for (;;)
   {
     //MX_USB_HOST_Process();
-    osDelay(300);
+    
     ADC_data.update_value();
+    osDelay(300);
   }
 }
 
@@ -1188,12 +1200,20 @@ void RS485_data(void *argument)
   for (;;)
   {
     osDelay(3000);
-    Read_ADC_Voltage();
+    Read_ADC_Voltage(); // Измерение напряжения на АКБ
     if (EEPROM.Mode == 1) osThreadSuspend(RS485_dataHandle); // Остановить, если циклический режим (для однократного выполнения)
   }
 }
 
-
+void SD_Task(void *argument) {
+  // Код задачи
+  SD_check();
+  for (;;) {
+    xSemaphoreTake(SD_WRITE, portMAX_DELAY);
+    WriteToSDCard();
+    osDelay(1000);
+  }
+}
 
 uint32_t data_read_adc_in = 0;
 void Display_I2C(void *argument)
@@ -1257,7 +1277,6 @@ void Erroe_indicate(void *argument)
   if (EEPROM.USB_mode == 0){
     MX_USB_HOST_Init();
   }
-  SD_check();
   for (;;)
   {
     Diagnostics();
@@ -1343,7 +1362,7 @@ void UART_PARSER_task(void *argument)
     
 
   
-      if (!(GSM_data.Status & GSM_RDY) && (EEPROM.USB_mode != 2)){
+      if (!(GSM_data.Status & GSM_RDY)){
         int result = SendCommandAndParse("AT\r", parse_ERROR_OK, 1000);
         if (result == 1){
           GSM_data.Status |= GSM_RDY;
@@ -1357,7 +1376,7 @@ void UART_PARSER_task(void *argument)
           if (SendCommandAndParse("AT&W\r", waitForOKResponse, 1000) != 1){}
         }
       }
-      if ((GSM_data.Status & GSM_RDY) && (EEPROM.USB_mode != 2))
+      if (GSM_data.Status & GSM_RDY)
       {
         SendCommandAndParse("AT+CPIN?\r", parse_CPIN, 1000);
         SendCommandAndParse("AT+CSQ\r", parse_CSQ, 1000);

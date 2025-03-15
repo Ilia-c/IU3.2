@@ -19,17 +19,19 @@ extern char SDPath[4]; // Предположим, что здесь лежит "
 extern RTC_TimeTypeDef Time;
 extern RTC_DateTypeDef Date;
 
-void SD_check_conect(){
-
+void format_uint8_t_2(char *buffer, size_t size, uint8_t data) {
+    snprintf(buffer, size, "%u", data);
 }
 
-void SD_check(){
-    if (ERRCODE.STATUS & STATUS_SD_TEMP_OUT_OF_RANGE) return;
-    char read_buff[20] = {0};
-	char write_buff[20] = {0};
-    
-    FRESULT res = f_mount(&SDFatFS, (TCHAR const*)SDPath, 1);
-    UINT bytesWritten;
+void SD_check(void)
+{
+    // Если температура вне допустимого диапазона – выходим
+    if (ERRCODE.STATUS & STATUS_SD_TEMP_OUT_OF_RANGE)
+        return;
+
+    FRESULT res;
+    // Монтируем файловую систему
+    res = f_mount(&SDFatFS, (TCHAR const*)SDPath, 1);
     if (res != FR_OK) {
         // Обработка ошибки: карта не смонтировалась
         ERRCODE.STATUS |= STATUS_SD_MOUNT_ERROR;
@@ -37,62 +39,77 @@ void SD_check(){
     }
 
     char filePath[32];
-    sprintf(filePath, "%s/log.txt", SDPath); 
+    // Формируем путь к файлу log.txt
+    snprintf(filePath, sizeof(filePath), "%s/log.txt", SDPath);
+
+    // Открываем (или создаем) файл для проверки доступности
     res = f_open(&SDFile, filePath, FA_OPEN_ALWAYS | FA_WRITE);
     if (res != FR_OK) {
-        // Ошибка открытия/создания
+        // Ошибка открытия/создания файла
         ERRCODE.STATUS |= STATUS_SD_FILE_OPEN_ERROR;
         f_mount(NULL, SDPath, 1);
         return;
     }
 
-    char string[100] = "Загрузка в режиме настройки. Дата:";
-    char buffer[60] = {'\0'};
-    format_uint8_t_2(buffer, sizeof(buffer), Time.Hours);
-    strcat(string, buffer);
-    strcat(string, ":");
-    format_uint8_t_2(buffer, sizeof(buffer), Time.Minutes);
-    strcat(string, buffer);
-    strcat(string, " Дата:");
-    format_uint8_t_2(buffer, sizeof(buffer), Date.Date);
-    strcat(string, buffer);
-    strcat(string, ".");
-    format_uint8_t_2(buffer, sizeof(buffer), Date.Month);
-    strcat(string, buffer);
-    strcat(string, ". КОД:");
-    format_uint8_t_2(buffer, sizeof(buffer), Date.Year);
-    strcat(string, buffer);
-    base62_encode(ERRCODE.STATUS, buffer, sizeof(buffer));
-    strcat(string, buffer);
-    strcat(string, "\n");
+    // Закрываем файл и отмонтируем файловую систему
+    f_close(&SDFile);
+    f_mount(NULL, SDPath, 1);
+}
+
+void SD_write_log(const char *string)
+{
+    // Если температура вне допустимого диапазона – выходим
+    if (ERRCODE.STATUS & STATUS_SD_TEMP_OUT_OF_RANGE)
+        return;
+
+    FRESULT res;
+    // Монтируем файловую систему
+    res = f_mount(&SDFatFS, (TCHAR const*)SDPath, 1);
+    if (res != FR_OK) {
+        // Если карта не смонтировалась, выставляем флаг ошибки и выходим
+        ERRCODE.STATUS |= STATUS_SD_MOUNT_ERROR;
+        return;
+    }
+
+    char filePath[32];
+    // Формируем путь к файлу log.txt (используем snprintf для безопасности)
+    snprintf(filePath, sizeof(filePath), "%s/log.txt", SDPath);
+
+    // Открываем (или создаем) файл для записи в режиме append
+    res = f_open(&SDFile, filePath, FA_OPEN_ALWAYS | FA_WRITE);
+    if (res != FR_OK) {
+        // Ошибка открытия/создания файла
+        ERRCODE.STATUS |= STATUS_SD_FILE_OPEN_ERROR;
+        f_mount(NULL, SDPath, 1);
+        return;
+    }
 
     // Переходим в конец файла (append-режим)
     res = f_lseek(&SDFile, f_size(&SDFile));
-    if (res != FR_OK)
-    {
+    if (res != FR_OK) {
         ERRCODE.STATUS |= STATUS_SD_CORRUPTED_DATA;
         f_close(&SDFile);
         f_mount(NULL, SDPath, 1);
         return;
     }
 
-    res = f_write(&SDFile, string, strlen(string), &bytesWritten);
-    if (res != FR_OK || bytesWritten < strlen(string))
-    {
+    // Пишем строку в файл
+    size_t stringLength = strlen(string);
+    UINT bytesWritten = 0;
+    res = f_write(&SDFile, string, stringLength, &bytesWritten);
+    if (res != FR_OK || bytesWritten < stringLength) {
         ERRCODE.STATUS |= STATUS_SD_WRITE_ERROR;
         f_close(&SDFile);
         f_mount(NULL, SDPath, 1);
         return;
     }
-    // Закрываем файл
+
+    // Закрываем файл и отмонтируем файловую систему
     f_close(&SDFile);
-    // Отмонтируем
     f_mount(NULL, SDPath, 1);
 }
 
-void format_uint8_t_2(char *buffer, size_t size, uint8_t data) {
-    snprintf(buffer, size, "%u", data);
-}
+
 
 void base62_encode(uint64_t value, char *buffer, size_t bufferSize) {
     if (bufferSize < 12) {
