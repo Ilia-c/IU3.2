@@ -6,7 +6,7 @@
 #include "OLED_Icons.h"
 #include <string.h>
 #include <stdio.h>
-
+#include "usb_host.h"
 
 #define OLED_ADDRESS		0x78	//0x3C
 #define OLED_WIDTH			128

@@ -54,6 +54,7 @@
 #endif
 #ifndef CMSIS_device_header
 #define CMSIS_device_header "stm32l4xx.h"
+#include "stm32l4xx.h"
 #endif /* CMSIS_device_header */
 
 #define configENABLE_FPU                         0
@@ -83,7 +84,6 @@
 #define configASSERT(x) if((x) == 0) { taskDISABLE_INTERRUPTS(); for(;;); }
 
 
-#include "stm32l4xx.h"
 #define configRECORD_STACK_HIGH_ADDRESS 1
 #define configGENERATE_RUN_TIME_STATS 1
 #define INCLUDE_xSemaphoreGetMutexHolder 1

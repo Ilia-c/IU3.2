@@ -280,31 +280,24 @@ void UART4_IRQHandler(void)
   */
 
 extern EEPROM_Settings_item EEPROM;
+static uint8_t last_USB_state = 255;
 void OTG_FS_IRQHandler(void)
 {
-  /* USER CODE BEGIN OTG_FS_IRQn 0 */
-
-  /* USER CODE END OTG_FS_IRQn 0 */
-  
-  if (EEPROM.USB_mode == 1){
+  // ! При несовпадении - полная деинициализация USB
+  if (last_USB_state == 255) last_USB_state = EEPROM.USB_mode;
+  if (last_USB_state == 1 || last_USB_state == 2){
     HAL_PCD_IRQHandler(&hpcd_USB_OTG_FS);
   }
-  if (EEPROM.USB_mode == 2){
+  if (last_USB_state == 0){
     HAL_HCD_IRQHandler(&hhcd_USB_OTG_FS);
   }
- 
-  /* USER CODE BEGIN OTG_FS_IRQn 1 */
-
-  /* USER CODE END OTG_FS_IRQn 1 */
 }
 
 
 void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
 {
-    // Здесь можно поставить breakpoint или выводить сообщение
-    printf("Stack overflow in task: %s\r\n", pcTaskName);
-    // Остановить выполнение, чтобы посмотреть регистры
-    taskDISABLE_INTERRUPTS();
+    // Событие переполнения стека
+    taskDISABLE_INTERRUPTS(); 
     for(;;);
 }
 

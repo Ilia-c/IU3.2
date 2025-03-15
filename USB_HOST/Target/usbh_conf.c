@@ -58,14 +58,21 @@ USBH_StatusTypeDef USBH_Get_USB_Status(HAL_StatusTypeDef hal_status);
                        LL Driver Callbacks (HCD -> USB Host Library)
 *******************************************************************************/
 /* MSP Init */
+
 void HAL_HCD_MspInit(HCD_HandleTypeDef* hcdHandle)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-
-  if(hcdHandle->Instance == USB_OTG_FS)
+  if(hcdHandle->Instance==USB_OTG_FS)
   {
-    /* Инициализация пинов DM/DP */
+  /* USER CODE BEGIN USB_OTG_FS_MspInit 0 */
+
+  /* USER CODE END USB_OTG_FS_MspInit 0 */
+
     __HAL_RCC_GPIOA_CLK_ENABLE();
+    /**USB_OTG_FS GPIO Configuration
+    PA11     ------> USB_OTG_FS_DM
+    PA12     ------> USB_OTG_FS_DP
+    */
     GPIO_InitStruct.Pin = GPIO_PIN_11|GPIO_PIN_12;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -73,10 +80,10 @@ void HAL_HCD_MspInit(HCD_HandleTypeDef* hcdHandle)
     GPIO_InitStruct.Alternate = GPIO_AF10_OTG_FS;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-    /* Включаем тактирование OTG_FS */
+    /* Peripheral clock enable */
     __HAL_RCC_USB_OTG_FS_CLK_ENABLE();
 
-    /* Включаем VDDUSB (для USB-трансивера на STM32L4) */
+    /* Enable VDDUSB */
     if(__HAL_RCC_PWR_IS_CLK_DISABLED())
     {
       __HAL_RCC_PWR_CLK_ENABLE();
@@ -88,32 +95,14 @@ void HAL_HCD_MspInit(HCD_HandleTypeDef* hcdHandle)
       HAL_PWREx_EnableVddUSB();
     }
 
-    /* Настраиваем прерывание */
+    /* Peripheral interrupt init */
     HAL_NVIC_SetPriority(OTG_FS_IRQn, 5, 0);
     HAL_NVIC_EnableIRQ(OTG_FS_IRQn);
+  /* USER CODE BEGIN USB_OTG_FS_MspInit 1 */
 
-    /* --- ВАЖНО: ОТКЛЮЧАЕМ VBUS SENSING И ФОРСИРУЕМ HOST MODE --- */
-    // Для STM32L4xx, в Reference Manual (RM0351 или актуальном для L476) смотрим регистры:
-    // - GCCFG (General core configuration register), бит 21: VBDEN (VBUS Detection ENable).
-    //   0 = VBUS sensing disabled
-    // - GUSBCFG (Global USB configuration register),
-    //   бит 29 = FHMOD (Force Host Mode),
-    //   бит 30 = FDMOD (Force Device Mode) – нужно сбросить, если выставляем Host.
-
-    // 1) Отключаем VBUS detection (бит 21 = 0)
-    USB_OTG_FS->GCCFG &= ~((uint32_t)(1 << 21));  // Сбрасываем VBDEN
-
-    // 2) Форсируем Host Mode:
-    //    Сбрасываем FDMOD (бит 30), Устанавливаем FHMOD (бит 29).
-    //    Но будьте внимательны к тому, что HAL может это делать внутри HAL_HCD_Init.
-    //    Если HAL перезаписывает эти биты, иногда приходится делать это после HAL_HCD_Init().
-    USB_OTG_FS->GUSBCFG &= ~((uint32_t)(1 << 30)); // FDMOD = 0
-    USB_OTG_FS->GUSBCFG |=  ((uint32_t)(1 << 29)); // FHMOD = 1
-
-    /* --- Конец правок --- */
+  /* USER CODE END USB_OTG_FS_MspInit 1 */
   }
 }
-
 
 void HAL_HCD_MspDeInit(HCD_HandleTypeDef* hcdHandle)
 {
@@ -241,8 +230,6 @@ USBH_StatusTypeDef USBH_LL_Init(USBH_HandleTypeDef *phost)
   hhcd_USB_OTG_FS.Init.dma_enable = DISABLE;
   hhcd_USB_OTG_FS.Init.phy_itface = HCD_PHY_EMBEDDED;
   hhcd_USB_OTG_FS.Init.Sof_enable = DISABLE;
-  hhcd_USB_OTG_FS.Init.low_power_enable = 0; 
-  hhcd_USB_OTG_FS.Init.use_external_vbus = 0;
   if (HAL_HCD_Init(&hhcd_USB_OTG_FS) != HAL_OK)
   {
     Error_Handler( );

@@ -9,11 +9,10 @@
 extern SPI_HandleTypeDef hspi2;
 uint32_t flash_end_ptr = 0;
 
-// Функции-обёртки для SPI (возвращают 0 при успехе, -1 при ошибке)
+// ------------------ Низкоуровневые SPI-функции ------------------
 static int SPI2_Send(uint8_t *dt, uint16_t cnt) {
     return (HAL_SPI_Transmit(&hspi2, dt, cnt, 1000) == HAL_OK) ? 0 : -1;
 }
-
 static int SPI2_Recv(uint8_t *dt, uint16_t cnt) {
     return (HAL_SPI_Receive(&hspi2, dt, cnt, 1000) == HAL_OK) ? 0 : -1;
 }
@@ -21,26 +20,19 @@ static int SPI2_Recv(uint8_t *dt, uint16_t cnt) {
 //------------------------------------------------------------------------------
 // w25_init: Сброс флеша, проверка ID и обновление flash_end_ptr.
 void w25_init(void) {
-    // Сброс флеша
     if (W25_Reset() != 0) {
-        // Можно установить код ошибки в Status_codes, если требуется.
         return;
     }
     HAL_Delay(100);
     
-    // Чтение ID
     uint32_t id = 0;
     if (W25_Read_ID(&id) != 0) {
-        // Отметить ошибку и выйти
         return;
     }
-    // Проверяем ID (например, для W25Q128 должен быть 0xEF4018)
     if (id != 0xEF4018) {
-        // Установить код ошибки в Status_codes.h (например, ERRCODE.STATUS |= STATUS_FLASH_INIT_ERROR)
+        // Можно установить код ошибки
         return;
     }
-    
-    // Обновляем указатель на свободный фрагмент
     update_flash_end_ptr();
 }
 
@@ -58,7 +50,6 @@ int W25_Read_ID(uint32_t *id) {
     *id = (dt[0] << 16) | (dt[1] << 8) | dt[2];
     return 0;
 }
-
 
 //------------------------------------------------------------------------------
 // Сброс флеша
@@ -81,7 +72,6 @@ int W25_Read_Data(uint32_t addr, uint8_t *data, uint32_t sz) {
     cmd[2] = (addr >> 8) & 0xFF;
     cmd[3] = addr & 0xFF;
     cs_set();
-    HAL_Delay(2);
     if (SPI2_Send(cmd, 4) != 0) { cs_reset(); return -1; }
     if (SPI2_Recv(data, sz) != 0) { cs_reset(); return -1; }
     cs_reset();
@@ -99,7 +89,7 @@ int W25_Write_Enable(void) {
 }
 
 //------------------------------------------------------------------------------
-// Ожидание готовности флеша (с использованием FreeRTOS)
+// Ожидание готовности флеша (FreeRTOS)
 int W25_WaitForReady(uint32_t timeout_ms) {
     TickType_t start_tick = xTaskGetTickCount();
     while (((xTaskGetTickCount() - start_tick) * portTICK_PERIOD_MS) < timeout_ms) {
@@ -130,7 +120,7 @@ int W25_Write_Data(uint32_t addr, uint8_t *data, uint32_t sz) {
 }
 
 //------------------------------------------------------------------------------
-// Стирание сектора (адрес должен быть выровнен по SECTOR_SIZE)
+// Стирание сектора
 int W25_Erase_Sector(uint32_t addr) {
     uint8_t cmd[4];
     cmd[0] = W25_SECTOR_ERASE;
@@ -139,7 +129,6 @@ int W25_Erase_Sector(uint32_t addr) {
     cmd[3] = addr & 0xFF;
     if (W25_Write_Enable() != 0) return -1;
     cs_set();
-    HAL_Delay(2);
     if (SPI2_Send(cmd, 4) != 0) { cs_reset(); return -1; }
     cs_reset();
     if (W25_WaitForReady(400) != 0) return -1;
@@ -159,7 +148,7 @@ uint8_t W25_Read_Status(void) {
 }
 
 //------------------------------------------------------------------------------
-// Полное стирание флеша (Chip Erase)
+// Полное стирание флеша
 int W25_Chip_Erase(void) {
     uint8_t cmd = W25_CHIP_ERASE;
     if (W25_Write_Enable() != 0) return -1;
@@ -177,10 +166,7 @@ int W25_Chip_Erase(void) {
 }
 
 //------------------------------------------------------------------------------
-// update_flash_end_ptr: Последовательное сканирование всех секторов для определения первого свободного фрагмента.
-// Если заголовок сектора равен SECTOR_EMPTY (0xFFFF), устанавливаем flash_end_ptr на начало сектора.
-// Если заголовок равен SECTOR_INUSE (0x00FF), сканируем фрагменты (начиная с SECTOR_HEADER_SIZE) и ищем первый свободный фрагмент.
-// Если все фрагменты заполнены, помечаем сектор как полный (SECTOR_FULL) и продолжаем.
+// update_flash_end_ptr
 int update_flash_end_ptr(void) {
     uint16_t sector_header;
     for (uint32_t sec = 0; sec < TOTAL_SECTORS; sec++) {
@@ -191,138 +177,110 @@ int update_flash_end_ptr(void) {
             flash_end_ptr = sec * RECORDS_PER_SECTOR;
             return 0;
         } else if (sector_header == SECTOR_INUSE) {
-            // Сканируем фрагменты в секторе
             for (uint32_t i = 0; i < RECORDS_PER_SECTOR; i++) {
                 uint32_t addr = sector_addr + SECTOR_HEADER_SIZE + i * RECORD_SIZE;
+                // Читаем первые 2 байта
                 uint8_t frag_status[2];
                 if (W25_Read_Data(addr, frag_status, sizeof(frag_status)) != 0)
                     continue;
-                // Если первый байт равен 0xFF, фрагмент свободен.
-                // Если фрагмент имеет значение 0x00 в первом байте и второй 0xFF – запись была начата, считаем его заполненным.
-                if (frag_status[0] == 0xFF)
-                {
+                // Если первый байт = 0xFF => свободно
+                if (frag_status[0] == 0xFF) {
                     flash_end_ptr = sec * RECORDS_PER_SECTOR + i;
                     return 0;
                 }
             }
-            // Все фрагменты заполнены – помечаем сектор как полный.
+            // Все фрагменты заполнены => SECTOR_FULL
             uint16_t full_val = SECTOR_FULL;
             if (W25_Write_Data(sector_addr, (uint8_t *)&full_val, sizeof(full_val)) != 0)
                 return -1;
         }
     }
-    // Если все сектора заполнены, начинаем с первого сектора.
+    // Если всё заполнено, wrap-around
     flash_end_ptr = 0;
     return 0;
 }
 
 //------------------------------------------------------------------------------
-// flash_append_record: Запись новой 128-байтной записи в последнюю свободную ячейку.
-// Алгоритм:
-// 1. Определяем текущий фрагмент по flash_end_ptr.
-// 2. Считываем заголовок сектора. Если сектор пустой, обновляем его до SECTOR_INUSE.
-// 3. Считываем первые 2 байта целевого фрагмента. Если фрагмент занят, переходим к следующему сектору:
-//    - Определяем следующий сектор (с wrap-around).
-//    - Стираем следующий сектор, чтобы он стал пустым.
-//    - Помечаем текущий сектор как заполненный (SECTOR_FULL).
-//    - Обновляем flash_end_ptr на начало нового сектора.
-// 4. Формируем запись: заполняем length, rec_status_start (0x00), rec_status_end (0xFF) и data.
-// 5. Записываем запись в фрагмент, затем обновляем rec_status_end до RECORD_COMPLETE_FLAG (0xAA).
-// 6. Обновляем flash_end_ptr.
+// flash_append_record: теперь учитываем, что data[] меньше на 2 байта (RECORD_SIZE - 10).
 int flash_append_record(const char *record_data) {
-    if (!record_data)
-        return -1;
+    if (!record_data) return -1;
     size_t len = strlen(record_data);
-    if (len > (RECORD_SIZE - 8))
-        len = RECORD_SIZE - 8;
+    if (len > (RECORD_SIZE - 10))  // <-- здесь -10, а не -8
+        len = RECORD_SIZE - 10;
     
-    // Определяем текущую позицию по flash_end_ptr
     uint32_t record_index = flash_end_ptr;
     uint32_t sector = record_index / RECORDS_PER_SECTOR;
     uint32_t rec_in_sector = record_index % RECORDS_PER_SECTOR;
     uint32_t sector_addr = sector * SECTOR_SIZE;
     uint32_t record_addr = sector_addr + SECTOR_HEADER_SIZE + rec_in_sector * RECORD_SIZE;
     
-    // Считываем 2-байтовый заголовок сектора
     uint16_t sector_header;
     if (W25_Read_Data(sector_addr, (uint8_t *)&sector_header, sizeof(sector_header)) != 0)
         return -1;
     
-    // Если сектор пустой, обновляем его заголовок до SECTOR_INUSE (0x00FF)
     if (sector_header == SECTOR_EMPTY) {
         uint16_t new_header = SECTOR_INUSE;
         if (W25_Write_Data(sector_addr, (uint8_t *)&new_header, sizeof(new_header)) != 0)
             return -1;
     }
     
-    // Вместо проверки только текущего фрагмента, ищем свободный фрагмент в текущем секторе,
-    // начиная с позиции rec_in_sector.
     int found_fragment = 0;
     for (uint32_t i = rec_in_sector; i < RECORDS_PER_SECTOR; i++) {
         uint32_t candidate_addr = sector_addr + SECTOR_HEADER_SIZE + i * RECORD_SIZE;
         uint8_t frag_status[2];
         if (W25_Read_Data(candidate_addr, frag_status, sizeof(frag_status)) != 0)
             continue;
-        // Если первые 2 байта равны 0xFF, фрагмент считается свободным.
         if (frag_status[0] == 0xFF && frag_status[1] == 0xFF) {
             flash_end_ptr = sector * RECORDS_PER_SECTOR + i;
-            record_addr = candidate_addr;
-            found_fragment = 1;
+            record_addr   = candidate_addr;
+            found_fragment= 1;
             break;
         }
     }
-    
-    // Если ни один фрагмент в текущем секторе свободен, сектор считается заполненным.
     if (!found_fragment) {
-        // Перед переходом к следующему сектору очищаем следующий сектор, чтобы гарантировать, 
-        // что всегда будет хотя бы один пустой сектор.
+        // Переход к следующему сектору
         uint32_t next_sector = (sector + 1) % TOTAL_SECTORS;
         uint32_t next_sector_addr = next_sector * SECTOR_SIZE;
         if (W25_Erase_Sector(next_sector_addr) != 0)
             return -1;
-        // Помечаем текущий сектор как заполненный
         uint16_t full_val = SECTOR_FULL;
         if (W25_Write_Data(sector_addr, (uint8_t *)&full_val, sizeof(full_val)) != 0)
             return -1;
-        // Обновляем flash_end_ptr на начало нового сектора
         flash_end_ptr = next_sector * RECORDS_PER_SECTOR;
-        sector = flash_end_ptr / RECORDS_PER_SECTOR;
+        sector = next_sector;
         rec_in_sector = 0;
         sector_addr = sector * SECTOR_SIZE;
-        record_addr = sector_addr + SECTOR_HEADER_SIZE;
+        record_addr= sector_addr + SECTOR_HEADER_SIZE;
     }
     
-    // Формируем новую запись (фиксированный размер 128 байт)
     record_t new_rec;
-    // Поле length – длина полезных данных (максимум 122 байта)
-    new_rec.length = (uint16_t)len;
-    // rec_status_start устанавливается в 0x00 (запись начата)
-    new_rec.rec_status_start = 0x00;
-    // rec_status_end изначально 0xFF (запись не завершена)
-    new_rec.rec_status_end = 0xFF;
-    // Если это первая запись в секторе, первый фрагмент уже содержит заголовок сектора,
-    // поэтому никаких дополнительных действий не требуются.
+    new_rec.length          = (uint16_t)len;
+    new_rec.rec_status_start= 0x00;
+    new_rec.rec_status_end  = 0xFF;
+    // Добавленные поля: sent_marker_sector, sent_marker_block
+    // По умолчанию = 0xFF (не отправлено)
+    new_rec.sent_marker_sector = 0xFF;
+    new_rec.sent_marker_block  = 0xFF;
+
     memset(new_rec.data, 0xFF, sizeof(new_rec.data));
     memcpy(new_rec.data, record_data, len);
     
-    // Записываем новую 128-байтную запись в найденный фрагмент
+    // Запись полностью (128 байт)
     if (W25_Write_Data(record_addr, (uint8_t *)&new_rec, sizeof(record_t)) != 0)
         return -1;
     
-    // После успешной записи обновляем поле rec_status_end до RECORD_COMPLETE_FLAG (0xAA)
+    // Обновляем rec_status_end -> RECORD_COMPLETE_FLAG
     uint8_t complete_flag = RECORD_COMPLETE_FLAG;
-    uint32_t status_addr = record_addr + offsetof(record_t, rec_status_end);
+    uint32_t status_addr  = record_addr + offsetof(record_t, rec_status_end);
     if (W25_Write_Data(status_addr, &complete_flag, 1) != 0)
         return -1;
     
-    // Обновляем глобальный указатель: переходим к следующему фрагменту
     flash_end_ptr++;
     return 0;
 }
 
-
 //------------------------------------------------------------------------------
-// Чтение записи по физическому номеру фрагмента (от 0 до TOTAL_RECORDS-1)
+// Чтение записи
 int flash_read_record_by_index(uint32_t record_block, char *buffer) {
     if (!buffer || record_block >= TOTAL_RECORDS)
         return -1;
@@ -330,28 +288,58 @@ int flash_read_record_by_index(uint32_t record_block, char *buffer) {
     uint32_t sector = record_block / RECORDS_PER_SECTOR;
     uint32_t rec_in_sector = record_block % RECORDS_PER_SECTOR;
     uint32_t addr = sector * SECTOR_SIZE + SECTOR_HEADER_SIZE + rec_in_sector * RECORD_SIZE;
+    
     record_t rec;
     if (W25_Read_Data(addr, (uint8_t *)&rec, sizeof(record_t)) != 0)
         return -1;
+    // Если первый байт == 0xFF => пусто
     if (((uint8_t *)&rec)[0] == 0xFF)
         return -1;
     
-    // Количество байт данных не должно превышать размер полезной области.
+    // Длина не должна превосходить (RECORD_SIZE-10)
     uint16_t len = rec.length;
-    if (len > (RECORD_SIZE - 8))
-        len = RECORD_SIZE - 8;
+    if (len > (RECORD_SIZE - 10))
+        len = RECORD_SIZE - 10;
     
-    memcpy(buffer, rec.data, len);
-    buffer[len] = '\0';
-    
-    // Если запись не завершена, дописываем метку ошибки.
-    if (rec.rec_status_end != RECORD_COMPLETE_FLAG) {
-        strncat(buffer, ";err flasg\n", RECORD_OUTPUT_SIZE - strlen(buffer) - 1);
-    }
-    
+        memcpy(buffer, rec.data, len);
+        buffer[len] = '\0'; // завершаем строку
+        
+        // Флаги отсутствия скобок
+        int no_open_bracket  = 0; 
+        int no_close_bracket = 0;
+        
+        // 1) Проверяем/удаляем ведущий '['
+        size_t l = strlen(buffer);
+        if (l == 0 || buffer[0] != '[') {
+            no_open_bracket = 1;
+        } else {
+            // если найдено '[', удаляем его, сдвигая строку
+            memmove(buffer, buffer + 1, l); 
+        }
+        
+        // 2) Проверяем/удаляем завершающий ']'
+        l = strlen(buffer);
+        if (l == 0 || buffer[l - 1] != ']') {
+            no_close_bracket = 1;
+        } else {
+            // если найдено ']', заменяем на '\0'
+            buffer[l - 1] = '\0';
+        }
+        
+        // 3) Если отсутствует либо ведущая '[', либо завершающая ']', добавляем ";NO_WRITE"
+        if (no_open_bracket || no_close_bracket) {
+            strncat(buffer, ";NO_WRITE", RECORD_OUTPUT_SIZE - strlen(buffer) - 1);
+        }
+        
+        if (rec.sent_marker_block != 0x00) {
+            strncat(buffer, ";NO_SEND", RECORD_OUTPUT_SIZE - strlen(buffer) - 1);
+        }
+        // 5) В конце – добавляем перевод строки
+        strncat(buffer, "\n", strlen(buffer));
+        
+        
     return 0;
 }
-
 void createFilename(char *dest, size_t destSize) {
     const char *version = EEPROM.version.VERSION_PCB;  // например, "3.75-A001V"
     char tmp[32];
@@ -369,28 +357,25 @@ void createFilename(char *dest, size_t destSize) {
     snprintf(dest, destSize, "%s%s.csv", USBHPath, tmp);
 }
 
-// Возвраты: -1 - ошибка USB,  0 - Ошибка чтения 1 - все ок
+
+//------------------------------------------------------------------------------
+// backup_records_to_external – без изменений
 int backup_records_to_external(void) {
     // Обновляем flash_end_ptr (если требуется)
     update_flash_end_ptr();
     // Если запись успешно считана, вызываем резервное копирование (например, выводим в консоль).
     FRESULT res;
     UINT bw;
-    f_mount(NULL, USBHPath, 0);
-    osDelay(100);
-    if(disk_initialize(0) != RES_OK) {
-        // Если диск не инициализируется, возвращаем ошибку
-        return -1;
-    }
-    //f_mount(NULL, (TCHAR const* )"", 0);
-    res = f_mount(&USBFatFs, USBHPath, 0);
+    FATFS *fs;
+    DWORD fre_clust;
+
+    
+    res = f_getfree(USBHPath, &fre_clust, &fs);
     if (res != FR_OK)
     {
-        // Если файловую систему не смонтировать, выходим
-        // ! Вывести сообщение об ошибке
-        f_mount(NULL, "", 0);
         return -1;
     }
+    
 
     char filename[16];
     createFilename(filename, sizeof(filename));
@@ -399,8 +384,11 @@ int backup_records_to_external(void) {
     {
         f_close(&MyFile);
         f_mount(NULL, USBHPath, 0);
+        memset(&USBFatFs, 0, sizeof(FATFS));
         return -1;
     }
+
+
 
     // Определяем последний записанный фрагмент.
     uint32_t last_written;
@@ -442,34 +430,13 @@ int backup_records_to_external(void) {
             // Считываем запись по индексу (функция flash_read_record_by_index не требует параметр размера)
             if (flash_read_record_by_index(record_index, save_data) == 0)
             {
-                char *ptr = save_data;
-                // Если первый символ равен '[', пропускаем его, сдвигая указатель
-                if (ptr[0] == '[') {
-                    ptr++;
-                }
-                
-                // Если строка пустая после сдвига, пропускаем запись
-                if (strlen(ptr) == 0) continue;
-                // Определяем текущую длину строки, на которую указывает ptr
-                size_t len = strlen(ptr);
-                
-                // Если последний символ равен ']', заменяем его на перевод строки '\n'
-                if (len > 0 && ptr[len - 1] == ']') {
-                    ptr[len - 1] = '\n';
-                    // Если длина строки меньше размера буфера, гарантируем корректное завершение строки
-                    if (len < RECORD_OUTPUT_SIZE) {
-                        ptr[len] = '\0';
-                    }
-                    // На всякий случай, чтобы гарантировать, что последний символ в буфере – '\0'
-                    ptr[RECORD_OUTPUT_SIZE - 1] = '\0';
-                }
-                
-                // Пишем обработанную строку в файл
-                res = f_write(&MyFile, ptr, strlen(ptr), &bw);
+
+                res = f_write(&MyFile, save_data, strlen(save_data), &bw);
                 if(res != FR_OK)
                 {
                     f_close(&MyFile);
                     f_mount(NULL, USBHPath, 0);
+                    memset(&USBFatFs, 0, sizeof(FATFS));
                     return -1;
                 }
             }
@@ -483,8 +450,132 @@ int backup_records_to_external(void) {
     if (res != FR_OK) {
         // Обработка ошибки синхронизации
     }
-    osDelay(200);
+    //osDelay(200);
     f_close(&MyFile);
-    f_mount(NULL, USBHPath, 0);
+    //f_mount(NULL, USBHPath, 0);
     return 1;
+}
+
+
+//------------------------------------------------------------------------------
+// Новая функция: mark_block_sent_and_check_sector
+int mark_block_sent_and_check_sector(uint32_t record_block) {
+    if (record_block >= TOTAL_RECORDS)
+        return -1;
+    
+    // 1) Ставим sent_marker_block=0x00 для заданного блока
+    uint32_t sector = record_block / RECORDS_PER_SECTOR;
+    uint32_t blk_in_sec = record_block % RECORDS_PER_SECTOR;
+    uint32_t block_addr = sector * SECTOR_SIZE + SECTOR_HEADER_SIZE + blk_in_sec * RECORD_SIZE;
+    
+    uint8_t zeroByte = 0x00;
+    // offset = offsetof(record_t, sent_marker_block)
+    uint32_t offset_sent_block = offsetof(record_t, sent_marker_block); // == 7
+    if (W25_Write_Data(block_addr + offset_sent_block, &zeroByte, 1) != 0)
+        return -1;
+    
+    // 2) Проверяем все блоки сектора: если все (не пустые) тоже имеют sent_marker_block=0x00,
+    //    то в нулевом блоке сектора => sent_marker_sector=0x00
+    uint32_t sector_addr = sector * SECTOR_SIZE;
+    for (uint32_t i = 0; i < RECORDS_PER_SECTOR; i++) {
+        uint32_t cur_block_addr = sector_addr + SECTOR_HEADER_SIZE + i * RECORD_SIZE;
+        record_t rec;
+        if (W25_Read_Data(cur_block_addr, (uint8_t *)&rec, sizeof(record_t)) != 0)
+            continue;
+        // Если первый байт=0xFF => блок пуст => пропускаем
+        if (((uint8_t *)&rec)[0] == 0xFF)
+            continue;
+        // Если sent_marker_block != 0x00 => есть неотправленный
+        if (rec.sent_marker_block != 0x00)
+            return 0; 
+    }
+    // Если дошли сюда, все не-пустые блоки = sent_marker_block=0x00 => выставляем sent_marker_sector=0x00
+    // Нулевой блок => offset= sector_addr+0*RECORD_SIZE +offsetof(record_t,sent_marker_sector)
+    // Но учтите, sector_header=2 байта. 0-й блок => sector_addr +0?
+    uint32_t zero_block_addr = sector_addr + SECTOR_HEADER_SIZE; // Адрес 0-го блока
+    uint32_t offset_sent_sector = offsetof(record_t, sent_marker_sector); // == 6
+    if (W25_Write_Data(zero_block_addr + offset_sent_sector, &zeroByte, 1) != 0)
+        return -1;
+    
+    return 0;
+}
+
+int find_first_unsent_block_by_sector(uint32_t *record_block)
+{
+    if (!record_block) return -1;
+    
+    for (uint32_t sec = 0; sec < TOTAL_SECTORS; sec++) {
+        // Начало сектора
+        uint32_t sector_addr = sec * SECTOR_SIZE;
+        
+        // Считываем sector_header (2 байта в начале сектора)
+        uint16_t sector_header;
+        if (W25_Read_Data(sector_addr, (uint8_t *)&sector_header, sizeof(sector_header)) != 0) {
+            // Ошибка чтения – пропускаем
+            continue;
+        }
+        // Пропускаем пустые и полные сектора
+        if (sector_header == SECTOR_EMPTY || sector_header == SECTOR_FULL) {
+            // Сектор пустой (нет данных) или полный (но может быть неотправленный?
+            // Логика у вас такая, что FULL обычно значит "все блоки заняты". 
+            // Если "FULL" неотправленный, это case не рассмотрен – поправьте при необходимости.
+            continue;
+        }
+        
+        // Сектор "INUSE" (0x00FF) – проверим sent_marker_sector в **нулевом блоке** – байт[6].
+        // Адрес нулевого блока = sector_addr + SECTOR_HEADER_SIZE
+        uint32_t zero_block_addr = sector_addr + SECTOR_HEADER_SIZE;
+        
+        // Считываем sent_marker_sector (offset=6, т.к. offsetof(record_t, sent_marker_sector)==6)
+        uint8_t sectorSentMarker;
+        if (W25_Read_Data(zero_block_addr + offsetof(record_t, sent_marker_sector), &sectorSentMarker, 1) != 0) {
+            continue; // ошибка чтения
+        }
+        // Если весь сектор уже отправлен, пропускаем
+        if (sectorSentMarker == 0x00) {
+            // весь сектор = отправлен
+            continue;
+        }
+        
+        // sectorSentMarker=0xFF => не отправлен целиком. Теперь перебираем блоки
+        // ищем первый неотправленный (sent_marker_block==0xFF)
+        int found_unsent_in_sector = 0; // флаг
+        for (uint32_t i = 0; i < RECORDS_PER_SECTOR; i++) {
+            uint32_t block_addr = sector_addr + SECTOR_HEADER_SIZE + i * RECORD_SIZE;
+            // Проверим пуст ли блок (первый байт структуры, rec[0] == 0xFF)
+            uint8_t firstByte;
+            if (W25_Read_Data(block_addr, &firstByte, 1) != 0) {
+                continue; // ошибка чтения – пропускаем
+            }
+            if (firstByte == 0xFF) {
+                // блок пуст
+                continue;
+            }
+            // Блок не пуст – считываем sent_marker_block
+            uint8_t blockSentMarker;
+            if (W25_Read_Data(block_addr + offsetof(record_t, sent_marker_block),
+                              &blockSentMarker, 1) != 0) {
+                continue;
+            }
+            if (blockSentMarker == 0xFF) {
+                // Н найден – неотправленный блок
+                *record_block = sec * RECORDS_PER_SECTOR + i;
+                return 0; // возвращаем успех
+            }
+        }
+        
+        // Если цикл прошёл, но не найден ни один блок, имеющий blockSentMarker==0xFF,
+        // значит все заполненные блоки уже отправлены => ставим sectorSentMarker=0x00
+        {
+            uint8_t zeroByte = 0x00;
+            if (W25_Write_Data(zero_block_addr + offsetof(record_t, sent_marker_sector),
+                               &zeroByte, 1) != 0) {
+                continue;
+            }
+        }
+        // И идём к следующему сектору
+    }
+    
+    // Если дошли сюда, неотправленных блоков не найдено
+    return -1;
 }

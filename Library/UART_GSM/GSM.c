@@ -52,7 +52,7 @@ static void GSM_TimerCallback(TimerHandle_t xTimer)
         activeBuffer = parseBuffer;
         parseBuffer = temp;
         
-        if (EEPROM.USB_mode == 1)
+        if (EEPROM.USB_mode == 1 || EEPROM.USB_mode == 2)
         {
             /* Передаём данные по USB. Важно: CDC_Transmit_FS должна корректно работать с данными,
                если передача асинхронная, то возможно потребуется дополнительное копирование. */
@@ -76,6 +76,11 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     if (huart->Instance == UART4)
     {
+        if (EEPROM.USB_mode == 2){
+            HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
+            CDC_Transmit_FS((uint8_t *)&gsmRxChar, 1);
+            return;
+        }
         if (data_read == 0){
             HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
             return;

@@ -6,6 +6,7 @@
 #include "Status_codes.h"
 #include "cmsis_os.h"
 #include "usbd_cdc_if.h"
+#include <ctype.h>
 
 void WriteToSDCard(void);
 void SD_check();

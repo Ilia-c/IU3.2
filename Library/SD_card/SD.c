@@ -142,7 +142,9 @@ void WriteToSDCard(void)
     // Открываем (или создаём) файл для записи в корне SD-карты
     // Обратите внимание на использование SDPath и sprintf
     char filePath[32];
-    sprintf(filePath, "%s/test.txt", SDPath); // будет "0:/test.txt"
+    char filename[16];
+    createFilename(filename, sizeof(filename));
+    sprintf(filePath, filename, SDPath); 
     
     res = f_open(&SDFile, filePath, FA_OPEN_ALWAYS | FA_WRITE);
     if (res != FR_OK) {
@@ -193,6 +195,16 @@ int containsRussian(const char *str) {
     }
     return 0;
 }
+void remove_whitespace(char *str) {
+    char *dst = str;
+    while (*str) {
+        if (!isspace((unsigned char)*str))
+            *dst++ = *str;
+        str++;
+    }
+    *dst = '\0';
+}
+
 void Collect_DATA(){
     HAL_RTC_GetDate(&hrtc, &Date, RTC_FORMAT_BIN);
     HAL_RTC_GetTime(&hrtc, &Time, RTC_FORMAT_BIN);
@@ -206,7 +218,7 @@ void Collect_DATA(){
     }
 
     snprintf(save_data, CMD_BUFFER_SIZE,
-        "[%s;%s;%s;%s;%s;%s;%s;%s;%02d/%02d/%02d%s%02d:%02d:%02d;%s;%s;%u;%u]",
+        "[%s;%s;%s;%s;%s;%s;%s;%s;%02d:%02d%s%02d/%02d/%02d;%s;%s;%u;%u]",
         EEPROM.version.VERSION_PCB,              // строка
         EEPROM.version.password,                 // строка
         ADC_data.ADC_value_char,                   // строка
@@ -215,13 +227,14 @@ void Collect_DATA(){
         IntADC.ADC_AKB_volts_char,                 // строка
         IntADC.ADC_AKB_Proc_char,                  // строка
         ERRCODE.STATUSCHAR,                        // строка
+        Time.Hours, Time.Minutes,     // время (часы, минуты, секунды)
+        "-",
         Date.Date, Date.Month, Date.Year,          // дата (день, месяц, год)
-        ".", 
-        Time.Hours, Time.Minutes, Time.Seconds,     // время (часы, минуты, секунды)
         "0",                                       // time_sleep_mode всегда "0"
         "0", 
         EEPROM.time_sleep_m,                       // число
         EEPROM.time_sleep_h);                      // число
+        remove_whitespace(save_data);
 }
 
 void SETTINGS_REQUEST_DATA(){

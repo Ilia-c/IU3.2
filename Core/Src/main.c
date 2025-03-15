@@ -188,7 +188,6 @@ uint8_t units = 0;
 int main(void)
 {
   __HAL_RCC_PWR_CLK_ENABLE();
-
   HAL_Init();
   SystemClock_Config();
   PeriphCommonClock_Config();
@@ -305,13 +304,12 @@ int main(void)
     HAL_Delay(20);
 
     //if (EEPROM.USB_mode == 0) MX_USB_DEVICE_Init_COMPORT(); // Режим работы в USB_FLASH (перефброс фалов с данными на внешний USB)
-    if (EEPROM.USB_mode == 1){
+    if (EEPROM.USB_mode == 1 || EEPROM.USB_mode == 2){
       MX_USB_DEVICE_Init_COMPORT(); // Режим работы в VirtualComPort
       HAL_NVIC_SetPriority(OTG_FS_IRQn, 10, 0); // Приоритет прерывания
       HAL_NVIC_EnableIRQ(OTG_FS_IRQn);         // Включение прерывания
     }
-    //if (EEPROM.USB_mode == 2) MX_USB_DEVICE_Init_COMPORT(); // Режим работы в USB-FLASH с внутренней flash
-    //if (EEPROM.USB_mode == 3) MX_USB_DEVICE_Init_COMPORT(); // Режим работы в USB-FLASH с SD
+    //if (EEPROM.USB_mode == 3) MX_USB_DEVICE_Init_COMPORT();
 
     if (EEPROM.screen_sever_mode == 1) Start_video();
     HAL_GPIO_WritePin(COL_B1_GPIO_Port, COL_B1_Pin, 1);
@@ -1179,9 +1177,8 @@ void ADC_read(void *argument)
   for (;;)
   {
     //MX_USB_HOST_Process();
-    
-    ADC_data.update_value();
     osDelay(300);
+    ADC_data.update_value();
   }
 }
 
@@ -1257,7 +1254,7 @@ void Erroe_indicate(void *argument)
 {
   UNUSED(argument);
   uint64_t ErrorMask = 0;
-  if (EEPROM.USB_mode == 2){
+  if (EEPROM.USB_mode == 0){
     MX_USB_HOST_Init();
   }
   SD_check();
@@ -1346,7 +1343,7 @@ void UART_PARSER_task(void *argument)
     
 
   
-      if (!(GSM_data.Status & GSM_RDY)){
+      if (!(GSM_data.Status & GSM_RDY) && (EEPROM.USB_mode != 2)){
         int result = SendCommandAndParse("AT\r", parse_ERROR_OK, 1000);
         if (result == 1){
           GSM_data.Status |= GSM_RDY;
@@ -1360,7 +1357,7 @@ void UART_PARSER_task(void *argument)
           if (SendCommandAndParse("AT&W\r", waitForOKResponse, 1000) != 1){}
         }
       }
-      if (GSM_data.Status & GSM_RDY)
+      if ((GSM_data.Status & GSM_RDY) && (EEPROM.USB_mode != 2))
       {
         SendCommandAndParse("AT+CPIN?\r", parse_CPIN, 1000);
         SendCommandAndParse("AT+CSQ\r", parse_CSQ, 1000);

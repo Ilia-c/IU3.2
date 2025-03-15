@@ -157,10 +157,10 @@ menuSelect_item CURRENT_LOOP = {
 menuSelect_item USB_MODE_STRUCT = {
     (uint8_t *)&EEPROM.USB_mode,
     {
-        {"Флешка USB", "FLASH USB"},           // ИЗМЕНИТЬ НАЗВАНИЕ
+        {"Запись USB", "FLASH on USB"},           // ИЗМЕНИТЬ НАЗВАНИЕ
         {"Команды", "Comand"},
-        {"Внут. FLASH", "Int. FLASH"},
-        {"Внут. SD", "Int. SD"}
+        {"Отладка GSM", "GSM"},
+        {"выкл.", "OFF"}
     }
 };
 
@@ -593,6 +593,7 @@ void SAVE_IZM(){
     Collect_DATA();
     update_flash_end_ptr();
     flash_append_record(save_data);
+    mark_block_sent_and_check_sector(flash_end_ptr);
 
     char flash_end_ptr_char[30] = {0};
     snprintf(flash_end_ptr_char, 30, "%s %ld", ZAPISEY[EEPROM.len], flash_end_ptr);
@@ -711,7 +712,7 @@ void Reset_settings(){
     EEPROM.RS485_prot = 0;        // Протокол RS-485
     EEPROM.units_mes = 1;         // Единицы измерения (по умолчанию метры)
     EEPROM.screen_sever_mode = 1; // Включить или нет заставку при включении
-    EEPROM.USB_mode = 0;          // Режим работы USB
+    EEPROM.USB_mode = 3;          // Режим работы USB
     EEPROM.len = 0;               // Язык меню
     EEPROM.mode_ADC = 1;          // Режим работы АЦП, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
     EEPROM_SaveSettings(&EEPROM);
@@ -731,58 +732,50 @@ void Reset_settings(){
     osDelay(200);
 }
 void ALL_Reset_settings(){
-
-    EEPROM.time_sleep_h = 1; // Время сна устройства (часы)
-    EEPROM.time_sleep_m = 0; // Время сна устройства (минуты)
-    EEPROM.MAX_LVL = 15;    // Максимальный уровень (например, 15 метров) ВПИ
-    EEPROM.ZERO_LVL = 0;    // Нулевое значение (например, 0 метров) НПИ
-    EEPROM.Mode = 0;              // Текущий режим работы
-    EEPROM.Communication = 1;     // Включен GSM или нет
-    EEPROM.RS485_prot = 0;        // Протокол RS-485
-    EEPROM.units_mes = 1;         // Единицы измерения (по умолчанию метры)
-    EEPROM.screen_sever_mode = 1; // Включить или нет заставку при включении
-    EEPROM.USB_mode = 0;          // Режим работы USB
-    EEPROM.len = 0;               // Язык меню
-    EEPROM.mode_ADC = 1;          // Режим работы АЦП, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
-
-    strcpy(EEPROM.version.VERSION_PROGRAMM, "0.15b");
-    strcpy(EEPROM.version.VERSION_PCB, "3.75-A001V");
-    strcpy(EEPROM.version.password, "1234");
-    strcpy(EEPROM.version.time_work_char, "0");
-    for (int i = 0; i<4; i++) EEPROM.last_error_code[i] = 0; // Последний код ошибки
-    EEPROM.time_work_h = 0;                            // Время работы устройства (часы)
-    EEPROM.time_work_m = 0;                            // Время работы устройства (минуты)
-    EEPROM.time_sleep_h = 1; // Время сна устройства (часы)
-    EEPROM.time_sleep_m = 0; // Время сна устройства (минуты)
-
-    strcpy(EEPROM.Phone, "+79150305966");
-
-
-    // Параметры АЦП:
-    EEPROM.ADC_ION = 1.17;     // Напряжение ИОН АЦП
-    EEPROM.ADC_RESISTOR = 49.99; // Сопротивление резистора
-    EEPROM.GVL_correct = 0;    // Коррекция нулевой точки (смещение ± от текущего значения) УГВ
-    EEPROM.k_koeff = 0;        // Коэффициэнт наклона линейной зависимости (по 2 точкам, 20мА и 4мА)
-    EEPROM.MAX_LVL = 15;       // Максимальный уровень (например, 15 метров) ВПИ
-    EEPROM.ZERO_LVL = 0;       // Нулевое значение (например, 0 метров) НПИ
-    EEPROM.GVL_correct_4m = 0.004;    // Реальные 4мА
-    EEPROM.GVL_correct_20m = 0.02;   // Реальные 20мА
-    // Коррекция температуры (смещение):
-    EEPROM.Crorrect_TEMP_A = 0; // Смещение датчика аналоговой температуры
-    EEPROM.Colibrate_koeff = 1.0;
-
-    // Параметры select_bar:
-    EEPROM.Mode = 0;              // Текущий режим работы (0 - режим текущие показания, 1 - циклический режим 2 - режим выставки)
-    EEPROM.Communication = 1;     // Включен GSM или нет
-    EEPROM.RS485_prot = 0;        // Протокол RS-485
-    EEPROM.units_mes = 1;         // Единицы измерения (по умолчанию метры)
-    EEPROM.screen_sever_mode = 1; // Включить или нет заставку при включении
-    EEPROM.USB_mode = 0;          // Режим работы USB
-    EEPROM.Save_in = 0;          // Куда сохранять данные 0 - FLASH, 1 - SD, 2 - USB, 3 - Сайт
-    EEPROM.len = 0;               // Язык меню
-    EEPROM.mode_ADC = 0;           // Режим работы АЦП, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
-    EEPROM.block = 0;              // Блокировка устройства 1 - заблокировано 0 - разблокировано
-    EEPROM_SaveSettings(&EEPROM);
+    EEPROM_Settings_item EEPROM_RESET = {
+        .version = {
+            // Текущая версия устройства
+            .VERSION_PROGRAMM = "0.15b", // Версия программы
+            .VERSION_PCB = "3.75-A001V",    // Версия печатной платы
+            .password = "1234",
+            .time_work_char = "0",       // Время работы в виде строки
+        },
+        .last_error_code = {0x00, 0x00, 0x00, 0x00}, // Последний код ошибки
+        .time_work_h = 0,                            // Время работы устройства (часы)
+        .time_work_m = 0,                            // Время работы устройства (минуты)
+    
+        // Вводимые данные:
+        .time_sleep_h = 1, // Время сна устройства (часы)
+        .time_sleep_m = 0, // Время сна устройства (минуты)
+    
+        .Phone = "+79150305966",
+    
+        // Параметры АЦП:
+        .ADC_ION = 1.17,     // Напряжение ИОН АЦП
+        .ADC_RESISTOR = 49.99, // Сопротивление резистора
+        .GVL_correct = 0,    // Коррекция нулевой точки (смещение ± от текущего значения) УГВ
+        .k_koeff = 0,        // Коэффициэнт наклона линейной зависимости (по 2 точкам, 20мА и 4мА)
+        .MAX_LVL = 15,       // Максимальный уровень (например, 15 метров) ВПИ
+        .ZERO_LVL = 0,       // Нулевое значение (например, 0 метров) НПИ
+        .GVL_correct_4m = 0.004,    // Реальные 4мА
+        .GVL_correct_20m = 0.02,   // Реальные 20мА
+        // Коррекция температуры (смещение):
+        .Crorrect_TEMP_A = 0, // Смещение датчика аналоговой температуры
+        .Colibrate_koeff = 1.0,
+    
+        // Параметры select_bar:
+        .Mode = 0,              // Текущий режим работы (0 - режим текущие показания, 1 - циклический режим 2 - режим выставки)
+        .Communication = 1,     // Включен GSM или нет
+        .RS485_prot = 0,        // Протокол RS-485
+        .units_mes = 1,         // Единицы измерения (по умолчанию метры)
+        .screen_sever_mode = 1, // Включить или нет заставку при включении
+        .USB_mode = 0,          // Режим работы USB
+        .Save_in = 0,          // Куда сохранять данные 0 - FLASH, 1 - SD, 2 - USB, 3 - Сайт
+        .len = 0,               // Язык меню
+        .mode_ADC = 0,           // Режим работы АЦП, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
+        .block = 0              // Блокировка устройства 1 - заблокировано 0 - разблокировано
+    };
+    EEPROM_SaveSettings(&EEPROM_RESET);
 
 
     mode_redact = 2;
@@ -796,7 +789,9 @@ void ALL_Reset_settings(){
     }
     else OLED_DrawCenteredString(READY, Y);
     OLED_UpdateScreen();
-    osDelay(200);
+    osDelay(2000);
+    NVIC_SystemReset();
+
 }
 
 
@@ -1115,18 +1110,26 @@ void Display_TopBar(menuItem *CurrentMenu)
     {
         right_ot -= 7;
         OLED_DrawStr("SIM?\0", right_ot, top_GSM_status, 1);
+        right_ot-=8;
     }
     if (GSM_data.GSM_Signal_Level_3 == -1)
     {
         right_ot += 3;
         OLED_DrawXBM(right_ot, top_GSM_status, no_signal);
+        right_ot-=4;
     }
     
     const uint8_t* signal_icons[] = {signal_0, signal_1, signal_2, signal_3};
     //GSM_data.GSM_Signal_Level = 3;
     if (GSM_data.GSM_Signal_Level_3 >= 0 && GSM_data.GSM_Signal_Level_3 <= 3) {
         OLED_DrawXBM(right_ot, top_GSM_status, signal_icons[GSM_data.GSM_Signal_Level_3]);
+        right_ot-=8;
     }
+
+    if (Appli_state == APPLICATION_READY){
+        OLED_DrawXBM(right_ot, top_akb_status, USB_XMB);
+    }
+
     right_ot = winth_display - 12 - 2; // Ширина экрана минус 2 символа - процент заряда (0-9%) и - 2 отступ справа
     //Вариант оптимизации
 }

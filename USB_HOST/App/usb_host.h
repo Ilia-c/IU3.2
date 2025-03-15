@@ -29,7 +29,11 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l4xx.h"
 #include "stm32l4xx_hal.h"
+#include "main.h"
+#include "FreeRTOS.h"
+#include "semphr.h"
 
+extern xSemaphoreHandle Display_semaphore;
 /* USER CODE BEGIN INCLUDE */
 
 /* USER CODE END INCLUDE */
@@ -59,6 +63,8 @@ typedef enum {
   APPLICATION_READY,
   APPLICATION_DISCONNECT
 }ApplicationTypeDef;
+
+extern ApplicationTypeDef Appli_state;
 
 /** @defgroup USBH_HOST_Exported_FunctionsPrototype USBH_HOST_Exported_FunctionsPrototype
   * @brief Declaration of public functions for Usb host.

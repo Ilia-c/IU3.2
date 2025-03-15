@@ -15,6 +15,7 @@ extern const uint8_t signal_2[];
 extern const uint8_t signal_3[];
 extern const uint8_t no_signal[];
 extern const uint8_t akb[];
+extern const uint8_t USB_XMB[];
 extern const uint8_t QR[];
 extern const uint8_t ScreenSaver_Static[];
 extern const uint16_t frame_delays[];

@@ -24,22 +24,12 @@
 #include "usbh_core.h"
 #include "usbh_msc.h"
 #include "ff_gen_drv.h"
-/* USER CODE BEGIN Includes */
+#include "USB_FATFS_SAVE.h"
 
-/* USER CODE END Includes */
-
-/* USER CODE BEGIN PV */
-/* Private variables ---------------------------------------------------------*/
-
-/* USER CODE END PV */
-
-/* USER CODE BEGIN PFP */
-/* Private function prototypes -----------------------------------------------*/
-
-/* USER CODE END PFP */
-
-/* USB Host core handle declaration */
+extern char USBHPath[4];
 USBH_HandleTypeDef hUsbHostFS;
+FRESULT res;
+extern FATFS USBFatFs;
 ApplicationTypeDef Appli_state = APPLICATION_IDLE;
 
 /*
@@ -92,6 +82,7 @@ void MX_USB_HOST_Init(void)
 /*
  * user callback definition
  */
+
 static void USBH_UserProcess  (USBH_HandleTypeDef *phost, uint8_t id)
 {
   /* USER CODE BEGIN CALL_BACK_1 */
@@ -101,19 +92,30 @@ static void USBH_UserProcess  (USBH_HandleTypeDef *phost, uint8_t id)
   break;
 
   case HOST_USER_DISCONNECTION:
+  f_mount(NULL, USBHPath, 0);
+  memset(&USBFatFs, 0, sizeof(FATFS));
   Appli_state = APPLICATION_DISCONNECT;
-  //Appli_state = APPLICATION_IDLE;
-  //f_mount(NULL, (TCHAR const* )"", 0);
+  xSemaphoreGive(Display_semaphore);
   break;
 
   case HOST_USER_CLASS_ACTIVE:
-  //Appli_state = APPLICATION_READY;
-  Appli_state = APPLICATION_START;
 
+  res = f_mount(&USBFatFs, USBHPath, 0);
+  if (res != FR_OK)
+  {
+    f_mount(NULL, USBHPath, 0);
+    memset(&USBFatFs, 0, sizeof(FATFS));
+    xSemaphoreGive(Display_semaphore);
+  }
+  else
+  {
+    Appli_state = APPLICATION_READY;
+  }
+  xSemaphoreGive(Display_semaphore);
   break;
 
   case HOST_USER_CONNECTION:
-  //Appli_state = APPLICATION_START;
+  Appli_state = APPLICATION_START;
   break;
 
   default:
