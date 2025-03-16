@@ -76,12 +76,14 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     if (huart->Instance == UART4)
     {
+        /*
         if (EEPROM.USB_mode == 2){
             HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
             CDC_Transmit_FS((uint8_t *)&gsmRxChar, 1);
             return;
-        }
-        if (data_read == 0){
+        }*/
+
+        if ((data_read == 0) && (EEPROM.USB_mode != 2)){
             HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
             return;
         }

@@ -18,80 +18,98 @@ extern char SDPath[4]; // Предположим, что здесь лежит "
 
 extern RTC_TimeTypeDef Time;
 extern RTC_DateTypeDef Date;
+extern FRESULT res;
+const static char file_log[12] = "0:log.txt";
 
 void format_uint8_t_2(char *buffer, size_t size, uint8_t data) {
     snprintf(buffer, size, "%u", data);
 }
 
-void SD_check(void)
-{
-    // Если температура вне допустимого диапазона – выходим
-    if (ERRCODE.STATUS & STATUS_SD_TEMP_OUT_OF_RANGE)
-        return;
 
-    FRESULT res;
-    // Монтируем файловую систему
+HAL_StatusTypeDef SD_mount(){
+    if (ERRCODE.STATUS & STATUS_SD_TEMP_OUT_OF_RANGE)
+    return HAL_ERROR;
+
+    if (HAL_GPIO_ReadPin(SDMMC1_DET_GPIO_Port, SDMMC1_DET_Pin) != GPIO_PIN_RESET) {
+        ERRCODE.STATUS |= STATUS_SD_INIT_ERROR;
+        f_mount(NULL, SDPath, 0);
+        memset(&SDFatFS, 0, sizeof(FATFS));
+        return HAL_ERROR;
+    }
+    return HAL_ERROR;
+    uint32_t timeout = HAL_GetTick() + 1000; // 1 секунда таймаут
+    while (HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER)
+    {
+        if(HAL_GetTick() > timeout)
+        {
+            ERRCODE.STATUS |= STATUS_SD_INIT_ERROR;
+            f_mount(NULL, SDPath, 0);
+            memset(&SDFatFS, 0, sizeof(FATFS));
+            return HAL_ERROR;
+        }
+        osDelay(1);
+    }
+
+    ERRCODE.STATUS &= ~STATUS_SD_INIT_ERROR;
     res = f_mount(&SDFatFS, (TCHAR const*)SDPath, 1);
     if (res != FR_OK) {
-        // Обработка ошибки: карта не смонтировалась
         ERRCODE.STATUS |= STATUS_SD_MOUNT_ERROR;
-        return;
+        return HAL_ERROR;
     }
+    ERRCODE.STATUS &= ~STATUS_SD_MOUNT_ERROR;
+    
+    return HAL_OK;
+}
+void SD_unmount(){
+    f_mount(NULL, SDPath, 0);
+    memset(&SDFatFS, 0, sizeof(FATFS));
+}
 
-    char filePath[32];
-    // Формируем путь к файлу log.txt
-    snprintf(filePath, sizeof(filePath), "%s/log.txt", SDPath);
-
-    // Открываем (или создаем) файл для проверки доступности
-    res = f_open(&SDFile, filePath, FA_OPEN_ALWAYS | FA_WRITE);
+void SD_check(void)
+{
+    if (SD_mount() == HAL_ERROR) return;
+    res = f_open(&SDFile, file_log, FA_OPEN_ALWAYS | FA_WRITE);
     if (res != FR_OK) {
-        // Ошибка открытия/создания файла
         ERRCODE.STATUS |= STATUS_SD_FILE_OPEN_ERROR;
-        f_mount(NULL, SDPath, 1);
+        SD_unmount();
         return;
     }
+    ERRCODE.STATUS &= ~STATUS_SD_FILE_OPEN_ERROR;
 
     // Закрываем файл и отмонтируем файловую систему
     f_close(&SDFile);
-    f_mount(NULL, SDPath, 1);
+    SD_unmount();
 }
 
-void SD_write_log(const char *string)
+void SD_write_log(char *string, char *file_name)
 {
-    // Если температура вне допустимого диапазона – выходим
-    if (ERRCODE.STATUS & STATUS_SD_TEMP_OUT_OF_RANGE)
-        return;
-
-    FRESULT res;
-    // Монтируем файловую систему
-    res = f_mount(&SDFatFS, (TCHAR const*)SDPath, 1);
+    if (SD_mount() == HAL_ERROR) return;
+    char filename[16] = {'\0'};
+    sprintf(filename, file_name, SDPath); 
+    res = f_open(&SDFile, filename, FA_OPEN_ALWAYS | FA_WRITE);
     if (res != FR_OK) {
-        // Если карта не смонтировалась, выставляем флаг ошибки и выходим
-        ERRCODE.STATUS |= STATUS_SD_MOUNT_ERROR;
+        ERRCODE.STATUS |= STATUS_SD_FILE_OPEN_ERROR;
+        SD_unmount();
         return;
     }
-
-    char filePath[32];
-    // Формируем путь к файлу log.txt (используем snprintf для безопасности)
-    snprintf(filePath, sizeof(filePath), "%s/log.txt", SDPath);
-
-    // Открываем (или создаем) файл для записи в режиме append
-    res = f_open(&SDFile, filePath, FA_OPEN_ALWAYS | FA_WRITE);
+    ERRCODE.STATUS &= ~STATUS_SD_FILE_OPEN_ERROR;
+    res = f_open(&SDFile, filename, FA_OPEN_ALWAYS | FA_WRITE);
     if (res != FR_OK) {
         // Ошибка открытия/создания файла
         ERRCODE.STATUS |= STATUS_SD_FILE_OPEN_ERROR;
-        f_mount(NULL, SDPath, 1);
+        SD_unmount();
         return;
     }
+    ERRCODE.STATUS &= ~STATUS_SD_FILE_OPEN_ERROR;
 
-    // Переходим в конец файла (append-режим)
     res = f_lseek(&SDFile, f_size(&SDFile));
     if (res != FR_OK) {
         ERRCODE.STATUS |= STATUS_SD_CORRUPTED_DATA;
         f_close(&SDFile);
-        f_mount(NULL, SDPath, 1);
+        SD_unmount();
         return;
     }
+    ERRCODE.STATUS &= ~STATUS_SD_CORRUPTED_DATA;
 
     // Пишем строку в файл
     size_t stringLength = strlen(string);
@@ -100,16 +118,23 @@ void SD_write_log(const char *string)
     if (res != FR_OK || bytesWritten < stringLength) {
         ERRCODE.STATUS |= STATUS_SD_WRITE_ERROR;
         f_close(&SDFile);
-        f_mount(NULL, SDPath, 1);
+        SD_unmount();
         return;
     }
+    ERRCODE.STATUS &= ~STATUS_SD_WRITE_ERROR;
 
     // Закрываем файл и отмонтируем файловую систему
     f_close(&SDFile);
-    f_mount(NULL, SDPath, 1);
+    SD_unmount();
 }
 
 
+extern uint32_t data_read_adc_in;
+void WriteToSDCard(void)
+{
+    Collect_DATA();
+    SD_write_log(save_data, EEPROM.version.VERSION_PCB);
+}
 
 void base62_encode(uint64_t value, char *buffer, size_t bufferSize) {
     if (bufferSize < 12) {
@@ -136,65 +161,6 @@ void base62_encode(uint64_t value, char *buffer, size_t bufferSize) {
 
     // Копируем результат в выходной буфер
     strncpy(buffer, result, bufferSize);
-}
-
-
-extern uint32_t data_read_adc_in;
-void WriteToSDCard(void)
-{
-    if (ERRCODE.STATUS & STATUS_SD_TEMP_OUT_OF_RANGE) return;
-    FRESULT res;
-    UINT bytesWritten;
-
-    Collect_DATA();
-
-    // Монтируем файловую систему
-    res = f_mount(&SDFatFS, (TCHAR const*)SDPath, 1);
-    if (res != FR_OK) {
-        // Обработка ошибки: карта не смонтировалась
-        ERRCODE.STATUS |= STATUS_SD_MOUNT_ERROR;
-        return;
-    }
-
-    // Открываем (или создаём) файл для записи в корне SD-карты
-    // Обратите внимание на использование SDPath и sprintf
-    char filePath[32];
-    char filename[16];
-    createFilename(filename, sizeof(filename));
-    sprintf(filePath, filename, SDPath); 
-    
-    res = f_open(&SDFile, filePath, FA_OPEN_ALWAYS | FA_WRITE);
-    if (res != FR_OK) {
-        // Ошибка открытия/создания
-        ERRCODE.STATUS |= STATUS_SD_FILE_OPEN_ERROR;
-        f_mount(NULL, SDPath, 1);
-        return;
-    }
-
-    // Переходим в конец файла (append-режим)
-    res = f_lseek(&SDFile, f_size(&SDFile));
-    if (res != FR_OK) {
-        ERRCODE.STATUS |= STATUS_SD_CORRUPTED_DATA;
-        f_close(&SDFile);
-        f_mount(NULL, SDPath, 1);
-        return;
-    }
-
-    // Записываем данные
-    res = f_write(&SDFile, save_data, strlen(save_data), &bytesWritten);
-    if (res != FR_OK || bytesWritten < strlen(save_data)) {
-        // Ошибка записи
-        ERRCODE.STATUS |= STATUS_SD_WRITE_ERROR;
-        f_close(&SDFile);
-        f_mount(NULL, SDPath, 1);
-        return;
-    }
-
-    // Закрываем файл
-    f_close(&SDFile);
-
-    // Отмонтируем
-    f_mount(NULL, SDPath, 1);
 }
 
 

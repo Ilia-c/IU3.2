@@ -153,7 +153,7 @@ osThreadId_t SD_taskHandle;
 const osThreadAttr_t SD_task_attributes = {
     .name = "SD_task",
     .stack_size = 1024*2,
-    .priority = (osPriority_t)osPriorityLow5,
+    .priority = (osPriority_t)osPriorityLow,
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -311,12 +311,11 @@ int main(void)
     HAL_Delay(20);
 
     //if (EEPROM.USB_mode == 0) MX_USB_DEVICE_Init_COMPORT(); // Режим работы в USB_FLASH (перефброс фалов с данными на внешний USB)
-    if (EEPROM.USB_mode == 1){
+    if ((EEPROM.USB_mode == 1) || (EEPROM.USB_mode == 2)){
       MX_USB_DEVICE_Init_COMPORT(); // Режим работы в VirtualComPort
       HAL_NVIC_SetPriority(OTG_FS_IRQn, 10, 0); // Приоритет прерывания
       HAL_NVIC_EnableIRQ(OTG_FS_IRQn);         // Включение прерывания
     }
-    //if (EEPROM.USB_mode == 2) MX_USB_DEVICE_Init_COMPORT(); // Режим работы в USB-FLASH с внутренней flash
     //if (EEPROM.USB_mode == 3) MX_USB_DEVICE_Init_COMPORT(); // Режим работы в USB-FLASH с SD
 
     if (EEPROM.screen_sever_mode == 1) Start_video();
@@ -1207,11 +1206,13 @@ void RS485_data(void *argument)
 
 void SD_Task(void *argument) {
   // Код задачи
-  SD_check();
   for (;;) {
-    xSemaphoreTake(SD_WRITE, portMAX_DELAY);
-    WriteToSDCard();
     osDelay(1000);
+    SD_check();
+    if(xSemaphoreTake(SD_WRITE, pdMS_TO_TICKS(20000)) == pdTRUE)
+    {
+        WriteToSDCard();
+    }
   }
 }
 

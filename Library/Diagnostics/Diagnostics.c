@@ -33,8 +33,6 @@ void Diagnostics()
     {
         ERRCODE.STATUS &= ~STATUS_EEPROM_INIT_ERROR;
     }
-    // SD
-    //SD_check();
 
     // ADC
     osDelay(300);
