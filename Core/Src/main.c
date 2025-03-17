@@ -1363,7 +1363,7 @@ void UART_PARSER_task(void *argument)
     
 
   
-      if (!(GSM_data.Status & GSM_RDY)){
+      if ((!(GSM_data.Status & GSM_RDY)) && (EEPROM.USB_mode != 2)){
         int result = SendCommandAndParse("AT\r", parse_ERROR_OK, 1000);
         if (result == 1){
           GSM_data.Status |= GSM_RDY;
@@ -1377,7 +1377,7 @@ void UART_PARSER_task(void *argument)
           if (SendCommandAndParse("AT&W\r", waitForOKResponse, 1000) != 1){}
         }
       }
-      if (GSM_data.Status & GSM_RDY)
+      if ((GSM_data.Status & GSM_RDY) && (EEPROM.USB_mode != 2))
       {
         SendCommandAndParse("AT+CPIN?\r", parse_CPIN, 1000);
         SendCommandAndParse("AT+CSQ\r", parse_CSQ, 1000);
