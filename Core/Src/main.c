@@ -239,45 +239,56 @@ int main(void)
 
   HAL_Delay(10);
   
-  /*
-  uint8_t state = 0;
-  for( uint8_t i=1; i<128; i++ ){
-    state = HAL_I2C_IsDeviceReady(&hi2c1, (uint16_t)(i<<1), 3, 5);
-    if(state == HAL_OK){
-      uint8_t test = 0;
-    }
-  }*/
   //EEPROM_SaveSettings(&EEPROM);
-  if (HAL_I2C_IsDeviceReady(&hi2c1, EEPROM_I2C_ADDRESS, 2, 100) != HAL_OK)
+  // Чтение данных из EEPROM
+  if (!(EEPROM_IsDataExists()))
   {
-    // EEPROM недоступна
-    ERRCODE.STATUS |= STATUS_EEPROM_INIT_ERROR;
+    // Данных нету - первый запуск
+    if (!EEPROM_SaveSettings(&EEPROM))
+    {
+      // Сохранение не вышло
+    }
   }
   else
   {
-    // Чтение данных из EEPROM
-    if (!(EEPROM_IsDataExists()))
+    if (!EEPROM_LoadSettings(&EEPROM))
     {
-      // Данных нету - первый запуск
+      // Ошибка - неверный идентификатор данных
       if (!EEPROM_SaveSettings(&EEPROM))
       {
         // Сохранение не вышло
       }
     }
-    else
-    {
-      if (!EEPROM_LoadSettings(&EEPROM))
-      {
-        // Ошибка - неверный идентификатор данных
-        if (!EEPROM_SaveSettings(&EEPROM))
-        {
-          // Сохранение не вышло
-        }
-      }
-    }
   }
+
   //EEPROM.Mode = 0;
   HAL_PWR_EnableBkUpAccess();
+  uint16_t faultCode = HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_INDEX_ERROR_CODE);
+  if (faultCode != 0U){
+    switch (faultCode)
+        {
+        case FAULT_CODE_NMI:
+            ERRCODE.STATUS |= STATUS_NMI_OCCURRED;
+            break;
+        case FAULT_CODE_HARDFAULT:
+            ERRCODE.STATUS |= STATUS_HARDFAULT_OCCURRED;
+            break;
+        case FAULT_CODE_MEMMANAGE:
+            ERRCODE.STATUS |= STATUS_MEMMANAGE_FAULT;
+            break;
+        case FAULT_CODE_BUSFAULT:
+            ERRCODE.STATUS |= STATUS_BUSFAULT_OCCURRED;
+            break;
+        case FAULT_CODE_USAGEFAULT:
+            ERRCODE.STATUS |= STATUS_USAGEFAULT_OCCURRED;
+            break;
+        default:
+            // Неизвестный код — обрабатываем при желании
+            break;
+        }
+        HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE, 0U);
+  }
+
   uint32_t value = HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_INDEX_RESET_PROG);
   if (value == DATA_RESET_PROG){  
     // Если сброс из перехода в цикл
@@ -794,7 +805,7 @@ static void MX_SPI2_Init(void)
   hspi2.Init.CLKPolarity = SPI_POLARITY_HIGH;
   hspi2.Init.CLKPhase = SPI_PHASE_2EDGE;  
   hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -956,6 +967,12 @@ void Main(void *argument)
   HAL_NVIC_EnableIRQ(TIM5_IRQn);        // Включите прерывание
   HAL_TIM_Base_Start_IT(&htim5);
 
+  // Если была критическая ошибка
+  if (ERRCODE.STATUS & STATUS_FAULTS){
+    Collect_DATA();
+    update_flash_end_ptr();
+    flash_append_record(save_data);
+  }
   //int32_t adc =  ADC1_Read_PC0();
 
   for (;;)
@@ -979,6 +996,13 @@ void Main_Cycle(void *argument)
   vSemaphoreCreateBinary(SD_WRITE);
   // 1. Включено -  АЦП, flash, EEPROM
   // 2. Уже конфигурация EEPROM прочитана
+
+  // Если была критическая ошибка
+  if (ERRCODE.STATUS & STATUS_FAULTS){
+    Collect_DATA();
+    update_flash_end_ptr();
+    flash_append_record(save_data);
+  }
   for (;;)
   {
     osDelay(10);
@@ -1143,7 +1167,6 @@ void Main_Cycle(void *argument)
     osThreadSuspend(UART_PARSER_taskHandle);
     osDelay(100);
     HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
-
     HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);
     HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);
     HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);

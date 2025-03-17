@@ -22,6 +22,7 @@
 #include "stm32l4xx_it.h"
 #include "Settings.h"
 #include "Status_codes.h"
+#include "RTC_data.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 /* USER CODE END Includes */
@@ -75,67 +76,60 @@ extern UART_HandleTypeDef huart4;
 /**
   * @brief This function handles Non maskable interrupt.
   */
-void NMI_Handler(void)
-{
-  // ! Добавить сохранения кода ошибки и стека вызывов
-  ERRCODE.STATUS |= STATUS_NMI_OCCURRED;
-  //HAL_PWR_EnableBkUpAccess();
-  //HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_RESET_PROG, DATA_RESET_PROG);
-  //NVIC_SystemReset();
-  while (1){}
-}
 
-/**
-  * @brief This function handles Hard fault interrupt.
-  */
-void HardFault_Handler(void)
-{
-  // ! Добавить сохранения кода ошибки и стека вызывов
-  ERRCODE.STATUS |= STATUS_HARDFAULT_OCCURRED;
-  //HAL_PWR_EnableBkUpAccess();
-  //HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_RESET_PROG, DATA_RESET_PROG);
-  //NVIC_SystemReset();
-  while (1){}
-}
-
-/**
-  * @brief This function handles Memory management fault.
-  */
-void MemManage_Handler(void)
-{
-  // ! Добавить сохранения кода ошибки и стека вызывов
-  ERRCODE.STATUS |= STATUS_MEMMANAGE_FAULT;
-  //HAL_PWR_EnableBkUpAccess();
-  //HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_RESET_PROG, DATA_RESET_PROG);
-  //NVIC_SystemReset();
-  while (1){}
-}
-
-/**
-  * @brief This function handles Prefetch fault, memory access fault.
-  */
-void BusFault_Handler(void)
-{
-  // ! Добавить сохранения кода ошибки и стека вызывов
-  ERRCODE.STATUS |= STATUS_BUSFAULT_OCCURRED;
-  //HAL_PWR_EnableBkUpAccess();
-  //HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_RESET_PROG, DATA_RESET_PROG);
-  //NVIC_SystemReset();
-  while (1){}
-}
-
-/**
-  * @brief This function handles Undefined instruction or illegal state.
-  */
-void UsageFault_Handler(void)
-{
-  // ! Добавить сохранения кода ошибки и стека вызывов
-  ERRCODE.STATUS |= STATUS_USAGEFAULT_OCCURRED;
-  //HAL_PWR_EnableBkUpAccess();
-  //HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_RESET_PROG, DATA_RESET_PROG);
-  //NVIC_SystemReset();
-  while (1){}
-}
+extern RTC_HandleTypeDef hrtc;
+ void NMI_Handler(void)
+ {
+   // Устанавливаем флаг в ERRCODE (не сохранится после reset, если не в backup SRAM)
+   ERRCODE.STATUS |= STATUS_NMI_OCCURRED;  
+ 
+   // Разрешаем доступ к backup-регистрам
+   HAL_PWR_EnableBkUpAccess();
+   // Сохраняем код ошибки в резервном регистре
+   HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE, FAULT_CODE_NMI);
+ 
+   // Аппаратный сброс
+   NVIC_SystemReset();
+ 
+   // Если по каким-то причинам сброс не произошёл, зацикливаемся
+   while (1) {}
+ }
+ 
+ void HardFault_Handler(void)
+ {
+   ERRCODE.STATUS |= STATUS_HARDFAULT_OCCURRED;
+   HAL_PWR_EnableBkUpAccess();
+   HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE, FAULT_CODE_HARDFAULT);
+   NVIC_SystemReset();
+   while (1) {}
+ }
+ 
+ void MemManage_Handler(void)
+ {
+   ERRCODE.STATUS |= STATUS_MEMMANAGE_FAULT;
+   HAL_PWR_EnableBkUpAccess();
+   HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE, FAULT_CODE_MEMMANAGE);
+   NVIC_SystemReset();
+   while (1) {}
+ }
+ 
+ void BusFault_Handler(void)
+ {
+   ERRCODE.STATUS |= STATUS_BUSFAULT_OCCURRED;
+   HAL_PWR_EnableBkUpAccess();
+   HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE, FAULT_CODE_BUSFAULT);
+   NVIC_SystemReset();
+   while (1) {}
+ }
+ 
+ void UsageFault_Handler(void)
+ {
+   ERRCODE.STATUS |= STATUS_USAGEFAULT_OCCURRED;
+   HAL_PWR_EnableBkUpAccess();
+   HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE, FAULT_CODE_USAGEFAULT);
+   NVIC_SystemReset();
+   while (1) {}
+ }
 
 /**
   * @brief This function handles Debug monitor.
@@ -298,6 +292,10 @@ void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
 {
     // Событие переполнения стека
     taskDISABLE_INTERRUPTS(); 
+    ERRCODE.STATUS |= STATUS_USAGEFAULT_OCCURRED;
+    HAL_PWR_EnableBkUpAccess();
+    HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE, FAULT_CODE_USAGEFAULT);
+    NVIC_SystemReset();
     for(;;);
 }
 

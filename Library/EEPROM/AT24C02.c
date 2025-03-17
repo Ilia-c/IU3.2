@@ -39,6 +39,10 @@ static bool EEPROM_WriteData(uint16_t memAddr, const uint8_t *pData, uint16_t si
             bytesToWrite = (size - bytesWritten);
         }
 
+        if (HAL_I2C_IsDeviceReady(&hi2c1, EEPROM_I2C_ADDRESS, 3, 100) != HAL_OK)
+        {
+            return false;
+        }
         status = HAL_I2C_Mem_Write(&hi2c1,
                                    EEPROM_I2C_ADDRESS,
                                    currentAddr,
@@ -60,11 +64,20 @@ static bool EEPROM_WriteData(uint16_t memAddr, const uint8_t *pData, uint16_t si
 
 //=============================================================================
 // Функция чтения данных из EEPROM
-static bool EEPROM_ReadData(uint16_t memAddr, uint8_t *pData, uint16_t size) {
+static bool EEPROM_ReadData(uint16_t memAddr, uint8_t *pData, uint16_t size)
+{
+    // Проверяем, готово ли устройство (EEPROM) к работе
+    if (HAL_I2C_IsDeviceReady(&hi2c1, EEPROM_I2C_ADDRESS, 3, 10) != HAL_OK)
+    {
+        ERRCODE.STATUS |= STATUS_EEPROM_INIT_ERROR;
+        return false;
+    }
+    ERRCODE.STATUS &= ~STATUS_EEPROM_INIT_ERROR;
+    // Если устройство готово, выполняем чтение
     HAL_StatusTypeDef status = HAL_I2C_Mem_Read(&hi2c1,
                                                 EEPROM_I2C_ADDRESS,
                                                 memAddr,
-                                                I2C_MEMADD_SIZE_8BIT, // Важно
+                                                I2C_MEMADD_SIZE_8BIT,
                                                 pData,
                                                 size,
                                                 1000);

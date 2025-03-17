@@ -29,6 +29,13 @@ extern "C"
   extern char save_data[CMD_BUFFER_SIZE];
 
 
+  #define BKP_REG_INDEX_ERROR_CODE  RTC_BKP_DR0
+  // Коды для разных Fault'ов:
+  #define FAULT_CODE_NMI            1U
+  #define FAULT_CODE_HARDFAULT      2U
+  #define FAULT_CODE_MEMMANAGE      3U
+  #define FAULT_CODE_BUSFAULT       4U
+  #define FAULT_CODE_USAGEFAULT     5U
 
   typedef struct Prgramm_version
   {
