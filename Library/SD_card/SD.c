@@ -26,33 +26,47 @@ void format_uint8_t_2(char *buffer, size_t size, uint8_t data) {
 }
 
 
-HAL_StatusTypeDef SD_mount(){
+HAL_StatusTypeDef SD_mount(void)
+{
+    // Если температура вне допустимого диапазона – выходим
     if (ERRCODE.STATUS & STATUS_SD_TEMP_OUT_OF_RANGE)
-    return HAL_ERROR;
+    {
+        return HAL_ERROR;
+    }
 
-    if (HAL_GPIO_ReadPin(SDMMC1_DET_GPIO_Port, SDMMC1_DET_Pin) != GPIO_PIN_RESET) {
+    // Проверяем, вставлена ли SD-карта через сигнал определения (CD)
+    if (HAL_GPIO_ReadPin(SDMMC1_DET_GPIO_Port, SDMMC1_DET_Pin) != GPIO_PIN_RESET)
+    {
         ERRCODE.STATUS |= STATUS_SD_INIT_ERROR;
+        // Размонтируем и сбрасываем состояние FATFS
         f_mount(NULL, SDPath, 0);
         memset(&SDFatFS, 0, sizeof(FATFS));
         return HAL_ERROR;
     }
-    return HAL_ERROR;
-    uint32_t timeout = HAL_GetTick() + 1000; // 1 секунда таймаут
-    while (HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER)
-    {
-        if(HAL_GetTick() > timeout)
-        {
-            ERRCODE.STATUS |= STATUS_SD_INIT_ERROR;
-            f_mount(NULL, SDPath, 0);
-            memset(&SDFatFS, 0, sizeof(FATFS));
-            return HAL_ERROR;
-        }
-        osDelay(1);
-    }
 
+    // Размонтируем файловую систему и сбрасываем структуру FATFS
+    f_mount(NULL, SDPath, 0);
+    memset(&SDFatFS, 0, sizeof(FATFS));
+    
+    // Переинициализируем SD-интерфейс:
+    // Сначала деинициализируем SD-периферийное устройство,
+    // затем инициализируем его заново.
+    if (HAL_SD_DeInit(&hsd1) != HAL_OK)
+    {
+        ERRCODE.STATUS |= STATUS_SD_INIT_ERROR;
+        return HAL_ERROR;
+    }
+    if (HAL_SD_Init(&hsd1) != HAL_OK)
+    {
+        ERRCODE.STATUS |= STATUS_SD_INIT_ERROR;
+        return HAL_ERROR;
+    }
     ERRCODE.STATUS &= ~STATUS_SD_INIT_ERROR;
+    
+    // Пытаемся смонтировать файловую систему
     res = f_mount(&SDFatFS, (TCHAR const*)SDPath, 1);
-    if (res != FR_OK) {
+    if (res != FR_OK)
+    {
         ERRCODE.STATUS |= STATUS_SD_MOUNT_ERROR;
         return HAL_ERROR;
     }
@@ -60,6 +74,7 @@ HAL_StatusTypeDef SD_mount(){
     
     return HAL_OK;
 }
+
 void SD_unmount(){
     f_mount(NULL, SDPath, 0);
     memset(&SDFatFS, 0, sizeof(FATFS));
@@ -67,6 +82,7 @@ void SD_unmount(){
 
 void SD_check(void)
 {
+
     if (SD_mount() == HAL_ERROR) return;
     res = f_open(&SDFile, file_log, FA_OPEN_ALWAYS | FA_WRITE);
     if (res != FR_OK) {
@@ -202,8 +218,8 @@ void Collect_DATA(){
 
     snprintf(save_data, CMD_BUFFER_SIZE,
         "[%s;%s;%s;%s;%s;%s;%s;%s;%02d:%02d%s%02d/%02d/%02d;%s;%s;%u;%u]",
-        EEPROM.version.VERSION_PCB,              // строка
-        EEPROM.version.password,                 // строка
+        EEPROM.version.VERSION_PCB,                // строка
+        EEPROM.version.password,                   // строка
         ADC_data.ADC_value_char,                   // строка
         ADC_data.ADC_SI_value_char,                // строка (возможно заменённая)
         ADC_data.ADC_SI_value_correct_char,        // строка (возможно заменённая)

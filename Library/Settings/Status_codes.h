@@ -100,7 +100,7 @@
 #define STATUS_USAGEFAULT_OCCURRED         (1ULL << 59)  // Произошёл UsageFault (неопределённая инструкция или иное)
 
 /* ---------- 15. РЕЗЕРВ (биты 60..63) ---------- */
-#define STATUS_RESERVED_60                 (1ULL << 60)
+#define ERROR_RTC                          (1ULL << 60) // Ошибка RTC, запуск от внутреннего генератора
 #define STATUS_RESERVED_61                 (1ULL << 61)
 #define STATUS_RESERVED_62                 (1ULL << 62)
 #define STATUS_RESERVED_63                 (1ULL << 63)

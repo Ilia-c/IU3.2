@@ -19,7 +19,7 @@ char save_data[CMD_BUFFER_SIZE] __attribute__((section(".ram2"))); // Перем
 EEPROM_Settings_item EEPROM = {
     .version = {
         // Текущая версия устройства
-        .VERSION_PROGRAMM = "0.15b", // Версия программы
+        .VERSION_PROGRAMM = "0.38b", // Версия программы
         .VERSION_PCB = "3.75-A001V",    // Версия печатной платы
         .password = "1234",
         .time_work_char = "0",       // Время работы в виде строки
@@ -136,6 +136,9 @@ GSM_STATUS_item GSM_data = {
     .GSM_signal_lvl_char   = "ND",                           // Текстовое представление уровня сигнала
     .GSM_err_lvl_char   = "ND",                           // Текстовое представление уровня сигнала
     .GSM_gprs_on_char      = (char *)GPRS_STATUS[1],         // "DISCONNECTED" – GPRS не подключён
+    .GSM_sms_status      = "",         // Статус отправки смс
+    .GSM_site_status      = "",         // Статус запроса на сайт
+    .GSM_site_read_status = "",
 
     .GSM_LastResponseTime  = 0,                              // Время последнего ответа – 0 секунд
     .update_value          = Update_Data                            // Функция обновления значений
@@ -180,13 +183,13 @@ uint8_t g_myRxBuffer[MY_USB_RX_BUFFER_SIZE]; // Максимальное кол�
 
 const char MODEM_STATUS[3][6] = {"GSM", "NBIOT", "ND"}; // Индикация статуса блока "GSM", "NBIOT", "ND"
 const char STATUS_CHAR[4][5] = {"OK", "ERR", "WAR", "ND"}; // Индикация статуса блока "OK", "ERR", "WAR", "ND"
-const char SIM_STATUS[3][8] = {"OK", "NO", "UNKNOWN"};// Статус SIM-карты: PRESENT – установлена, ABSENT – не установлена, UNKNOWN – неизвестно 
+const char SIM_STATUS[3][8] = {"OK", "NO", "ND"};// Статус SIM-карты: PRESENT – установлена, ABSENT – не установлена, UNKNOWN – неизвестно 
 const char GSM_READY_STATUS[2][5] = {"RDY", "NRDY"};// Статус готовности GSM: RDY – готов, NRDY – не готов
-const char GSM_REG_STATUS[3][8] = {"REG", "NREG", "UNKNOWN"};// Статус регистрации в сети: REG – зарегистрирован, NREG – не зарегистрирован, UNKNOWN – неизвестно
+const char GSM_REG_STATUS[3][8] = {"REG", "NREG", "ND"};// Статус регистрации в сети: REG – зарегистрирован, NREG – не зарегистрирован, UNKNOWN – неизвестно
 const char GPRS_STATUS[2][5] = {"CONN", "DISC"}; // Статус GPRS соединения: CONNECTED – установлено, DISCONNECTED – разорвано
 
 const GSM_Operator_item GSM_Operators[] = {
-    {0, "Undefine"},       // Необрежеленный
+    {0, "ND"},       // Необрежеленный
     // Российские операторы (MCC = 250)
     {25001, "MTS"},       // МТС (MNC 01)
     {25002, "Megafon"},   // МегаФон (MNC 02)
@@ -211,7 +214,7 @@ const GSM_Operator_item GSM_Operators[] = {
 };
 
 const Country_operator_item Countries[] = {
-    {0, "UNDEF"},
+    {0, "ND"},
     {212, "AFG"}, // Afghanistan (MCC 412) – здесь выбран представительский номер: 412 → AFG
     {276, "ALB"}, // Albania (MCC 276)
     {603, "DZA"}, // Algeria (MCC 603)

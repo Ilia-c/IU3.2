@@ -43,9 +43,11 @@ int parse_CPIN()
 {
     if (strstr(parseBuffer, "+CPIN:READY") != NULL){
         GSM_data.Status |= SIM_PRESENT;
+        ERRCODE.STATUS |= STATUS_GSM_NO_SIM;
         return 1;
     }
     GSM_data.Status &= ~SIM_PRESENT;
+    ERRCODE.STATUS &= ~STATUS_GSM_NO_SIM;
     return 0;
 }
 
@@ -562,7 +564,7 @@ int parse_site_response(void) {
     }
     
     // Сохраняем разобранные данные в EEPROM
-    EEPROM.Mode = (uint8_t)mode;
+    if (EEPROM.Mode != 0) EEPROM.Mode = (uint8_t)mode;
     // Если режим сна равен 0, время сна трактуем как минуты, иначе как часы
     if (sleepMode == 1) {
         EEPROM.time_sleep_m = (uint16_t)sleepTime;

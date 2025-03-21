@@ -39,6 +39,7 @@ extern uint32_t g_total_records_count;
 
 // Макросы для "меток"
 #define EMPTY  0xFF  // обозначение "пусто / стёрто"
+#define WRITE_START 0xF0  //  Запись в сектор начата
 #define SET    0x00  // обозначение "установлено / занято"
 
 // Смещения внутри блока
@@ -79,6 +80,7 @@ int  W25_Chip_Erase(void);
 int32_t search_sector_empty(void);
 int flash_append_record(const char *record_data, uint8_t sector_mark_send);
 int mark_block_sent(int32_t addr_block);
+int Save_one_to_USB(void);
 int backup_records_to_external(void);
 
 // При желании – функции для работы с именем файла, USB и т.д.

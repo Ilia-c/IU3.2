@@ -8,23 +8,44 @@ RTC_HandleTypeDef hrtc;
 extern RTC_TimeTypeDef Time;
 extern RTC_DateTypeDef Date;
 
+#define LSI_TIMEOUT 1000  // Таймаут в миллисекундах для ожидания готовности LSI
+
 void RTC_Init(void)
 {
-	hrtc.Instance = RTC;
-	hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
-	hrtc.Init.AsynchPrediv = 127;
-	hrtc.Init.SynchPrediv = 255;
-	hrtc.Init.OutPut = RTC_OUTPUT_DISABLE;
-	hrtc.Init.OutPutRemap = RTC_OUTPUT_REMAP_NONE;
-	hrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
-	hrtc.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
+    // Первоначальная настройка RTC для внешнего источника (например, LSE)
+    hrtc.Instance = RTC;
+    hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
+    hrtc.Init.AsynchPrediv = 127;
+    hrtc.Init.SynchPrediv = 255;
+    hrtc.Init.OutPut = RTC_OUTPUT_DISABLE;
+    hrtc.Init.OutPutRemap = RTC_OUTPUT_REMAP_NONE;
+    hrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
+    hrtc.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
 
-	
-	if (HAL_RTC_Init(&hrtc) != HAL_OK)
-	{
-		Error_Handler();
-	}
+    if (HAL_RTC_Init(&hrtc) != HAL_OK)
+    {
+		ERRCODE.STATUS |= ERROR_RTC;
+        // Если инициализация не удалась, переходим на внутренний источник (LSI)
+        __HAL_RCC_LSI_ENABLE();
+
+        uint32_t tickstart = HAL_GetTick();
+        // Ждём готовности LSI с защитой от зависания (timeout)
+        while ((__HAL_RCC_GET_FLAG(RCC_FLAG_LSIRDY) == RESET) && ((HAL_GetTick() - tickstart) < LSI_TIMEOUT)){}
+        if ((HAL_GetTick() - tickstart) >= LSI_TIMEOUT)
+        {
+            // Таймаут ожидания LSI - вызываем обработчик ошибок
+            Error_Handler();
+        }
+        // Настраиваем RTC для работы с LSI. Прескалеры могут отличаться от конфигурации для LSE.
+        hrtc.Init.AsynchPrediv = 127;
+        hrtc.Init.SynchPrediv = 249;  // Примерно для LSI ~32000 Гц
+        if (HAL_RTC_Init(&hrtc) != HAL_OK)
+        {
+            Error_Handler();
+        }
+    }
 }
+
 int day_in_mount(int mount, int year)
 {
 	if (mount == 2)

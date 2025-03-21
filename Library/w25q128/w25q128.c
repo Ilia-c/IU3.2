@@ -263,7 +263,7 @@ int32_t search_sector_empty(void)
             continue;
         }
 
-        if (sector_header == EMPTY) {
+        if (sector_header != SET) {
             // Считаем, что сектор "неполностью заполнен"
             // Ищем в секторе свободный блок
             for (uint32_t i = 0; i < RECORDS_PER_SECTOR; i++) {
@@ -314,7 +314,7 @@ int flash_append_record(const char *record_data, uint8_t sector_mark_send_flag)
     // Сформируем структуру
     record_t new_rec;
     // По вашей логике:
-    new_rec.Sector_mark       = EMPTY; // [0] 0xFF - т.к. это не всегда блок #0
+    new_rec.Sector_mark       = WRITE_START; // [0] 0xF0 
     new_rec.Sector_mark_send  = EMPTY; // [1]
     new_rec.rec_status_start  = SET;   // [2] => 0x00
     new_rec.rec_status_end    = EMPTY; // [3] => 0xFF
@@ -439,6 +439,56 @@ int mark_block_sent(int32_t addr_block)
 
     return 0;
 }
+int Save_one_to_USB(void)
+{
+    FRESULT res;
+    UINT bw;
+    FATFS *fs;
+    DWORD fre_clust;
+    
+    res = f_getfree(USBHPath, &fre_clust, &fs);
+    if (res != FR_OK) {
+        return -1;
+    }
+
+    char filename[16];
+    createFilename(filename, sizeof(filename));
+    res = f_open(&MyFile, filename, FA_OPEN_APPEND | FA_WRITE);
+    if (res != FR_OK) {
+        f_close(&MyFile);
+        f_mount(NULL, USBHPath, 0);
+        memset(&USBFatFs, 0, sizeof(FATFS));
+        return -1;
+    }
+    res = f_lseek(&MyFile, f_size(&MyFile));
+    if (res != FR_OK) {
+        f_close(&MyFile);
+        f_mount(NULL, USBHPath, 0);
+        memset(&USBFatFs, 0, sizeof(FATFS));
+        return -1;
+    }
+    uint16_t len_data = strlen(save_data);
+    save_data[len_data-1] = '\n'; // обрезаем
+    save_data[len_data] = '\0'; // обрезаем  
+    char *data = save_data + 1; 
+    res = f_write(&MyFile, data, strlen(data), &bw);
+    if (res != FR_OK)
+    {
+        f_close(&MyFile);
+        f_mount(NULL, USBHPath, 0);
+        memset(&USBFatFs, 0, sizeof(FATFS));
+        return -1;
+    }
+
+    res = f_sync(&MyFile);
+    if (res != FR_OK) {
+        return -1;
+    }
+    f_close(&MyFile);
+
+    return 0;
+}
+
 
 //------------------------------------------------------------------------------
 // Функция резервного копирования данных во внешнее хранилище (USB)
@@ -513,9 +563,9 @@ int backup_records_to_external(void)
                 continue;
             }
             size_t realLen = rec.length;
-            if (realLen > 100){
-                rec.data[100] = '\n'; // обрезаем
-                rec.data[101] = '\0'; // обрезаем  
+            if (realLen > 110){
+                rec.data[110] = '\n'; // обрезаем
+                rec.data[111] = '\0'; // обрезаем  
             } 
             else{
                 rec.data[realLen-1] = '\n'; // обрезаем
@@ -547,8 +597,8 @@ int backup_records_to_external(void)
             }
 
             // Записываем в файл
-            char *data = &rec.data[1];
-            res = f_write(&MyFile, data, strlen(rec.data-1), &bw);
+            char *data = rec.data + 1; 
+            res = f_write(&MyFile, data, strlen(data), &bw);
             if (res != FR_OK)
             {
                 f_close(&MyFile);

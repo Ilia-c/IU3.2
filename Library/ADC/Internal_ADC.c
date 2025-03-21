@@ -27,7 +27,7 @@ void Read_ADC_Voltage(void)
     }
 }
 
-void Read_ADC_Colibrate_24V(void)
+int Read_ADC_Colibrate_24V(void)
 {
     // Запускаем преобразование АЦП
     HAL_ADC_Start(&hadc1);
@@ -41,8 +41,10 @@ void Read_ADC_Colibrate_24V(void)
         EEPROM_SaveSettings(&EEPROM);
         if (!EEPROM_CheckDataValidity()){
             ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
+            return -1;
         }
     }
+    return 0;
 }
 
 float voltageToSOC(float voltage) {

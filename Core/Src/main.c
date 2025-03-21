@@ -1019,8 +1019,11 @@ void Main_Cycle(void *argument)
           status = 1;
           break;
         }
+        if ((i>30) && (GSM_data.Status & SIM_PRESENT)) break;
         osDelay(500);
       }
+      
+
       if (status == 1)
       {
         GSM_data.Status |= HTTP_READ;
@@ -1100,66 +1103,73 @@ void Main_Cycle(void *argument)
       }
       // Если условие не выполняется - значит с данными все ОК
     }
-
+    
     HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);
     HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);
     //HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 0);
     //HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 0);
 
     // Отправка данных на сервер
-    if (EEPROM.Communication != 0)
+    if (!(GSM_data.Status & SIM_PRESENT))
     {
-      uint8_t status = 0;
-      // 60 секунд на попытки зарагистрироваться
-      for (int i = 0; i < 10; i++)
+      if (EEPROM.Communication != 0)
       {
-        if ((GSM_data.Status & NETWORK_REGISTERED) && (GSM_data.Status & SIGNAL_PRESENT))
+        uint8_t status = 0;
+        // 60 секунд на попытки зарагистрироваться
+        for (int i = 0; i < 10; i++)
         {
-          status = 1;
-          break;
-        }
-        osDelay(1000);
-      }
-      if (status == 1)
-      {
-        status = 0;
-        GSM_data.Status |= HTTP_SEND;
-        for (int i = 0; i < 120; i++)
-        {
-          if (GSM_data.Status & HTTP_SEND_Successfully)
+          if ((GSM_data.Status & NETWORK_REGISTERED) && (GSM_data.Status & SIGNAL_PRESENT))
           {
             status = 1;
             break;
           }
-          if (ERRCODE.STATUS & STATUS_UART_SERVER_COMM_ERROR)
-          {
-            status = 0;
-            break;
-          }
           osDelay(1000);
         }
-        if (status == 0)
+        if (status == 1)
         {
-          GSM_data.Status |= SMS_SEND;
+          status = 0;
+          GSM_data.Status |= HTTP_SEND;
           for (int i = 0; i < 120; i++)
           {
-            if (GSM_data.Status & SMS_SEND_Successfully)
+            if (GSM_data.Status & HTTP_SEND_Successfully)
             {
               status = 1;
               break;
             }
-            if (ERRCODE.STATUS & STATUS_UART_SMS_SEND_ERROR)
+            if (ERRCODE.STATUS & STATUS_UART_SERVER_COMM_ERROR)
             {
               status = 0;
               break;
             }
             osDelay(1000);
           }
+          if (status == 0)
+          {
+            GSM_data.Status |= SMS_SEND;
+            for (int i = 0; i < 120; i++)
+            {
+              if (GSM_data.Status & SMS_SEND_Successfully)
+              {
+                status = 1;
+                break;
+              }
+              if (ERRCODE.STATUS & STATUS_UART_SMS_SEND_ERROR)
+              {
+                status = 0;
+                break;
+              }
+              osDelay(1000);
+            }
+          }
+        }
+        else
+        {
+          ERRCODE.STATUS |= STATUS_GSM_REG_ERROR;
         }
       }
-      else{
-        ERRCODE.STATUS |= STATUS_GSM_REG_ERROR;
-      }
+    }
+    else{
+      ERRCODE.STATUS |= STATUS_GSM_NO_SIM;
     }
 
     osThreadSuspend(UART_PARSER_taskHandle);
@@ -1171,12 +1181,16 @@ void Main_Cycle(void *argument)
     osDelay(10);
 
     // 8.  Сохранение данных
-    
+
+
     Collect_DATA();
     xSemaphoreGive(SD_WRITE);
-
+    uint8_t send_status = 1;
+    if (ERRCODE.STATUS & STATUS_UART_SERVER_COMM_ERROR){
+      send_status = 0; // Отметить как не отправленную 
+    }
     // ! перенести в отдельную задачу
-    flash_append_record(save_data, 0);
+    flash_append_record(save_data, send_status);
     osDelay(200);
 
 
@@ -1360,83 +1374,145 @@ void Erroe_indicate(void *argument)
 }
 void UART_PARSER_task(void *argument)
 {
-    UNUSED(argument);
-    GSM_Init();
-    for (;;)
-    { 
+  UNUSED(argument);
+  GSM_Init();
+  for (;;)
+  {
     osDelay(5000);
+    if (EEPROM.Mode == 0)
+    {
+      if (!(GSM_data.Status & SMS_SEND))
+      {
+        strcpy(GSM_data.GSM_sms_status, "");
+      }
+      if (!(GSM_data.Status & HTTP_READ))
+      {
+        strcpy(GSM_data.GSM_site_read_status, "");
+      }
+      if (!(GSM_data.Status & HTTP_SEND))
+      {
+        strcpy(GSM_data.GSM_site_status, "");
+      }
+    }
+
     // Если GSM должен быть включен
-    if (EEPROM.Communication == 1){
+    if (EEPROM.Communication == 1)
+    {
       // Если GSM был выключен
-      if (HAL_GPIO_ReadPin(EN_3P8V_GPIO_Port, EN_3P8V_Pin) == 0){
+      if (HAL_GPIO_ReadPin(EN_3P8V_GPIO_Port, EN_3P8V_Pin) == 0)
+      {
         HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 1); // Включение GSM
         osDelay(100);
         HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 1);
         osDelay(600);
         HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 0);
       }
-    } 
+    }
     // Если GSM должен быть выключен
-    if (EEPROM.Communication == 0){ 
-      HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0); 
+    if (EEPROM.Communication == 0)
+    {
+      HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
       continue;
     }
-    //if (EEPROM.Mode != 0) osThreadSuspend(SIM800_dataHandle); // Остановить, если циклический режим (для однократного выполнения)
-    
+    // if (EEPROM.Mode != 0) osThreadSuspend(SIM800_dataHandle); // Остановить, если циклический режим (для однократного выполнения)
 
-  
-      if ((!(GSM_data.Status & GSM_RDY)) && (EEPROM.USB_mode != 2)){
-        int result = SendCommandAndParse("AT\r", parse_ERROR_OK, 1000);
-        if (result == 1){
-          GSM_data.Status |= GSM_RDY;
-          if (SendCommandAndParse("AT+CFUN=0\r", waitForOKResponse, 1000) != 1){}
-          osDelay(300);
-          if (SendCommandAndParse("AT+CFGDUALMODE=1,0\r", waitForOKResponse, 1000) != 1){}
-          osDelay(300);
-          if (SendCommandAndParse("AT+CFGRATPRIO=2\r", waitForOKResponse, 1000) != 1){}
-          osDelay(300);
-          if (SendCommandAndParse("AT+CFUN=1\r", waitForOKResponse, 1000) != 1){}
-          if (SendCommandAndParse("AT&W\r", waitForOKResponse, 1000) != 1){}
+    if ((!(GSM_data.Status & GSM_RDY)) && (EEPROM.USB_mode != 2))
+    {
+      int result = SendCommandAndParse("AT\r", parse_ERROR_OK, 1000);
+      if (result == 1)
+      {
+        GSM_data.Status |= GSM_RDY;
+        if (SendCommandAndParse("AT+CFUN=0\r", waitForOKResponse, 1000) != 1)
+        {
+        }
+        osDelay(300);
+        if (SendCommandAndParse("AT+CFGDUALMODE=1,0\r", waitForOKResponse, 1000) != 1)
+        {
+        }
+        osDelay(300);
+        if (SendCommandAndParse("AT+CFGRATPRIO=2\r", waitForOKResponse, 1000) != 1)
+        {
+        }
+        osDelay(300);
+        if (SendCommandAndParse("AT+CFUN=1\r", waitForOKResponse, 1000) != 1)
+        {
+        }
+        if (SendCommandAndParse("AT&W\r", waitForOKResponse, 1000) != 1)
+        {
         }
       }
-      if ((GSM_data.Status & GSM_RDY) && (EEPROM.USB_mode != 2))
-      {
-        SendCommandAndParse("AT+CPIN?\r", parse_CPIN, 1000);
-        SendCommandAndParse("AT+CSQ\r", parse_CSQ, 1000);
-        SendCommandAndParse("AT+CEREG?\r", parse_CEREG, 1000);
-        SendCommandAndParse("AT+COPS?\r", parse_COPS, 1000);
-        GSM_data.update_value();
-        if (EEPROM.Mode == 0) xSemaphoreGive(Display_semaphore);
-      }
+    }
+    if ((GSM_data.Status & GSM_RDY) && (EEPROM.USB_mode != 2))
+    {
+      SendCommandAndParse("AT+CPIN?\r", parse_CPIN, 1000);
+      SendCommandAndParse("AT+CSQ\r", parse_CSQ, 1000);
+      SendCommandAndParse("AT+CEREG?\r", parse_CEREG, 1000);
+      SendCommandAndParse("AT+COPS?\r", parse_COPS, 1000);
+      GSM_data.update_value();
+      if (EEPROM.Mode == 0)
+        xSemaphoreGive(Display_semaphore);
+    }
 
-      if (GSM_data.Status & SMS_SEND)
+    if (GSM_data.Status & SMS_SEND)
+    {
+      // флаг того что нужно отправить смс
+      GSM_data.Status &= ~SMS_SEND;
+      Collect_DATA();
+      if (sendSMS() == HAL_OK)
       {
-        // флаг того что нужно отправить смс
-        GSM_data.Status &= ~SMS_SEND;
-        Collect_DATA();
-        if (sendSMS() == HAL_OK)  GSM_data.Status|=SMS_SEND_Successfully;
-        else ERRCODE.STATUS |= STATUS_UART_SMS_SEND_ERROR;
+        if (EEPROM.Mode == 0) strcpy(GSM_data.GSM_sms_status, "OK");
+        xSemaphoreGive(Display_semaphore);
+        GSM_data.Status |= SMS_SEND_Successfully;
       }
-
-      if (GSM_data.Status & HTTP_SEND)
+      else
       {
-        GSM_data.Status &= ~HTTP_SEND;
-        Collect_DATA();
-        if (sendHTTP() == HAL_OK)  GSM_data.Status|=HTTP_SEND_Successfully;
-        else ERRCODE.STATUS |= STATUS_UART_SERVER_COMM_ERROR;
-      }
-      if (GSM_data.Status & HTTP_READ)
-      {
-        // флаг того что нужно отправить HTTP
-        GSM_data.Status &= ~HTTP_READ;
-        SETTINGS_REQUEST_DATA();
-        if (READ_Settings_sendHTTP() == HAL_OK)  GSM_data.Status|=HTTP_READ_Successfully;
-        else ERRCODE.STATUS |= STATUS_UART_SERVER_COMM_ERROR;
+        if (EEPROM.Mode == 0) strcpy(GSM_data.GSM_sms_status, "ERR");
+        xSemaphoreGive(Display_semaphore);
+        ERRCODE.STATUS |= STATUS_UART_SMS_SEND_ERROR;
       }
     }
+
+    if (GSM_data.Status & HTTP_SEND)
+    {
+      GSM_data.Status &= ~HTTP_SEND;
+      Collect_DATA();
+      if (sendHTTP() == HAL_OK)
+      {
+        GSM_data.Status |= HTTP_SEND_Successfully;
+        if (EEPROM.Mode == 0)
+          strcpy(GSM_data.GSM_site_status, "OK");
+        xSemaphoreGive(Display_semaphore);
+      }
+      else
+      {
+        if (EEPROM.Mode == 0)
+          strcpy(GSM_data.GSM_site_status, "ERR");
+        xSemaphoreGive(Display_semaphore);
+        ERRCODE.STATUS |= STATUS_UART_SERVER_COMM_ERROR;
+      }
+    }
+    if (GSM_data.Status & HTTP_READ)
+    {
+      // флаг того что нужно отправить HTTP
+      GSM_data.Status &= ~HTTP_READ;
+      SETTINGS_REQUEST_DATA();
+      if (READ_Settings_sendHTTP() == HAL_OK)
+      {
+        GSM_data.Status |= HTTP_READ_Successfully;
+        if (EEPROM.Mode == 0)
+          strcpy(GSM_data.GSM_site_read_status, "OK");
+        xSemaphoreGive(Display_semaphore);
+      }
+      else
+      {
+        if (EEPROM.Mode == 0)
+          strcpy(GSM_data.GSM_site_read_status, "ERR");
+        xSemaphoreGive(Display_semaphore);
+        ERRCODE.STATUS |= STATUS_UART_SERVER_COMM_ERROR;
+      }
+    }
+  }
 }
-
-
 
 int a = 0;
 

@@ -192,6 +192,9 @@ extern "C"
     char GSM_signal_lvl_char[3];    // Текстовое представление уровня сигнала
     char GSM_err_lvl_char[3];       // Текстовое представление ошибок сигнала
     char *GSM_gprs_on_char;         // Например, GPRS_STATUS[0] или GPRS_STATUS[1]
+    char GSM_sms_status[10];         // Статус отправки смс
+    char GSM_site_status[10];         // Статус запроса на сайт
+    char GSM_site_read_status[10];
 
     uint32_t GSM_LastResponseTime;  // Время последнего ответа (секунды)
     void (*update_value)(void);     // Функция обновления значений
