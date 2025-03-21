@@ -40,7 +40,8 @@
         "usbd_cdc_if.h": "c",
         "usbh_msc.h": "c",
         "usb_host.h": "c",
-        "usb_fatfs_save.h": "c"
+        "usb_fatfs_save.h": "c",
+        "xutility": "c"
     },
-    "cortex-debug.variableUseNaturalFormat": false
+    "cortex-debug.variableUseNaturalFormat": true
 }

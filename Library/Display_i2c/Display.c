@@ -591,12 +591,12 @@ void SAVE_IZM(){
     OLED_UpdateScreen();
 
     Collect_DATA();
-    update_flash_end_ptr();
-    flash_append_record(save_data);
-    mark_block_sent_and_check_sector(flash_end_ptr);
+    int res = flash_append_record(save_data, 1);
+    if (res == -1) {OLED_DrawCenteredString(ERROR_TEXT, Y); OLED_UpdateScreen(); return;}
 
+    g_total_records_count++;
     char flash_end_ptr_char[30] = {0};
-    snprintf(flash_end_ptr_char, 30, "%s %ld", ZAPISEY[EEPROM.len], flash_end_ptr);
+    snprintf(flash_end_ptr_char, 30, "%s %ld", ZAPISEY[EEPROM.len], g_total_records_count);
     OLED_DrawRectangleFill(0, 15, winth_display, 60, 0);
     OLED_DrawCenteredString(READY, Y);
 
@@ -676,8 +676,9 @@ void Flash_Format(){
     OLED_DrawCenteredString(Clear, Y);
     OLED_DrawCenteredString(POWER_NOT, Y+10);
     OLED_UpdateScreen();
+
     W25_Chip_Erase();
-    update_flash_end_ptr();
+
     OLED_DrawRectangleFill(0, 15, winth_display, 60, 0);
     OLED_DrawCenteredString(READY, Y);
     OLED_UpdateScreen();

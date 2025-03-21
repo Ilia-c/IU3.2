@@ -970,8 +970,7 @@ void Main(void *argument)
   // Если была критическая ошибка
   if (ERRCODE.STATUS & STATUS_FAULTS){
     Collect_DATA();
-    update_flash_end_ptr();
-    flash_append_record(save_data);
+    flash_append_record(save_data, 0);
   }
   //int32_t adc =  ADC1_Read_PC0();
 
@@ -1000,8 +999,7 @@ void Main_Cycle(void *argument)
   // Если была критическая ошибка
   if (ERRCODE.STATUS & STATUS_FAULTS){
     Collect_DATA();
-    update_flash_end_ptr();
-    flash_append_record(save_data);
+    flash_append_record(save_data, 0);
   }
   for (;;)
   {
@@ -1173,12 +1171,13 @@ void Main_Cycle(void *argument)
     osDelay(10);
 
     // 8.  Сохранение данных
-    // ! перенести в отдельную задачу
+    
     Collect_DATA();
     xSemaphoreGive(SD_WRITE);
-    update_flash_end_ptr();
-    flash_append_record(save_data);
 
+    // ! перенести в отдельную задачу
+    flash_append_record(save_data, 0);
+    osDelay(200);
 
 
     HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, 1);
