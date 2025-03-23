@@ -43,11 +43,11 @@ int parse_CPIN()
 {
     if (strstr(parseBuffer, "+CPIN:READY") != NULL){
         GSM_data.Status |= SIM_PRESENT;
-        ERRCODE.STATUS |= STATUS_GSM_NO_SIM;
+        ERRCODE.STATUS &= ~STATUS_GSM_NO_SIM;
         return 1;
     }
     GSM_data.Status &= ~SIM_PRESENT;
-    ERRCODE.STATUS &= ~STATUS_GSM_NO_SIM;
+    ERRCODE.STATUS |= STATUS_GSM_NO_SIM;
     return 0;
 }
 
