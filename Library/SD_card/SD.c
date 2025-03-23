@@ -204,6 +204,7 @@ void remove_whitespace(char *str) {
     *dst = '\0';
 }
 
+const char CableB[] = "cable_break";
 void Collect_DATA(){
     HAL_RTC_GetDate(&hrtc, &Date, RTC_FORMAT_BIN);
     HAL_RTC_GetTime(&hrtc, &Time, RTC_FORMAT_BIN);
@@ -212,8 +213,8 @@ void Collect_DATA(){
     // Если в ADC_data.ADC_SI_value_char или ADC_data.ADC_SI_value_correct_char содержатся русские символы,
     // заменяем их на "cable break"
     if (containsRussian(ADC_data.ADC_SI_value_char) || containsRussian(ADC_data.ADC_SI_value_correct_char)) {
-        strcpy(ADC_data.ADC_SI_value_char, "cable_break");
-        strcpy(ADC_data.ADC_SI_value_correct_char, "cable_break");
+        strcpy(ADC_data.ADC_SI_value_char, CableB);
+        strcpy(ADC_data.ADC_SI_value_correct_char, CableB);
     }
 
     snprintf(save_data, CMD_BUFFER_SIZE,
