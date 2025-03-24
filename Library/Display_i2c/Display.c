@@ -38,7 +38,7 @@ extern ADC_MS5193T_item ADC_data;
 extern EEPROM_Settings_item EEPROM;
 extern ERRCODE_item ERRCODE;
 extern RTC_HandleTypeDef hrtc;
-
+extern IWDG_HandleTypeDef hiwdg;
 
 char str[5];
 int right_ot = winth_display - 12 - 2; // Ширина экрана минус 2 символа - процент заряда (0-9%) и - 2 отступ справа
@@ -176,7 +176,7 @@ menuSelect_item USB_MODE_STRUCT = {
 menuSelect_item SAVE_IN_STRUCT = {
     (uint8_t *)&EEPROM.Save_in,
     {
-        {"Устройство", "Device"},
+        {"Прибор", "Device"},
         {"USB", "USB"},
         {"Сайт", "Website"}
     }
@@ -1977,18 +1977,22 @@ void UpdateFrameDiff(const uint8_t *new_frame) {
     memcpy(old_frame, temp_buffer, 1024);
 }
 
+
+
 void Start_video() {
     int contrast = 0xFF;
     int charge_period = 0xF1;
     for (int i = 0; i < 23; i++) {
         UpdateFrameDiff(frames[i]);
         HAL_Delay(frame_delays[i]);
+        HAL_IWDG_Refresh(&hiwdg);
         if (i>15){
             OLED_SetContrast(contrast);
             OLED_SendCommand(0xD9);  //  Установка фаз
             OLED_SendCommand(charge_period);  // Установка фаз
             contrast -= 31;
             charge_period-=28;
+            
         }
     }
     

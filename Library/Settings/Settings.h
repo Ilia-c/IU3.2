@@ -59,7 +59,7 @@ extern "C"
     uint16_t time_sleep_h; // Время сна устройства часы
     uint16_t time_sleep_m; // Время сна устройства минуты
 
-    char Phone[12];      // Последний код ошибки
+    char Phone[20];      // Последний код ошибки
     //  АЦП  //
     double ADC_ION;     // Напряжение ИОН АЦП
     float ADC_RESISTOR; // Сопротивление резистора

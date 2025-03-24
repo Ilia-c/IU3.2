@@ -100,6 +100,15 @@ void MS5193T_Init(void) {
 // Функция чтения данных из регистра данных MS5193T (24-битные данные)
 uint32_t Read_MS5193T_Data(void)
 {
+    // Проверка ID регистра
+    uint8_t deviceID = SPI2_Read_OneByte(0x60); // Ожидается 0x0B
+    if ((deviceID & 0x0F) != 0x0B)
+    {
+        // Ошибка инициализации
+        ERRCODE.STATUS |= STATUS_ADC_EXTERNAL_INIT_ERROR;
+        return;
+    }
+    
     taskENTER_CRITICAL();
 	uint8_t xtemp[3] = {0x00, 0x00, 0x00};
 	int32_t adValue=0;
@@ -129,9 +138,6 @@ uint32_t Read_MS5193T_Data(void)
     taskEXIT_CRITICAL();
     return adValue;
 }
-
-
-
 
 void calculate_ADC_data_temp(int32_t adValue) {
     double koeff = 0.0000000697; 

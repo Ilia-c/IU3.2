@@ -2,13 +2,12 @@
 #include "Parser.h"
 
 #define NUM_AT_COMMANDS (sizeof(atCommandList)/sizeof(atCommandList[0]))
-
+static char command[50] __attribute__((section(".ram2"))) =  {0};
 
 int SendCommandAndParse(const char *command, int (*parser)(), uint32_t timeout)
 {
     // Сброс текущего буфера перед отправкой
     SendSomeCommandAndSetFlag();  
-
     // Отправка команды
     HAL_UART_Transmit(&huart4, (uint8_t *)command, strlen(command), 1000);
 
@@ -289,7 +288,9 @@ int sendSMS(void)
         }
 
         // Команда для начала отправки SMS
-        if (SendCommandAndParse("AT+CMGS=\"+79150305966\"\r", waitForGreaterThanResponse, 1000) != 1)
+        // "AT+CMGS=\"+79150305966\"\r"
+        sprintf(command, "AT+CMGS=\"%s\"\r", EEPROM.Phone);
+        if (SendCommandAndParse(command, waitForGreaterThanResponse, 1000) != 1)
         {
             osDelay(5000);
             continue;
@@ -437,7 +438,7 @@ int READ_Settings_sendHTTP(void) {
         if (readResult != 1) {
             ERRCODE.STATUS |= STATUS_UART_NO_RESPONSE;
         }
-
+        
         // Если до сюда дошли, значит все команды выполнены успешно
         httpSent = 1;
         break;
@@ -472,11 +473,7 @@ int Send_data(){
 
 
 int parse_site_response(void) {
-    // Если в ответе содержится слово NO_BINDING, считаем, что данных нет
-    if (strstr(parseBuffer, "NO_BINDING") != NULL) {
-        return 0;
-    }
-    
+
     // Ищем открывающую и закрывающую квадратные скобки
     char *start = strchr(parseBuffer, '[');
     char *end = strrchr(parseBuffer, ']');
@@ -514,7 +511,7 @@ int parse_site_response(void) {
     unsigned int sleepTime = 0;
     double correct = 0.0;
     double maxLvl = 0.0;
-    char phone[32] = {0};
+    char phone[20] = {0};
 
     int tokenCount = 0;
     char *token = strtok(dataCopy, ";");
@@ -524,6 +521,7 @@ int parse_site_response(void) {
         switch (tokenCount)
         {
         case 1:
+            if (token[0] == '[') token++;
             strncpy(devNum, token, sizeof(devNum) - 1);
             devNum[sizeof(devNum) - 1] = '\0';
             break;

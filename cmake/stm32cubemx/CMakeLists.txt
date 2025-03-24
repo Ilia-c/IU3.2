@@ -48,7 +48,8 @@ target_include_directories(stm32cubemx INTERFACE
     ../../Library/Sleep_system
     ../../Library/EEPROM
     ../../Library/Diagnostics
-    ../../Library/USB_FATFS_SAVE/
+    ../../Library/USB_FATFS_SAVE
+    ../../Library/OneWire
 )
 
 target_sources(stm32cubemx INTERFACE
@@ -94,6 +95,7 @@ target_sources(stm32cubemx INTERFACE
     ../../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart.c
     ../../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart_ex.c
     ../../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_hcd.c
+    ../../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_iwdg.c
     ../../Core/Src/system_stm32l4xx.c
     ../../Middlewares/Third_Party/FatFs/src/diskio.c
     ../../Middlewares/Third_Party/FatFs/src/ff.c
@@ -149,6 +151,8 @@ target_sources(stm32cubemx INTERFACE
     ../../Library/EEPROM/AT24C02.c
     ../../Library/Diagnostics/Diagnostics.c
     ../../Library/USB_FATFS_SAVE/USB_FATFS_SAVE.c
+    ../../Library/OneWire/ds18b20.c
+    ../../Library/OneWire/OneWire.c
 )
 
 target_link_directories(stm32cubemx INTERFACE

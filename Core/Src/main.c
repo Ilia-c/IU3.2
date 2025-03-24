@@ -43,6 +43,8 @@
 #include "Parser.h"
 #include "Diagnostics.h"
 #include "USB_FATFS_SAVE.h"
+#include "ds18b20.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -77,16 +79,25 @@ SPI_HandleTypeDef hspi2;
 
 TIM_HandleTypeDef htim5;
 TIM_HandleTypeDef htim6;
+TIM_HandleTypeDef htim7;
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart4;
 DMA_HandleTypeDef hdma_sdmmc1;
+
+IWDG_HandleTypeDef hiwdg;
 
 /* Definitions for Main */
 osThreadId_t MainHandle;
 const osThreadAttr_t Main_attributes = {
     .name = "Main",
     .stack_size = 256 * 1,
+    .priority = (osPriority_t)osPriorityHigh5,
+};
+osThreadId_t Main_Cycle_taskHandle;
+const osThreadAttr_t Main_Cycle_task_attributes = {
+    .name = "Main_Cycle_task",
+    .stack_size = 1024 * 3,
     .priority = (osPriority_t)osPriorityHigh5,
 };
 
@@ -127,14 +138,6 @@ const osThreadAttr_t USB_COM_task_attributes = {
     .priority = (osPriority_t)osPriorityLow2,
 };
 
-
-osThreadId_t Main_Cycle_taskHandle;
-const osThreadAttr_t Main_Cycle_task_attributes = {
-    .name = "Main_Cycle_task",
-    .stack_size = 1024 * 3,
-    .priority = (osPriority_t)osPriorityHigh5,
-};
-
 osThreadId_t  ERROR_INDICATE_taskHandle;
 const osThreadAttr_t Erroe_indicate_task_attributes = {
     .name = "Erroe_indicate_task",
@@ -155,6 +158,12 @@ const osThreadAttr_t SD_task_attributes = {
     .stack_size = 1024*2,
     .priority = (osPriority_t)osPriorityLow,
 };
+osThreadId_t WATCDOG_taskHandle;
+const osThreadAttr_t WATCDOG_task_attributes = {
+    .name = "Watch_dog_task",
+    .stack_size = 256,
+    .priority = (osPriority_t)osPriorityHigh3,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
@@ -171,6 +180,8 @@ static void MX_SPI2_Init(void);        // АЦП+FLASH
 static void MX_UART4_Init(void);       // GSM
 static void MX_TIM5_Init(void);
 static void MX_TIM6_Init(void);
+static void MX_IWDG_Init(void);
+static void MX_TIM7_Init(void);
 
 void BlinkLED(GPIO_TypeDef *LEDPort, uint16_t LEDPin, uint8_t blinkCount, uint32_t onTime, uint32_t offTime, uint32_t cycleDelay);
 void Display_I2C(void *argument);
@@ -185,7 +196,7 @@ void SD_Task(void *argument);
 void Erroe_indicate(void *argument);
 void HAL_TIM6_Callback(void);
 void SetTimerPeriod(uint32_t period_ms);
-
+void Watch_dog_task(void *argument);
 
 unsigned int id = 0x00;
 extern RTC_HandleTypeDef hrtc;
@@ -194,8 +205,10 @@ uint8_t units = 0;
 int main(void)
 {
   __HAL_RCC_PWR_CLK_ENABLE();
-
   HAL_Init();
+  //MX_IWDG_Init();
+  //
+  HAL_IWDG_Refresh(&hiwdg);
   SystemClock_Config();
   PeriphCommonClock_Config();
   RTC_Init();
@@ -217,6 +230,8 @@ int main(void)
   MX_UART4_Init();
   MX_TIM5_Init();
   MX_TIM6_Init();
+  MX_TIM7_Init();
+  
 
   InitMenus();
   // Начальные состояния переферии - ВСЕ ОТКЛЮЧЕНО
@@ -238,7 +253,6 @@ int main(void)
   HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);           // Включение Памяти на плате
 
   HAL_Delay(10);
-  
   //EEPROM_SaveSettings(&EEPROM);
   // Чтение данных из EEPROM
   if (!(EEPROM_IsDataExists()))
@@ -260,7 +274,7 @@ int main(void)
       }
     }
   }
-
+  HAL_IWDG_Refresh(&hiwdg);
   //EEPROM.Mode = 0;
   HAL_PWR_EnableBkUpAccess();
   uint16_t faultCode = HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_INDEX_ERROR_CODE);
@@ -307,11 +321,11 @@ int main(void)
   }
   __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB); // Сброс флага пробуждения из сна, для корректной работы сна
   HAL_PWR_DisableBkUpAccess();
-
+  
   HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
   HAL_NVIC_SetPriority(UART4_IRQn, 7, 0);
   HAL_NVIC_EnableIRQ(UART4_IRQn);
-
+  HAL_IWDG_Refresh(&hiwdg);
   // Запуск в режиме настройки (экран вкл)
   if (EEPROM.Mode == 0){
     // Включение переферии
@@ -328,7 +342,7 @@ int main(void)
       HAL_NVIC_EnableIRQ(OTG_FS_IRQn);         // Включение прерывания
     }
     //if (EEPROM.USB_mode == 3) MX_USB_DEVICE_Init_COMPORT(); // Режим работы в USB-FLASH с SD
-
+    
     if (EEPROM.screen_sever_mode == 1) Start_video();
     HAL_GPIO_WritePin(COL_B1_GPIO_Port, COL_B1_Pin, 1);
     HAL_GPIO_WritePin(COL_B2_GPIO_Port, COL_B2_Pin, 1);
@@ -351,23 +365,47 @@ int main(void)
   MX_DMA_Init();
   MX_SDMMC1_SD_Init();
   MX_FATFS_Init();
-
   w25_init();
 
-  //MX_USB_HOST_Init();
-  //Init_USB();
-  
-  //MSC_Application();
 
+  /*
+  Ds18b20_Init();
+  if (Ds18b20_ManualConvert())
+  {
+    for (uint8_t i = 0; i < 1; i++)
+    {
+      if (ds18b20[i].DataIsValid)
+      {
+        printf("Датчик %d: температура = %.2f °C\r\n", i, ds18b20[i].Temperature);
+      }
+      else
+      {
+        printf("Датчик %d: ошибка измерения\r\n", i);
+      }
+    }
+  }
+  else
+  {
+    printf("Преобразование температуры не завершилось вовремя!\r\n");
+  }
+*/
+
+
+  HAL_IWDG_Refresh(&hiwdg);
   MS5193T_Init();
   HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
+
+  HAL_IWDG_Refresh(&hiwdg);
   osKernelInitialize();
+
+  //Ds18b20_Init((osPriority_t)osPriorityLow3);
 
   ADC_readHandle = osThreadNew(ADC_read, NULL, &ADC_read_attributes);
   RS485_dataHandle = osThreadNew(RS485_data, NULL, &RS485_data_attributes);
   UART_PARSER_taskHandle = osThreadNew(UART_PARSER_task, NULL, &UART_PARSER_task_attributes);
   SD_taskHandle = osThreadNew(SD_Task, NULL, &SD_task_attributes);
-
+  WATCDOG_taskHandle = osThreadNew(Watch_dog_task, NULL, &WATCDOG_task_attributes);
+  
   if (EEPROM.Mode == 0){
     USB_COM_taskHandle = osThreadNew(USB_COM_task, NULL, &USB_COM_task_attributes);
     MainHandle = osThreadNew(Main, NULL, &Main_attributes); // Задача для настроечного режима
@@ -578,6 +616,21 @@ void MX_ADC1_Init(void)
     }
 }
 
+static void MX_IWDG_Init(void)
+{
+
+  hiwdg.Instance = IWDG;
+  hiwdg.Init.Prescaler = IWDG_PRESCALER_64;
+  hiwdg.Init.Window = 4095;
+  hiwdg.Init.Reload = 4000;
+  if (HAL_IWDG_Init(&hiwdg) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+
+}
+
 
 static void MX_TIM5_Init(void)
 {
@@ -634,6 +687,39 @@ static void MX_TIM6_Init(void)
   {
     Error_Handler();
   }
+}
+
+static void MX_TIM7_Init(void)
+{
+
+  /* USER CODE BEGIN TIM7_Init 0 */
+
+  /* USER CODE END TIM7_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM7_Init 1 */
+
+  /* USER CODE END TIM7_Init 1 */
+  htim7.Instance = TIM7;
+  htim7.Init.Prescaler = 40-1;
+  htim7.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim7.Init.Period = 0xFFFF;
+  htim7.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim7) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim7, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM7_Init 2 */
+
+  /* USER CODE END TIM7_Init 2 */
+
 }
 
 static void MX_ADC3_Init(void)
@@ -1019,8 +1105,13 @@ void Main_Cycle(void *argument)
           status = 1;
           break;
         }
-        // Если прошло больше 30 секунд и сим карта не вставлена
-        if ((i>60) && (!(GSM_data.Status & SIM_PRESENT))) break;
+        // Если прошло больше 22.5 секунд и сим карта не вставлена - перпезапускаем модуль
+        if ((i==45) && (!(GSM_data.Status & SIM_PRESENT))){
+          HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
+          osDelay(500);
+          HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 1);
+          GSM_data.Status = 0;
+        } 
         osDelay(500);
       }
       if ((status == 0) && ((GSM_data.Status & SIM_PRESENT))){
@@ -1028,6 +1119,7 @@ void Main_Cycle(void *argument)
         HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
         osDelay(500);
         HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 1);
+        GSM_data.Status = 0;
         for (int i = 0; i < 120; i++)
         {
           if ((GSM_data.Status & NETWORK_REGISTERED) && (GSM_data.Status & SIGNAL_PRESENT))
@@ -1081,7 +1173,6 @@ void Main_Cycle(void *argument)
     if (!(ERRCODE.STATUS & STATUS_ADC_EXTERNAL_INIT_ERROR))
     {
       osThreadResume(ADC_readHandle);
-
       status_ADC = 0;
       for (int i = 0; i < 50; i++)
       {
@@ -1133,62 +1224,51 @@ void Main_Cycle(void *argument)
     //HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 0);
 
     // Отправка данных на сервер
-    if (((GSM_data.Status & SIM_PRESENT)) && (status == 1))
+
+    // Если регистрация есть
+    if (status == 1)
     {
-      // Если симка вставлена и есть связь
       if (EEPROM.Communication != 0)
       {
-        // Повторная проверка регистрации (ну вдруг?)
-        if ((GSM_data.Status & NETWORK_REGISTERED) && (GSM_data.Status & SIGNAL_PRESENT))
+        status = 0;
+        GSM_data.Status |= HTTP_SEND;
+        for (int i = 0; i < 120; i++)
         {
-          status = 1;
-        }
-
-        if (status == 1)
-        {
-          status = 0;
-          GSM_data.Status |= HTTP_SEND;
-          for (int i = 0; i < 120; i++)
+          if (GSM_data.Status & HTTP_SEND_Successfully)
           {
-            if (GSM_data.Status & HTTP_SEND_Successfully)
+            status = 1;
+            break;
+          }
+          if (ERRCODE.STATUS & STATUS_UART_SERVER_COMM_ERROR)
+          {
+            status = 0;
+            break;
+          }
+          osDelay(1000);
+        }
+        if (status == 0)
+        {
+          GSM_data.Status |= SMS_SEND;
+          for (int i = 0; i < 60; i++)
+          {
+            if (GSM_data.Status & SMS_SEND_Successfully)
             {
               status = 1;
               break;
             }
-            if (ERRCODE.STATUS & STATUS_UART_SERVER_COMM_ERROR)
+            if (ERRCODE.STATUS & STATUS_UART_SMS_SEND_ERROR)
             {
               status = 0;
               break;
             }
             osDelay(1000);
           }
-          if (status == 0)
-          {
-            GSM_data.Status |= SMS_SEND;
-            for (int i = 0; i < 60; i++)
-            {
-              if (GSM_data.Status & SMS_SEND_Successfully)
-              {
-                status = 1;
-                break;
-              }
-              if (ERRCODE.STATUS & STATUS_UART_SMS_SEND_ERROR)
-              {
-                status = 0;
-                break;
-              }
-              osDelay(1000);
-            }
-          }
-        }
-        else
-        {
-          ERRCODE.STATUS |= STATUS_GSM_REG_ERROR;
         }
       }
     }
-    else{
-      ERRCODE.STATUS |= STATUS_GSM_NO_SIM;
+    else
+    {
+      ERRCODE.STATUS |= STATUS_GSM_REG_ERROR;
     }
 
     osThreadSuspend(UART_PARSER_taskHandle);
@@ -1296,6 +1376,17 @@ void Keyboard_task(void *argument)
 }
 
 
+void Watch_dog_task(void *argument)
+{
+  UNUSED(argument);
+  for (;;)
+  {
+    HAL_IWDG_Refresh(&hiwdg);
+    osDelay(1000);
+  }
+}
+
+
 void USB_COM_task(void *argument)
 {
   UNUSED(argument);
@@ -1323,6 +1414,8 @@ void BlinkLED(GPIO_TypeDef *LEDPort, uint16_t LEDPin, uint8_t blinkCount, uint32
     // Задержка между циклами моргания
     osDelay(cycleDelay);
 }
+
+
 // Индикация ошибок
 
 
@@ -1518,9 +1611,10 @@ void UART_PARSER_task(void *argument)
       if (READ_Settings_sendHTTP() == HAL_OK)
       {
         GSM_data.Status |= HTTP_READ_Successfully;
-        if (EEPROM.Mode == 0)
+        if (EEPROM.Mode == 0){
           strcpy(GSM_data.GSM_site_read_status, "OK");
-        if (EEPROM.Mode == 0) xSemaphoreGive(Display_semaphore);
+          xSemaphoreGive(Display_semaphore);
+        }
       }
       else
       {
