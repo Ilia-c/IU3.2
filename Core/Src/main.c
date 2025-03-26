@@ -206,9 +206,7 @@ int main(void)
 {
   __HAL_RCC_PWR_CLK_ENABLE();
   HAL_Init();
-  //MX_IWDG_Init();
-  //
-  HAL_IWDG_Refresh(&hiwdg);
+
   SystemClock_Config();
   PeriphCommonClock_Config();
   RTC_Init();
@@ -274,7 +272,6 @@ int main(void)
       }
     }
   }
-  HAL_IWDG_Refresh(&hiwdg);
   //EEPROM.Mode = 0;
   HAL_PWR_EnableBkUpAccess();
   uint16_t faultCode = HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_INDEX_ERROR_CODE);
@@ -325,10 +322,12 @@ int main(void)
   HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
   HAL_NVIC_SetPriority(UART4_IRQn, 7, 0);
   HAL_NVIC_EnableIRQ(UART4_IRQn);
-  HAL_IWDG_Refresh(&hiwdg);
+  
   // Запуск в режиме настройки (экран вкл)
   if (EEPROM.Mode == 0){
     // Включение переферии
+    MX_IWDG_Init();
+    HAL_IWDG_Refresh(&hiwdg);
     HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 1); // Включение датчика давления и !!!  измерение текущего напряжения питания 1:10
     HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 1); // Включаем экран
     HAL_Delay(10);
@@ -404,7 +403,6 @@ int main(void)
   RS485_dataHandle = osThreadNew(RS485_data, NULL, &RS485_data_attributes);
   UART_PARSER_taskHandle = osThreadNew(UART_PARSER_task, NULL, &UART_PARSER_task_attributes);
   SD_taskHandle = osThreadNew(SD_Task, NULL, &SD_task_attributes);
-  WATCDOG_taskHandle = osThreadNew(Watch_dog_task, NULL, &WATCDOG_task_attributes);
   
   if (EEPROM.Mode == 0){
     USB_COM_taskHandle = osThreadNew(USB_COM_task, NULL, &USB_COM_task_attributes);
@@ -412,6 +410,7 @@ int main(void)
     Keyboard_taskHandle = osThreadNew(Keyboard_task, NULL, &Keyboard_task_attributes);
     Display_I2CHandle = osThreadNew(Display_I2C, NULL, &Display_I2C_attributes);
     ERROR_INDICATE_taskHandle = osThreadNew(Erroe_indicate, NULL, &Erroe_indicate_task_attributes);
+    WATCDOG_taskHandle = osThreadNew(Watch_dog_task, NULL, &WATCDOG_task_attributes);
   }
   if (EEPROM.Mode == 1)
   {
@@ -1173,8 +1172,9 @@ void Main_Cycle(void *argument)
     if (!(ERRCODE.STATUS & STATUS_ADC_EXTERNAL_INIT_ERROR))
     {
       osThreadResume(ADC_readHandle);
+      osDelay(500);
       status_ADC = 0;
-      for (int i = 0; i < 50; i++)
+      for (uint8_t i = 0; i < 50; i++)
       {
         if (ADC_data.ADC_SI_value_char[0] != 'N')
           if (ADC_data.ADC_MS5193T_temp_char[0] != 'N')
@@ -1324,7 +1324,8 @@ void ADC_read(void *argument)
     //MX_USB_HOST_Process();
     
     ADC_data.update_value();
-    osDelay(300);
+    if (EEPROM.Mode == 0) osDelay(300);
+    else osDelay(50);
   }
 }
 

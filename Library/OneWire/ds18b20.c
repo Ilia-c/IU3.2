@@ -78,7 +78,7 @@ bool	Ds18b20_ManualConvert(void)
 	Ds18b20Delay(100);
 	while (!DS18B20_AllDone(&OneWire))
 	{
-		HAL_Delay(10);  
+		Ds18b20Delay(10);  
 		Ds18b20Timeout-=1;
 		if(Ds18b20Timeout==0)
 			break;
