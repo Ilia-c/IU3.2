@@ -5,7 +5,7 @@
 #include "semphr.h"
 #include "string.h"
 #include "usbd_cdc_if.h"
-
+#include "AT24C02.h"
 // Внешние переменные и объекты
 extern UART_HandleTypeDef huart4;
 extern xSemaphoreHandle UART_PARSER_semaphore;

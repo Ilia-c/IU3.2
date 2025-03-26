@@ -169,6 +169,14 @@ bool EEPROM_SaveSettings(const EEPROM_Settings_item *src) {
     if (!src) {
         return false;
     }
+    EEPROM_Settings_item currentSettings;
+    if (EEPROM_LoadSettings(&currentSettings)) {
+        // Если данные совпадают, то повторную запись не выполняем
+        if (memcmp(src, &currentSettings, sizeof(EEPROM_Settings_item)) == 0) {
+            // Данные уже сохранены, записывать повторно не нужно
+            return true;
+        }
+    }
 
     EepromRecord newRecord;
     memset(&newRecord, 0, sizeof(newRecord));

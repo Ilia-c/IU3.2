@@ -1090,7 +1090,7 @@ void Main_Cycle(void *argument)
   {
     osDelay(10);
     // 3. Выключить EEPROM
-    HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0); // Выключение Памяти на плате
+    //HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0); // Выключение Памяти на плате
 
     uint8_t status = 0;
     // 4. Запрос настроек с сайта для текущей конфигурации, запуск задачи параллельно, если фатальная ошибка - отключить GSM
@@ -1197,12 +1197,13 @@ void Main_Cycle(void *argument)
     // Вызов функции отправки и полчучения настроек
 
     // 7.  включить память
-    HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);
-    osDelay(10);
+    //HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);
+    //osDelay(10);
 
 
 
     // 8. Запись новго конфига, ели есть изменения (checksum)
+    /*
     EEPROM.Mode = 1;
     if (!(ERRCODE.STATUS & STATUS_UART_SERVER_COMM_ERROR))
     {
@@ -1217,6 +1218,7 @@ void Main_Cycle(void *argument)
       }
       // Если условие не выполняется - значит с данными все ОК
     }
+    */
     
     HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);
     HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);

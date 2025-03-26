@@ -577,6 +577,7 @@ int parse_site_response(void) {
     strncpy(EEPROM.Phone, phone, sizeof(EEPROM.Phone) - 1);
     EEPROM.Phone[sizeof(EEPROM.Phone) - 1] = '\0';
 
+    
     if (!EEPROM_SaveSettings(&EEPROM))
     {
         ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
