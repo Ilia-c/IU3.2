@@ -211,12 +211,12 @@ void calculate_ADC_data_heigh(int32_t adValue) {
             snprintf(ADC_data.ADC_SI_value_char, sizeof(ADC_data.ADC_SI_value_char), "Break");
             snprintf(ADC_data.ADC_SI_value_correct_char, sizeof(ADC_data.ADC_SI_value_correct_char), "Break");
         }
-        Remove_units();
+        if (EEPROM.Mode == 0) Remove_units();
     }
     else{
         snprintf(ADC_data.ADC_SI_value_char, sizeof(ADC_data.ADC_SI_value_char), "%4.2f", ADC_data.ADC_SI_value);
         snprintf(ADC_data.ADC_SI_value_correct_char, sizeof(ADC_data.ADC_SI_value_correct_char), "%4.2f", ADC_data.ADC_SI_value_correct);
-        Add_units();
+        if (EEPROM.Mode == 0) Add_units();
     }
     snprintf(ADC_data.ADC_Volts_char, sizeof(ADC_data.ADC_Volts_char), "%4.2f", ADC_data.ADC_Volts);
     snprintf(ADC_data.ADC_Current_char, sizeof(ADC_data.ADC_Current_char), "%4.1f", ADC_Current_new);

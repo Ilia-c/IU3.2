@@ -1161,7 +1161,8 @@ void Main_Cycle(void *argument)
     HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 1);
     HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);
     HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);
-    osDelay(100);
+    
+    osDelay(500);
     // Читаем текущее напряжение питания
     for (int i = 0; i < 10; i++)
     {
@@ -1193,7 +1194,8 @@ void Main_Cycle(void *argument)
     // 6. Отключить АЦП (датчик)
     //osThreadSuspend(ADC_readHandle);
     suspend = 0xFF;
-    osDelay(10);
+    osDelay(500);
+    osThreadSuspend(ADC_readHandle);
     HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
     // Вызов функции отправки и полчучения настроек
 
@@ -1222,8 +1224,8 @@ void Main_Cycle(void *argument)
     
     HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);
     HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);
-    //HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 0);
-    //HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 0);
+    HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 0);
+    HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 0);
 
     // Отправка данных на сервер
 
@@ -1274,7 +1276,7 @@ void Main_Cycle(void *argument)
     }
 
     osThreadSuspend(UART_PARSER_taskHandle);
-    osDelay(100);
+    osDelay(10);
     HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
     HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);
     HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);
@@ -1282,7 +1284,6 @@ void Main_Cycle(void *argument)
     osDelay(10);
 
     // 8.  Сохранение данных
-
 
     Collect_DATA();
     xSemaphoreGive(SD_WRITE);
@@ -1331,8 +1332,7 @@ void ADC_read(void *argument)
     else
     {
       osDelay(50);
-      if (suspend == 0xFF)
-        osThreadSuspend(ADC_readHandle);
+      if (suspend == 0xFF) osThreadSuspend(ADC_readHandle);
     }
   }
 }

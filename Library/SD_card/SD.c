@@ -216,7 +216,7 @@ void Collect_DATA(){
         strcpy(ADC_data.ADC_SI_value_char, CableB);
         strcpy(ADC_data.ADC_SI_value_correct_char, CableB);
     }
-
+    
     snprintf(save_data, CMD_BUFFER_SIZE,
         "[%s;%s;%s;%s;%s;%s;%s;%s;%02d:%02d%s%02d/%02d/%02d;%s;%s;%u;%u]",
         EEPROM.version.VERSION_PCB,                // строка
