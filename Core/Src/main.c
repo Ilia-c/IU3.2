@@ -6,12 +6,12 @@
  ******************************************************************************
  * @attention
  *
- * Copyright (c) 2024 STMicroelectronics.
- * All rights reserved.
+ * 
+ * 
  *
- * This software is licensed under terms that can be found in the LICENSE file
- * in the root directory of this software component.
- * If no LICENSE file comes with this software, it is provided AS-IS.
+ * VERSION Ver0.40_r5
+ * 
+ * 
  *
  ******************************************************************************
  */
@@ -201,6 +201,7 @@ void Watch_dog_task(void *argument);
 unsigned int id = 0x00;
 extern RTC_HandleTypeDef hrtc;
 uint8_t units = 0;
+uint8_t suspend = 0;
 
 int main(void)
 {
@@ -1158,6 +1159,8 @@ void Main_Cycle(void *argument)
     }
 
     HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 1);
+    HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);
+    HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);
     osDelay(100);
     // Читаем текущее напряжение питания
     for (int i = 0; i < 10; i++)
@@ -1175,13 +1178,11 @@ void Main_Cycle(void *argument)
       status_ADC = 0;
       for (uint8_t i = 0; i < 50; i++)
       {
-        if (ADC_data.ADC_SI_value_char[0] != 'N')
-          if (ADC_data.ADC_MS5193T_temp_char[0] != 'N')
-          {
+        if ((ADC_data.ADC_SI_value_char[0] != 'N') && (ADC_data.ADC_MS5193T_temp_char[0] != 'N')){
             status_ADC = 1;
             break;
-          }
-          osDelay(100);
+        }
+        osDelay(100);
       }
       if (status_ADC == 0)
       {
@@ -1190,7 +1191,8 @@ void Main_Cycle(void *argument)
     }
 
     // 6. Отключить АЦП (датчик)
-    osThreadSuspend(ADC_readHandle);
+    //osThreadSuspend(ADC_readHandle);
+    suspend = 0xFF;
     osDelay(10);
     HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
     // Вызов функции отправки и полчучения настроек
@@ -1198,7 +1200,6 @@ void Main_Cycle(void *argument)
     // 7.  включить память
     //HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);
     //osDelay(10);
-
 
 
     // 8. Запись новго конфига, ели есть изменения (checksum)
@@ -1286,7 +1287,7 @@ void Main_Cycle(void *argument)
     Collect_DATA();
     xSemaphoreGive(SD_WRITE);
     uint8_t send_status = 1;
-    if (ERRCODE.STATUS & STATUS_UART_SERVER_COMM_ERROR){
+    if ((ERRCODE.STATUS & STATUS_UART_SERVER_COMM_ERROR) || (ERRCODE.STATUS & STATUS_GSM_REG_ERROR)){
       send_status = 0; // Отметить как не отправленную 
     }
     // ! перенести в отдельную задачу
@@ -1322,11 +1323,17 @@ void ADC_read(void *argument)
   UNUSED(argument);
   for (;;)
   {
-    //MX_USB_HOST_Process();
-    
+    // MX_USB_HOST_Process();
+
     ADC_data.update_value();
-    if (EEPROM.Mode == 0) osDelay(300);
-    else osDelay(50);
+    if (EEPROM.Mode == 0)
+      osDelay(300);
+    else
+    {
+      osDelay(50);
+      if (suspend == 0xFF)
+        osThreadSuspend(ADC_readHandle);
+    }
   }
 }
 
