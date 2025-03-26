@@ -1164,8 +1164,7 @@ void Main_Cycle(void *argument)
     {
       Read_ADC_Voltage();
     }
-    HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
-    osDelay(100);
+    osDelay(20);
     // 5. Получения показаний АЦП
     //  Запускаем преобразования
     uint8_t  status_ADC = 0;

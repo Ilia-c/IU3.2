@@ -1,3 +1,11 @@
+#ifndef DISOLAY_H
+#define DISOLAY_H
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #include "OLED.h"
 #include "OLED_Fonts.h"
 #include "OLED_Icons.h"
@@ -124,3 +132,10 @@ void PROGRESS_BAR(uint8_t procent);
 void SAVE_USB();
 void GSM_HTTP_SYNC();
 void colibrate_24v();
+
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // SETTINGS_H

@@ -527,6 +527,7 @@ void Add_units(void)
     Menu_1_2_4_2.add_signat = &UNITS_MODE_DATA;
     Menu_1_2_4_3.add_signat = &UNITS_MODE_DATA;
 }
+
 void Remove_units(void)
 {
     // Теперь присваиваем указатели на строки, полученные из GSM_data

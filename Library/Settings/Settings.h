@@ -1,15 +1,17 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #include <stdint.h>
 #include "RTC_data.h"
 #include "MS5193T.h"
 #include "GSM.h"
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+
 
 // define для режима работы
 #define REDACT_MODE 0          // режим редактирования

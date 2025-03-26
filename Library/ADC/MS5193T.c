@@ -214,7 +214,6 @@ void calculate_ADC_data_heigh(int32_t adValue) {
         Remove_units();
     }
     else{
-        
         snprintf(ADC_data.ADC_SI_value_char, sizeof(ADC_data.ADC_SI_value_char), "%4.2f", ADC_data.ADC_SI_value);
         snprintf(ADC_data.ADC_SI_value_correct_char, sizeof(ADC_data.ADC_SI_value_correct_char), "%4.2f", ADC_data.ADC_SI_value_correct);
         Add_units();
