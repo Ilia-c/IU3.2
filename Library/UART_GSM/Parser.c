@@ -330,28 +330,31 @@ int sendHTTP(void) {
         //SendCommandAndParse("AT+CGACT=0\r", parse_ERROR_OK, 1000);
         //SendCommandAndParse("AT+CGDCONT=1\r", parse_ERROR_OK, 1000);
         // Начало настройки соединения
+        /*
         if (SendCommandAndParse("AT+CGDCONT=1,\"IP\",\"internet.mts.ru\"\r", waitForOKResponse, 1000) != 1) {
-            goto http_error;
+            goto http_error_1;
         }
         if (SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 1000) != 1) {
-            goto http_error;
+            goto http_error_1;
         }
         if (SendCommandAndParse("AT+CDNSCFG=\"8.8.8.8\",\"77.88.8.8\"\r", waitForOKResponse, 1000) != 1) {
-            goto http_error;
+            goto http_error_1;
         }
+        */
+
         if (SendCommandAndParse("AT+HTTPINIT\r", waitForOKResponse, 1000) != 1) {
-            goto http_error;
+            goto http_error_1;
         }
         if (SendCommandAndParse("AT+HTTPPARA=\"CID\",\"1\"\r", waitForOKResponse, 1000) != 1) {
-            goto http_error;
+            goto http_error_1;
         }
         // Отправка HTTP запроса (send - строка с корректно сформированным URL)
         if (SendCommandAndParse(send, waitForOKResponse, 20000) != 1) {
-            goto http_error;
+            goto http_error_1;
         }
         // Выполнение HTTPACTION, проверка ответа
         if (SendCommandAndParse("AT+HTTPACTION=0\r", waitForHTTPResponse, 20000) != 1) {
-            goto http_error;
+            goto http_error_1;
         }
         int readResult = SendCommandAndParse("AT+HTTPREAD=0,200\r", waitAndParseSiteResponse, 1000);
         if (readResult != 1) {
@@ -369,11 +372,15 @@ int sendHTTP(void) {
         httpSent = 1;
         break;
 
-http_error:
+http_error_1:
         // В случае ошибки выполняем «очистку» состояния:
         SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000);
         SendCommandAndParse("AT+CGACT=0\r", waitForOKResponse, 1000);
         SendCommandAndParse("AT+CGDCONT=1\r", waitForOKResponse, 1000);
+
+        SendCommandAndParse("AT+CGDCONT=1,\"IP\",\"internet.mts.ru\"\r", waitForOKResponse, 1000); 
+        SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 1000);
+        SendCommandAndParse("AT+CDNSCFG=\"8.8.8.8\",\"77.88.8.8\"\r", waitForOKResponse, 1000);
         osDelay(5000);  // Задержка 5 секунд перед следующей попыткой
     }
 
@@ -404,28 +411,31 @@ int READ_Settings_sendHTTP(void) {
         //SendCommandAndParse("AT+CGACT=0\r", parse_ERROR_OK, 1000);
         //SendCommandAndParse("AT+CGDCONT=1\r", parse_ERROR_OK, 1000);
         // Начало настройки соединения
+        /*
         if (SendCommandAndParse("AT+CGDCONT=1,\"IP\",\"internet.mts.ru\"\r", waitForOKResponse, 1000) != 1) {
-            goto http_error;
+            goto http_error_2;
         }
         if (SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 1000) != 1) {
-            goto http_error;
+            goto http_error_2;
         }
         if (SendCommandAndParse("AT+CDNSCFG=\"8.8.8.8\",\"77.88.8.8\"\r", waitForOKResponse, 1000) != 1) {
-            goto http_error;
-        }
+            goto http_error_2;
+        } 
+        */
         if (SendCommandAndParse("AT+HTTPINIT\r", waitForOKResponse, 1000) != 1) {
-            goto http_error;
+            goto http_error_2;
         }
+        
         if (SendCommandAndParse("AT+HTTPPARA=\"CID\",\"1\"\r", waitForOKResponse, 1000) != 1) {
-            goto http_error;
+            goto http_error_2;
         }
         // Отправка HTTP запроса (send - строка с корректно сформированным URL)
         if (SendCommandAndParse(send, waitForOKResponse, 20000) != 1) {
-            goto http_error;
+            goto http_error_2;
         }
         // Выполнение HTTPACTION, проверка ответа
         if (SendCommandAndParse("AT+HTTPACTION=0\r", waitForHTTPResponse, 20000) != 1) {
-            goto http_error;
+            goto http_error_2;
         }
         //osDelay(2000);
         int readResult = SendCommandAndParse("AT+HTTPREAD=0,200\r", waitAndParseSiteResponse, 1000);
@@ -443,11 +453,15 @@ int READ_Settings_sendHTTP(void) {
         httpSent = 1;
         break;
 
-http_error:
+http_error_2:
         // В случае ошибки выполняем «очистку» состояния:
         SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000);
         SendCommandAndParse("AT+CGACT=0\r", waitForOKResponse, 1000);
         SendCommandAndParse("AT+CGDCONT=1\r", waitForOKResponse, 1000);
+
+        SendCommandAndParse("AT+CGDCONT=1,\"IP\",\"internet.mts.ru\"\r", waitForOKResponse, 1000); 
+        SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 1000);
+        SendCommandAndParse("AT+CDNSCFG=\"8.8.8.8\",\"77.88.8.8\"\r", waitForOKResponse, 1000);
         osDelay(5000);  // Задержка 5 секунд перед следующей попыткой
     }
 

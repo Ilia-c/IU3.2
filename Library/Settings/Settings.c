@@ -179,7 +179,7 @@ uint8_t time_counter = 0;
 
 
 // Буфер для приёма данных по USB
-uint8_t g_myRxBuffer[MY_USB_RX_BUFFER_SIZE]; // Максимальное количество байт для сбора данных по USB
+uint8_t g_myRxBuffer[MY_USB_RX_BUFFER_SIZE]  __attribute__((section(".ram2"))); // Максимальное количество байт для сбора данных по USB
 
 const char MODEM_STATUS[3][6] = {"GSM", "NBIOT", "ND"}; // Индикация статуса блока "GSM", "NBIOT", "ND"
 const char STATUS_CHAR[4][5] = {"OK", "ERR", "WAR", "ND"}; // Индикация статуса блока "OK", "ERR", "WAR", "ND"

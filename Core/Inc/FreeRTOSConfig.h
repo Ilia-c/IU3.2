@@ -83,7 +83,7 @@
 #define configUSE_MALLOC_FAILED_HOOK   1
 #define configASSERT(x) if((x) == 0) { taskDISABLE_INTERRUPTS(); for(;;); }
 
-//#define configUSE_TICKLESS_IDLE 1
+#define configUSE_TICKLESS_IDLE 1
 
 #define configRECORD_STACK_HIGH_ADDRESS 1
 #define configGENERATE_RUN_TIME_STATS 1

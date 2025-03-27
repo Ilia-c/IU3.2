@@ -175,10 +175,11 @@ extern "C"
 #define HTTP_SEND_Successfully  (1UL << 14)    //  http запрос успешен
 #define HTTP_READ_Successfully (1UL << 15)    // http запрос (чтение данных) успешен
 #define SMS_SEND_Successfully (1UL << 16)    //  SMS успешено отправлено
+#define NETWORK_REGISTERED_SET_HTTP (1UL << 17)   // Устройство зарегистрировано в сети для регистрации HTTP при включении
 
   typedef struct GSM_STATUS_item
   {
-    uint16_t Status;                // Статус работы в виде битовой маски
+    uint32_t Status;                // Статус работы в виде битовой маски
     int8_t GSM_Signal_Level;        // Уровень сигнала GSM или -1, если нет регистрации
     int8_t GSM_Signal_Level_3;      // Уровень сигнала GSM или для отображения в виде значков
     int8_t GSM_Signal_Errors;       // Ошибки сигнала GSM или -1, если нет регистрации

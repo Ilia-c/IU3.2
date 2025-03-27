@@ -9,7 +9,7 @@
  * 
  * 
  *
- * VERSION Ver0.40_r5
+ * VERSION Ver0.41
  * 
  * 
  *
@@ -250,6 +250,7 @@ int main(void)
   HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);             // Общее питание 5В
   HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);         // Общее питание 3.3В (АЦП, темп., и т.д.)
   HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);           // Включение Памяти на плате
+  HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 1);
 
   HAL_Delay(10);
   //EEPROM_SaveSettings(&EEPROM);
@@ -324,25 +325,24 @@ int main(void)
   HAL_NVIC_SetPriority(UART4_IRQn, 7, 0);
   HAL_NVIC_EnableIRQ(UART4_IRQn);
   
+
+  if ((EEPROM.USB_mode == 1) || (EEPROM.USB_mode == 2)){
+    MX_USB_DEVICE_Init_COMPORT(); // Режим работы в VirtualComPort
+    HAL_NVIC_SetPriority(OTG_FS_IRQn, 10, 0); // Приоритет прерывания
+    HAL_NVIC_EnableIRQ(OTG_FS_IRQn);         // Включение прерывания
+  }
   // Запуск в режиме настройки (экран вкл)
   if (EEPROM.Mode == 0){
     // Включение переферии
     MX_IWDG_Init();
     HAL_IWDG_Refresh(&hiwdg);
-    HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 1); // Включение датчика давления и !!!  измерение текущего напряжения питания 1:10
+    //HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 1); // Включение датчика давления и !!!  измерение текущего напряжения питания 1:10
     HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 1); // Включаем экран
     HAL_Delay(10);
     OLED_Init(&hi2c2);
     HAL_Delay(20);
 
-    //if (EEPROM.USB_mode == 0) MX_USB_DEVICE_Init_COMPORT(); // Режим работы в USB_FLASH (перефброс фалов с данными на внешний USB)
-    if ((EEPROM.USB_mode == 1) || (EEPROM.USB_mode == 2)){
-      MX_USB_DEVICE_Init_COMPORT(); // Режим работы в VirtualComPort
-      HAL_NVIC_SetPriority(OTG_FS_IRQn, 10, 0); // Приоритет прерывания
-      HAL_NVIC_EnableIRQ(OTG_FS_IRQn);         // Включение прерывания
-    }
-    //if (EEPROM.USB_mode == 3) MX_USB_DEVICE_Init_COMPORT(); // Режим работы в USB-FLASH с SD
-    
+
     if (EEPROM.screen_sever_mode == 1) Start_video();
     HAL_GPIO_WritePin(COL_B1_GPIO_Port, COL_B1_Pin, 1);
     HAL_GPIO_WritePin(COL_B2_GPIO_Port, COL_B2_Pin, 1);
@@ -1153,22 +1153,20 @@ void Main_Cycle(void *argument)
             status = 0;
             break;
           }
-          osDelay(1000);
+          osDelay(500);
         }
       }
     }
 
-    HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 1);
-    HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);
-    HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);
     
+
     osDelay(500);
     // Читаем текущее напряжение питания
     for (int i = 0; i < 10; i++)
     {
       Read_ADC_Voltage();
     }
-    osDelay(20);
+    osDelay(1000);
     // 5. Получения показаний АЦП
     //  Запускаем преобразования
     uint8_t  status_ADC = 0;
@@ -1194,7 +1192,7 @@ void Main_Cycle(void *argument)
     // 6. Отключить АЦП (датчик)
     //osThreadSuspend(ADC_readHandle);
     suspend = 0xFF;
-    osDelay(500);
+    osDelay(350);
     osThreadSuspend(ADC_readHandle);
     HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
     // Вызов функции отправки и полчучения настроек
@@ -1331,7 +1329,7 @@ void ADC_read(void *argument)
       osDelay(300);
     else
     {
-      osDelay(50);
+      osDelay(150);
       if (suspend == 0xFF) osThreadSuspend(ADC_readHandle);
     }
   }
@@ -1563,6 +1561,13 @@ void UART_PARSER_task(void *argument)
         }
       }
     }
+    if (GSM_data.Status & NETWORK_REGISTERED_SET_HTTP){
+      GSM_data.Status&=~NETWORK_REGISTERED_SET_HTTP;
+      SendCommandAndParse("AT+CGDCONT=1,\"IP\",\"internet.mts.ru\"\r", waitForOKResponse, 1000); 
+      SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 1000);
+      SendCommandAndParse("AT+CDNSCFG=\"8.8.8.8\",\"77.88.8.8\"\r", waitForOKResponse, 1000);
+    }
+
     if ((GSM_data.Status & GSM_RDY) && (EEPROM.USB_mode != 2))
     {
       SendCommandAndParse("AT+CPIN?\r", parse_CPIN, 1000);

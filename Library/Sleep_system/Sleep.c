@@ -234,11 +234,11 @@ void GPIO_AnalogConfig(void)
     GPIO_InitStruct.Pin = GPIO_PIN_All;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-    //GPIO_InitStruct.Pin = GPIO_PIN_All;
-    //HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+    GPIO_InitStruct.Pin = GPIO_PIN_All;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-    //GPIO_InitStruct.Pin = GPIO_PIN_All;
-    //HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+    GPIO_InitStruct.Pin = GPIO_PIN_All;
+    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
     __HAL_RCC_GPIOA_CLK_DISABLE();
     __HAL_RCC_GPIOB_CLK_DISABLE();
@@ -259,6 +259,23 @@ extern HCD_HandleTypeDef hhcd_USB_OTG_FS; // для режима Host
 void Enter_StandbyMode(uint8_t hours, uint8_t minutes)
 {
     vTaskSuspendAll();
+
+    HAL_ADC_DeInit(&hadc1);
+    HAL_ADC_DeInit(&hadc3);
+    HAL_DMA_Abort(&hdma_sdmmc1); 
+    HAL_NVIC_DisableIRQ(DMA2_Channel4_IRQn);
+    __HAL_RCC_DMA2_CLK_DISABLE();
+    HAL_PCD_DeInit(&hpcd_USB_OTG_FS);
+    HAL_HCD_DeInit(&hhcd_USB_OTG_FS);
+    __HAL_RCC_USB_OTG_FS_CLK_DISABLE();
+    __HAL_RCC_GPIOA_CLK_ENABLE(); // Временно включить клок, чтобы перенастроить ножки
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    GPIO_InitStruct.Pin = GPIO_PIN_11 | GPIO_PIN_12; // DM/DP
+    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    __HAL_RCC_GPIOA_CLK_DISABLE();
+    DBGMCU->CR = 0x0;
 
     HAL_RCC_DeInit();
     HAL_SuspendTick();

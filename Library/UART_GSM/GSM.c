@@ -193,6 +193,7 @@ void Update_Data(void)
     }
 
     GSM_data.GSM_status_reg_char = (char *)GSM_REG_STATUS[0];
+    if (!(GSM_data.Status & NETWORK_REGISTERED)) GSM_data.Status |= NETWORK_REGISTERED_SET_HTTP;
     GSM_data.Status |= NETWORK_REGISTERED;
     if (determineRegionAndOperator() == 0){
         GSM_data.Status = SIM_PRESENT | GSM_RDY | SIGNAL_PRESENT;
