@@ -176,6 +176,7 @@ extern "C"
 #define HTTP_READ_Successfully (1UL << 15)    // http запрос (чтение данных) успешен
 #define SMS_SEND_Successfully (1UL << 16)    //  SMS успешено отправлено
 #define NETWORK_REGISTERED_SET_HTTP (1UL << 17)   // Устройство зарегистрировано в сети для регистрации HTTP при включении
+#define DATA_READ (1UL << 18) // Сброс активного состояния
 
   typedef struct GSM_STATUS_item
   {

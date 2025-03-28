@@ -149,7 +149,7 @@ osThreadId_t  UART_PARSER_taskHandle;
 const osThreadAttr_t UART_PARSER_task_attributes = {
     .name = "UART_PARSER_task",
     .stack_size = 1024 * 3,
-    .priority = (osPriority_t)osPriorityLow6,
+    .priority = (osPriority_t)osPriorityHigh4,
 };
 
 osThreadId_t SD_taskHandle;
@@ -322,19 +322,21 @@ int main(void)
   HAL_PWR_DisableBkUpAccess();
   
   HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
-  HAL_NVIC_SetPriority(UART4_IRQn, 7, 0);
+  HAL_NVIC_SetPriority(UART4_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(UART4_IRQn);
   
 
   if ((EEPROM.USB_mode == 1) || (EEPROM.USB_mode == 2)){
     MX_USB_DEVICE_Init_COMPORT(); // Режим работы в VirtualComPort
-    HAL_NVIC_SetPriority(OTG_FS_IRQn, 10, 0); // Приоритет прерывания
+    HAL_NVIC_SetPriority(OTG_FS_IRQn, 6, 0); // Приоритет прерывания
     HAL_NVIC_EnableIRQ(OTG_FS_IRQn);         // Включение прерывания
   }
   // Запуск в режиме настройки (экран вкл)
   if (EEPROM.Mode == 0){
     // Включение переферии
-    MX_IWDG_Init();
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    //MX_IWDG_Init();
+    //!/
     HAL_IWDG_Refresh(&hiwdg);
     //HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 1); // Включение датчика давления и !!!  измерение текущего напряжения питания 1:10
     HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 1); // Включаем экран
@@ -1107,18 +1109,28 @@ void Main_Cycle(void *argument)
         }
         // Если прошло больше 22.5 секунд и сим карта не вставлена - перпезапускаем модуль
         if ((i==45) && (!(GSM_data.Status & SIM_PRESENT))){
+          osThreadSuspend(UART_PARSER_taskHandle);
           HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
-          osDelay(500);
+          osDelay(1000);
           HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 1);
+          HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 1);
+          osDelay(600);
+          HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 0);
+          osThreadResume(UART_PARSER_taskHandle);
           GSM_data.Status = 0;
         } 
         osDelay(500);
       }
       if ((status == 0) && ((GSM_data.Status & SIM_PRESENT))){
         // Если регистрация не прошла, но сим карта есть - перезагружаем модем
+        osThreadSuspend(UART_PARSER_taskHandle);
         HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
-        osDelay(500);
+        osDelay(1000);
         HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 1);
+        HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 1);
+        osDelay(600);
+        HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 0);
+        osThreadResume(UART_PARSER_taskHandle);
         GSM_data.Status = 0;
         for (int i = 0; i < 120; i++)
         {
@@ -1150,6 +1162,7 @@ void Main_Cycle(void *argument)
           }
           if (ERRCODE.STATUS & STATUS_UART_SERVER_COMM_ERROR)
           {
+
             status = 0;
             break;
           }
@@ -1197,33 +1210,10 @@ void Main_Cycle(void *argument)
     HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
     // Вызов функции отправки и полчучения настроек
 
-    // 7.  включить память
-    //HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);
-    //osDelay(10);
 
-
-    // 8. Запись новго конфига, ели есть изменения (checksum)
-    /*
-    EEPROM.Mode = 1;
-    if (!(ERRCODE.STATUS & STATUS_UART_SERVER_COMM_ERROR))
-    {
-      if (!(EEPROM_IsDataExists()))
-      {
-        // Данных нету или идентификатор изменился
-        if (!EEPROM_SaveSettings(&EEPROM))
-        {
-          // Сохранение не вышло - нет связи с EEPROM
-          ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
-        }
-      }
-      // Если условие не выполняется - значит с данными все ОК
-    }
-    */
     
     HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);
     HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);
-    HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 0);
-    HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 0);
 
     // Отправка данных на сервер
 
@@ -1234,7 +1224,7 @@ void Main_Cycle(void *argument)
       {
         status = 0;
         GSM_data.Status |= HTTP_SEND;
-        for (int i = 0; i < 120; i++)
+        for (int i = 0; i < 5000; i++)
         {
           if (GSM_data.Status & HTTP_SEND_Successfully)
           {
@@ -1248,7 +1238,7 @@ void Main_Cycle(void *argument)
           }
           osDelay(1000);
         }
-        if (status == 0)
+        if ((ERRCODE.STATUS & STATUS_UART_SERVER_COMM_ERROR) || (status == 0))
         {
           GSM_data.Status |= SMS_SEND;
           for (int i = 0; i < 60; i++)
@@ -1275,9 +1265,8 @@ void Main_Cycle(void *argument)
 
     osThreadSuspend(UART_PARSER_taskHandle);
     osDelay(10);
+    
     HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
-    HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);
-    HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);
     HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);
     osDelay(10);
 
@@ -1304,7 +1293,8 @@ void Main_Cycle(void *argument)
     HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 0);
     HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);
     osDelay(10);
-    Enter_StandbyMode(EEPROM.time_sleep_h, EEPROM.time_sleep_m);
+    //Enter_StandbyMode(EEPROM.time_sleep_h, EEPROM.time_sleep_m);
+    Enter_StandbyMode(0, 3);
     osDelay(10000);
     ERRCODE.STATUS |= STATUS_CRITICAL_ERROR;
   }
@@ -1515,7 +1505,7 @@ void UART_PARSER_task(void *argument)
     }
 
     // Если GSM должен быть включен
-    if (EEPROM.Communication == 1)
+    if ((EEPROM.Communication == 1) && (EEPROM.Mode != 1))
     {
       // Если GSM был выключен
       if (HAL_GPIO_ReadPin(EN_3P8V_GPIO_Port, EN_3P8V_Pin) == 0)
@@ -1556,6 +1546,9 @@ void UART_PARSER_task(void *argument)
         if (SendCommandAndParse("AT+CFUN=1\r", waitForOKResponse, 1000) != 1)
         {
         }
+        if (SendCommandAndParse("AT+CSCON=0\r", waitForOKResponse, 1000) != 1)
+        {
+        }
         if (SendCommandAndParse("AT&W\r", waitForOKResponse, 1000) != 1)
         {
         }
@@ -1564,7 +1557,7 @@ void UART_PARSER_task(void *argument)
     if (GSM_data.Status & NETWORK_REGISTERED_SET_HTTP){
       GSM_data.Status&=~NETWORK_REGISTERED_SET_HTTP;
       SendCommandAndParse("AT+CGDCONT=1,\"IP\",\"internet.mts.ru\"\r", waitForOKResponse, 1000); 
-      SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 1000);
+      SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 150000);
       SendCommandAndParse("AT+CDNSCFG=\"8.8.8.8\",\"77.88.8.8\"\r", waitForOKResponse, 1000);
     }
 

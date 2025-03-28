@@ -3,6 +3,7 @@
 
 extern UART_HandleTypeDef huart4;
 extern xSemaphoreHandle UART_PARSER_semaphore;
+extern xSemaphoreHandle USB_COM_SEND_semaphore;
 extern EEPROM_Settings_item EEPROM;
 
 /* Однобайтовый приём */
@@ -21,8 +22,6 @@ static uint16_t activeIndex = 0;
 /* Одиночный таймер, который сбрасывается при каждом принятом символе */
 static TimerHandle_t gsmTimer = NULL;
 
-/* Прототип функции обратного вызова таймера */
-static void GSM_TimerCallback(TimerHandle_t xTimer);
 
 /* Инициализация модуля GSM: создание таймера и запуск приёма по UART */
 void GSM_Init(void)
@@ -44,8 +43,7 @@ static void GSM_TimerCallback(TimerHandle_t xTimer)
     if (activeIndex > 0)
     {
         /* Завершаем строку в активном буфере */
-        activeBuffer[activeIndex] = '\0';
-        uint16_t length = activeIndex;
+        activeBuffer[activeIndex++] = '\0';
         
         /* Меняем местами буферы: накопленные данные будут обрабатываться через parseBuffer */
         char *temp = activeBuffer;
@@ -54,11 +52,8 @@ static void GSM_TimerCallback(TimerHandle_t xTimer)
         
         if (EEPROM.USB_mode == 1 || EEPROM.USB_mode == 2)
         {
-            /* Передаём данные по USB. Важно: CDC_Transmit_FS должна корректно работать с данными,
-               если передача асинхронная, то возможно потребуется дополнительное копирование. */
-            CDC_Transmit_FS((uint8_t *)parseBuffer, length);
+            CDC_Transmit_FS((uint8_t *)parseBuffer, activeIndex);
         }
-        
         /* Сигнализируем задаче парсера о готовности данных */
         BaseType_t xHigherPriorityTaskWoken = pdFALSE;
         xSemaphoreGiveFromISR(UART_PARSER_semaphore, &xHigherPriorityTaskWoken);
@@ -70,33 +65,33 @@ static void GSM_TimerCallback(TimerHandle_t xTimer)
     memset(activeBuffer, 0, CMD_BUFFER_SIZE);
 }
 
-uint8_t data_read = 0; // принимать или нет данные
+
 /* Колбэк, вызываемый по завершении приёма одного байта по UART4 */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     if (huart->Instance == UART4)
     {
+        HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
         /*
-        if (EEPROM.USB_mode == 2){
-            HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
-            CDC_Transmit_FS((uint8_t *)&gsmRxChar, 1);
-            return;
-        }*/
+        static char buf[2];
+        buf[0] = (char)gsmRxChar;
+        buf[1] = '\0';
+        CDC_Transmit_FS((uint8_t *)buf, 1);
+        */
 
-        if ((data_read == 0) && (EEPROM.USB_mode != 2)){
-            HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
+        if ((!(GSM_data.Status & DATA_READ)) && (EEPROM.USB_mode != 2)){
             return;
         }
         /* Если есть место в активном буфере – сохраняем принятый символ */
         if (activeIndex < CMD_BUFFER_SIZE - 1)
         {
-            activeBuffer[activeIndex++] = gsmRxChar;
+            activeBuffer[activeIndex] = gsmRxChar;
+            activeIndex++;
         }
         else
         {
-            /* Переполнение буфера – сбрасываем накопление */
             activeIndex = 0;
-            memset(activeBuffer, 0, CMD_BUFFER_SIZE);
+            activeBuffer[activeIndex] = gsmRxChar;
         }
         
         BaseType_t xHigherPriorityTaskWoken = pdFALSE;
@@ -106,7 +101,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
             portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
         }
         
-        HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
     }
 }
 
@@ -115,6 +109,7 @@ void SendSomeCommandAndSetFlag(void)
 {
     activeIndex = 0;
     memset(activeBuffer, 0, CMD_BUFFER_SIZE);
+    
 }
 
 /* Функция обновления данных GSM */
@@ -123,7 +118,7 @@ void Update_Data(void)
     if (!(GSM_data.Status & GSM_RDY))
     {
         /* Модуль неактивен: сбрасываем все состояния */
-        GSM_data.Status = 0;
+        GSM_data.Status &= (1<<DATA_READ);
         GSM_data.GSM_Signal_Level = 99;
         GSM_data.GSM_Signal_Level_3 = -2;
         GSM_data.GSM_status_char = (char *)STATUS_CHAR[1];         // "ND" – статус не определён

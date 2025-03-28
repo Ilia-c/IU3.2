@@ -93,4 +93,5 @@ void USB_COM(void)
 
 void USB_Send_Status_Report(void)
 {
+    
 }

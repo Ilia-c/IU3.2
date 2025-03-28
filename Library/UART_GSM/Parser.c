@@ -2,17 +2,20 @@
 #include "Parser.h"
 
 #define NUM_AT_COMMANDS (sizeof(atCommandList)/sizeof(atCommandList[0]))
-static char command[50] __attribute__((section(".ram2"))) =  {0};
+static char command[256] __attribute__((section(".ram2"))) =  {0};
+char tempBuf[256]__attribute__((section(".ram2"))) = {0}; 
 
-int SendCommandAndParse(const char *command, int (*parser)(), uint32_t timeout)
+int SendCommandAndParse(const char *command_in, int (*parser)(), uint32_t timeout)
 {
+    memset(tempBuf, 0, sizeof(tempBuf));
+    snprintf(tempBuf, sizeof(tempBuf), "SEND: %s", command_in);
+    CDC_Transmit_FS((uint8_t *)tempBuf, strlen(tempBuf));
+
     // Сброс текущего буфера перед отправкой
     SendSomeCommandAndSetFlag();  
     // Отправка команды
-    HAL_UART_Transmit(&huart4, (uint8_t *)command, strlen(command), 1000);
-
-    // Включаем приём (если data_read=0, то ничего не придёт)
-    data_read = 1;
+    HAL_UART_Transmit(&huart4, (uint8_t *)command_in, strlen(command_in), 1000);
+    GSM_data.Status |= DATA_READ;
 
     // Сбрасываем висящий семафор, если он есть
     xSemaphoreTake(UART_PARSER_semaphore, 0);
@@ -21,16 +24,18 @@ int SendCommandAndParse(const char *command, int (*parser)(), uint32_t timeout)
     if (xSemaphoreTake(UART_PARSER_semaphore, timeout) == pdFALSE)
     {
         // Не дождались завершения приёма в течение timeout
-        data_read = 0;
+        GSM_data.Status &= ~DATA_READ;
         return -1; 
     }
 
     // Здесь parseBuffer уже содержит принятые данные (полностью или частично)
     // Вызываем парсер, который ищет OK/ERROR/что угодно
-    int result = parser();  // ваш parse_ERROR_OK или любой другой
+    int result = 0;
+    if (parser != NULL) result = parser();  // ваш parse_ERROR_OK или любой другой
 
     // После разбора можно отключить приём
-    data_read = 0;
+    GSM_data.Status &= ~DATA_READ;
+    
     return result;
 }
 
@@ -153,7 +158,7 @@ int parse_ERROR_OK(void)
 
 int waitForOKResponse()
 {
-    uint32_t timeout = 40000;
+    uint32_t timeout = 10000;
     TickType_t startTick = xTaskGetTickCount();
     TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
     if (strstr(parseBuffer, "OK") != NULL)
@@ -183,7 +188,7 @@ int waitForOKResponse()
 
 int waitForGreaterThanResponse(void)
 {
-    uint32_t timeout = 40000; // Таймаут в мс
+    uint32_t timeout = 10000; // Таймаут в мс
     TickType_t startTick = xTaskGetTickCount();
     TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
     // Если в буфере обнаружен символ '>', считаем, что приглашение получено
@@ -217,13 +222,13 @@ int waitForGreaterThanResponse(void)
 
 int waitForHTTPResponse()
 {
-    uint32_t timeout = 60000;
+    uint32_t timeout = 150000;
     TickType_t startTick = xTaskGetTickCount();
     TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
-    int m, s, d;
+    int32_t m, s, d;
     // Пытаемся разобрать строку. Если в ответе присутствует лишний символ, например,
     // точка в конце "162.", sscanf успешно вернёт 3, так как цифры будут разобраны корректно.
-    if (sscanf(parseBuffer, "%d %d %d", &m, &s, &d) == 3)
+    if (sscanf(parseBuffer, "%ld %ld %ld", &m, &s, &d) == 3)
     {
         if (s == 200)
             return 1;
@@ -233,9 +238,7 @@ int waitForHTTPResponse()
     {
         if (xSemaphoreTake(UART_PARSER_semaphore, pdMS_TO_TICKS(5000)) == pdTRUE)
         {
-            // Пытаемся разобрать строку. Если в ответе присутствует лишний символ, например,
-            // точка в конце "162.", sscanf успешно вернёт 3, так как цифры будут разобраны корректно.
-            if (sscanf(parseBuffer, "%d %d %d", &m, &s, &d) == 3)
+            if (sscanf(parseBuffer, "%ld %ld %ld", &m, &s, &d) == 3)
             {
                 if (s == 200)
                     return 1;
@@ -243,6 +246,7 @@ int waitForHTTPResponse()
             }
         }
     }
+    CDC_Transmit_FS(parseBuffer, sizeof(parseBuffer));
     return -1; // Таймаут: ответ не получен или не соответствует формату
 }
 
@@ -253,12 +257,15 @@ int sendSMS(void)
 {
     int attempt;
     uint8_t smsSent = 0; // Флаг успешной отправки SMS
-    size_t len = strlen(save_data);
-    if (len + 2 < CMD_BUFFER_SIZE)
+
+    char send[512] = {0};
+    if (strlen(save_data) + 3 < sizeof(send) )
     {
-        save_data[len] = '\x1A';
-        save_data[len + 1] = '\r';
-        save_data[len + 2] = '\0';
+        strcat(send, save_data);
+        strcat(send, "\x1A\r");
+    }
+    else{
+        return -1;
     }
 
     if (SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000) != 1)
@@ -289,6 +296,7 @@ int sendSMS(void)
 
         // Команда для начала отправки SMS
         // "AT+CMGS=\"+79150305966\"\r"
+        memset(command, 0, sizeof(command));
         sprintf(command, "AT+CMGS=\"%s\"\r", EEPROM.Phone);
         if (SendCommandAndParse(command, waitForGreaterThanResponse, 1000) != 1)
         {
@@ -316,35 +324,20 @@ int sendHTTP(void) {
     int attempt;
     uint8_t httpSent = 0; // Флаг успешной отправки HTTP
     char send[512] = "AT+HTTPPARA=\"URL\",\"http://geosp-data.ru/api/save-data?data=";
-    size_t len = strlen(save_data);
-    if (len + 2 < 512) {
-        save_data[len] = '"';
-        save_data[len + 1] = '\r';
-        save_data[len + 2] = '\0';
+    if ( (strlen(send) + strlen(save_data) + 3) < sizeof(send) )
+    {
+        strcat(send, save_data);
+        strcat(send, "\"\r");
     }
-    strcat(send, save_data);
+    else{
+        return -1;
+    }
 
     for (attempt = 0; attempt < MAX_HTTP_ATTEMPTS; attempt++) {
-        // Предварительная очистка состояния перед началом
-        //SendCommandAndParse("AT+HTTPTERM\r", parse_ERROR_OK, 1000);
-        //SendCommandAndParse("AT+CGACT=0\r", parse_ERROR_OK, 1000);
-        //SendCommandAndParse("AT+CGDCONT=1\r", parse_ERROR_OK, 1000);
-        // Начало настройки соединения
-        /*
-        if (SendCommandAndParse("AT+CGDCONT=1,\"IP\",\"internet.mts.ru\"\r", waitForOKResponse, 1000) != 1) {
-            goto http_error_1;
-        }
-        if (SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 1000) != 1) {
-            goto http_error_1;
-        }
-        if (SendCommandAndParse("AT+CDNSCFG=\"8.8.8.8\",\"77.88.8.8\"\r", waitForOKResponse, 1000) != 1) {
-            goto http_error_1;
-        }
-        */
-
         if (SendCommandAndParse("AT+HTTPINIT\r", waitForOKResponse, 1000) != 1) {
             goto http_error_1;
         }
+        osDelay(100);
         if (SendCommandAndParse("AT+HTTPPARA=\"CID\",\"1\"\r", waitForOKResponse, 1000) != 1) {
             goto http_error_1;
         }
@@ -352,20 +345,24 @@ int sendHTTP(void) {
         if (SendCommandAndParse(send, waitForOKResponse, 20000) != 1) {
             goto http_error_1;
         }
+        osDelay(100);
         // Выполнение HTTPACTION, проверка ответа
-        if (SendCommandAndParse("AT+HTTPACTION=0\r", waitForHTTPResponse, 20000) != 1) {
+        if (SendCommandAndParse("AT+HTTPACTION=0\r", waitForHTTPResponse, 30000) != 1) {
             goto http_error_1;
         }
+        osDelay(1000);
         int readResult = SendCommandAndParse("AT+HTTPREAD=0,200\r", waitAndParseSiteResponse, 1000);
         if (readResult != 1) {
             readResult = SendCommandAndParse("AT+HTTPREAD=0,200\r", waitAndParseSiteResponse, 1000);
         }
         osDelay(100);
         // После попыток, вне зависимости от результата, завершаем HTTP сессию
-        SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000);
+        SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 120000);
         // Если данные так и не получены, считаем попытку неуспешной
         if (readResult != 1) {
             ERRCODE.STATUS |= STATUS_UART_NO_RESPONSE;
+            ERRCODE.STATUS |= STATUS_UART_SERVER_COMM_ERROR;
+            goto http_error_1;
         }
 
         // Если до сюда дошли, значит все команды выполнены успешно
@@ -373,15 +370,18 @@ int sendHTTP(void) {
         break;
 
 http_error_1:
-        // В случае ошибки выполняем «очистку» состояния:
-        SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000);
-        SendCommandAndParse("AT+CGACT=0\r", waitForOKResponse, 1000);
-        SendCommandAndParse("AT+CGDCONT=1\r", waitForOKResponse, 1000);
-
-        SendCommandAndParse("AT+CGDCONT=1,\"IP\",\"internet.mts.ru\"\r", waitForOKResponse, 1000); 
-        SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 1000);
-        SendCommandAndParse("AT+CDNSCFG=\"8.8.8.8\",\"77.88.8.8\"\r", waitForOKResponse, 1000);
-        osDelay(5000);  // Задержка 5 секунд перед следующей попыткой
+    SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000);
+    osDelay(500);
+    SendCommandAndParse("AT+CGACT=0\r", waitForOKResponse, 1000);
+    osDelay(500);
+    SendCommandAndParse("AT+CGDCONT=1\r", waitForOKResponse, 1000);
+    osDelay(500);
+    SendCommandAndParse("AT+CGDCONT=1,\"IP\",\"internet.mts.ru\"\r", waitForOKResponse, 1000);
+    osDelay(500);
+    SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 1000);
+    osDelay(500);
+    SendCommandAndParse("AT+CDNSCFG=\"8.8.8.8\",\"77.88.8.8\"\r", waitForOKResponse, 1000);
+    osDelay(5000); // Задержка 5 секунд перед следующей попыткой
     }
 
     // Если ни одна из попыток не увенчалась успехом, выставляем флаг ошибки
@@ -397,13 +397,17 @@ int READ_Settings_sendHTTP(void) {
     uint8_t httpSent = 0; // Флаг успешной отправки HTTP
     char send[512] = "AT+HTTPPARA=\"URL\",\"http://geosp-data.ru/api/save-data?request=";
     
-    size_t len = strlen(save_data);
-    if (len + 2 < 512) {
-        save_data[len] = '"';
-        save_data[len + 1] = '\r';
-        save_data[len + 2] = '\0';
+    // Проверяем, поместится ли дополнение: длина send + длина save_data + 2 символа (для " и \r) + завершающий \0
+    if ( (strlen(send) + strlen(save_data) + 3) < sizeof(send) )
+    {
+        strcat(send, save_data);
+        strcat(send, "\"\r");
     }
-    strcat(send, save_data);
+    else{
+        return -1;
+    }
+    
+
 
     for (attempt = 0; attempt < MAX_HTTP_ATTEMPTS; attempt++) {
         // Предварительная очистка состояния перед началом
@@ -425,23 +429,27 @@ int READ_Settings_sendHTTP(void) {
         if (SendCommandAndParse("AT+HTTPINIT\r", waitForOKResponse, 1000) != 1) {
             goto http_error_2;
         }
+        osDelay(100);
         
         if (SendCommandAndParse("AT+HTTPPARA=\"CID\",\"1\"\r", waitForOKResponse, 1000) != 1) {
             goto http_error_2;
         }
+        osDelay(100);
         // Отправка HTTP запроса (send - строка с корректно сформированным URL)
         if (SendCommandAndParse(send, waitForOKResponse, 20000) != 1) {
             goto http_error_2;
         }
+        osDelay(100);
         // Выполнение HTTPACTION, проверка ответа
         if (SendCommandAndParse("AT+HTTPACTION=0\r", waitForHTTPResponse, 20000) != 1) {
             goto http_error_2;
         }
-        //osDelay(2000);
+        osDelay(2000);
         int readResult = SendCommandAndParse("AT+HTTPREAD=0,200\r", waitAndParseSiteResponse, 1000);
         if (readResult != 1) {
             readResult = SendCommandAndParse("AT+HTTPREAD=0,200\r", waitAndParseSiteResponse, 1000);
         }
+        osDelay(200);
         // После попыток, вне зависимости от результата, завершаем HTTP сессию
         SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000);
         // Если данные так и не получены, считаем попытку неуспешной
@@ -456,11 +464,15 @@ int READ_Settings_sendHTTP(void) {
 http_error_2:
         // В случае ошибки выполняем «очистку» состояния:
         SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000);
+        osDelay(500);
         SendCommandAndParse("AT+CGACT=0\r", waitForOKResponse, 1000);
+        osDelay(500);
         SendCommandAndParse("AT+CGDCONT=1\r", waitForOKResponse, 1000);
-
+        osDelay(500);
         SendCommandAndParse("AT+CGDCONT=1,\"IP\",\"internet.mts.ru\"\r", waitForOKResponse, 1000); 
+        osDelay(500);
         SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 1000);
+        osDelay(500);
         SendCommandAndParse("AT+CDNSCFG=\"8.8.8.8\",\"77.88.8.8\"\r", waitForOKResponse, 1000);
         osDelay(5000);  // Задержка 5 секунд перед следующей попыткой
     }

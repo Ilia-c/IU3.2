@@ -171,10 +171,10 @@ void RTC_SetAlarm_HoursMinutes(uint8_t hours, uint8_t minutes)
             alarmInPast = 1;
     }
 
-    // Если рассчитанное время уже прошло, прибавляем 10 минут
+    // Если рассчитанное время уже прошло, прибавляем 30 минут
     if (alarmInPast == 1)
     {
-        uint32_t newTotalSeconds = computedAlarmSeconds + (10 * 60);
+        uint32_t newTotalSeconds = computedAlarmSeconds + (30 * 60);
         // Если новое время выходит за пределы суток, определяем количество дополнительных дней
         uint32_t extraDays = newTotalSeconds / 86400;
         uint32_t secondsOfDay = newTotalSeconds % 86400;
