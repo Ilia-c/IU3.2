@@ -996,6 +996,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
+  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF8_UART4;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
   /*Configure GPIO pins : NUM_RES_Pin USART1_DATA_DETECT_Pin */
   GPIO_InitStruct.Pin = NUM_RES_Pin|USART1_DATA_DETECT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
@@ -1123,14 +1130,12 @@ void Main_Cycle(void *argument)
       }
       if ((status == 0) && ((GSM_data.Status & SIM_PRESENT))){
         // Если регистрация не прошла, но сим карта есть - перезагружаем модем
-        osThreadSuspend(UART_PARSER_taskHandle);
         HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
         osDelay(1000);
         HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 1);
         HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 1);
         osDelay(600);
         HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 0);
-        osThreadResume(UART_PARSER_taskHandle);
         GSM_data.Status = 0;
         for (int i = 0; i < 120; i++)
         {
@@ -1206,8 +1211,9 @@ void Main_Cycle(void *argument)
     //osThreadSuspend(ADC_readHandle);
     suspend = 0xFF;
     osDelay(350);
-    osThreadSuspend(ADC_readHandle);
+    
     HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
+    osThreadSuspend(ADC_readHandle);
     // Вызов функции отправки и полчучения настроек
 
 
@@ -1224,7 +1230,7 @@ void Main_Cycle(void *argument)
       {
         status = 0;
         GSM_data.Status |= HTTP_SEND;
-        for (int i = 0; i < 5000; i++)
+        for (int i = 0; i < 120; i++)
         {
           if (GSM_data.Status & HTTP_SEND_Successfully)
           {
@@ -1293,8 +1299,7 @@ void Main_Cycle(void *argument)
     HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 0);
     HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);
     osDelay(10);
-    //Enter_StandbyMode(EEPROM.time_sleep_h, EEPROM.time_sleep_m);
-    Enter_StandbyMode(0, 3);
+    Enter_StandbyMode(EEPROM.time_sleep_h, EEPROM.time_sleep_m);
     osDelay(10000);
     ERRCODE.STATUS |= STATUS_CRITICAL_ERROR;
   }

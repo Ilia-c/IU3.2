@@ -2,7 +2,7 @@
 #include "Parser.h"
 
 #define NUM_AT_COMMANDS (sizeof(atCommandList)/sizeof(atCommandList[0]))
-static char command[256] __attribute__((section(".ram2"))) =  {0};
+static char command[1024] __attribute__((section(".ram2"))) =  {0};
 char tempBuf[256]__attribute__((section(".ram2"))) = {0}; 
 
 int SendCommandAndParse(const char *command_in, int (*parser)(), uint32_t timeout)
@@ -14,8 +14,9 @@ int SendCommandAndParse(const char *command_in, int (*parser)(), uint32_t timeou
     // Сброс текущего буфера перед отправкой
     SendSomeCommandAndSetFlag();  
     // Отправка команды
-    HAL_UART_Transmit(&huart4, (uint8_t *)command_in, strlen(command_in), 1000);
     GSM_data.Status |= DATA_READ;
+    osDelay(10);
+    HAL_UART_Transmit(&huart4, (uint8_t *)command_in, strlen(command_in), 1000);
 
     // Сбрасываем висящий семафор, если он есть
     xSemaphoreTake(UART_PARSER_semaphore, 0);
@@ -222,7 +223,7 @@ int waitForGreaterThanResponse(void)
 
 int waitForHTTPResponse()
 {
-    uint32_t timeout = 150000;
+    uint32_t timeout = 60000;
     TickType_t startTick = xTaskGetTickCount();
     TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
     int32_t m, s, d;
@@ -257,12 +258,9 @@ int sendSMS(void)
 {
     int attempt;
     uint8_t smsSent = 0; // Флаг успешной отправки SMS
-
-    char send[512] = {0};
-    if (strlen(save_data) + 3 < sizeof(send) )
+    if (strlen(save_data) + 3 < sizeof(save_data) )
     {
-        strcat(send, save_data);
-        strcat(send, "\x1A\r");
+        strcat(save_data, "\x1A\r");
     }
     else{
         return -1;
@@ -298,9 +296,10 @@ int sendSMS(void)
         // "AT+CMGS=\"+79150305966\"\r"
         memset(command, 0, sizeof(command));
         sprintf(command, "AT+CMGS=\"%s\"\r", EEPROM.Phone);
+        strcat(command, save_data);
         if (SendCommandAndParse(command, waitForGreaterThanResponse, 1000) != 1)
         {
-            osDelay(5000);
+            osDelay(2000);
             continue;
         }
         HAL_UART_Transmit(&huart4, save_data, strlen(save_data), 1000);
