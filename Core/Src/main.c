@@ -321,7 +321,11 @@ int main(void)
   }
   __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB); // Сброс флага пробуждения из сна, для корректной работы сна
   HAL_PWR_DisableBkUpAccess();
-  
+  if ((EEPROM.USB_mode == 1) || (EEPROM.USB_mode == 2)){
+    MX_USB_DEVICE_Init_COMPORT(); // Режим работы в VirtualComPort
+    HAL_NVIC_SetPriority(OTG_FS_IRQn, 10, 0); // Приоритет прерывания
+    HAL_NVIC_EnableIRQ(OTG_FS_IRQn);         // Включение прерывания
+  }
   HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
   HAL_NVIC_SetPriority(UART4_IRQn, 7, 0);
   HAL_NVIC_EnableIRQ(UART4_IRQn);
@@ -336,11 +340,6 @@ int main(void)
     HAL_Delay(20);
 
     //if (EEPROM.USB_mode == 0) MX_USB_DEVICE_Init_COMPORT(); // Режим работы в USB_FLASH (перефброс фалов с данными на внешний USB)
-    if ((EEPROM.USB_mode == 1) || (EEPROM.USB_mode == 2)){
-      MX_USB_DEVICE_Init_COMPORT(); // Режим работы в VirtualComPort
-      HAL_NVIC_SetPriority(OTG_FS_IRQn, 10, 0); // Приоритет прерывания
-      HAL_NVIC_EnableIRQ(OTG_FS_IRQn);         // Включение прерывания
-    }
     //if (EEPROM.USB_mode == 3) MX_USB_DEVICE_Init_COMPORT(); // Режим работы в USB-FLASH с SD
     
     if (EEPROM.screen_sever_mode == 1) Start_video();
