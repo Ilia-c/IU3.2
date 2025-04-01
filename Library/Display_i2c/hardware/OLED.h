@@ -7,6 +7,8 @@
 #include <string.h>
 #include <stdio.h>
 #include "usb_host.h"
+#include "Settings.h"
+#include "Status_codes.h"
 
 #define OLED_ADDRESS		0x78	//0x3C
 #define OLED_WIDTH			128
@@ -80,5 +82,6 @@ void OLED_DrawCircleFill(int16_t x0, int16_t y0, int16_t radius);
 void OLED_DrawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1);
 void OLED_UpdateScreen();
 void OLED_UpdateOnePage(uint8_t page_number);
+void OLED_Diagnostics();
 
 #endif

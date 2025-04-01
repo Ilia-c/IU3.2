@@ -344,7 +344,6 @@ int main(void)
     OLED_Init(&hi2c2);
     HAL_Delay(20);
 
-
     if (EEPROM.screen_sever_mode == 1) Start_video();
     HAL_GPIO_WritePin(COL_B1_GPIO_Port, COL_B1_Pin, 1);
     HAL_GPIO_WritePin(COL_B2_GPIO_Port, COL_B2_Pin, 1);
@@ -1203,7 +1202,7 @@ void Main_Cycle(void *argument)
       }
       if (status_ADC == 0)
       {
-        ERRCODE.STATUS |= STATUS_ADC_EXTERNAL_SENSOR_ERROR;
+        ERRCODE.STATUS |= STATUS_ADC_TIMEOUT_ERROR;
       }
     }
 
@@ -1443,8 +1442,6 @@ void Erroe_indicate(void *argument)
     }
     // Ошибка инициализации АЦП
     ErrorMask = STATUS_ADC_EXTERNAL_INIT_ERROR
-    | STATUS_ADC_EXTERNAL_SENSOR_ERROR
-    | STATUS_ADC_BOARD_TEMP_ERROR
     | STATUS_ADC_RANGE_ERROR;
     if (ERRCODE.STATUS & ErrorMask){
       BlinkLED(GPIOC, GPIO_PIN_13, 2, 500, 500, 0);
@@ -1452,10 +1449,11 @@ void Erroe_indicate(void *argument)
     }
     
     // Ошибка инициализации Flash
-    ErrorMask = STATUS_FLASH_INIT_ERROR
-    | STATUS_FLASH_WRITE_ERROR
-    | STATUS_FLASH_READ_ERROR
-    | STATUS_FLASH_CRC_ERROR;
+    ErrorMask = STATUS_FLASH_ID_ERROR
+    | STATUS_FLASH_SEND_ERROR
+    | STATUS_FLASH_RECV_ERROR
+    | STATUS_FLASH_TIEOUT_ERROR
+    | STATUS_FLASH_READY_ERROR;
     if (ERRCODE.STATUS & ErrorMask){
       BlinkLED(GPIOC, GPIO_PIN_13, 3, 500, 500, 0);
       goto skip;

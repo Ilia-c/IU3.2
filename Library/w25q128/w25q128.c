@@ -19,12 +19,46 @@ uint32_t g_total_records_count = 0;
 // ------------------ Вспомогательные SPI-функции ------------------
 static int SPI2_Send(uint8_t *dt, uint16_t cnt)
 {
-    return (HAL_SPI_Transmit(&hspi2, dt, cnt, 1000) == HAL_OK) ? 0 : -1;
+    HAL_StatusTypeDef status = HAL_SPI_Transmit(&hspi2, dt, cnt, 1000);
+    if (status == HAL_TIMEOUT) {
+        ERRCODE.STATUS |= STATUS_FLASH_TIEOUT_ERROR;
+        return -1;
+    }
+    ERRCODE.STATUS &= ~STATUS_FLASH_TIEOUT_ERROR;
+    if (status == HAL_ERROR) {
+        ERRCODE.STATUS |= STATUS_FLASH_SEND_ERROR;
+        return -1;
+    }
+    ERRCODE.STATUS &= ~STATUS_FLASH_SEND_ERROR;
+
+    if (status == HAL_BUSY) {
+        ERRCODE.STATUS |= STATUS_FLASH_READY_ERROR;
+        return 0;
+    }
+    ERRCODE.STATUS &= ~STATUS_FLASH_READY_ERROR;
+    return 0;
 }
 
 static int SPI2_Recv(uint8_t *dt, uint16_t cnt)
 {
-    return (HAL_SPI_Receive(&hspi2, dt, cnt, 1000) == HAL_OK) ? 0 : -1;
+    HAL_StatusTypeDef status = HAL_SPI_Receive(&hspi2, dt, cnt, 1000);
+    if (status == HAL_TIMEOUT) {
+        ERRCODE.STATUS |= STATUS_FLASH_TIEOUT_ERROR;
+        return -1;
+    }
+    ERRCODE.STATUS &= ~STATUS_FLASH_TIEOUT_ERROR;
+    if (status == HAL_ERROR) {
+        ERRCODE.STATUS |= STATUS_FLASH_RECV_ERROR;
+        return -1;
+    }
+    ERRCODE.STATUS &= ~STATUS_FLASH_RECV_ERROR;
+
+    if (status == HAL_BUSY) {
+        ERRCODE.STATUS |= STATUS_FLASH_READY_ERROR;
+        return 0;
+    }
+    ERRCODE.STATUS &= ~STATUS_FLASH_READY_ERROR;
+    return 0;
 }
 
 //------------------------------------------------------------------------------
@@ -177,6 +211,7 @@ int W25_Write_Data(uint32_t addr, uint8_t *data, uint32_t sz)
 
     cs_set();
     if (SPI2_Send(cmd, 4) != 0) {
+
         cs_reset();
         return -1;
     }
@@ -448,25 +483,33 @@ int Save_one_to_USB(void)
     
     res = f_getfree(USBHPath, &fre_clust, &fs);
     if (res != FR_OK) {
+        ERRCODE.STATUS |= STATUS_USB_FULL_ERROR;
         return -1;
     }
+    ERRCODE.STATUS &= ~STATUS_USB_FULL_ERROR;
 
     char filename[16];
     createFilename(filename, sizeof(filename));
     res = f_open(&MyFile, filename, FA_OPEN_APPEND | FA_WRITE);
     if (res != FR_OK) {
+        ERRCODE.STATUS |= STATUS_USB_OPEN_ERROR;
         f_close(&MyFile);
         f_mount(NULL, USBHPath, 0);
         memset(&USBFatFs, 0, sizeof(FATFS));
         return -1;
     }
+    ERRCODE.STATUS &= ~STATUS_USB_OPEN_ERROR;
+
     res = f_lseek(&MyFile, f_size(&MyFile));
     if (res != FR_OK) {
+        ERRCODE.STATUS |= STATUS_USB_LSEEK_ERROR;
         f_close(&MyFile);
         f_mount(NULL, USBHPath, 0);
         memset(&USBFatFs, 0, sizeof(FATFS));
         return -1;
     }
+    ERRCODE.STATUS &= ~STATUS_USB_LSEEK_ERROR;
+
     uint16_t len_data = strlen(save_data);
     save_data[len_data-1] = '\n'; // обрезаем
     save_data[len_data] = '\0'; // обрезаем  
@@ -474,16 +517,20 @@ int Save_one_to_USB(void)
     res = f_write(&MyFile, data, strlen(data), &bw);
     if (res != FR_OK)
     {
+        ERRCODE.STATUS |= STATUS_USB_FLASH_WRITE_ERROR;
         f_close(&MyFile);
         f_mount(NULL, USBHPath, 0);
         memset(&USBFatFs, 0, sizeof(FATFS));
         return -1;
     }
+    ERRCODE.STATUS &= ~STATUS_USB_FLASH_WRITE_ERROR;
 
     res = f_sync(&MyFile);
     if (res != FR_OK) {
+        ERRCODE.STATUS |= STATUS_USB_FLASH_SYNC_ERROR;
         return -1;
     }
+    ERRCODE.STATUS &= ~STATUS_USB_FLASH_SYNC_ERROR;
     f_close(&MyFile);
 
     return 0;

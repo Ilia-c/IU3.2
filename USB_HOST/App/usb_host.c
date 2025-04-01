@@ -103,12 +103,14 @@ static void USBH_UserProcess  (USBH_HandleTypeDef *phost, uint8_t id)
   res = f_mount(&USBFatFs, USBHPath, 0);
   if (res != FR_OK)
   {
+    ERRCODE.STATUS |= STATUS_USB_FLASH_MOUNT_ERROR;
     f_mount(NULL, USBHPath, 0);
     memset(&USBFatFs, 0, sizeof(FATFS));
     xSemaphoreGive(Display_semaphore);
   }
   else
   {
+    ERRCODE.STATUS &= ~STATUS_USB_FLASH_MOUNT_ERROR;
     Appli_state = APPLICATION_READY;
   }
   xSemaphoreGive(Display_semaphore);

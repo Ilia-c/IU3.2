@@ -32,6 +32,8 @@
 #include "main.h"
 #include "FreeRTOS.h"
 #include "semphr.h"
+#include "Settings.h"
+#include "Status_codes.h"
 
 extern xSemaphoreHandle Display_semaphore;
 /* USER CODE BEGIN INCLUDE */

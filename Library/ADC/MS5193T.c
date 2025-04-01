@@ -11,7 +11,21 @@ extern SPI_HandleTypeDef hspi2;
 uint8_t SPI2_TransmitByte(uint8_t TxData)
 {
     uint8_t RxData = 0;
-    HAL_SPI_TransmitReceive(&hspi2, &TxData, &RxData, 1, 100);
+    HAL_StatusTypeDef status = HAL_SPI_TransmitReceive(&hspi2, &TxData, &RxData, 1, 100);
+    if (status == HAL_TIMEOUT) {
+        ERRCODE.STATUS |= STATUS_ADC_TIMEOUT_ERROR;
+    }
+    ERRCODE.STATUS &= ~STATUS_ADC_TIMEOUT_ERROR;
+
+    if (status == HAL_BUSY) {
+        ERRCODE.STATUS |= STATUS_ADC_READY_ERROR;
+    }
+    ERRCODE.STATUS &= ~STATUS_ADC_READY_ERROR;
+    if (status == HAL_ERROR) {
+        ERRCODE.STATUS |= STATUS_ADC_EXTERNAL_INIT_ERROR;
+    }
+    ERRCODE.STATUS &= ~STATUS_ADC_EXTERNAL_INIT_ERROR;
+
     return RxData;
 }
 
@@ -203,6 +217,7 @@ void calculate_ADC_data_heigh(int32_t adValue) {
     for (int i = 0; i<11; i++) ADC_data.ADC_SI_value_correct_char[i] = '\0';
 
     if (ADC_data.ADC_SI_value < (double)*ADC_data.ZERO_LVL-0.1) {
+        ERRCODE.STATUS |= STATUS_ADC_RANGE_ERROR;
         if (EEPROM.len == 0){
             snprintf(ADC_data.ADC_SI_value_char, sizeof(ADC_data.ADC_SI_value_char), "Обрыв");
             snprintf(ADC_data.ADC_SI_value_correct_char, sizeof(ADC_data.ADC_SI_value_correct_char), "Обрыв");
@@ -214,6 +229,7 @@ void calculate_ADC_data_heigh(int32_t adValue) {
         if (EEPROM.Mode == 0) Remove_units();
     }
     else{
+        ERRCODE.STATUS &= ~STATUS_ADC_RANGE_ERROR;
         snprintf(ADC_data.ADC_SI_value_char, sizeof(ADC_data.ADC_SI_value_char), "%4.2f", ADC_data.ADC_SI_value);
         snprintf(ADC_data.ADC_SI_value_correct_char, sizeof(ADC_data.ADC_SI_value_correct_char), "%4.2f", ADC_data.ADC_SI_value_correct);
         if (EEPROM.Mode == 0) Add_units();

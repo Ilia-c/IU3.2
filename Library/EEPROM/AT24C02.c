@@ -1,11 +1,9 @@
 #include "AT24C02.h"
 #include "stm32l4xx_hal.h"
 #include <string.h>
-#include <stddef.h>  // Для offsetof
+#include <stddef.h> 
 
 extern I2C_HandleTypeDef hi2c1;
-
-// Убедимся, что размер EepromRecord не превышает размер EEPROM (256 байт)
 _Static_assert(sizeof(EepromRecord) <= EEPROM_TOTAL_SIZE, "EepromRecord exceeds EEPROM size");
 
 //=============================================================================
@@ -41,8 +39,10 @@ static bool EEPROM_WriteData(uint16_t memAddr, const uint8_t *pData, uint16_t si
 
         if (HAL_I2C_IsDeviceReady(&hi2c1, EEPROM_I2C_ADDRESS, 3, 100) != HAL_OK)
         {
+            ERRCODE.STATUS |= STATUS_EEPROM_READY_ERROR;
             return false;
         }
+        ERRCODE.STATUS &= ~STATUS_EEPROM_READY_ERROR;
         status = HAL_I2C_Mem_Write(&hi2c1,
                                    EEPROM_I2C_ADDRESS,
                                    currentAddr,
@@ -50,9 +50,25 @@ static bool EEPROM_WriteData(uint16_t memAddr, const uint8_t *pData, uint16_t si
                                    (uint8_t *)(pData + bytesWritten),
                                    bytesToWrite,
                                    1000);
-        if (status != HAL_OK) {
+        if (status == HAL_TIMEOUT)
+        {
+            ERRCODE.STATUS |= STATUS_EEPROM_TIMEOUT_I2C_ERROR;
             return false;
         }
+        ERRCODE.STATUS &= ~STATUS_EEPROM_TIMEOUT_I2C_ERROR;
+
+        if (status == HAL_BUSY)
+        {
+            ERRCODE.STATUS |= STATUS_EEPROM_READY_ERROR;
+            return false;
+        }
+        ERRCODE.STATUS &= ~STATUS_EEPROM_READY_ERROR;
+        if (status == HAL_ERROR)
+        {
+            ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
+            return false;
+        }
+        ERRCODE.STATUS &= ~STATUS_EEPROM_WRITE_ERROR;
 
         // Задержка для завершения внутренней записи EEPROM (обычно 5 мс)
         HAL_Delay(5);
@@ -69,10 +85,10 @@ static bool EEPROM_ReadData(uint16_t memAddr, uint8_t *pData, uint16_t size)
     // Проверяем, готово ли устройство (EEPROM) к работе
     if (HAL_I2C_IsDeviceReady(&hi2c1, EEPROM_I2C_ADDRESS, 3, 10) != HAL_OK)
     {
-        ERRCODE.STATUS |= STATUS_EEPROM_INIT_ERROR;
+        ERRCODE.STATUS |= STATUS_EEPROM_READY_ERROR;
         return false;
     }
-    ERRCODE.STATUS &= ~STATUS_EEPROM_INIT_ERROR;
+    ERRCODE.STATUS &= ~STATUS_EEPROM_READY_ERROR;
     // Если устройство готово, выполняем чтение
     HAL_StatusTypeDef status = HAL_I2C_Mem_Read(&hi2c1,
                                                 EEPROM_I2C_ADDRESS,
@@ -81,6 +97,18 @@ static bool EEPROM_ReadData(uint16_t memAddr, uint8_t *pData, uint16_t size)
                                                 pData,
                                                 size,
                                                 1000);
+    if (status == HAL_TIMEOUT) {
+        ERRCODE.STATUS |= STATUS_EEPROM_TIMEOUT_I2C_ERROR;
+    }
+    ERRCODE.STATUS &= ~STATUS_EEPROM_TIMEOUT_I2C_ERROR;
+
+    if (status == HAL_BUSY) {
+        ERRCODE.STATUS |= STATUS_EEPROM_READY_ERROR;
+    }
+    ERRCODE.STATUS &= ~STATUS_EEPROM_READY_ERROR;
+    if (status == HAL_ERROR) {
+        ERRCODE.STATUS |= STATUS_EEPROM_READ_ERROR;
+    }
     return (status == HAL_OK);
 }
 
@@ -134,9 +162,11 @@ static bool ReadSlot(EepromRecord *record) {
     uint32_t calcCrc = CalculateCRC(buffer, sizeof(EepromRecord));
 
     if (calcCrc != savedCrc) {
+        // Если контрольная сумма не совпадает, данные некорректны
+        ERRCODE.STATUS |= STATUS_EEPROM_CRC_ERROR;
         return false;
     }
-
+    ERRCODE.STATUS &= ~STATUS_EEPROM_CRC_ERROR; 
     return true;
 }
 

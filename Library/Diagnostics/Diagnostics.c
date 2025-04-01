@@ -3,23 +3,14 @@
 
 void Diagnostics()
 {
+    // OLED
+    OLED_Diagnostics();
+
     // EEPROM
     if (HAL_I2C_IsDeviceReady(&hi2c1, EEPROM_I2C_ADDRESS, 2, 100) == HAL_OK)
     {
-        if ((EEPROM_IsDataExists()))
-        {
-            // Сброс ошибок EEPROM (кроме записи)
-            ERRCODE.STATUS &= ~STATUS_EEPROM_INIT_ERROR;
-            ERRCODE.STATUS &= ~STATUS_EEPROM_READ_ERROR;
-            ERRCODE.STATUS &= ~STATUS_EEPROM_CRC_ERROR;
-        }
-        else
-        {
-            ERRCODE.STATUS |= STATUS_EEPROM_CRC_ERROR;
-        }
+        EEPROM_IsDataExists();
     }
-    else
-        ERRCODE.STATUS |= STATUS_EEPROM_INIT_ERROR;
     osDelay(300);
     // FLASH
     uint32_t id = 0;
@@ -27,11 +18,11 @@ void Diagnostics()
     if (id != 0xef4018)
     {
         // Сброс ошибоки Инициализации (потом проверить чтение)
-        ERRCODE.STATUS |= STATUS_FLASH_INIT_ERROR;
+        ERRCODE.STATUS |= STATUS_FLASH_ID_ERROR;
     }
     else
     {
-        ERRCODE.STATUS &= ~STATUS_EEPROM_INIT_ERROR;
+        ERRCODE.STATUS &= ~STATUS_FLASH_ID_ERROR;
     }
 
     // ADC

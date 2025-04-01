@@ -7,6 +7,19 @@ static uint8_t oled_start_column = 2;		// Display shift
 static uint8_t oled_buffer[1024] __attribute__((section(".ram2"))) = {0};			// Display buffer
 static I2C_HandleTypeDef* hi2c;				// Pointer I2C structure
 
+
+void OLED_Diagnostics()
+{
+    // OLED
+    if (HAL_I2C_IsDeviceReady(hi2c, OLED_ADDRESS, 10, 100) != HAL_OK)
+	{
+		ERRCODE.STATUS |= STATUS_SPI_DISPLAY_NO_RESPONSE; // Экран не отвечает
+		return 0;
+	}
+	ERRCODE.STATUS &= ~STATUS_SPI_DISPLAY_NO_RESPONSE; // Экран отвечает
+}
+
+
 /* private: */
 void OLED_ClearBuffer(uint8_t value)
 {
@@ -37,9 +50,11 @@ uint8_t OLED_Init(I2C_HandleTypeDef* i2c_handleTypeDef)
 	
 	if (HAL_I2C_IsDeviceReady(hi2c, OLED_ADDRESS, 10, 100) != HAL_OK)
 	{
+		ERRCODE.STATUS |= STATUS_SPI_DISPLAY_NO_RESPONSE; // Экран не отвечает
 		return 0;
 	}
-	
+	ERRCODE.STATUS &= ~STATUS_SPI_DISPLAY_NO_RESPONSE; // Экран отвечает
+
 	OLED_SendCommand(OLED_DISPLAY_OFF);
 	OLED_SendCommand(OLED_SET_DISPLAY_CLOCK_DIV_RATIO);
 	OLED_SendCommand(0xF0);
