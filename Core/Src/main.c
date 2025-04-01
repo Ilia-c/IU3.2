@@ -112,7 +112,7 @@ const osThreadAttr_t Display_I2C_attributes = {
 osThreadId_t ADC_readHandle;
 const osThreadAttr_t ADC_read_attributes = {
     .name = "ADC_read",
-    .stack_size = 256 * 4,
+    .stack_size = 256*5,
     .priority = (osPriority_t)osPriorityLow3,
 };
 /* Definitions for RS485_data */
@@ -141,7 +141,7 @@ const osThreadAttr_t USB_COM_task_attributes = {
 osThreadId_t  ERROR_INDICATE_taskHandle;
 const osThreadAttr_t Erroe_indicate_task_attributes = {
     .name = "Erroe_indicate_task",
-    .stack_size = 1024 * 2,
+    .stack_size = 1024 * 1,
     .priority = (osPriority_t)osPriorityLow1,
 };
 
@@ -344,8 +344,7 @@ int main(void)
     OLED_Init(&hi2c2);
     HAL_Delay(20);
 
-    //if (EEPROM.screen_sever_mode == 1) Start_video();
-    Start_video(); // ! Для теста
+    if (EEPROM.screen_sever_mode == 1) Start_video();
 
     HAL_GPIO_WritePin(COL_B1_GPIO_Port, COL_B1_Pin, 1);
     HAL_GPIO_WritePin(COL_B2_GPIO_Port, COL_B2_Pin, 1);

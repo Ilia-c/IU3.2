@@ -4,7 +4,7 @@
 void Diagnostics()
 {
     // OLED
-    //OLED_Diagnostics();
+    OLED_Diagnostics();
 
     // EEPROM
     if (HAL_I2C_IsDeviceReady(&hi2c1, EEPROM_I2C_ADDRESS, 2, 100) == HAL_OK)
