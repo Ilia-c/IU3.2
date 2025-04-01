@@ -141,7 +141,7 @@ const osThreadAttr_t USB_COM_task_attributes = {
 osThreadId_t  ERROR_INDICATE_taskHandle;
 const osThreadAttr_t Erroe_indicate_task_attributes = {
     .name = "Erroe_indicate_task",
-    .stack_size = 1024 * 1,
+    .stack_size = 1024 * 2,
     .priority = (osPriority_t)osPriorityLow1,
 };
 
