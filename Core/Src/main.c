@@ -334,9 +334,8 @@ int main(void)
   // Запуск в режиме настройки (экран вкл)
   if (EEPROM.Mode == 0){
     // Включение переферии
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    //MX_IWDG_Init();
-    //!/
+    MX_IWDG_Init();
+   
     HAL_IWDG_Refresh(&hiwdg);
     //HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 1); // Включение датчика давления и !!!  измерение текущего напряжения питания 1:10
     HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 1); // Включаем экран
@@ -1202,7 +1201,7 @@ void Main_Cycle(void *argument)
       }
       if (status_ADC == 0)
       {
-        ERRCODE.STATUS |= STATUS_ADC_TIMEOUT_ERROR;
+        ERRCODE.STATUS |= STATUS_ADC_TIMEOUT_CYCLE_ERROR;
       }
     }
 
@@ -1466,7 +1465,6 @@ void Erroe_indicate(void *argument)
                      | STATUS_SD_WRITE_ERROR
                      | STATUS_SD_READ_ERROR
                      | STATUS_SD_CORRUPTED_DATA
-                     | STATUS_SD_CRC_MISMATCH
                      | STATUS_SD_FILE_OPEN_ERROR
                      | STATUS_SD_TEMP_OUT_OF_RANGE;
     if (ERRCODE.STATUS & ErrorMask) {

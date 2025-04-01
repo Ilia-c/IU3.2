@@ -27,38 +27,38 @@
 #define STATUS_ADC_RANGE_ERROR (1ULL << 8)         // Ошибка диапазона данных АЦП (обрыв) +
 #define STATUS_ADC_TIMEOUT_ERROR (1ULL << 9)       // Таймаут ответа от АЦП +
 #define STATUS_ADC_READY_ERROR (1ULL << 10)        // SPI АЦП занят +
+#define STATUS_ADC_TIMEOUT_CYCLE_ERROR (1ULL << 11)        // Ошибка таймаута АЦП при чтении  +
 
 /* ---------- 4. ОШИБКИ ДАТЧИКОВ ТЕМПЕРАТУРЫ (биты 11..12) ---------- */
-#define STATUS_TEMP_SENSOR_COMM_ERROR (1ULL << 11) // Ошибка связи с цифровым датчиком температуры -
+#define STATUS_TEMP_SENSOR_COMM_ERROR (1ULL << 12) // Ошибка связи с цифровым датчиком температуры -
 
 /* ---------- 5. ОШИБКИ RS-485 (биты 13..15) ---------- */
-#define STATUS_RS485_INIT_ERROR (1ULL << 12) // Ошибка инициализации RS-485 (UART) -
-#define STATUS_RS485_RX_ERROR (1ULL << 13)   // Любая ошибка приема (parity/framing/overrun) -
-#define STATUS_RS485_TX_ERROR (1ULL << 14)   // Ошибка передачи данных RS-485 -
+#define STATUS_RS485_INIT_ERROR (1ULL << 13) // Ошибка инициализации RS-485 (UART) -
+#define STATUS_RS485_RX_ERROR (1ULL << 14)   // Любая ошибка приема (parity/framing/overrun) -
+#define STATUS_RS485_TX_ERROR (1ULL << 15)   // Ошибка передачи данных RS-485 -
 
 /* ---------- 6. ОШИБКИ USB (биты 16..19) ---------- */
-#define STATUS_USB_FLASH_MOUNT_ERROR (1ULL << 15) // Ошибка монтирования USB-Flash +
-#define STATUS_USB_FULL_ERROR (1ULL << 16)        //  Ошибка заполнености USB-Flash +
-#define STATUS_USB_OPEN_ERROR (1ULL << 17)        //  Ошибка открытия USB-Flash +
-#define STATUS_USB_LSEEK_ERROR (1ULL << 18)       //  Ошибка поиска конца файла USB-Flash +
-#define STATUS_USB_FLASH_WRITE_ERROR (1ULL << 19) // Ошибка записи на USB-Flash +
-#define STATUS_USB_FLASH_READ_ERROR (1ULL << 20)  // Ошибка чтения на USB-Flash +
-#define STATUS_USB_FLASH_SYNC_ERROR (1ULL << 21)  // Ошибка синхронизации USB-Flash +
+#define STATUS_USB_FLASH_MOUNT_ERROR (1ULL << 16) // Ошибка монтирования USB-Flash +
+#define STATUS_USB_FULL_ERROR (1ULL << 17)        //  Ошибка заполнености USB-Flash +
+#define STATUS_USB_OPEN_ERROR (1ULL << 18)        //  Ошибка открытия USB-Flash +
+#define STATUS_USB_LSEEK_ERROR (1ULL << 19)       //  Ошибка поиска конца файла USB-Flash +
+#define STATUS_USB_FLASH_WRITE_ERROR (1ULL << 20) // Ошибка записи на USB-Flash +
+#define STATUS_USB_FLASH_READ_ERROR (1ULL << 21)  // Ошибка чтения на USB-Flash +
+#define STATUS_USB_FLASH_SYNC_ERROR (1ULL << 22)  // Ошибка синхронизации USB-Flash +
 
 /* ---------- 7. ОШИБКИ FLASH (биты 20..23) ---------- */
-#define STATUS_FLASH_ID_ERROR (1ULL << 22)     // Ошибка ID внутренней Flash памяти +
-#define STATUS_FLASH_SEND_ERROR (1ULL << 23)   // Таймаут отправки на Flash память +
-#define STATUS_FLASH_RECV_ERROR (1ULL << 24)   // Таймаут чтения на Flash память +
-#define STATUS_FLASH_TIEOUT_ERROR (1ULL << 25) // Ошибка таймаута Flash памяти +
-#define STATUS_FLASH_READY_ERROR (1ULL << 26)  // Ошибка готовности линии SPI Flash +
+#define STATUS_FLASH_ID_ERROR (1ULL << 23)     // Ошибка ID внутренней Flash памяти +
+#define STATUS_FLASH_SEND_ERROR (1ULL << 24)   // Таймаут отправки на Flash память +
+#define STATUS_FLASH_RECV_ERROR (1ULL << 25)   // Таймаут чтения на Flash память +
+#define STATUS_FLASH_TIEOUT_ERROR (1ULL << 26) // Ошибка таймаута Flash памяти +
+#define STATUS_FLASH_READY_ERROR (1ULL << 27)  // Ошибка готовности линии SPI Flash +
 
 /* ---------- 8. ОШИБКИ SD-КАРТЫ (биты 24..31) ---------- */
-#define STATUS_SD_INIT_ERROR (1ULL << 27)        // Ошибка инициализации SD-карты
-#define STATUS_SD_MOUNT_ERROR (1ULL << 28)       // Ошибка монтирования файловой системы SD
-#define STATUS_SD_WRITE_ERROR (1ULL << 29)       // Ошибка записи на SD
-#define STATUS_SD_READ_ERROR (1ULL << 30)        // Ошибка чтения с SD
-#define STATUS_SD_CORRUPTED_DATA (1ULL << 31)    // Данные повреждены на SD
-#define STATUS_SD_CRC_MISMATCH (1ULL << 32)      // Несовпадение контрольной суммы SD
+#define STATUS_SD_INIT_ERROR (1ULL << 28)        // Ошибка инициализации SD-карты
+#define STATUS_SD_MOUNT_ERROR (1ULL << 29)       // Ошибка монтирования файловой системы SD
+#define STATUS_SD_WRITE_ERROR (1ULL << 30)       // Ошибка записи на SD
+#define STATUS_SD_READ_ERROR (1ULL << 31)        // Ошибка чтения с SD
+#define STATUS_SD_CORRUPTED_DATA (1ULL << 32)    // Данные повреждены на SD
 #define STATUS_SD_FILE_OPEN_ERROR (1ULL << 33)   // Ошибка открытия файла на SD
 #define STATUS_SD_TEMP_OUT_OF_RANGE (1ULL << 34) // Температура вне допустимого диапазона для SD
 
@@ -131,7 +131,7 @@
                              STATUS_FLASH_READY_ERROR)
 
 #define STATUS_SD_ERRORS (STATUS_SD_INIT_ERROR | STATUS_SD_MOUNT_ERROR | STATUS_SD_WRITE_ERROR | \
-                          STATUS_SD_READ_ERROR | STATUS_SD_CORRUPTED_DATA | STATUS_SD_CRC_MISMATCH | \
+                          STATUS_SD_READ_ERROR | STATUS_SD_CORRUPTED_DATA | \
                           STATUS_SD_FILE_OPEN_ERROR | STATUS_SD_TEMP_OUT_OF_RANGE)
 
 #define STATUS_GSM_ERRORS (STATUS_GSM_REG_ERROR | STATUS_NBIOT_REG_ERROR | STATUS_GSM_NET_ERROR | \
