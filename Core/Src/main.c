@@ -344,7 +344,9 @@ int main(void)
     OLED_Init(&hi2c2);
     HAL_Delay(20);
 
-    if (EEPROM.screen_sever_mode == 1) Start_video();
+    //if (EEPROM.screen_sever_mode == 1) Start_video();
+    Start_video(); // ! Для теста
+
     HAL_GPIO_WritePin(COL_B1_GPIO_Port, COL_B1_Pin, 1);
     HAL_GPIO_WritePin(COL_B2_GPIO_Port, COL_B2_Pin, 1);
     HAL_GPIO_WritePin(COL_B3_GPIO_Port, COL_B3_Pin, 1);
