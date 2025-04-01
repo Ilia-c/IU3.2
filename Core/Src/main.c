@@ -265,6 +265,7 @@ int main(void)
   }
   else
   {
+    
     if (!EEPROM_LoadSettings(&EEPROM))
     {
       // Ошибка - неверный идентификатор данных

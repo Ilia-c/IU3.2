@@ -15,19 +15,19 @@
 #define STATUS_SPI_DISPLAY_NO_RESPONSE (1ULL << 0) // Экран не отвечает +
 
 /* ---------- 2. ОШИБКИ ВНЕШНЕЙ EEPROM (биты 3..6) ---------- */
-#define STATUS_EEPROM_INIT_ERROR (1ULL << 1)        // Ошибка инициализации EEPROM +
+#define STATUS_EEPROM_INIT_ERROR (1ULL << 1)        // Ошибка инициализации EEPROM -
 #define STATUS_EEPROM_READY_ERROR (1ULL << 2)       // Ошибка готовности EEPROM +
 #define STATUS_EEPROM_WRITE_ERROR (1ULL << 3)       // Ошибка записи в EEPROM +
-#define STATUS_EEPROM_READ_ERROR (1ULL << 4)        // Ошибка чтения из EEPROM +
+#define STATUS_EEPROM_READ_ERROR (1ULL << 4)        // Ошибка чтения из EEPROM -
 #define STATUS_EEPROM_CRC_ERROR (1ULL << 5)         // Ошибка проверки CRC данных EEPROM +
 #define STATUS_EEPROM_TIMEOUT_I2C_ERROR (1ULL << 6) // Превышено время ожидпния ответа от EEPROM +
 
 /* ---------- 3. ОШИБКИ ВНЕШНЕГО АЦП (биты 7..10) ---------- */
-#define STATUS_ADC_EXTERNAL_INIT_ERROR (1ULL << 7) // Ошибка внешнего АЦП +
-#define STATUS_ADC_RANGE_ERROR (1ULL << 8)         // Ошибка диапазона данных АЦП (обрыв) +
-#define STATUS_ADC_TIMEOUT_ERROR (1ULL << 9)       // Таймаут ответа от АЦП +
-#define STATUS_ADC_READY_ERROR (1ULL << 10)        // SPI АЦП занят +
-#define STATUS_ADC_TIMEOUT_CYCLE_ERROR (1ULL << 11)        // Ошибка таймаута АЦП при чтении  +
+#define STATUS_ADC_EXTERNAL_INIT_ERROR (1ULL << 7)  // Ошибка внешнего АЦП +
+#define STATUS_ADC_RANGE_ERROR (1ULL << 8)          // Ошибка диапазона данных АЦП (обрыв) +
+#define STATUS_ADC_TIMEOUT_ERROR (1ULL << 9)        // Таймаут ответа от АЦП +
+#define STATUS_ADC_READY_ERROR (1ULL << 10)         // SPI АЦП занят +
+#define STATUS_ADC_TIMEOUT_CYCLE_ERROR (1ULL << 11) // Ошибка таймаута АЦП при чтении  +
 
 /* ---------- 4. ОШИБКИ ДАТЧИКОВ ТЕМПЕРАТУРЫ (биты 11..12) ---------- */
 #define STATUS_TEMP_SENSOR_COMM_ERROR (1ULL << 12) // Ошибка связи с цифровым датчиком температуры -
@@ -107,12 +107,11 @@
 #define ERROR_RTC (1ULL << 63) // Ошибка RTC, запуск от внутреннего генератора
 
 /* ---------- Групповые маски ошибок ---------- */
-/* ---------- Групповые маски ошибок ---------- */
 #define STATUS_SPI_ERRORS (STATUS_SPI_DISPLAY_NO_RESPONSE)
 
 #define STATUS_EEPROM_ERRORS (STATUS_EEPROM_INIT_ERROR | STATUS_EEPROM_READY_ERROR | \
-                               STATUS_EEPROM_WRITE_ERROR | STATUS_EEPROM_READ_ERROR | \
-                               STATUS_EEPROM_CRC_ERROR | STATUS_EEPROM_TIMEOUT_I2C_ERROR)
+                              STATUS_EEPROM_WRITE_ERROR | STATUS_EEPROM_READ_ERROR | \
+                              STATUS_EEPROM_CRC_ERROR | STATUS_EEPROM_TIMEOUT_I2C_ERROR)
 
 #define STATUS_ADC_ERRORS (STATUS_ADC_EXTERNAL_INIT_ERROR | STATUS_ADC_RANGE_ERROR | \
                            STATUS_ADC_TIMEOUT_ERROR | STATUS_ADC_READY_ERROR)
@@ -121,25 +120,25 @@
 
 #define STATUS_RS485_ERRORS (STATUS_RS485_INIT_ERROR | STATUS_RS485_RX_ERROR | STATUS_RS485_TX_ERROR)
 
-#define STATUS_USB_ERRORS (STATUS_USB_FLASH_MOUNT_ERROR | STATUS_USB_FULL_ERROR | \
-                           STATUS_USB_OPEN_ERROR | STATUS_USB_LSEEK_ERROR | \
+#define STATUS_USB_ERRORS (STATUS_USB_FLASH_MOUNT_ERROR | STATUS_USB_FULL_ERROR |       \
+                           STATUS_USB_OPEN_ERROR | STATUS_USB_LSEEK_ERROR |             \
                            STATUS_USB_FLASH_WRITE_ERROR | STATUS_USB_FLASH_READ_ERROR | \
                            STATUS_USB_FLASH_SYNC_ERROR)
 
-#define STATUS_FLASH_ERRORS (STATUS_FLASH_ID_ERROR | STATUS_FLASH_SEND_ERROR | \
+#define STATUS_FLASH_ERRORS (STATUS_FLASH_ID_ERROR | STATUS_FLASH_SEND_ERROR |     \
                              STATUS_FLASH_RECV_ERROR | STATUS_FLASH_TIEOUT_ERROR | \
                              STATUS_FLASH_READY_ERROR)
 
 #define STATUS_SD_ERRORS (STATUS_SD_INIT_ERROR | STATUS_SD_MOUNT_ERROR | STATUS_SD_WRITE_ERROR | \
-                          STATUS_SD_READ_ERROR | STATUS_SD_CORRUPTED_DATA | \
+                          STATUS_SD_READ_ERROR | STATUS_SD_CORRUPTED_DATA |                      \
                           STATUS_SD_FILE_OPEN_ERROR | STATUS_SD_TEMP_OUT_OF_RANGE)
 
 #define STATUS_GSM_ERRORS (STATUS_GSM_REG_ERROR | STATUS_NBIOT_REG_ERROR | STATUS_GSM_NET_ERROR | \
-                           STATUS_GSM_NO_SIM | STATUS_UART_SMS_SEND_ERROR | \
-                           STATUS_UART_SERVER_COMM_ERROR | STATUS_UART_SERVER_UNAVAILABLE | \
+                           STATUS_GSM_NO_SIM | STATUS_UART_SMS_SEND_ERROR |                       \
+                           STATUS_UART_SERVER_COMM_ERROR | STATUS_UART_SERVER_UNAVAILABLE |       \
                            STATUS_UART_NO_RESPONSE | STATUS_UART_WRONG_PASSWORD)
 
-#define STATUS_FIRMWARE_ERRORS (STATUS_FIRMWARE_UPDATE_ERROR | \
+#define STATUS_FIRMWARE_ERRORS (STATUS_FIRMWARE_UPDATE_ERROR |       \
                                 STATUS_FIRMWARE_UPDATE_INTERRUPTED | \
                                 STATUS_FIRMWARE_CHECK_ERROR)
 
@@ -154,6 +153,5 @@
 
 #define STATUS_FAULTS (STATUS_NMI_OCCURRED | STATUS_MEMMANAGE_FAULT | \
                        STATUS_BUSFAULT_OCCURRED | STATUS_USAGEFAULT_OCCURRED)
-
 
 #endif // __STATUS_CODES_H__

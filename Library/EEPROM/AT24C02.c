@@ -99,17 +99,20 @@ static bool EEPROM_ReadData(uint16_t memAddr, uint8_t *pData, uint16_t size)
                                                 1000);
     if (status == HAL_TIMEOUT) {
         ERRCODE.STATUS |= STATUS_EEPROM_TIMEOUT_I2C_ERROR;
+        return false;
     }
     ERRCODE.STATUS &= ~STATUS_EEPROM_TIMEOUT_I2C_ERROR;
 
     if (status == HAL_BUSY) {
         ERRCODE.STATUS |= STATUS_EEPROM_READY_ERROR;
+        return false;
     }
     ERRCODE.STATUS &= ~STATUS_EEPROM_READY_ERROR;
     if (status == HAL_ERROR) {
         ERRCODE.STATUS |= STATUS_EEPROM_READ_ERROR;
+        return false;
     }
-    return (status == HAL_OK);
+    return true;
 }
 
 //=============================================================================
