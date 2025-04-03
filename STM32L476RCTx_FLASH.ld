@@ -7,7 +7,7 @@
 **  Author		: STM32CubeMX
 **
 **  Abstract    : Linker script for STM32L476RCTx series
-**                256Kbytes FLASH and 128Kbytes RAM
+**                512Kbytes FLASH and 128Kbytes RAM
 **
 **                Set heap size, stack size and stack location according
 **                to application requirements.
