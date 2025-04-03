@@ -7,6 +7,7 @@ extern char Keyboard_press_code;  // Итоговый код, который и�
 char Prot_Keyboard_press_code;    // Сырые данные при сканировании
 
 extern TIM_HandleTypeDef htim6;
+extern TIM_HandleTypeDef htim16;
 extern const uint16_t Timer_key_press;
 extern const uint16_t Timer_key_press_fast;
 uint8_t Timer = 0;
@@ -59,6 +60,7 @@ void ret_keyboard(void)
 
 void Keyboard(void)
 {
+    __HAL_TIM_SET_COUNTER(&htim16, 0);
     Keyboard_press_code = ScanKeypad();
     if ((mode_redact == 0) && ((Keyboard_press_code == 'L') || (Keyboard_press_code == 'R')) && ((Keyboard_press_code != 0xFF))){
         HAL_TIM_Base_Stop_IT(&htim6);

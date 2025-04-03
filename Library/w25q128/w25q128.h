@@ -8,9 +8,9 @@
 #include <stdio.h>
 #include <string.h>
 #include "stm32l4xx_hal.h"
-// Если у вас используется FreeRTOS:
 #include "FreeRTOS.h"
 #include "task.h"
+#include "SD.h"
 
 extern uint32_t g_total_records_count;
 // Команды флеш-памяти
@@ -33,7 +33,7 @@ extern uint32_t g_total_records_count;
 #define RECORDS_PER_SECTOR  (SECTOR_SIZE / RECORD_SIZE)
 
 // Полный размер флеш
-#define FLASH_TOTAL_SIZE    (16 * 1024 * 1024)
+#define FLASH_TOTAL_SIZE    ((15 * 1024 * 1024) + 512*1024)
 #define TOTAL_SECTORS       (FLASH_TOTAL_SIZE / SECTOR_SIZE)
 #define TOTAL_RECORDS       (TOTAL_SECTORS * RECORDS_PER_SECTOR)
 

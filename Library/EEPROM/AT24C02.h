@@ -6,7 +6,6 @@ extern "C" {
 #endif
 
 #include <stdint.h>
-#include <stdbool.h>
 #include "Settings.h"
 
 /* Параметры EEPROM */
@@ -36,20 +35,20 @@ typedef struct __attribute__((packed)) {
  * @param src Указатель на структуру с настройками.
  * @return true, если запись прошла успешно, иначе false.
  */
-bool EEPROM_SaveSettings(const EEPROM_Settings_item *src);
+HAL_StatusTypeDef EEPROM_SaveSettings(const EEPROM_Settings_item *src);
 
 /**
  * @brief Загружает настройки из EEPROM.
  * @param dst Указатель на структуру, куда будут загружены настройки.
  * @return true, если загрузка прошла успешно, иначе false.
  */
-bool EEPROM_LoadSettings(EEPROM_Settings_item *dst);
+HAL_StatusTypeDef EEPROM_LoadSettings(EEPROM_Settings_item *dst);
 
 /**
  * @brief Проверяет, существуют ли валидные данные в EEPROM.
  * @return true, если данные существуют и корректны, иначе false.
  */
-bool EEPROM_IsDataExists(void);
+HAL_StatusTypeDef EEPROM_IsDataExists(void);
 
 /**
  * @brief Проверяет корректность сохранённых данных в EEPROM.
@@ -59,7 +58,7 @@ bool EEPROM_IsDataExists(void);
  *
  * @return true, если данные корректны, иначе false.
  */
-bool EEPROM_CheckDataValidity(void);
+HAL_StatusTypeDef EEPROM_CheckDataValidity(void);
 
 #ifdef __cplusplus
 }

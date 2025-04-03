@@ -20,10 +20,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-extern DMA_HandleTypeDef hdma_sdmmc1;
-// Если вы более не используете DMA для SD, можно убрать эти extern'ы:
-// extern DMA_HandleTypeDef hdma_sdmmc1_rx;
-// extern DMA_HandleTypeDef hdma_sdmmc1_tx;
 
 void HAL_MspInit(void)
 {
@@ -313,35 +309,8 @@ void HAL_SD_MspInit(SD_HandleTypeDef* sdHandle)
     GPIO_InitStruct.Alternate = GPIO_AF12_SDMMC1;
     HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
-    /* Настройка прерывания SDMMC1 */
-    HAL_NVIC_SetPriority(SDMMC1_IRQn, 5, 0);
-    HAL_NVIC_EnableIRQ(SDMMC1_IRQn);
-    /* USER CODE END SDMMC1_MspInit 0 */
 
 
-    /* SDMMC1 DMA Init */
-    hdma_sdmmc1.Instance = DMA2_Channel4;
-    hdma_sdmmc1.Init.Request = DMA_REQUEST_7;
-    hdma_sdmmc1.Init.Direction = DMA_PERIPH_TO_MEMORY;
-    hdma_sdmmc1.Init.PeriphInc = DMA_PINC_DISABLE;
-    hdma_sdmmc1.Init.MemInc = DMA_MINC_ENABLE;
-    hdma_sdmmc1.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
-    hdma_sdmmc1.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
-    hdma_sdmmc1.Init.Mode = DMA_NORMAL;
-    hdma_sdmmc1.Init.Priority = DMA_PRIORITY_LOW;
-    if (HAL_DMA_Init(&hdma_sdmmc1) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
-
-    /* Связывание DMA с SDMMC1 */
-    __HAL_LINKDMA(sdHandle, hdmarx, hdma_sdmmc1);
-    __HAL_LINKDMA(sdHandle, hdmatx, hdma_sdmmc1);
-
-    /* Если необходимо, можно также поместить дополнительные настройки в USER CODE SDMMC1_MspInit 1 */
-    /* USER CODE BEGIN SDMMC1_MspInit 1 */
-    /* USER CODE END SDMMC1_MspInit 1 */
   }
 }
 

@@ -30,6 +30,8 @@ extern "C" {
 #include "stm32l4xx_hal.h"
 
 
+#define Debug_mode 1
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 

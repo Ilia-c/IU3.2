@@ -235,7 +235,6 @@ extern uint8_t USB_mode;
 
 
 extern char password[5];
-extern uint8_t time_counter;
 ////////////////////////////////////////////////////////////////////////////////
 // Глобальные переменные КОНФИГУРАЦИИ
 ////////////////////////////////////////////////////////////////////////////////
@@ -251,7 +250,6 @@ extern char OneWire_temp_char[5];  // Температура OneWire в виде
 
 extern char EEPROM_status_char[10]; // Статус доступности EEPROM
 extern char FLASH_status_char[10];  // Статус доступности FLASH
-extern char SD_status_char[10];     // Статус доступности SD
 
 extern RTC_TimeTypeDef Time; // Дата
 extern RTC_DateTypeDef Date; // Время

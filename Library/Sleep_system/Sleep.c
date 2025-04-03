@@ -249,7 +249,6 @@ void GPIO_AnalogConfig(void)
 
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc3;
-extern DMA_HandleTypeDef hdma_sdmmc1;
 
 // Если USB может работать как в режиме Device, так и в режиме Host,
 // объявите оба дескриптора (если они используются):
@@ -261,9 +260,7 @@ void Enter_StandbyMode(uint8_t hours, uint8_t minutes)
     vTaskSuspendAll();
 
     HAL_ADC_DeInit(&hadc1);
-    HAL_ADC_DeInit(&hadc3);
-    HAL_DMA_Abort(&hdma_sdmmc1); 
-    HAL_NVIC_DisableIRQ(DMA2_Channel4_IRQn);
+    HAL_ADC_DeInit(&hadc3); 
     __HAL_RCC_DMA2_CLK_DISABLE();
     HAL_PCD_DeInit(&hpcd_USB_OTG_FS);
     HAL_HCD_DeInit(&hhcd_USB_OTG_FS);

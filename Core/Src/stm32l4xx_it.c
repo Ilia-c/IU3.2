@@ -60,10 +60,10 @@
 /* External variables --------------------------------------------------------*/
 extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
 extern HCD_HandleTypeDef hhcd_USB_OTG_FS;
-extern SD_HandleTypeDef hsd1;
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim5;
 extern TIM_HandleTypeDef htim6;
+extern TIM_HandleTypeDef htim16;
 extern UART_HandleTypeDef huart4;
 
 /* USER CODE BEGIN EV */
@@ -192,6 +192,10 @@ void TIM6_DAC_IRQHandler(void)
   HAL_TIM6_Callback();
 }
 
+void TIM1_UP_TIM16_IRQHandler(void)
+{
+  HAL_TIM_IRQHandler(&htim16);
+}
 /******************************************************************************/
 /* STM32L4xx Peripheral Interrupt Handlers                                    */
 /* Add here the Interrupt Handlers for the used peripherals.                  */
@@ -223,39 +227,7 @@ void EXTI9_5_IRQHandler(void)
 
 
 
-void SDMMC1_IRQHandler(void)
-{
-  /* USER CODE BEGIN SDMMC1_IRQn 0 */
 
-  /* USER CODE END SDMMC1_IRQn 0 */
-  HAL_SD_IRQHandler(&hsd1);
-  /* USER CODE BEGIN SDMMC1_IRQn 1 */
-
-  /* USER CODE END SDMMC1_IRQn 1 */
-}
-
-/**
-  * @brief This function handles DMA2 channel4 global interrupt.
-  */
- extern DMA_HandleTypeDef hdma_sdmmc1;
- void DMA2_Channel4_IRQHandler(void)
- {
-   /* USER CODE BEGIN DMA2_Channel4_IRQn 0 */
-     if((hsd1.Context == (SD_CONTEXT_DMA | SD_CONTEXT_READ_SINGLE_BLOCK)) ||
-        (hsd1.Context == (SD_CONTEXT_DMA | SD_CONTEXT_READ_MULTIPLE_BLOCK)))
-     {
-       BSP_SD_DMA_Rx_IRQHandler();
-     }
-     else if((hsd1.Context == (SD_CONTEXT_DMA | SD_CONTEXT_WRITE_SINGLE_BLOCK)) ||
-             (hsd1.Context == (SD_CONTEXT_DMA | SD_CONTEXT_WRITE_MULTIPLE_BLOCK)))
-     {
-       BSP_SD_DMA_Tx_IRQHandler();
-     }
-   /* USER CODE END DMA2_Channel4_IRQn 0 */
-   HAL_DMA_IRQHandler(&hdma_sdmmc1);
-   /* USER CODE BEGIN DMA2_Channel4_IRQn 1 */
-   /* USER CODE END DMA2_Channel4_IRQn 1 */
- }
  
 
 void UART4_IRQHandler(void)

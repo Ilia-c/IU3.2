@@ -1,4 +1,3 @@
-/* USER CODE BEGIN Header */
 /**
  ******************************************************************************
  * @file           : main.c
@@ -8,15 +7,13 @@
  *
  * 
  * 
- *
+ * BY PROGRAMMERA
  * VERSION Ver0.41
  * 
  * 
  *
  ******************************************************************************
  */
-/* USER CODE END Header */
-/* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
 #include "fatfs.h"
@@ -58,10 +55,8 @@ xSemaphoreHandle USB_COM_semaphore;
 xSemaphoreHandle Main_semaphore;
 xSemaphoreHandle UART_PARSER_semaphore;
 xSemaphoreHandle ADC_READY; // Окончания преобразования при работе в циклическом режиме
-xSemaphoreHandle SD_WRITE; // Окончания преобразования при работе в циклическом режиме
 
 extern const uint16_t Timer_key_one_press;
-extern const uint16_t Timer_key_press;
 extern const uint16_t Timer_key_press_fast;
 
 extern uint8_t gsmRxChar;
@@ -69,23 +64,36 @@ extern EEPROM_Settings_item EEPROM;
 extern ERRCODE_item ERRCODE;
 
 
-ADC_HandleTypeDef hadc1;
-ADC_HandleTypeDef hadc3;
+
 I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c2;
-SD_HandleTypeDef hsd1;
-
 SPI_HandleTypeDef hspi2;
+UART_HandleTypeDef huart1;
+UART_HandleTypeDef huart4;
+
+ADC_HandleTypeDef hadc1;
+ADC_HandleTypeDef hadc3;
 
 TIM_HandleTypeDef htim5;
 TIM_HandleTypeDef htim6;
 TIM_HandleTypeDef htim7;
-
-UART_HandleTypeDef huart1;
-UART_HandleTypeDef huart4;
-DMA_HandleTypeDef hdma_sdmmc1;
+TIM_HandleTypeDef htim16;
 
 IWDG_HandleTypeDef hiwdg;
+
+void MX_GPIO_Init(void);  
+void MX_ADC1_Init(void);        // 
+void MX_ADC3_Init(void);        // 
+void MX_I2C1_Init(void);        // 
+void MX_I2C2_Init(void);        // 
+void MX_SPI2_Init(void);        // АЦП+FLASH
+//static void MX_UART1_Init(void);     // RS-485
+void MX_UART4_Init(void);       // GSM
+void MX_TIM5_Init(void);
+void MX_TIM6_Init(void);
+void MX_IWDG_Init(void);
+void MX_TIM7_Init(void);
+void MX_TIM16_Init(void);
 
 /* Definitions for Main */
 osThreadId_t MainHandle;
@@ -152,12 +160,6 @@ const osThreadAttr_t UART_PARSER_task_attributes = {
     .priority = (osPriority_t)osPriorityHigh4,
 };
 
-osThreadId_t SD_taskHandle;
-const osThreadAttr_t SD_task_attributes = {
-    .name = "SD_task",
-    .stack_size = 1024*2,
-    .priority = (osPriority_t)osPriorityLow,
-};
 osThreadId_t WATCDOG_taskHandle;
 const osThreadAttr_t WATCDOG_task_attributes = {
     .name = "Watch_dog_task",
@@ -167,21 +169,7 @@ const osThreadAttr_t WATCDOG_task_attributes = {
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-void PeriphCommonClock_Config(void);
-static void MX_GPIO_Init(void);       
-static void MX_DMA_Init(void);        // ДЛЯ SD
-static void MX_ADC1_Init(void);       // 
-static void MX_ADC3_Init(void);        // 
-static void MX_I2C1_Init(void);        // 
-static void MX_I2C2_Init(void);        // 
-void MX_SDMMC1_SD_Init(void);   //  SD
-static void MX_SPI2_Init(void);        // АЦП+FLASH
-//static void MX_UART1_Init(void);     // RS-485
-static void MX_UART4_Init(void);       // GSM
-static void MX_TIM5_Init(void);
-static void MX_TIM6_Init(void);
-static void MX_IWDG_Init(void);
-static void MX_TIM7_Init(void);
+void PeriphCommonClock_Config(void);     
 
 void BlinkLED(GPIO_TypeDef *LEDPort, uint16_t LEDPin, uint8_t blinkCount, uint32_t onTime, uint32_t offTime, uint32_t cycleDelay);
 void Display_I2C(void *argument);
@@ -250,28 +238,31 @@ int main(void)
   HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);             // Общее питание 5В
   HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);         // Общее питание 3.3В (АЦП, темп., и т.д.)
   HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);           // Включение Памяти на плате
-  HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 1);
+  HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 1);         // Включение 
 
   HAL_Delay(10);
-  //EEPROM_SaveSettings(&EEPROM);
+
   // Чтение данных из EEPROM
-  if (!(EEPROM_IsDataExists()))
+  if (EEPROM_CHECK() == HAL_OK)
   {
-    // Данных нету - первый запуск
-    if (!EEPROM_SaveSettings(&EEPROM))
+    if (EEPROM_IsDataExists() != HAL_OK)
     {
-      // Сохранение не вышло
-    }
-  }
-  else
-  {
-    
-    if (!EEPROM_LoadSettings(&EEPROM))
-    {
-      // Ошибка - неверный идентификатор данных
-      if (!EEPROM_SaveSettings(&EEPROM))
+      // Данных нету - первый запуск
+      if (EEPROM_SaveSettings(&EEPROM) != HAL_OK)
       {
         // Сохранение не вышло
+      }
+    }
+    else
+    {
+
+      if (EEPROM_LoadSettings(&EEPROM) != HAL_OK)
+      {
+        // Ошибка - неверный идентификатор данных
+        if (EEPROM_SaveSettings(&EEPROM) != HAL_OK)
+        {
+          // Сохранение не вышло
+        }
       }
     }
   }
@@ -313,9 +304,12 @@ int main(void)
     if (__HAL_PWR_GET_FLAG(PWR_FLAG_SB) == RESET){
       // Если сброс не из перехода в цикл и не из за wakeup
       EEPROM.Mode = 0;
-      // !! Добавить проверку на флаг доступности EEPROM
-      if (!EEPROM_CheckDataValidity()){
-        ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
+      if (ERRCODE.STATUS & STATUS_EEPROM_INIT_ERROR)
+      {
+        if (EEPROM_CheckDataValidity() != HAL_OK)
+        {
+          ERRCODE.STATUS |= STATUS_EEPROM_READ_ERROR;
+        }
       }
     }
   }
@@ -336,8 +330,9 @@ int main(void)
   if (EEPROM.Mode == 0){
     // Включение переферии
     MX_IWDG_Init();
-   
+    #if Debug_mode == 0
     HAL_IWDG_Refresh(&hiwdg);
+    #endif
     //HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 1); // Включение датчика давления и !!!  измерение текущего напряжения питания 1:10
     HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 1); // Включаем экран
     HAL_Delay(10);
@@ -355,6 +350,8 @@ int main(void)
     HAL_NVIC_EnableIRQ(EXTI4_IRQn);
     HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
     
+    // Таймер ухода в сон (либо заставки)
+
     // Настройка таймера клавиатуры
     HAL_NVIC_SetPriority(TIM6_DAC_IRQn, 8, 0); // Установите приоритет
     HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);        // Включите прерывание
@@ -363,34 +360,8 @@ int main(void)
     HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
   }
 
-  // Инициализация переферии
-  MX_DMA_Init();
-  MX_SDMMC1_SD_Init();
   MX_FATFS_Init();
   w25_init();
-
-
-  /*
-  Ds18b20_Init();
-  if (Ds18b20_ManualConvert())
-  {
-    for (uint8_t i = 0; i < 1; i++)
-    {
-      if (ds18b20[i].DataIsValid)
-      {
-        printf("Датчик %d: температура = %.2f °C\r\n", i, ds18b20[i].Temperature);
-      }
-      else
-      {
-        printf("Датчик %d: ошибка измерения\r\n", i);
-      }
-    }
-  }
-  else
-  {
-    printf("Преобразование температуры не завершилось вовремя!\r\n");
-  }
-*/
 
 
   HAL_IWDG_Refresh(&hiwdg);
@@ -400,12 +371,9 @@ int main(void)
   HAL_IWDG_Refresh(&hiwdg);
   osKernelInitialize();
 
-  //Ds18b20_Init((osPriority_t)osPriorityLow3);
-
   ADC_readHandle = osThreadNew(ADC_read, NULL, &ADC_read_attributes);
   RS485_dataHandle = osThreadNew(RS485_data, NULL, &RS485_data_attributes);
   UART_PARSER_taskHandle = osThreadNew(UART_PARSER_task, NULL, &UART_PARSER_task_attributes);
-  SD_taskHandle = osThreadNew(SD_Task, NULL, &SD_task_attributes);
   
   if (EEPROM.Mode == 0){
     USB_COM_taskHandle = osThreadNew(USB_COM_task, NULL, &USB_COM_task_attributes);
@@ -443,7 +411,6 @@ void SetTimerPeriod(uint32_t period_ms)
     // Частота таймера (TIM5) = 40 МГц (согласно конфигурации SystemClock)
     // Предположим делитель для удобного расчёта: 40 000 (40 МГц / 40 000 = 1 кГц)
     uint32_t prescaler = 39999;  // Делитель: делит тактовую частоту до 1 кГц
-    uint32_t timer_clock = 1000; // Частота после делителя (1 кГц)
 
     // Период (ARR) = (требуемый период * частота таймера) - 1
     uint32_t auto_reload = period_ms - 1;
@@ -483,570 +450,6 @@ void HAL_TIM5_Callback(void)
 
 
 
-void SystemClock_Config(void)
-{
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-
-  /** Configure the main internal regulator output voltage
-  */
-  if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure LSE Drive Capability
-  */
-  HAL_PWR_EnableBkUpAccess();
-  __HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_LOW);
-
-  /** Initializes the RCC Oscillators according to the specified parameters
-  * in the RCC_OscInitTypeDef structure.
-  */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 1;
-  RCC_OscInitStruct.PLL.PLLN = 10;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV7;
-  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
-  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Initializes the CPU, AHB and APB buses clocks
-  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
-
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-}
-
-/**
-  * @brief Peripherals Common Clock Configuration
-  * @retval None
-  */
-void PeriphCommonClock_Config(void)
-{
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
-
-  /** Initializes the peripherals clock
-   */
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB | RCC_PERIPHCLK_SDMMC1 | RCC_PERIPHCLK_ADC;
-  PeriphClkInit.AdcClockSelection = RCC_ADCCLKSOURCE_PLLSAI1;
-  PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLLSAI1;
-  PeriphClkInit.Sdmmc1ClockSelection = RCC_SDMMC1CLKSOURCE_PLLSAI1;
-  PeriphClkInit.PLLSAI1.PLLSAI1Source = RCC_PLLSOURCE_HSE;
-  PeriphClkInit.PLLSAI1.PLLSAI1M = 1;
-  PeriphClkInit.PLLSAI1.PLLSAI1N = 12;
-  PeriphClkInit.PLLSAI1.PLLSAI1P = RCC_PLLP_DIV7;
-  PeriphClkInit.PLLSAI1.PLLSAI1Q = RCC_PLLQ_DIV2;
-  PeriphClkInit.PLLSAI1.PLLSAI1R = RCC_PLLR_DIV2;
-  PeriphClkInit.PLLSAI1.PLLSAI1ClockOut = RCC_PLLSAI1_48M2CLK | RCC_PLLSAI1_ADC1CLK;
-  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
-  {
-    Error_Handler();
-  }
-}
-
-/**
- * @brief ADC1 Initialization Function
- * @param None
- * @retval None
- */
-ADC_HandleTypeDef hadc1; // Глобальный или статический, как у вас заведено
-
-void MX_ADC1_Init(void)
-{
-    ADC_ChannelConfTypeDef sConfig = {0};
-
-    // Включаем тактирование АЦП1 и порта PC0
-    __HAL_RCC_ADC_CLK_ENABLE();
-    __HAL_RCC_GPIOC_CLK_ENABLE();
-
-    // Настраиваем PC0 как аналоговый вход (без подтяжки)
-    GPIO_InitTypeDef GPIO_InitStruct = {0};
-    GPIO_InitStruct.Pin = GPIO_PIN_0;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG_ADC_CONTROL;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
-    // Настраиваем ADC1: 12-битное разрешение, одиночное преобразование, программный запуск
-    hadc1.Instance = ADC1;
-    hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;    // Асинхронный клок без предделителя
-    hadc1.Init.Resolution = ADC_RESOLUTION_12B;          // 12-битное разрешение АЦП (значения от 0 до 4095)
-    hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;          // Выравнивание результата по правому краю
-    hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;          // Отключаем сканирование (одноканальный режим)
-    hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;       // Флаг конца каждого одиночного преобразования
-    hadc1.Init.LowPowerAutoWait = DISABLE;
-    hadc1.Init.ContinuousConvMode = DISABLE;             // Непрерывный режим отключен (однократное преобразование)
-    hadc1.Init.NbrOfConversion = 1;
-    hadc1.Init.DiscontinuousConvMode = DISABLE;
-    hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;    // Преобразование запускается программно (софтверный триггер)
-    hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-    hadc1.Init.DMAContinuousRequests = DISABLE;
-    hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
-    hadc1.Init.OversamplingMode = DISABLE;
-    if (HAL_ADC_Init(&hadc1) != HAL_OK)
-    {
-        // Обработка ошибки инициализации
-        Error_Handler();
-    }
-
-    // Выбираем канал, соответствующий PC0 (канал 1 ADC1)
-    sConfig.Channel = ADC_CHANNEL_1;         // PC0 подключен к Channel 1 АЦП1
-    sConfig.Rank = ADC_REGULAR_RANK_1;
-    sConfig.SingleDiff = ADC_SINGLE_ENDED;
-    sConfig.SamplingTime = ADC_SAMPLETIME_47CYCLES_5;  // Время выборки канала (47.5 тактов, пример)
-    sConfig.OffsetNumber = ADC_OFFSET_NONE;
-    sConfig.Offset = 0;
-    if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-    {
-        // Обработка ошибки настройки канала
-        Error_Handler();
-    }
-}
-
-static void MX_IWDG_Init(void)
-{
-
-  hiwdg.Instance = IWDG;
-  hiwdg.Init.Prescaler = IWDG_PRESCALER_64;
-  hiwdg.Init.Window = 4095;
-  hiwdg.Init.Reload = 4000;
-  if (HAL_IWDG_Init(&hiwdg) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-
-}
-
-
-static void MX_TIM5_Init(void)
-{
-    TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-    TIM_MasterConfigTypeDef sMasterConfig = {0};
-
-    htim5.Instance = TIM5;
-    htim5.Init.Prescaler = 40000-1;                       // Предделитель (40 МГц / 40 000 = 1 кГц)
-    htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
-    htim5.Init.Period = 20000-1;                          // Период (1 кГц / 20 000 = 0.05 Гц или 20 сек)
-    htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-    htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-
-    if (HAL_TIM_Base_Init(&htim5) != HAL_OK)
-    {
-        Error_Handler();
-    }
-
-    sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-    if (HAL_TIM_ConfigClockSource(&htim5, &sClockSourceConfig) != HAL_OK)
-    {
-        Error_Handler();
-    }
-
-    sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-    sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-    if (HAL_TIMEx_MasterConfigSynchronization(&htim5, &sMasterConfig) != HAL_OK)
-    {
-        Error_Handler();
-    }
-}
-
-
-static void MX_TIM6_Init(void)
-{
-
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-
-  /* USER CODE BEGIN TIM6_Init 1 */
-
-  /* USER CODE END TIM6_Init 1 */
-  htim6.Instance = TIM6;
-  htim6.Init.Prescaler = 40000 - 1;
-  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = Timer_key_press - 1;
-  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
-  sMasterConfig.MasterSlaveMode = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-}
-
-static void MX_TIM7_Init(void)
-{
-
-  /* USER CODE BEGIN TIM7_Init 0 */
-
-  /* USER CODE END TIM7_Init 0 */
-
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-
-  /* USER CODE BEGIN TIM7_Init 1 */
-
-  /* USER CODE END TIM7_Init 1 */
-  htim7.Instance = TIM7;
-  htim7.Init.Prescaler = 40-1;
-  htim7.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim7.Init.Period = 0xFFFF;
-  htim7.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim7) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim7, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM7_Init 2 */
-
-  /* USER CODE END TIM7_Init 2 */
-
-}
-
-static void MX_ADC3_Init(void)
-{
-  ADC_ChannelConfTypeDef sConfig = {0};
-
-  hadc3.Instance                      = ADC3;
-  hadc3.Init.ClockPrescaler          = ADC_CLOCK_ASYNC_DIV1;     // Делитель тактирования
-  hadc3.Init.Resolution              = ADC_RESOLUTION_12B;       // 12 бит
-  hadc3.Init.DataAlign               = ADC_DATAALIGN_RIGHT;
-  hadc3.Init.ScanConvMode            = ADC_SCAN_DISABLE;         // Один канал
-  hadc3.Init.EOCSelection            = ADC_EOC_SINGLE_CONV;
-  hadc3.Init.LowPowerAutoWait        = DISABLE;
-  hadc3.Init.ContinuousConvMode      = DISABLE;                  // Одиночное преобразование
-  hadc3.Init.NbrOfConversion         = 1;
-  hadc3.Init.DiscontinuousConvMode   = DISABLE;
-  hadc3.Init.ExternalTrigConv        = ADC_SOFTWARE_START;
-  hadc3.Init.ExternalTrigConvEdge    = ADC_EXTERNALTRIGCONVEDGE_NONE;
-  hadc3.Init.DMAContinuousRequests   = DISABLE;
-  hadc3.Init.Overrun                 = ADC_OVR_DATA_PRESERVED;
-  hadc3.Init.OversamplingMode        = DISABLE;
-
-  if (HAL_ADC_Init(&hadc3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  // Настраиваем регулярный канал — PC0 = Channel 1 (ADC123_IN1)
-  sConfig.Channel      = ADC_CHANNEL_1;
-  sConfig.Rank         = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_24CYCLES_5; // При необходимости выбрать больше (например, 47.5 или 92.5)
-  sConfig.SingleDiff   = ADC_SINGLE_ENDED;
-  sConfig.OffsetNumber = ADC_OFFSET_NONE;
-  sConfig.Offset       = 0;
-
-  if (HAL_ADC_ConfigChannel(&hadc3, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-}
-
-
-/**
- * @brief I2C1 Initialization Function
- * @param None
- * @retval None
- */
-static void MX_I2C1_Init(void)
-{
-
-  /* USER CODE BEGIN I2C1_Init 0 */
-
-  /* USER CODE END I2C1_Init 0 */
-
-  /* USER CODE BEGIN I2C1_Init 1 */
-
-  /* USER CODE END I2C1_Init 1 */
-  hi2c1.Instance = I2C1;
-  hi2c1.Init.Timing = 0x00F12981;
-  hi2c1.Init.OwnAddress1 = 0;
-  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-  hi2c1.Init.OwnAddress2 = 0;
-  hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
-  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure Analogue filter
-  */
-  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure Digital filter
-  */
-  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN I2C1_Init 2 */
-
-  /* USER CODE END I2C1_Init 2 */
-
-}
-
-/**
- * @brief I2C2 Initialization Function
- * @param None
- * @retval None
- */
-static void MX_I2C2_Init(void)
-{
-
-  /* USER CODE BEGIN I2C2_Init 0 */
-
-  /* USER CODE END I2C2_Init 0 */
-
-  /* USER CODE BEGIN I2C2_Init 1 */
-
-  /* USER CODE END I2C2_Init 1 */
-  hi2c2.Instance = I2C2;
-  hi2c2.Init.Timing = 0x00F12981;
-  hi2c2.Init.OwnAddress1 = 0;
-  hi2c2.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-  hi2c2.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-  hi2c2.Init.OwnAddress2 = 0;
-  hi2c2.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
-  hi2c2.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-  hi2c2.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-  if (HAL_I2C_Init(&hi2c2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure Analogue filter
-  */
-  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c2, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure Digital filter
-  */
-  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c2, 0) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-}
-
-
-void MX_SDMMC1_SD_Init(void)
-{
-  hsd1.Instance = SDMMC1;
-  hsd1.Init.ClockEdge = SDMMC_CLOCK_EDGE_RISING;
-  hsd1.Init.ClockBypass = SDMMC_CLOCK_BYPASS_DISABLE;
-  hsd1.Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE;
-  hsd1.Init.BusWide = SDMMC_BUS_WIDE_1B;
-  hsd1.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
-  hsd1.Init.ClockDiv = 128;
-}
-
-
-/**
-  * @brief SPI2 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_SPI2_Init(void)
-{
-
-  /* USER CODE BEGIN SPI2_Init 0 */
-
-  /* USER CODE END SPI2_Init 0 */
-
-  /* USER CODE BEGIN SPI2_Init 1 */
-
-  /* USER CODE END SPI2_Init 1 */
-  /* SPI2 parameter configuration*/
-  hspi2.Instance = SPI2;
-  hspi2.Init.Mode = SPI_MODE_MASTER;
-  hspi2.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
-  hspi2.Init.CLKPolarity = SPI_POLARITY_HIGH;
-  hspi2.Init.CLKPhase = SPI_PHASE_2EDGE;  
-  hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
-  hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
-  hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
-  hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
-  hspi2.Init.CRCPolynomial = 7;
-  hspi2.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
-  hspi2.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
-  if (HAL_SPI_Init(&hspi2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN SPI2_Init 2 */
-
-  /* USER CODE END SPI2_Init 2 */
-
-}
-
-
-
-
-static void MX_UART4_Init(void)
-{
-  huart4.Instance = UART4;
-  huart4.Init.BaudRate = 57600;
-  huart4.Init.WordLength = UART_WORDLENGTH_8B;
-  huart4.Init.StopBits = UART_STOPBITS_1;
-  huart4.Init.Parity = UART_PARITY_NONE;
-  huart4.Init.Mode = UART_MODE_TX_RX;
-  huart4.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart4.Init.OverSampling = UART_OVERSAMPLING_16;
-  huart4.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart4.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_DMADISABLEONERROR_INIT;
-  huart4.AdvancedInit.DMADisableonRxError = UART_ADVFEATURE_DMA_DISABLEONRXERROR;
-  if (HAL_UART_Init(&huart4) != HAL_OK)
-  {
-    Error_Handler();
-  }
-}
-
-/**
-  * Enable DMA controller clock
-  */
-static void MX_DMA_Init(void)
-{
-
-  /* DMA controller clock enable */
-  __HAL_RCC_DMA2_CLK_ENABLE();
-
-  /* DMA interrupt init */
-  /* DMA2_Channel4_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Channel4_IRQn, 5, 0);
-  HAL_NVIC_EnableIRQ(DMA2_Channel4_IRQn);
-
-}
-/**
- * @brief GPIO Initialization Function
- * @param None
- * @retval None
- */
-static void MX_GPIO_Init(void)
-{
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-/* USER CODE BEGIN MX_GPIO_Init_1 */
-/* USER CODE END MX_GPIO_Init_1 */
-
-  /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOC_CLK_ENABLE();
-  __HAL_RCC_GPIOH_CLK_ENABLE();
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
-  __HAL_RCC_GPIOD_CLK_ENABLE();
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, RESERVED_Pin|EN_5V_Pin|EN_3P8V_Pin|ON_N25_Pin
-                          |COL_B4_Pin|SPI2_CS_ADC_Pin|One_Wire_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, UART4_WU_Pin|ON_OWEN_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, COL_B3_Pin|COL_B2_Pin|COL_B1_Pin|ON_DISP_Pin
-                          |ON_RS_Pin|GPIO_PIN_4|SPI2_CS_ROM_Pin|ON_ROM_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pins : RESERVED_Pin EN_5V_Pin EN_3P3V_Pin ON_N25_Pin
-                           COL_B4_Pin SPI2_CS_ADC_Pin One_Wire_Pin */
-  GPIO_InitStruct.Pin = RESERVED_Pin|EN_5V_Pin|EN_3P8V_Pin|ON_N25_Pin
-                          |COL_B4_Pin|SPI2_CS_ADC_Pin|One_Wire_Pin|EN_3P3V_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
-  GPIO_InitStruct.Pin = GPIO_PIN_0;
-  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;  // Отключение подтяжек
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-  /*Configure GPIO pins : UART4_WU_Pin ON_OWEN_Pin */
-  GPIO_InitStruct.Pin = UART4_WU_Pin|ON_OWEN_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF8_UART4;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : NUM_RES_Pin USART1_DATA_DETECT_Pin */
-  GPIO_InitStruct.Pin = NUM_RES_Pin|USART1_DATA_DETECT_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : STR_B1_Pin STR_B2_Pin STR_B3_Pin */
-  GPIO_InitStruct.Pin = STR_B1_Pin|STR_B2_Pin|STR_B3_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : STR_B4_Pin */
-  GPIO_InitStruct.Pin = STR_B4_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  HAL_GPIO_Init(STR_B4_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : COL_B3_Pin COL_B2_Pin COL_B1_Pin ON_DISP_Pin
-                           ON_RS_Pin PB4 ON_ROM_Pin */
-  GPIO_InitStruct.Pin = COL_B3_Pin|COL_B2_Pin|COL_B1_Pin|ON_DISP_Pin
-                          |ON_RS_Pin|GPIO_PIN_4|ON_ROM_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : SDMMC1_DET_Pin */
-  GPIO_InitStruct.Pin = SDMMC1_DET_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(SDMMC1_DET_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : SPI2_CS_ROM_Pin */
-  GPIO_InitStruct.Pin = SPI2_CS_ROM_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  HAL_GPIO_Init(SPI2_CS_ROM_GPIO_Port, &GPIO_InitStruct);
-
-  /**/
-  __HAL_SYSCFG_FASTMODEPLUS_ENABLE(SYSCFG_FASTMODEPLUS_PB6);
-}
-
 void Main(void *argument)
 {
   UNUSED(argument);
@@ -1056,11 +459,11 @@ void Main(void *argument)
   vSemaphoreCreateBinary(USB_COM_semaphore);
   vSemaphoreCreateBinary(UART_PARSER_semaphore);
   vSemaphoreCreateBinary(Main_semaphore);
-  vSemaphoreCreateBinary(SD_WRITE);
     // Запуск глобального таймера для обновления экрана
   HAL_NVIC_SetPriority(TIM5_IRQn, 8, 0); // Установите приоритет
   HAL_NVIC_EnableIRQ(TIM5_IRQn);        // Включите прерывание
   HAL_TIM_Base_Start_IT(&htim5);
+  HAL_TIM_Base_Start_IT(&htim16);
 
   // Если была критическая ошибка
   if (ERRCODE.STATUS & STATUS_FAULTS){
@@ -1087,7 +490,6 @@ void Main_Cycle(void *argument)
   vSemaphoreCreateBinary(USB_COM_semaphore);
   vSemaphoreCreateBinary(UART_PARSER_semaphore);
   vSemaphoreCreateBinary(Main_semaphore);
-  vSemaphoreCreateBinary(SD_WRITE);
   // 1. Включено -  АЦП, flash, EEPROM
   // 2. Уже конфигурация EEPROM прочитана
 
@@ -1153,7 +555,7 @@ void Main_Cycle(void *argument)
         HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
         osThreadSuspend(UART_PARSER_taskHandle);
       }
-
+      EEPROM_CHECK();
       if (status == 1)
       {
         // Если зарегеистрировались - запрашиваем настройки
@@ -1165,7 +567,7 @@ void Main_Cycle(void *argument)
             status = 1;
             break;
           }
-          if (ERRCODE.STATUS & STATUS_UART_SERVER_COMM_ERROR)
+          if (ERRCODE.STATUS & STATUS_HTTP_SERVER_COMM_ERROR)
           {
 
             status = 0;
@@ -1237,14 +639,14 @@ void Main_Cycle(void *argument)
             status = 1;
             break;
           }
-          if (ERRCODE.STATUS & STATUS_UART_SERVER_COMM_ERROR)
+          if (ERRCODE.STATUS & STATUS_HTTP_SERVER_COMM_ERROR)
           {
             status = 0;
             break;
           }
           osDelay(1000);
         }
-        if ((ERRCODE.STATUS & STATUS_UART_SERVER_COMM_ERROR) || (status == 0))
+        if ((ERRCODE.STATUS & STATUS_HTTP_SERVER_COMM_ERROR) || (status == 0))
         {
           GSM_data.Status |= SMS_SEND;
           for (int i = 0; i < 60; i++)
@@ -1254,7 +656,7 @@ void Main_Cycle(void *argument)
               status = 1;
               break;
             }
-            if (ERRCODE.STATUS & STATUS_UART_SMS_SEND_ERROR)
+            if (ERRCODE.STATUS & STATUS_GSM_SMS_SEND_ERROR)
             {
               status = 0;
               break;
@@ -1279,9 +681,8 @@ void Main_Cycle(void *argument)
     // 8.  Сохранение данных
 
     Collect_DATA();
-    xSemaphoreGive(SD_WRITE);
     uint8_t send_status = 1;
-    if ((ERRCODE.STATUS & STATUS_UART_SERVER_COMM_ERROR) || (ERRCODE.STATUS & STATUS_GSM_REG_ERROR)){
+    if ((ERRCODE.STATUS & STATUS_HTTP_SERVER_COMM_ERROR) || (ERRCODE.STATUS & STATUS_GSM_REG_ERROR)){
       send_status = 0; // Отметить как не отправленную 
     }
     // ! перенести в отдельную задачу
@@ -1301,7 +702,6 @@ void Main_Cycle(void *argument)
     osDelay(10);
     Enter_StandbyMode(EEPROM.time_sleep_h, EEPROM.time_sleep_m);
     osDelay(10000);
-    ERRCODE.STATUS |= STATUS_CRITICAL_ERROR;
   }
 }
 
@@ -1341,17 +741,6 @@ void RS485_data(void *argument)
   }
 }
 
-void SD_Task(void *argument) {
-  // Код задачи
-  for (;;) {
-    osDelay(1000);
-    SD_check();
-    if(xSemaphoreTake(SD_WRITE, pdMS_TO_TICKS(20000)) == pdTRUE)
-    {
-        WriteToSDCard();
-    }
-  }
-}
 
 uint32_t data_read_adc_in = 0;
 void Display_I2C(void *argument)
@@ -1434,56 +823,45 @@ void Erroe_indicate(void *argument)
     BlinkLED(GPIOC, GPIO_PIN_13, 1, 2000, 2000, 0);
     // Ошибка инициализации EEPROM
     ErrorMask = STATUS_EEPROM_INIT_ERROR
+    | STATUS_EEPROM_READY_ERROR
     | STATUS_EEPROM_WRITE_ERROR
     | STATUS_EEPROM_READ_ERROR
-    | STATUS_EEPROM_CRC_ERROR;
+    | STATUS_EEPROM_CRC_ERROR
+    | STATUS_EEPROM_TIMEOUT_I2C_ERROR;
     if (ERRCODE.STATUS & ErrorMask){
       BlinkLED(GPIOC, GPIO_PIN_13, 1, 500, 500, 0);
       goto skip;
     }
     // Ошибка инициализации АЦП
     ErrorMask = STATUS_ADC_EXTERNAL_INIT_ERROR
-    | STATUS_ADC_RANGE_ERROR;
+    | STATUS_ADC_TIMEOUT_ERROR
+    | STATUS_ADC_READY_ERROR
+    | STATUS_ADC_TIMEOUT_CYCLE_ERROR;
     if (ERRCODE.STATUS & ErrorMask){
       BlinkLED(GPIOC, GPIO_PIN_13, 2, 500, 500, 0);
       goto skip;
     }
     
     // Ошибка инициализации Flash
-    ErrorMask = STATUS_FLASH_ID_ERROR
+    ErrorMask = STATUS_FLASH_INIT_ERROR
+    | STATUS_FLASH_READY_ERROR
     | STATUS_FLASH_SEND_ERROR
     | STATUS_FLASH_RECV_ERROR
     | STATUS_FLASH_TIEOUT_ERROR
-    | STATUS_FLASH_READY_ERROR;
+    | STATUS_FLASH_CRC_ERROR
+    | STATUS_FLASH_OVERFLOW_ERROR;
     if (ERRCODE.STATUS & ErrorMask){
       BlinkLED(GPIOC, GPIO_PIN_13, 3, 500, 500, 0);
       goto skip;
     }
     
     
-    // Ошибка инициализации SD
-    ErrorMask = STATUS_SD_INIT_ERROR
-                     | STATUS_SD_MOUNT_ERROR
-                     | STATUS_SD_WRITE_ERROR
-                     | STATUS_SD_READ_ERROR
-                     | STATUS_SD_CORRUPTED_DATA
-                     | STATUS_SD_FILE_OPEN_ERROR
-                     | STATUS_SD_TEMP_OUT_OF_RANGE;
-    if (ERRCODE.STATUS & ErrorMask) {
-      BlinkLED(GPIOC, GPIO_PIN_13, 4, 500, 500, 0);
-      goto skip;
-    }
     skip:
       osDelay(1000);
-
-      time_counter++;
-      if (time_counter>120){
-        time_counter = 0;
-        //Screen_saver();
-      }
-      //Process_USB_Flash();
   }
 }
+
+static uint8_t delay_AT_OK = 0; // Количество попыток получить OK от модема 
 void UART_PARSER_task(void *argument)
 {
   UNUSED(argument);
@@ -1531,8 +909,10 @@ void UART_PARSER_task(void *argument)
     if ((!(GSM_data.Status & GSM_RDY)) && (EEPROM.USB_mode != 2))
     {
       int result = SendCommandAndParse("AT\r", parse_ERROR_OK, 1000);
+      delay_AT_OK++;
       if (result == 1)
       {
+        delay_AT_OK = 0;
         GSM_data.Status |= GSM_RDY;
         if (SendCommandAndParse("AT+CFUN=0\r", waitForOKResponse, 1000) != 1)
         {
@@ -1555,6 +935,9 @@ void UART_PARSER_task(void *argument)
         if (SendCommandAndParse("AT&W\r", waitForOKResponse, 1000) != 1)
         {
         }
+      }
+      if (delay_AT_OK > 20){
+        ERRCODE.STATUS |= STATUS_UART_NO_RESPONSE;
       }
     }
     if (GSM_data.Status & NETWORK_REGISTERED_SET_HTTP){
@@ -1590,7 +973,7 @@ void UART_PARSER_task(void *argument)
       {
         if (EEPROM.Mode == 0) strcpy(GSM_data.GSM_sms_status, "ERR");
         if (EEPROM.Mode == 0) xSemaphoreGive(Display_semaphore);
-        ERRCODE.STATUS |= STATUS_UART_SMS_SEND_ERROR;
+        ERRCODE.STATUS |= STATUS_GSM_SMS_SEND_ERROR;
       }
     }
 
@@ -1604,13 +987,14 @@ void UART_PARSER_task(void *argument)
         if (EEPROM.Mode == 0)
           strcpy(GSM_data.GSM_site_status, "OK");
         if (EEPROM.Mode == 0) xSemaphoreGive(Display_semaphore);
+        ERRCODE.STATUS &= ~STATUS_HTTP_SERVER_COMM_ERROR;
       }
       else
       {
         if (EEPROM.Mode == 0)
           strcpy(GSM_data.GSM_site_status, "ERR");
         if (EEPROM.Mode == 0) xSemaphoreGive(Display_semaphore);
-        ERRCODE.STATUS |= STATUS_UART_SERVER_COMM_ERROR;
+        ERRCODE.STATUS |= STATUS_HTTP_SERVER_COMM_ERROR;
       }
     }
     if (GSM_data.Status & HTTP_READ)
@@ -1624,6 +1008,7 @@ void UART_PARSER_task(void *argument)
         if (EEPROM.Mode == 0){
           strcpy(GSM_data.GSM_site_read_status, "OK");
           xSemaphoreGive(Display_semaphore);
+          ERRCODE.STATUS &= ~STATUS_HTTP_SERVER_COMM_ERROR;
         }
       }
       else
@@ -1631,19 +1016,34 @@ void UART_PARSER_task(void *argument)
         if (EEPROM.Mode == 0)
           strcpy(GSM_data.GSM_site_read_status, "ERR");
         if (EEPROM.Mode == 0) xSemaphoreGive(Display_semaphore);
-        ERRCODE.STATUS |= STATUS_UART_SERVER_COMM_ERROR;
+        ERRCODE.STATUS |= STATUS_HTTP_SERVER_COMM_ERROR;
       }
     }
   }
 }
 
-int a = 0;
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   if (htim->Instance == TIM2)
   {
     HAL_IncTick();
+  }
+  if (htim->Instance == TIM16)
+  {
+    if (EEPROM.Mode == 3){
+      Screen_saver();
+      return;
+    }
+    EEPROM.Mode = 1;
+    EEPROM_SaveSettings(&EEPROM);
+    if (EEPROM_CheckDataValidity() != HAL_OK){
+      ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
+    }
+    HAL_PWR_EnableBkUpAccess();
+    HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_RESET_PROG, DATA_RESET_PROG);
+    HAL_PWR_DisableBkUpAccess();
+    NVIC_SystemReset();
   }
 }
 

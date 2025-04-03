@@ -15,142 +15,139 @@
 #define STATUS_SPI_DISPLAY_NO_RESPONSE (1ULL << 0) // Экран не отвечает +
 
 /* ---------- 2. ОШИБКИ ВНЕШНЕЙ EEPROM (биты 3..6) ---------- */
-#define STATUS_EEPROM_INIT_ERROR (1ULL << 1)        // Ошибка инициализации EEPROM -
+#define STATUS_EEPROM_INIT_ERROR (1ULL << 1)        // Ошибка инициализации EEPROM (устройство ее не видит) +
 #define STATUS_EEPROM_READY_ERROR (1ULL << 2)       // Ошибка готовности EEPROM +
 #define STATUS_EEPROM_WRITE_ERROR (1ULL << 3)       // Ошибка записи в EEPROM +
-#define STATUS_EEPROM_READ_ERROR (1ULL << 4)        // Ошибка чтения из EEPROM -
-#define STATUS_EEPROM_CRC_ERROR (1ULL << 5)         // Ошибка проверки CRC данных EEPROM +
+#define STATUS_EEPROM_READ_ERROR (1ULL << 4)        // Ошибка чтения из EEPROM +
+#define STATUS_EEPROM_CRC_ERROR (1ULL << 5)         // Ошибка проверки CRC данных EEPROM (нарушена целостность данных) +
 #define STATUS_EEPROM_TIMEOUT_I2C_ERROR (1ULL << 6) // Превышено время ожидпния ответа от EEPROM +
 
 /* ---------- 3. ОШИБКИ ВНЕШНЕГО АЦП (биты 7..10) ---------- */
-#define STATUS_ADC_EXTERNAL_INIT_ERROR (1ULL << 7)  // Ошибка внешнего АЦП +
+#define STATUS_ADC_EXTERNAL_INIT_ERROR (1ULL << 7)  // Ошибка приема и передачи данных от внешнего АЦП +
 #define STATUS_ADC_RANGE_ERROR (1ULL << 8)          // Ошибка диапазона данных АЦП (обрыв) +
 #define STATUS_ADC_TIMEOUT_ERROR (1ULL << 9)        // Таймаут ответа от АЦП +
 #define STATUS_ADC_READY_ERROR (1ULL << 10)         // SPI АЦП занят +
-#define STATUS_ADC_TIMEOUT_CYCLE_ERROR (1ULL << 11) // Ошибка таймаута АЦП при чтении  +
-
-/* ---------- 4. ОШИБКИ ДАТЧИКОВ ТЕМПЕРАТУРЫ (биты 11..12) ---------- */
-#define STATUS_TEMP_SENSOR_COMM_ERROR (1ULL << 12) // Ошибка связи с цифровым датчиком температуры -
+#define STATUS_ADC_TIMEOUT_CYCLE_ERROR (1ULL << 11) // Ошибка таймаута АЦП в цикле (доп проверка)  +
 
 /* ---------- 5. ОШИБКИ RS-485 (биты 13..15) ---------- */
-#define STATUS_RS485_INIT_ERROR (1ULL << 13) // Ошибка инициализации RS-485 (UART) -
-#define STATUS_RS485_RX_ERROR (1ULL << 14)   // Любая ошибка приема (parity/framing/overrun) -
-#define STATUS_RS485_TX_ERROR (1ULL << 15)   // Ошибка передачи данных RS-485 -
+#define STATUS_RS485_INIT_ERROR (1ULL << 12) // Ошибка инициализации RS-485 (UART) -
+#define STATUS_RS485_RX_ERROR (1ULL << 13)   // Любая ошибка приема (parity/framing/overrun) -
+#define STATUS_RS485_TX_ERROR (1ULL << 14)   // Ошибка передачи данных RS-485 -
+#define STATUS_RS485_RESERVED_1 (1ULL << 15) // Резервная ошибка - 
+#define STATUS_RS485_RESERVED_2 (1ULL << 16) // Резервная ошибка -
 
 /* ---------- 6. ОШИБКИ USB (биты 16..19) ---------- */
-#define STATUS_USB_FLASH_MOUNT_ERROR (1ULL << 16) // Ошибка монтирования USB-Flash +
-#define STATUS_USB_FULL_ERROR (1ULL << 17)        //  Ошибка заполнености USB-Flash +
-#define STATUS_USB_OPEN_ERROR (1ULL << 18)        //  Ошибка открытия USB-Flash +
-#define STATUS_USB_LSEEK_ERROR (1ULL << 19)       //  Ошибка поиска конца файла USB-Flash +
-#define STATUS_USB_FLASH_WRITE_ERROR (1ULL << 20) // Ошибка записи на USB-Flash +
-#define STATUS_USB_FLASH_READ_ERROR (1ULL << 21)  // Ошибка чтения на USB-Flash +
-#define STATUS_USB_FLASH_SYNC_ERROR (1ULL << 22)  // Ошибка синхронизации USB-Flash +
+#define STATUS_USB_FLASH_MOUNT_ERROR (1ULL << 17) // Ошибка монтирования USB-Flash +
+#define STATUS_USB_FULL_ERROR (1ULL << 18)        //  Ошибка заполнености USB-Flash +
+#define STATUS_USB_OPEN_ERROR (1ULL << 19)        //  Ошибка открытия файла USB-Flash +
+#define STATUS_USB_LSEEK_ERROR (1ULL << 20)       //  Ошибка поиска конца файла USB-Flash +
+#define STATUS_USB_FLASH_WRITE_ERROR (1ULL << 21) // Ошибка записи на USB-Flash +
+#define STATUS_USB_FLASH_READ_ERROR (1ULL << 22)  // Ошибка чтения на USB-Flash +
+#define STATUS_USB_FLASH_SYNC_ERROR (1ULL << 23)  // Ошибка синхронизации USB-Flash +
 
 /* ---------- 7. ОШИБКИ FLASH (биты 20..23) ---------- */
-#define STATUS_FLASH_ID_ERROR (1ULL << 23)     // Ошибка ID внутренней Flash памяти +
-#define STATUS_FLASH_SEND_ERROR (1ULL << 24)   // Таймаут отправки на Flash память +
-#define STATUS_FLASH_RECV_ERROR (1ULL << 25)   // Таймаут чтения на Flash память +
-#define STATUS_FLASH_TIEOUT_ERROR (1ULL << 26) // Ошибка таймаута Flash памяти +
-#define STATUS_FLASH_READY_ERROR (1ULL << 27)  // Ошибка готовности линии SPI Flash +
-
-/* ---------- 8. ОШИБКИ SD-КАРТЫ (биты 24..31) ---------- */
-#define STATUS_SD_INIT_ERROR (1ULL << 28)        // Ошибка инициализации SD-карты
-#define STATUS_SD_MOUNT_ERROR (1ULL << 29)       // Ошибка монтирования файловой системы SD
-#define STATUS_SD_WRITE_ERROR (1ULL << 30)       // Ошибка записи на SD
-#define STATUS_SD_READ_ERROR (1ULL << 31)        // Ошибка чтения с SD
-#define STATUS_SD_CORRUPTED_DATA (1ULL << 32)    // Данные повреждены на SD
-#define STATUS_SD_FILE_OPEN_ERROR (1ULL << 33)   // Ошибка открытия файла на SD
-#define STATUS_SD_TEMP_OUT_OF_RANGE (1ULL << 34) // Температура вне допустимого диапазона для SD
+#define STATUS_FLASH_INIT_ERROR (1ULL << 24)     // Ошибка инициализации внутренней Flash памяти (чтение ID) +
+#define STATUS_FLASH_READY_ERROR (1ULL << 25)    // Ошибка готовности линии SPI Flash +
+#define STATUS_FLASH_SEND_ERROR (1ULL << 26)     // ошибка отправки команды на Flash память +
+#define STATUS_FLASH_RECV_ERROR (1ULL << 27)     // ошибка приема команды от Flash памяти +
+#define STATUS_FLASH_TIEOUT_ERROR (1ULL << 28)   // Ошибка таймаута Flash памяти +
+#define STATUS_FLASH_CRC_ERROR (1ULL << 29)      // Ошибка чтения данных из Flash памяти (поврежден блок) +
+#define STATUS_FLASH_OVERFLOW_ERROR (1ULL << 30) // Ошибка переполнения данных на Flash памяти (установится 1 раз) + 
 
 /* ---------- 9. ОШИБКИ GSM (биты 32..40) ---------- */
-#define STATUS_GSM_REG_ERROR (1ULL << 35)   // Ошибка регистрации в сети GSM
-#define STATUS_NBIOT_REG_ERROR (1ULL << 36) // Ошибка регистрации в сети NB-IoT
-#define STATUS_GSM_NET_ERROR (1ULL << 37)   // Ошибка выхода в интернет по GSM
-#define STATUS_GSM_NO_SIM (1ULL << 38)      // SIM-карта отсутствует
-// ОШИБКА - слабый уровень сигнала
-#define STATUS_UART_SMS_SEND_ERROR (1ULL << 39)     // Ошибка отправки SMS
-#define STATUS_UART_SERVER_COMM_ERROR (1ULL << 40)  // Ошибка связи с сервером
-#define STATUS_UART_SERVER_UNAVAILABLE (1ULL << 41) // Сервер недоступен
-#define STATUS_UART_NO_RESPONSE (1ULL << 42)        // Нет ответа от сервера/устройства
-#define STATUS_UART_WRONG_PASSWORD (1ULL << 43)     // Неверный пароль
+#define STATUS_UART_NO_RESPONSE (1ULL << 31)          // Нет ответа от модуля связи +
+#define STATUS_GSM_NO_SIM (1ULL << 32)                // SIM-карта отсутствует + 
+#define STATUS_GSM_SIGNEL_ERROR (1ULL << 33)          // Ошибка слабый сигнал (меньше 5) +
+#define STATUS_GSM_REG_ERROR (1ULL << 34)             // Ошибка регистрации в сети GSM +
+#define STATUS_NBIOT_REG_ERROR (1ULL << 35)           // Ошибка регистрации в сети NB-IoT -
+#define STATUS_HTTP_SERVER_COMM_ERROR (1ULL << 36)    // Ошибка связи с сервером +
+#define STATUS_GSM_SMS_SEND_ERROR (1ULL << 37)        // Ошибка отправки SMS +
+#define STATUS_HTTP_WRONG_PASSWORD_ERROR (1ULL << 38) // Неверный пароль +
+#define STATUS_HTTP_NO_BINDING_ERROR (1ULL << 39)     // Устройство не привязано на сайте +
+#define STATUS_HTTP_RESERVED (1ULL << 40)             // Резервная ошибка -
 
 /* ---------- 10. ОШИБКИ ПРОШИВКИ (биты 41..43) ---------- */
-#define STATUS_FIRMWARE_UPDATE_ERROR (1ULL << 44)       // Ошибка обновления (нарушена целостность прошивки)
-#define STATUS_FIRMWARE_UPDATE_INTERRUPTED (1ULL << 45) // Обновление прервано
-#define STATUS_FIRMWARE_CHECK_ERROR (1ULL << 46)        // Ошибка проверки прошивки (rollback или неверная подпись)
+#define STATUS_FIRMWARE_UPDATE_ERROR (1ULL << 41) // Ошибка обновления (нарушена целостность прошивки) -
+#define STATUS_FIRMWARE_COPY_SITE (1ULL << 42)    // Ошибка скачивания с сайта прошивки -
+#define STATUS_FIRMWARE_COPY_USB (1ULL << 43)     // Ошибка копирования с USB-Flash прошивки -
 
 /* ---------- 11. ОБЩИЕ ОШИБКИ (биты 44..47) ---------- */
-#define STATUS_IDLE_LOOP_MODE (1ULL << 47)   // Переход в idle loop из-за долгого бездействия
-#define STATUS_INTERNAL_ERROR (1ULL << 48)   // Внутренняя ошибка системы
-#define STATUS_VOLTAGE_TOO_LOW (1ULL << 49)  // Слишком низкое напряжение питания
-#define STATUS_VOLTAGE_TOO_HIGH (1ULL << 50) // Слишком высокое напряжение питания
+#define STATUS_IDLE_LOOP_MODE (1ULL << 44)   // Переход в idle loop из-за долгого бездействия (сохранять коды при переходе)
+#define STATUS_VOLTAGE_TOO_LOW (1ULL << 45)  // Слишком низкое напряжение питания
+#define STATUS_VOLTAGE_TOO_HIGH (1ULL << 46) // Слишком высокое напряжение питания
+#define LOW_VOLTAGE = 22.5
+#define HIGH_VOLTAGE = 29.3
 
-/* ---------- 12. КРИТИЧЕСКИЕ ОШИБКИ (биты 48..51) ---------- */
-#define STATUS_CRITICAL_ERROR (1ULL << 51)     // Критическая ошибка системы
-#define STATUS_UNKNOWN_ERROR (1ULL << 52)      // Неизвестная ошибка системы
-#define STATUS_STACK_OVERFLOW (1ULL << 53)     // Переполнение стека (RTOS/система)
-#define STATUS_HARDFAULT_OCCURRED (1ULL << 54) // Произошёл HardFault (или BusFault, если не обработан отдельно)
+/* ---------- 14. ИСКЛЮЧИТЕЛЬНЫЕ ФОЛТЫ (FAULTS) (биты 56..59) ----------  */
+#define STATUS_STACK_OVERFLOW (1ULL << 47)      // Переполнение стека (RTOS/система)
+#define STATUS_HARDFAULT_OCCURRED (1ULL << 48)  // Произошёл HardFault (или BusFault, если не обработан отдельно)
+#define STATUS_NMI_OCCURRED (1ULL << 49)        // Произошёл NMI (Non-Maskable Interrupt)
+#define STATUS_MEMMANAGE_FAULT (1ULL << 50)     // Произошёл MemManage Fault (ошибка управления памятью)
+#define STATUS_BUSFAULT_OCCURRED (1ULL << 51)   // Произошёл BusFault (ошибка доступа к памяти или периферии)
+#define STATUS_USAGEFAULT_OCCURRED (1ULL << 52) // Произошёл UsageFault (неопределённая инструкция или иное)
 
-/* ---------- 13. ОШИБКИ W25Q (биты 52..55) ---------- */
-#define STATUS_W25Q_INIT_ERROR (1ULL << 55)  // Не удалось инициализировать W25Q
-#define STATUS_W25Q_WRITE_ERROR (1ULL << 56) // Ошибка записи в W25Q (Page Program)
-#define STATUS_W25Q_ERASE_ERROR (1ULL << 57) // Ошибка стирания в W25Q (Sector/Block Erase)
-#define STATUS_W25Q_TIMEOUT (1ULL << 58)     // Превышен тайм-аут W25Q (Busy не снялся)
+#define STATUS_STACK_OVERFLOW_ACK (1ULL << 53)      // Переполнение стека подтверждение (2 подряд) (RTOS/система)
+#define STATUS_HARDFAULT_OCCURRED_ACK (1ULL << 54)  // Произошёл HardFault подтверждение (2 подряд) (или BusFault, если не обработан отдельно)
+#define STATUS_NMI_OCCURRED_ACK (1ULL << 55)        // Произошёл NMI подтверждение (2 подряд) (Non-Maskable Interrupt)
+#define STATUS_MEMMANAGE_FAULT_ACK (1ULL << 56)     // Произошёл MemManage Fault подтверждение (2 подряд) (ошибка управления памятью)
+#define STATUS_BUSFAULT_OCCURRED_ACK (1ULL << 57)   // Произошёл BusFault подтверждение (2 подряд) (ошибка доступа к памяти или периферии)
+#define STATUS_USAGEFAULT_OCCURRED_ACK (1ULL << 58) // Произошёл UsageFault подтверждение (2 подряд) (неопределённая инструкция или иное)
 
-/* ---------- 14. ИСКЛЮЧИТЕЛЬНЫЕ ФОЛТЫ (FAULTS) (биты 56..59) ---------- */
-#define STATUS_NMI_OCCURRED (1ULL << 59)        // Произошёл NMI (Non-Maskable Interrupt)
-#define STATUS_MEMMANAGE_FAULT (1ULL << 60)     // Произошёл MemManage Fault (ошибка управления памятью)
-#define STATUS_BUSFAULT_OCCURRED (1ULL << 61)   // Произошёл BusFault (ошибка доступа к памяти или периферии)
-#define STATUS_USAGEFAULT_OCCURRED (1ULL << 62) // Произошёл UsageFault (неопределённая инструкция или иное)
+#define ERROR_RTC (1ULL << 59)             // Ошибка RTC, запуск от внутреннего генератора
+#define STATUS_ADC_TEMP_ERROR (1ULL << 60) // Отсутствует аналоговый датчик температуры
 
 /* ---------- 15. РЕЗЕРВ (биты 60..63) ---------- */
-#define ERROR_RTC (1ULL << 63) // Ошибка RTC, запуск от внутреннего генератора
-
+#define STATUS_RESERVED_1 (1ULL << 61) // Резервная ошибка
+#define STATUS_RESERVED_2 (1ULL << 62) // Резервная ошибка
+#define STATUS_RESERVED_3 (1ULL << 63) // Резервная ошибка
 /* ---------- Групповые маски ошибок ---------- */
+
+/* 1. Ошибки экрана SPI */
 #define STATUS_SPI_ERRORS (STATUS_SPI_DISPLAY_NO_RESPONSE)
 
+/* 2. Ошибки внешней EEPROM */
 #define STATUS_EEPROM_ERRORS (STATUS_EEPROM_INIT_ERROR | STATUS_EEPROM_READY_ERROR | \
                               STATUS_EEPROM_WRITE_ERROR | STATUS_EEPROM_READ_ERROR | \
                               STATUS_EEPROM_CRC_ERROR | STATUS_EEPROM_TIMEOUT_I2C_ERROR)
 
+/* 3. Ошибки внешнего АЦП */
 #define STATUS_ADC_ERRORS (STATUS_ADC_EXTERNAL_INIT_ERROR | STATUS_ADC_RANGE_ERROR | \
-                           STATUS_ADC_TIMEOUT_ERROR | STATUS_ADC_READY_ERROR)
+                           STATUS_ADC_TIMEOUT_ERROR | STATUS_ADC_READY_ERROR |       \
+                           STATUS_ADC_TIMEOUT_CYCLE_ERROR)
 
-#define STATUS_TEMP_SENSOR_ERRORS (STATUS_TEMP_SENSOR_COMM_ERROR)
+/* 4. Ошибки RS-485 */
+#define STATUS_RS485_ERRORS (STATUS_RS485_INIT_ERROR | STATUS_RS485_RX_ERROR | \
+                             STATUS_RS485_TX_ERROR)
 
-#define STATUS_RS485_ERRORS (STATUS_RS485_INIT_ERROR | STATUS_RS485_RX_ERROR | STATUS_RS485_TX_ERROR)
-
+/* 5. Ошибки USB */
 #define STATUS_USB_ERRORS (STATUS_USB_FLASH_MOUNT_ERROR | STATUS_USB_FULL_ERROR |       \
                            STATUS_USB_OPEN_ERROR | STATUS_USB_LSEEK_ERROR |             \
                            STATUS_USB_FLASH_WRITE_ERROR | STATUS_USB_FLASH_READ_ERROR | \
                            STATUS_USB_FLASH_SYNC_ERROR)
 
-#define STATUS_FLASH_ERRORS (STATUS_FLASH_ID_ERROR | STATUS_FLASH_SEND_ERROR |     \
-                             STATUS_FLASH_RECV_ERROR | STATUS_FLASH_TIEOUT_ERROR | \
-                             STATUS_FLASH_READY_ERROR)
+/* 6. Ошибки Flash */
+#define STATUS_FLASH_ERRORS (STATUS_FLASH_INIT_ERROR | STATUS_FLASH_READY_ERROR | \
+                             STATUS_FLASH_SEND_ERROR | STATUS_FLASH_RECV_ERROR |  \
+                             STATUS_FLASH_TIEOUT_ERROR | STATUS_FLASH_CRC_ERROR | \
+                             STATUS_FLASH_OVERFLOW_ERROR)
 
-#define STATUS_SD_ERRORS (STATUS_SD_INIT_ERROR | STATUS_SD_MOUNT_ERROR | STATUS_SD_WRITE_ERROR | \
-                          STATUS_SD_READ_ERROR | STATUS_SD_CORRUPTED_DATA |                      \
-                          STATUS_SD_FILE_OPEN_ERROR | STATUS_SD_TEMP_OUT_OF_RANGE)
+/* 7. Ошибки GSM/NB-IoT и связи */
+#define STATUS_GSM_ERRORS (STATUS_UART_NO_RESPONSE | STATUS_GSM_NO_SIM |                  \
+                           STATUS_GSM_SIGNEL_ERROR | STATUS_GSM_REG_ERROR |               \
+                           STATUS_NBIOT_REG_ERROR | STATUS_HTTP_SERVER_COMM_ERROR |       \
+                           STATUS_GSM_SMS_SEND_ERROR | STATUS_HTTP_WRONG_PASSWORD_ERROR | \
+                           STATUS_HTTP_NO_BINDING_ERROR)
 
-#define STATUS_GSM_ERRORS (STATUS_GSM_REG_ERROR | STATUS_NBIOT_REG_ERROR | STATUS_GSM_NET_ERROR | \
-                           STATUS_GSM_NO_SIM | STATUS_UART_SMS_SEND_ERROR |                       \
-                           STATUS_UART_SERVER_COMM_ERROR | STATUS_UART_SERVER_UNAVAILABLE |       \
-                           STATUS_UART_NO_RESPONSE | STATUS_UART_WRONG_PASSWORD)
+/* 8. Ошибки прошивки */
+#define STATUS_FIRMWARE_ERRORS (STATUS_FIRMWARE_UPDATE_ERROR | STATUS_FIRMWARE_UPDATE_SITE)
 
-#define STATUS_FIRMWARE_ERRORS (STATUS_FIRMWARE_UPDATE_ERROR |       \
-                                STATUS_FIRMWARE_UPDATE_INTERRUPTED | \
-                                STATUS_FIRMWARE_CHECK_ERROR)
+/* 9. Общие ошибки */
+#define STATUS_COMMON_ERRORS (STATUS_IDLE_LOOP_MODE | STATUS_VOLTAGE_TOO_LOW | STATUS_VOLTAGE_TOO_HIGH)
 
-#define STATUS_COMMON_ERRORS (STATUS_IDLE_LOOP_MODE | STATUS_INTERNAL_ERROR | \
-                              STATUS_VOLTAGE_TOO_LOW | STATUS_VOLTAGE_TOO_HIGH)
+/* 10. Критические ошибки */
+#define STATUS_CRITICAL_ERRORS (STATUS_STACK_OVERFLOW | STATUS_HARDFAULT_OCCURRED)
 
-#define STATUS_CRITICAL_ERRORS (STATUS_CRITICAL_ERROR | STATUS_UNKNOWN_ERROR | \
-                                STATUS_STACK_OVERFLOW | STATUS_HARDFAULT_OCCURRED)
-
-#define STATUS_W25Q_ERRORS (STATUS_W25Q_INIT_ERROR | STATUS_W25Q_WRITE_ERROR | \
-                            STATUS_W25Q_ERASE_ERROR | STATUS_W25Q_TIMEOUT)
-
+/* 11. Фолты (исключительные ошибки) */
 #define STATUS_FAULTS (STATUS_NMI_OCCURRED | STATUS_MEMMANAGE_FAULT | \
                        STATUS_BUSFAULT_OCCURRED | STATUS_USAGEFAULT_OCCURRED)
 

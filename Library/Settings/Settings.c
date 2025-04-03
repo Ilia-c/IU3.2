@@ -159,7 +159,6 @@ char OneWire_temp_char[5] = {'\0'};  // Температура OneWire в вид
 
 char EEPROM_status_char[10]= "ND"; // Статус доступности EEPROM
 char FLASH_status_char[10] = "ND";  // Статус доступности FLASH
-char SD_status_char[10]= "ND";     // Статус доступности SD
 
 ////////////////////////////////////////////////////////////////////////////////
 // Дата и время (RTC)
@@ -175,7 +174,6 @@ RTC_DateTypeDef Date_start  = {0}; // Время старта МК
 const uint16_t Timer_key_press = 400;                      // Время ожидания до быстрого проматывания
 const uint16_t Timer_key_press_fast = 150;                 // Время быстрого нажатия клавиши
 char password[5] = "U37O";
-uint8_t time_counter = 0;
 
 
 // Буфер для приёма данных по USB

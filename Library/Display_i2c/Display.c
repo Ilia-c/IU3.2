@@ -96,15 +96,15 @@ const char READY[2][40] = {"Готово",  "Ready"};
 const char PASSWORD_IN[2][40] = {"Введите пароль",  "Enter password"};
 const char ERROR_TEXT[2][40] = {"Ошибка",  "Error"};
 const char DIAPASON_ERR[2][40] = {"Вне диапазона",  "Out of range"};
-const char CALIBRATE_4ma_CORRECT[2][40] = {"Калибровка 4мА успешна",  "4m сalibration completed"};
-const char CALIBRATE_20ma_CORRECT[2][40] = {"Калибровка 20мА успешна",  "20mA calibration completed"};
+const char CALIBRATE_4ma_CORRECT[2][40] = {"Калиб. 4мА успешна",  "4m сalib. compl."};
+const char CALIBRATE_20ma_CORRECT[2][40] = {"Калиб. 20мА успешна",  "20mA calib. compl."};
 const char ERROR_EEROM[2][40] = {"Ошибка EEPROM",  "EEPROM Error"};
 const char SAVE_DATA_IZM[2][40] = {"Сохранение...",  "SAVING..."};
 const char ZAPISEY[2][40] = {"Записей ",  "Log "};
 const char SAVE_USB_DATA[2][40] = {"Запись в файл... ",  "Filing..."};
 const char USB_RES_ERR[2][40] = {"USB не найден",  "USB not found"};
 const char SEND_ONE_REQ[2][40] = {"Отправка на сайт...",  "Uploading"};
-const char CALIBRATE_24V_CORRECT[2][40] = {"Калибровка 24В успешна",  "24V сalibration completed"};
+const char CALIBRATE_24V_CORRECT[2][40] = {"Калиб. 24В успешна",  "24V сalib. compl."};
 const char YES[2][40] = {"Да",  "YES"};
 const char NO[2][40] = {"Нет",  "NO"};
 const char FORMAT[2][40] = {"Форматировать Flash?",  "Format Flash?"};
@@ -469,13 +469,12 @@ MAKE_MENU(Menu_1, "Режимы", "Modes", 0, UPTADE_OFF, NO_SIGNED, Menu_2, PREVISION
 			MAKE_MENU(Menu_1_2_4_2, "Глубина", "Metering", 0, UPTADE_ON, UNITS_MODE_DATA, Menu_1_2_4_3, Menu_1_2_4_1, Menu_1_2_4, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char);
 			MAKE_MENU(Menu_1_2_4_3, "УГВ", "GWL", 0, UPTADE_ON, UNITS_MODE_DATA, Menu_1_2_4_4, Menu_1_2_4_2, Menu_1_2_4, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_correct_char);
 			MAKE_MENU(Menu_1_2_4_4, "Ток датчика", "Current", 0, UPTADE_ON, Unit_current, NEXT_MENU, Menu_1_2_4_3, Menu_1_2_4, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_Current_char);
-		MAKE_MENU(Menu_1_2_5, "EEPROM", "EEPROM", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_6, Menu_1_2_4, Menu_1_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, EEPROM_status_char); // ! обновить статус
-		MAKE_MENU(Menu_1_2_6, "SD-карта", "SD-card", 0, UPTADE_OFF, NO_SIGNED, Menu_1_2_7, Menu_1_2_5, Menu_1_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, FLASH_status_char); // ! обновить статус
-		MAKE_MENU(Menu_1_2_7, "FLASH", "FLASH", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_1_2_6, Menu_1_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, SD_status_char); // ! обновить статус
+		MAKE_MENU(Menu_1_2_5, "EEPROM", "EEPROM", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_6, Menu_1_2_4, Menu_1_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, EEPROM_status_char); 
+		MAKE_MENU(Menu_1_2_6, "FLASH", "FLASH", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_1_2_5, Menu_1_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, FLASH_status_char); 
 	MAKE_MENU(Menu_1_3, "Показания", "Sensor reading", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_1_2, Menu_1, Menu_1_3_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
 		MAKE_MENU(Menu_1_3_1, "Глубина", "Metering", 0, UPTADE_ON, UNITS_MODE_DATA, Menu_1_3_2, PREVISION_MENU, Menu_1_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char);
 		MAKE_MENU(Menu_1_3_2, "УГВ", "GWL", 0, UPTADE_ON, UNITS_MODE_DATA, Menu_1_3_3, Menu_1_3_1, Menu_1_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_correct_char);
-		MAKE_MENU(Menu_1_3_3, "Сохранить", "Save", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_1_3_2, Menu_1_3, CHILD_MENU, SAVE_IZM, SELECT_BAR, DATA_IN, DATA_OUT); // ! Сохранить показания в зависисмости от режима
+		MAKE_MENU(Menu_1_3_3, "Сохранить", "Save", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_1_3_2, Menu_1_3, CHILD_MENU, SAVE_IZM, SELECT_BAR, DATA_IN, DATA_OUT); 
 MAKE_MENU(Menu_2, "Настройки", "Settings", 0, UPTADE_OFF, NO_SIGNED, Menu_3, Menu_1, PARENT_MENU, Menu_2_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
 	MAKE_MENU(Menu_2_1, "Дата", "Date", 0, UPTADE_OFF, NO_SIGNED, Menu_2_2, PREVISION_MENU, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Date_redact, DATA_OUT);
 	MAKE_MENU(Menu_2_2, "Время", "Time", 0, UPTADE_OFF, NO_SIGNED, Menu_2_3, Menu_2_1, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Time_redact, DATA_OUT);
@@ -643,10 +642,11 @@ void SAVE_IZM(){
     Display_TopBar(selectedMenuItem);
     #define Y 25
 
-    Collect_DATA();
+    //Collect_DATA();
 
     if (EEPROM.Save_in == 0)
     {
+        Collect_DATA();
         OLED_DrawCenteredString(SAVE_DATA_IZM, Y);
         OLED_UpdateScreen();
         int res = flash_append_record(save_data, 1);
@@ -693,8 +693,8 @@ void SAVE_IZM(){
         while ((xTaskGetTickCount() - start_tick) < timeout)
         {
             // Если появился флаг ошибки UART или флаг успешной отправки HTTP, выходим из цикла
-            if (ERRCODE.STATUS & STATUS_UART_SERVER_COMM_ERROR){
-                GSM_data.Status &= ~STATUS_UART_SERVER_COMM_ERROR;
+            if (ERRCODE.STATUS & STATUS_HTTP_SERVER_COMM_ERROR){
+                GSM_data.Status &= ~STATUS_HTTP_SERVER_COMM_ERROR;
                 OLED_DrawCenteredString(ERROR_TEXT, Y);
                 OLED_UpdateScreen();
                 return;
@@ -856,7 +856,7 @@ void sleep(){
     if (YES_OR_NO(CYCLE) == 0){ mode_redact = 0; return;}
     EEPROM.Mode = 1;
     EEPROM_SaveSettings(&EEPROM);
-    if (!EEPROM_CheckDataValidity()){
+    if (EEPROM_CheckDataValidity() != HAL_OK){
         ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
     }
     HAL_PWR_EnableBkUpAccess();
@@ -864,7 +864,6 @@ void sleep(){
     HAL_PWR_DisableBkUpAccess();
     NVIC_SystemReset();
     osDelay(1000);
-    ERRCODE.STATUS |= STATUS_CRITICAL_ERROR;
 }
 
 
@@ -894,7 +893,7 @@ void Reset_settings(){
     FontSet(font);
     Display_TopBar(selectedMenuItem);
     #define Y 33
-    if (!EEPROM_CheckDataValidity()){
+    if (EEPROM_CheckDataValidity() != HAL_OK){
         ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
         OLED_DrawCenteredString(ERROR, Y);
     }
@@ -958,7 +957,7 @@ void ALL_Reset_settings(){
     FontSet(font);
     Display_TopBar(selectedMenuItem);
     #define Y 33
-    if (!EEPROM_CheckDataValidity()){
+    if (EEPROM_CheckDataValidity() != HAL_OK){
         ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
         OLED_DrawCenteredString(ERROR_TEXT, Y);
     }
@@ -988,7 +987,7 @@ void colibrate_4ma(){
     OLED_DrawCenteredString(CALIBRATE_4ma_CORRECT, Y_col);
 
     EEPROM_SaveSettings(&EEPROM);
-    if (!EEPROM_CheckDataValidity()){
+    if (EEPROM_CheckDataValidity() != HAL_OK){
         ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
         OLED_DrawCenteredString(ERROR_EEROM, Y_col+10);
     }
@@ -1032,11 +1031,11 @@ void colibrate_20ma(){
     OLED_DrawCenteredString(CALIBRATE_20ma_CORRECT, Y_col);
 
     EEPROM_SaveSettings(&EEPROM);
-    if (!EEPROM_CheckDataValidity()){
+    if (EEPROM_CheckDataValidity() != HAL_OK){
         ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
         OLED_DrawCenteredString(ERROR_EEROM, Y_col+10);
     }
-    OLED_DrawCenteredString(READY, Y_col+10);
+    OLED_DrawCenteredString(READY, Y_col+20);
     OLED_UpdateScreen();
     osDelay(200);
 }
@@ -1516,7 +1515,7 @@ void redact_end()
     mode_redact = 0;
     led_cursor = 1; 
     EEPROM_SaveSettings(&EEPROM);
-    if (!EEPROM_CheckDataValidity()){
+    if (EEPROM_CheckDataValidity() != HAL_OK){
         ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
     }
 }
@@ -1853,7 +1852,6 @@ void Keyboard_processing()
 {
     if (Keyboard_press_code != 0xFF)
     {
-        time_counter = 0;
         if (mode_redact == 5){
             return;
         }
@@ -2001,3 +1999,5 @@ void Start_video() {
     OLED_SendCommand(0xF1);  //  Установка фаз на рабочий режим
     OLED_SetContrast(0xFF);
 }
+
+

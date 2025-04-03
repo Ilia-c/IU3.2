@@ -77,7 +77,9 @@ int parse_CSQ(void)
             //ber - уровень ошибок 0-7, 99
             GSM_data.GSM_Signal_Level = rssi;
             GSM_data.GSM_Signal_Errors = ber;
-            
+
+            if (GSM_data.GSM_Signal_Level <= 5) ERRCODE.STATUS |= STATUS_GSM_SIGNEL_ERROR;
+            else ERRCODE.STATUS &= ~STATUS_GSM_SIGNEL_ERROR;
             return 1;
         }
     }
@@ -227,12 +229,17 @@ int waitForHTTPResponse()
     TickType_t startTick = xTaskGetTickCount();
     TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
     int32_t m, s, d;
+    ERRCODE.STATUS &= ~STATUS_HTTP_WRONG_PASSWORD_ERROR;
     // Пытаемся разобрать строку. Если в ответе присутствует лишний символ, например,
     // точка в конце "162.", sscanf успешно вернёт 3, так как цифры будут разобраны корректно.
     if (sscanf(parseBuffer, "%ld %ld %ld", &m, &s, &d) == 3)
     {
         if (s == 200)
             return 1;
+        if (s == 403){
+            ERRCODE.STATUS |= STATUS_HTTP_WRONG_PASSWORD_ERROR;
+            return -1;
+        }
         return 0; // Успешно получен и разобран ответ
     }
     while ((xTaskGetTickCount() - startTick) < timeoutTicks)
@@ -243,6 +250,10 @@ int waitForHTTPResponse()
             {
                 if (s == 200)
                     return 1;
+                if (s == 403){
+                    ERRCODE.STATUS |= STATUS_HTTP_WRONG_PASSWORD_ERROR;
+                    return -1;
+                }
                 return 0; // Успешно получен и разобран ответ
             }
         }
@@ -311,7 +322,7 @@ int sendSMS(void)
 
     // Если ни одна из попыток не увенчалась успехом, выставляем флаг ошибки
     if (!smsSent) {
-        ERRCODE.STATUS |= STATUS_UART_SMS_SEND_ERROR;
+        ERRCODE.STATUS |= STATUS_GSM_SMS_SEND_ERROR;
         return -1;
     }
     return 0;
@@ -346,7 +357,14 @@ int sendHTTP(void) {
         }
         osDelay(100);
         // Выполнение HTTPACTION, проверка ответа
-        if (SendCommandAndParse("AT+HTTPACTION=0\r", waitForHTTPResponse, 30000) != 1) {
+        int res = SendCommandAndParse("AT+HTTPACTION=0\r", waitForHTTPResponse, 30000);
+        if (res == -1) {
+            // Значит доступ запрещен, вероятно неверный пароль
+            SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 120000);
+            break;
+        }
+        if (res == 0){
+            // Если ошибка
             goto http_error_1;
         }
         osDelay(1000);
@@ -360,10 +378,9 @@ int sendHTTP(void) {
         // Если данные так и не получены, считаем попытку неуспешной
         if (readResult != 1) {
             ERRCODE.STATUS |= STATUS_UART_NO_RESPONSE;
-            ERRCODE.STATUS |= STATUS_UART_SERVER_COMM_ERROR;
+            ERRCODE.STATUS |= STATUS_HTTP_SERVER_COMM_ERROR;
             goto http_error_1;
         }
-
         // Если до сюда дошли, значит все команды выполнены успешно
         httpSent = 1;
         break;
@@ -385,7 +402,7 @@ http_error_1:
 
     // Если ни одна из попыток не увенчалась успехом, выставляем флаг ошибки
     if (!httpSent) {
-        ERRCODE.STATUS |= STATUS_UART_SERVER_COMM_ERROR;
+        ERRCODE.STATUS |= STATUS_HTTP_SERVER_COMM_ERROR;
         return -1;
     }
     return 0;
@@ -440,7 +457,14 @@ int READ_Settings_sendHTTP(void) {
         }
         osDelay(100);
         // Выполнение HTTPACTION, проверка ответа
-        if (SendCommandAndParse("AT+HTTPACTION=0\r", waitForHTTPResponse, 20000) != 1) {
+        int res = SendCommandAndParse("AT+HTTPACTION=0\r", waitForHTTPResponse, 30000);
+        if (res == -1) {
+            // Значит доступ запрещен, вероятно неверный пароль
+            SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 120000);
+            break;
+        }
+        if (res == 0){
+            // Если ошибка
             goto http_error_2;
         }
         osDelay(2000);
@@ -478,7 +502,7 @@ http_error_2:
 
     // Если ни одна из попыток не увенчалась успехом, выставляем флаг ошибки
     if (!httpSent) {
-        ERRCODE.STATUS |= STATUS_UART_SERVER_COMM_ERROR;
+        ERRCODE.STATUS |= STATUS_HTTP_SERVER_COMM_ERROR;
         return -1;
     }
     return 0;
@@ -487,9 +511,9 @@ http_error_2:
 int Send_data(){
     Collect_DATA();
     if (sendHTTP() == 0) return 0;
-    ERRCODE.STATUS |= STATUS_UART_SERVER_COMM_ERROR;
+    ERRCODE.STATUS |= STATUS_HTTP_SERVER_COMM_ERROR;
     if (sendSMS() == 0) return 0;
-    ERRCODE.STATUS |= STATUS_UART_SMS_SEND_ERROR;
+    ERRCODE.STATUS |= STATUS_GSM_SMS_SEND_ERROR;
     return -1;
 }
 
@@ -603,7 +627,7 @@ int parse_site_response(void) {
     EEPROM.Phone[sizeof(EEPROM.Phone) - 1] = '\0';
 
     
-    if (!EEPROM_SaveSettings(&EEPROM))
+    if (EEPROM_SaveSettings(&EEPROM) != HAL_OK)
     {
         ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
     }
@@ -618,6 +642,7 @@ int waitAndParseSiteResponse(void)
     TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
     
     if (strstr(parseBuffer, "NO_BINDING") != NULL) {
+        ERRCODE.STATUS |= STATUS_HTTP_NO_BINDING_ERROR;
         return 0;
     }
     char *start = strchr(parseBuffer, '[');
@@ -634,6 +659,7 @@ int waitAndParseSiteResponse(void)
         {
             // При каждом получении новых данных проверяем:
             if (strstr(parseBuffer, "NO_BINDING") != NULL) {
+                ERRCODE.STATUS |= STATUS_HTTP_NO_BINDING_ERROR;
                 return 0;
             }
             start = strchr(parseBuffer, '[');

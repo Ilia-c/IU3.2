@@ -14,6 +14,7 @@
 
 extern uint8_t data_read;
 
+void GSM_Init(void);
 void Update_Data(void);
 int determineRegionAndOperator(void);
 void SendSomeCommandAndSetFlag(void);

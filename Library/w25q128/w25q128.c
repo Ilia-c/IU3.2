@@ -71,15 +71,15 @@ void w25_init(void)
     HAL_Delay(100);
 
     uint32_t id = 0;
-    if (W25_Read_ID(&id) != 0) {
-        return;
+    W25_Read_ID(&id);
+    if (id != 0xef4018)
+    {
+        ERRCODE.STATUS |= STATUS_FLASH_INIT_ERROR;
     }
-    // Для W25Q128 ожидается JEDEC ID 0xEF4018 (может отличаться у других моделей)
-    if (id != 0xEF4018) {
-        // Код ошибки или лог
-        return;
+    else
+    {
+        ERRCODE.STATUS &= ~STATUS_FLASH_INIT_ERROR;
     }
-    // Если нужно что-то ещё, делаем здесь
 }
 
 //------------------------------------------------------------------------------
@@ -285,7 +285,6 @@ int W25_Chip_Erase(void)
 
 //------------------------------------------------------------------------------
 // Возвращает адрес свободного блока в "пустом" секторе или стирает сектор №0, если всё заполнено.
-// (Ваша нестандартная логика: sector_header=0xFF, пока есть свободные блоки)
 int32_t search_sector_empty(void)
 {
     uint8_t sector_header;  // первый байт сектора
@@ -306,6 +305,7 @@ int32_t search_sector_empty(void)
                 uint8_t frag_status;
                 if (W25_Read_Data(addr, &frag_status, 1) != 0) {
                     // Ошибка чтения - пропускаем
+                    ERRCODE.STATUS |= STATUS_FLASH_CRC_ERROR;
                     continue;
                 }
                 if (frag_status == EMPTY) {
@@ -384,6 +384,10 @@ int flash_append_record(const char *record_data, uint8_t sector_mark_send_flag)
             uint32_t next_sector = (sector_index + 1) % TOTAL_SECTORS;
             uint32_t next_sector_addr = next_sector * SECTOR_SIZE;
 
+            if (next_sector_addr >= FLASH_TOTAL_SIZE){
+                next_sector_addr = 0;
+                ERRCODE.STATUS |= STATUS_FLASH_OVERFLOW_ERROR;
+            }
             // читаем байт [0] в следующем секторе
             uint8_t next_sector_mark = 0xFF;
             if (W25_Read_Data(next_sector_addr, &next_sector_mark, 1) == 0) {
@@ -481,13 +485,20 @@ int Save_one_to_USB(void)
     FATFS *fs;
     DWORD fre_clust;
     
+    ERRCODE.STATUS &= ~STATUS_USB_FULL_ERROR;
+    ERRCODE.STATUS &= ~STATUS_USB_OPEN_ERROR;
+    ERRCODE.STATUS &= ~STATUS_USB_LSEEK_ERROR;
+    ERRCODE.STATUS &= ~STATUS_USB_FLASH_WRITE_ERROR;
+    ERRCODE.STATUS &= ~STATUS_USB_FLASH_READ_ERROR;
+    ERRCODE.STATUS &= ~STATUS_USB_FLASH_SYNC_ERROR;
+
     res = f_getfree(USBHPath, &fre_clust, &fs);
     if (res != FR_OK) {
         ERRCODE.STATUS |= STATUS_USB_FULL_ERROR;
         return -1;
     }
     ERRCODE.STATUS &= ~STATUS_USB_FULL_ERROR;
-
+    
     char filename[16];
     createFilename(filename, sizeof(filename));
     res = f_open(&MyFile, filename, FA_OPEN_APPEND | FA_WRITE);
@@ -509,6 +520,8 @@ int Save_one_to_USB(void)
         return -1;
     }
     ERRCODE.STATUS &= ~STATUS_USB_LSEEK_ERROR;
+    Collect_DATA();
+
 
     uint16_t len_data = strlen(save_data);
     save_data[len_data-1] = '\n'; // обрезаем
@@ -551,24 +564,30 @@ int backup_records_to_external(void)
     res = f_getfree(USBHPath, &fre_clust, &fs);
     if (res != FR_OK) {
         return -1;
+        ERRCODE.STATUS |= STATUS_USB_FULL_ERROR;
     }
+    ERRCODE.STATUS &= ~STATUS_USB_FULL_ERROR;
 
     char filename[16];
     createFilename(filename, sizeof(filename));
     res = f_open(&MyFile, filename, FA_OPEN_APPEND | FA_WRITE);
     if (res != FR_OK) {
+        ERRCODE.STATUS |= STATUS_USB_OPEN_ERROR;
         f_close(&MyFile);
         f_mount(NULL, USBHPath, 0);
         memset(&USBFatFs, 0, sizeof(FATFS));
         return -1;
     }
+    ERRCODE.STATUS &= ~STATUS_USB_OPEN_ERROR;
     res = f_lseek(&MyFile, f_size(&MyFile));
     if (res != FR_OK) {
+        ERRCODE.STATUS |= STATUS_USB_LSEEK_ERROR;
         f_close(&MyFile);
         f_mount(NULL, USBHPath, 0);
         memset(&USBFatFs, 0, sizeof(FATFS));
         return -1;
     }
+    ERRCODE.STATUS &= ~STATUS_USB_LSEEK_ERROR;
     // Допустим, flash_end_ptr не используется, тогда можно убрать всё с last_written / start_sector.
 
     // Сканируем все секторы
@@ -595,6 +614,7 @@ int backup_records_to_external(void)
             uint32_t block_addr = sector_addr + (i * RECORD_SIZE) + BLOCK_MARK_WRITE_START;
             uint8_t block_header = 0xFF;
             if (W25_Read_Data(block_addr, &block_header, 1) != 0) {
+                ERRCODE.STATUS |= STATUS_USB_FLASH_READ_ERROR;
                 // ошибка чтения
                 continue;
             }
@@ -607,6 +627,7 @@ int backup_records_to_external(void)
             // сместимся назад на 2 байта
             block_addr -= BLOCK_MARK_WRITE_START;
             if (W25_Read_Data(block_addr, (uint8_t *)&rec, sizeof(rec)) != 0) {
+                ERRCODE.STATUS |= STATUS_USB_FLASH_READ_ERROR;
                 continue;
             }
             size_t realLen = rec.length;
@@ -648,6 +669,7 @@ int backup_records_to_external(void)
             res = f_write(&MyFile, data, strlen(data), &bw);
             if (res != FR_OK)
             {
+                ERRCODE.STATUS |= STATUS_USB_FLASH_WRITE_ERROR;
                 f_close(&MyFile);
                 f_mount(NULL, USBHPath, 0);
                 memset(&USBFatFs, 0, sizeof(FATFS));
@@ -655,12 +677,13 @@ int backup_records_to_external(void)
             }
         }
     }
-
+    
     res = f_sync(&MyFile);
     if (res != FR_OK) {
+        ERRCODE.STATUS |= STATUS_USB_FLASH_SYNC_ERROR;
         // ошибка синхронизации
     }
-
+    ERRCODE.STATUS &= ~STATUS_USB_FLASH_SYNC_ERROR;
     f_close(&MyFile);
     // f_mount(NULL, USBHPath, 0); // Если нужно
     return 1;

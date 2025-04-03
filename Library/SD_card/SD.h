@@ -10,12 +10,9 @@
 
 extern EEPROM_Settings_item EEPROM;
 
-void WriteToSDCard(void);
-void SD_check();
+
 void base62_encode(uint64_t value, char *buffer, size_t bufferSize);
-void SETTINGS_REQUEST_DATA();
 void SD_write_log(char *string, char *path);
-HAL_StatusTypeDef SD_mount();
-void SD_unmount();
 void Collect_DATA();
 void remove_whitespace(char *str);
+void SETTINGS_REQUEST_DATA();

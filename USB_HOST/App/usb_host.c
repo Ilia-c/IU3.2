@@ -1,21 +1,21 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file            : usb_host.c
-  * @version         : v2.0_Cube
-  * @brief           : This file implements the USB Host
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2025 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file            : usb_host.c
+ * @version         : v2.0_Cube
+ * @brief           : This file implements the USB Host
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2025 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
@@ -52,9 +52,9 @@ static void USBH_UserProcess(USBH_HandleTypeDef *phost, uint8_t id);
 /* USER CODE END 1 */
 
 /**
-  * Init USB host library, add supported class and start the library
-  * @retval None
-  */
+ * Init USB host library, add supported class and start the library
+ * @retval None
+ */
 void MX_USB_HOST_Init(void)
 {
   /* USER CODE BEGIN USB_HOST_Init_PreTreatment */
@@ -83,54 +83,53 @@ void MX_USB_HOST_Init(void)
  * user callback definition
  */
 
-static void USBH_UserProcess  (USBH_HandleTypeDef *phost, uint8_t id)
+static void USBH_UserProcess(USBH_HandleTypeDef *phost, uint8_t id)
 {
   /* USER CODE BEGIN CALL_BACK_1 */
-  switch(id)
+  switch (id)
   {
   case HOST_USER_SELECT_CONFIGURATION:
-  break;
+    break;
 
   case HOST_USER_DISCONNECTION:
-  f_mount(NULL, USBHPath, 0);
-  memset(&USBFatFs, 0, sizeof(FATFS));
-  Appli_state = APPLICATION_DISCONNECT;
-  xSemaphoreGive(Display_semaphore);
-  break;
+    f_mount(NULL, USBHPath, 0);
+    memset(&USBFatFs, 0, sizeof(FATFS));
+    Appli_state = APPLICATION_DISCONNECT;
+    xSemaphoreGive(Display_semaphore);
+    break;
 
   case HOST_USER_CLASS_ACTIVE:
 
-  res = f_mount(&USBFatFs, USBHPath, 0);
-  if (res != FR_OK)
-  {
-    ERRCODE.STATUS |= STATUS_USB_FLASH_MOUNT_ERROR;
-    f_mount(NULL, USBHPath, 0);
-    memset(&USBFatFs, 0, sizeof(FATFS));
+    res = f_mount(&USBFatFs, USBHPath, 0);
+    if (res != FR_OK)
+    {
+      ERRCODE.STATUS |= STATUS_USB_FLASH_MOUNT_ERROR;
+      f_mount(NULL, USBHPath, 0);
+      memset(&USBFatFs, 0, sizeof(FATFS));
+      xSemaphoreGive(Display_semaphore);
+    }
+    else
+    {
+      ERRCODE.STATUS &= ~STATUS_USB_FLASH_MOUNT_ERROR;
+      Appli_state = APPLICATION_READY;
+    }
     xSemaphoreGive(Display_semaphore);
-  }
-  else
-  {
-    ERRCODE.STATUS &= ~STATUS_USB_FLASH_MOUNT_ERROR;
-    Appli_state = APPLICATION_READY;
-  }
-  xSemaphoreGive(Display_semaphore);
-  break;
+    break;
 
   case HOST_USER_CONNECTION:
-  Appli_state = APPLICATION_START;
-  break;
+    Appli_state = APPLICATION_START;
+    break;
 
   default:
-  break;
+    break;
   }
   /* USER CODE END CALL_BACK_1 */
 }
 
 /**
-  * @}
-  */
+ * @}
+ */
 
 /**
-  * @}
-  */
-
+ * @}
+ */

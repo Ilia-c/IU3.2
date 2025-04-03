@@ -54,12 +54,12 @@ target_include_directories(stm32cubemx INTERFACE
 
 target_sources(stm32cubemx INTERFACE
     ../../Core/Src/main.c
+    ../../Core/Src/GPIO.c
+    ../../Core/Src/Init.c
     ../../Core/Src/freertos.c
     ../../Core/Src/stm32l4xx_it.c
     ../../Core/Src/stm32l4xx_hal_msp.c
     ../../Core/Src/stm32l4xx_hal_timebase_tim.c
-    ../../FATFS/Target/bsp_driver_sd.c
-    ../../FATFS/Target/sd_diskio.c
     ../../FATFS/Target/fatfs_platform.c
     ../../FATFS/Target/usbh_diskio.c
     ../../FATFS/App/fatfs.c

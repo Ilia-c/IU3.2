@@ -39,7 +39,7 @@ int Read_ADC_Colibrate_24V(void)
         *IntADC.Colibrate_koeff = 24.0f / IntADC.ADC_AKB_volts;
         sprintf(IntADC.ADC_AKB_volts_char, "%.2f", IntADC.ADC_AKB_volts);
         EEPROM_SaveSettings(&EEPROM);
-        if (!EEPROM_CheckDataValidity()){
+        if (EEPROM_CheckDataValidity() != HAL_OK){
             ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
             return -1;
         }

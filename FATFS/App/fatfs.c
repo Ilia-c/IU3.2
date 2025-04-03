@@ -18,12 +18,11 @@
 /* USER CODE END Header */
 #include "fatfs.h"
 
-uint8_t retSD;    /* Return value for SD */
-char SDPath[4] = "0:";   /* SD logical drive path */
+
 FATFS SDFatFS;    /* File system object for SD logical drive */
 FIL SDFile;       /* File object for SD */
 uint8_t retUSBH;    /* Return value for USBH */
-char USBHPath[4] = "1:";   /* USBH logical drive path */
+char USBHPath[4] = "0:";   /* USBH logical drive path */
 FATFS USBHFatFS;    /* File system object for USBH logical drive */
 FIL USBHFile;       /* File object for USBH */
 
@@ -33,9 +32,6 @@ FIL USBHFile;       /* File object for USBH */
 
 void MX_FATFS_Init(void)
 {
-  /*## FatFS: Link the SD driver ###########################*/
-  retSD = FATFS_LinkDriver(&SD_Driver, SDPath);
-  /*## FatFS: Link the USBH driver ###########################*/
   retUSBH = FATFS_LinkDriver(&USBH_Driver, USBHPath);
   
   
