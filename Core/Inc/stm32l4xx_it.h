@@ -25,6 +25,14 @@
  extern "C" {
 #endif
 
+#include "Settings.h"
+#include "Status_codes.h"
+#include "RTC_data.h"
+#include "main.h"
+#include "keyboard.h"
+#include "Display.h"
+
+extern EEPROM_Settings_item EEPROM;
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 

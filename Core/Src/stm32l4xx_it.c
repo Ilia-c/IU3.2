@@ -18,11 +18,7 @@
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
-#include "main.h"
 #include "stm32l4xx_it.h"
-#include "Settings.h"
-#include "Status_codes.h"
-#include "RTC_data.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 /* USER CODE END Includes */
@@ -63,8 +59,10 @@ extern HCD_HandleTypeDef hhcd_USB_OTG_FS;
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim5;
 extern TIM_HandleTypeDef htim6;
-extern TIM_HandleTypeDef htim16;
+extern TIM_HandleTypeDef htim8;
 extern UART_HandleTypeDef huart4;
+
+extern xSemaphoreHandle SLEEP_semaphore;
 
 /* USER CODE BEGIN EV */
 
@@ -80,26 +78,27 @@ extern UART_HandleTypeDef huart4;
 extern RTC_HandleTypeDef hrtc;
  void NMI_Handler(void)
  {
-   // Ð£ÑÑ‚Ð°Ð½Ð°Ð²Ð»Ð¸Ð²Ð°ÐµÐ¼ Ñ„Ð»Ð°Ð³ Ð² ERRCODE (Ð½Ðµ ÑÐ¾Ñ…Ñ€Ð°Ð½Ð¸Ñ‚ÑÑ Ð¿Ð¾ÑÐ»Ðµ reset, ÐµÑÐ»Ð¸ Ð½Ðµ Ð² backup SRAM)
+   // Óñòàíàâëèâàåì ôëàã â ERRCODE (íå ñîõðàíèòñÿ ïîñëå reset, åñëè íå â backup SRAM)
    ERRCODE.STATUS |= STATUS_NMI_OCCURRED;  
- 
-   // Ð Ð°Ð·Ñ€ÐµÑˆÐ°ÐµÐ¼ Ð´Ð¾ÑÑ‚ÑƒÐ¿ Ðº backup-Ñ€ÐµÐ³Ð¸ÑÑ‚Ñ€Ð°Ð¼
+   uint32_t errcode_low  = (uint32_t)(ERRCODE.STATUS & 0xFFFFFFFF);
+   uint32_t errcode_high = (uint32_t)(ERRCODE.STATUS >> 32);
    HAL_PWR_EnableBkUpAccess();
-   // Ð¡Ð¾Ñ…Ñ€Ð°Ð½ÑÐµÐ¼ ÐºÐ¾Ð´ Ð¾ÑˆÐ¸Ð±ÐºÐ¸ Ð² Ñ€ÐµÐ·ÐµÑ€Ð²Ð½Ð¾Ð¼ Ñ€ÐµÐ³Ð¸ÑÑ‚Ñ€Ðµ
-   HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE, FAULT_CODE_NMI);
- 
-   // ÐÐ¿Ð¿Ð°Ñ€Ð°Ñ‚Ð½Ñ‹Ð¹ ÑÐ±Ñ€Ð¾Ñ
+   HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_1, errcode_low);
+   HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_2, errcode_high);
    NVIC_SystemReset();
  
-   // Ð•ÑÐ»Ð¸ Ð¿Ð¾ ÐºÐ°ÐºÐ¸Ð¼-Ñ‚Ð¾ Ð¿Ñ€Ð¸Ñ‡Ð¸Ð½Ð°Ð¼ ÑÐ±Ñ€Ð¾Ñ Ð½Ðµ Ð¿Ñ€Ð¾Ð¸Ð·Ð¾ÑˆÑ‘Ð», Ð·Ð°Ñ†Ð¸ÐºÐ»Ð¸Ð²Ð°ÐµÐ¼ÑÑ
+   // Åñëè ïî êàêèì-òî ïðè÷èíàì ñáðîñ íå ïðîèçîø¸ë, çàöèêëèâàåìñÿ
    while (1) {}
  }
  
  void HardFault_Handler(void)
  {
    ERRCODE.STATUS |= STATUS_HARDFAULT_OCCURRED;
+   uint32_t errcode_low  = (uint32_t)(ERRCODE.STATUS & 0xFFFFFFFF);
+   uint32_t errcode_high = (uint32_t)(ERRCODE.STATUS >> 32);
    HAL_PWR_EnableBkUpAccess();
-   HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE, FAULT_CODE_HARDFAULT);
+   HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_1, errcode_low);
+   HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_2, errcode_high);
    NVIC_SystemReset();
    while (1) {}
  }
@@ -107,8 +106,11 @@ extern RTC_HandleTypeDef hrtc;
  void MemManage_Handler(void)
  {
    ERRCODE.STATUS |= STATUS_MEMMANAGE_FAULT;
+   uint32_t errcode_low  = (uint32_t)(ERRCODE.STATUS & 0xFFFFFFFF);
+   uint32_t errcode_high = (uint32_t)(ERRCODE.STATUS >> 32);
    HAL_PWR_EnableBkUpAccess();
-   HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE, FAULT_CODE_MEMMANAGE);
+   HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_1, errcode_low);
+   HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_2, errcode_high);
    NVIC_SystemReset();
    while (1) {}
  }
@@ -116,8 +118,11 @@ extern RTC_HandleTypeDef hrtc;
  void BusFault_Handler(void)
  {
    ERRCODE.STATUS |= STATUS_BUSFAULT_OCCURRED;
+   uint32_t errcode_low  = (uint32_t)(ERRCODE.STATUS & 0xFFFFFFFF);
+   uint32_t errcode_high = (uint32_t)(ERRCODE.STATUS >> 32);
    HAL_PWR_EnableBkUpAccess();
-   HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE, FAULT_CODE_BUSFAULT);
+   HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_1, errcode_low);
+   HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_2, errcode_high);
    NVIC_SystemReset();
    while (1) {}
  }
@@ -125,8 +130,11 @@ extern RTC_HandleTypeDef hrtc;
  void UsageFault_Handler(void)
  {
    ERRCODE.STATUS |= STATUS_USAGEFAULT_OCCURRED;
+   uint32_t errcode_low  = (uint32_t)(ERRCODE.STATUS & 0xFFFFFFFF);
+   uint32_t errcode_high = (uint32_t)(ERRCODE.STATUS >> 32);
    HAL_PWR_EnableBkUpAccess();
-   HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE, FAULT_CODE_USAGEFAULT);
+   HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_1, errcode_low);
+   HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_2, errcode_high);
    NVIC_SystemReset();
    while (1) {}
  }
@@ -192,10 +200,20 @@ void TIM6_DAC_IRQHandler(void)
   HAL_TIM6_Callback();
 }
 
-void TIM1_UP_TIM16_IRQHandler(void)
+static uint32_t time_counter;
+void TIM8_UP_IRQHandler(void)
 {
-  HAL_TIM_IRQHandler(&htim16);
+  HAL_TIM_IRQHandler(&htim8);
+  time_counter++;
+  if (time_counter>=300){
+    // Åàñëè ïðîøëî 5 ìèíóò - âûçûâàåì ëèáî çàñòàâêó, ëèáî çàñûïàåì (çàâèñèò îò ðåæèìà block)
+    time_counter=0;
+    static portBASE_TYPE xTaskWoken;
+    xSemaphoreGiveFromISR(SLEEP_semaphore, &xTaskWoken);
+  }
 }
+
+
 /******************************************************************************/
 /* STM32L4xx Peripheral Interrupt Handlers                                    */
 /* Add here the Interrupt Handlers for the used peripherals.                  */
@@ -249,7 +267,7 @@ extern EEPROM_Settings_item EEPROM;
 static uint8_t last_USB_state = 255;
 void OTG_FS_IRQHandler(void)
 {
-  // ! ÐŸÑ€Ð¸ Ð½ÐµÑÐ¾Ð²Ð¿Ð°Ð´ÐµÐ½Ð¸Ð¸ - Ð¿Ð¾Ð»Ð½Ð°Ñ Ð´ÐµÐ¸Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð°Ñ†Ð¸Ñ USB
+  // ! Ïðè íåñîâïàäåíèè - ïîëíàÿ äåèíèöèàëèçàöèÿ USB
   if (last_USB_state == 255) last_USB_state = EEPROM.USB_mode;
   if (last_USB_state == 1 || last_USB_state == 2){
     HAL_PCD_IRQHandler(&hpcd_USB_OTG_FS);
@@ -262,11 +280,14 @@ void OTG_FS_IRQHandler(void)
 
 void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
 {
-    // Ð¡Ð¾Ð±Ñ‹Ñ‚Ð¸Ðµ Ð¿ÐµÑ€ÐµÐ¿Ð¾Ð»Ð½ÐµÐ½Ð¸Ñ ÑÑ‚ÐµÐºÐ°
+    // Ñîáûòèå ïåðåïîëíåíèÿ ñòåêà
     taskDISABLE_INTERRUPTS(); 
     ERRCODE.STATUS |= STATUS_USAGEFAULT_OCCURRED;
+    uint32_t errcode_low  = (uint32_t)(ERRCODE.STATUS & 0xFFFFFFFF);
+    uint32_t errcode_high = (uint32_t)(ERRCODE.STATUS >> 32);
     HAL_PWR_EnableBkUpAccess();
-    HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE, FAULT_CODE_USAGEFAULT);
+    HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_1, errcode_low);
+    HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_2, errcode_high);
     NVIC_SystemReset();
     for(;;);
 }

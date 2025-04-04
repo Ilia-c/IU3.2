@@ -8,7 +8,7 @@
  * 
  * 
  * BY PROGRAMMERA
- * VERSION Ver0.41
+ * VERSION Ver0.44
  * 
  * 
  *
@@ -40,7 +40,6 @@
 #include "Parser.h"
 #include "Diagnostics.h"
 #include "USB_FATFS_SAVE.h"
-#include "ds18b20.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -54,7 +53,8 @@ xSemaphoreHandle Display_cursor_semaphore;
 xSemaphoreHandle USB_COM_semaphore;
 xSemaphoreHandle Main_semaphore;
 xSemaphoreHandle UART_PARSER_semaphore;
-xSemaphoreHandle ADC_READY; // РћРєРѕРЅС‡Р°РЅРёСЏ РїСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёСЏ РїСЂРё СЂР°Р±РѕС‚Рµ РІ С†РёРєР»РёС‡РµСЃРєРѕРј СЂРµР¶РёРјРµ
+xSemaphoreHandle ADC_READY; // Окончания преобразования при работе в циклическом режиме
+xSemaphoreHandle SLEEP_semaphore;
 
 extern const uint16_t Timer_key_one_press;
 extern const uint16_t Timer_key_press_fast;
@@ -77,7 +77,7 @@ ADC_HandleTypeDef hadc3;
 TIM_HandleTypeDef htim5;
 TIM_HandleTypeDef htim6;
 TIM_HandleTypeDef htim7;
-TIM_HandleTypeDef htim16;
+TIM_HandleTypeDef htim8;
 
 IWDG_HandleTypeDef hiwdg;
 
@@ -86,20 +86,21 @@ void MX_ADC1_Init(void);        //
 void MX_ADC3_Init(void);        // 
 void MX_I2C1_Init(void);        // 
 void MX_I2C2_Init(void);        // 
-void MX_SPI2_Init(void);        // РђР¦Рџ+FLASH
+void MX_SPI2_Init(void);        // АЦП+FLASH
 //static void MX_UART1_Init(void);     // RS-485
 void MX_UART4_Init(void);       // GSM
 void MX_TIM5_Init(void);
 void MX_TIM6_Init(void);
 void MX_IWDG_Init(void);
 void MX_TIM7_Init(void);
-void MX_TIM16_Init(void);
+void MX_TIM8_Init(void);
 
+void HAL_TIM5_Callback(void);
 /* Definitions for Main */
 osThreadId_t MainHandle;
 const osThreadAttr_t Main_attributes = {
     .name = "Main",
-    .stack_size = 256 * 1,
+    .stack_size = 512 * 3,
     .priority = (osPriority_t)osPriorityHigh5,
 };
 osThreadId_t Main_Cycle_taskHandle;
@@ -113,21 +114,21 @@ const osThreadAttr_t Main_Cycle_task_attributes = {
 osThreadId_t Display_I2CHandle;
 const osThreadAttr_t Display_I2C_attributes = {
     .name = "Display_I2C",
-    .stack_size = 1024 * 2,
+    .stack_size = 1024 * 3,
     .priority = (osPriority_t)osPriorityHigh,
 };
 /* Definitions for ADC_read */
 osThreadId_t ADC_readHandle;
 const osThreadAttr_t ADC_read_attributes = {
     .name = "ADC_read",
-    .stack_size = 256*5,
+    .stack_size = 1024 * 3,
     .priority = (osPriority_t)osPriorityLow3,
 };
 /* Definitions for RS485_data */
 osThreadId_t RS485_dataHandle;
 const osThreadAttr_t RS485_data_attributes = {
     .name = "RS485_data",
-    .stack_size = 512 * 4,
+    .stack_size = 1024 * 3,
     .priority = (osPriority_t)osPriorityLow3,
 };
 
@@ -142,7 +143,7 @@ const osThreadAttr_t Keyboard_task_attributes = {
 osThreadId_t USB_COM_taskHandle;
 const osThreadAttr_t USB_COM_task_attributes = {
     .name = "USB_COM_task",
-    .stack_size = 512 * 2,
+    .stack_size = 512 * 3,
     .priority = (osPriority_t)osPriorityLow2,
 };
 
@@ -163,7 +164,7 @@ const osThreadAttr_t UART_PARSER_task_attributes = {
 osThreadId_t WATCDOG_taskHandle;
 const osThreadAttr_t WATCDOG_task_attributes = {
     .name = "Watch_dog_task",
-    .stack_size = 256,
+    .stack_size = 1024 * 1,
     .priority = (osPriority_t)osPriorityHigh3,
 };
 
@@ -176,7 +177,7 @@ void Display_I2C(void *argument);
 void ADC_read(void *argument);
 void RS485_data(void *argument);
 void Main(void *argument);
-void Main_Cycle(void *argument); // РѕСЃРЅРѕРІРЅРѕР№ СЂРµР¶РёРј РІ С†РёРєР»РёС‡РµСЃРєРѕРј СЂРµР¶РёРјРµ
+void Main_Cycle(void *argument); // основной режим в циклическом режиме
 void Keyboard_task(void *argument);
 void USB_COM_task(void *argument);
 void UART_PARSER_task(void *argument);
@@ -218,14 +219,15 @@ int main(void)
   MX_TIM5_Init();
   MX_TIM6_Init();
   MX_TIM7_Init();
+  MX_TIM8_Init();
   
 
   InitMenus();
-  // РќР°С‡Р°Р»СЊРЅС‹Рµ СЃРѕСЃС‚РѕСЏРЅРёСЏ РїРµСЂРµС„РµСЂРёРё - Р’РЎР• РћРўРљР›Р®Р§Р•РќРћ
+  // Начальные состояния переферии - ВСЕ ОТКЛЮЧЕНО
   HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, 1);
   HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ADC_Pin, 1);
   HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
-  HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);     // РќРµ РІРєР»СЋС‡Р°РµРј RS РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
+  HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);     // Не включаем RS по умолчанию
   HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 0);
   HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 0);
   HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
@@ -234,23 +236,23 @@ int main(void)
   
   HAL_Delay(10);
 
-  // Р—РђРџРЈРЎРљРђР•РўРЎРЇ Р’РЎР•Р“Р”Рђ 
-  HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);             // РћР±С‰РµРµ РїРёС‚Р°РЅРёРµ 5Р’
-  HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);         // РћР±С‰РµРµ РїРёС‚Р°РЅРёРµ 3.3Р’ (РђР¦Рџ, С‚РµРјРї., Рё С‚.Рґ.)
-  HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);           // Р’РєР»СЋС‡РµРЅРёРµ РџР°РјСЏС‚Рё РЅР° РїР»Р°С‚Рµ
-  HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 1);         // Р’РєР»СЋС‡РµРЅРёРµ 
+  // ЗАПУСКАЕТСЯ ВСЕГДА 
+  HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);             // Общее питание 5В
+  HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);         // Общее питание 3.3В (АЦП, темп., и т.д.)
+  HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);           // Включение Памяти на плате
+  HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 1);         // Включение 
 
   HAL_Delay(10);
 
-  // Р§С‚РµРЅРёРµ РґР°РЅРЅС‹С… РёР· EEPROM
+  // Чтение данных из EEPROM
   if (EEPROM_CHECK() == HAL_OK)
   {
     if (EEPROM_IsDataExists() != HAL_OK)
     {
-      // Р”Р°РЅРЅС‹С… РЅРµС‚Сѓ - РїРµСЂРІС‹Р№ Р·Р°РїСѓСЃРє
+      // Данных нету - первый запуск
       if (EEPROM_SaveSettings(&EEPROM) != HAL_OK)
       {
-        // РЎРѕС…СЂР°РЅРµРЅРёРµ РЅРµ РІС‹С€Р»Рѕ
+        // Сохранение не вышло
       }
     }
     else
@@ -258,51 +260,25 @@ int main(void)
 
       if (EEPROM_LoadSettings(&EEPROM) != HAL_OK)
       {
-        // РћС€РёР±РєР° - РЅРµРІРµСЂРЅС‹Р№ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РґР°РЅРЅС‹С…
+        // Ошибка - неверный идентификатор данных
         if (EEPROM_SaveSettings(&EEPROM) != HAL_OK)
         {
-          // РЎРѕС…СЂР°РЅРµРЅРёРµ РЅРµ РІС‹С€Р»Рѕ
+          // Сохранение не вышло
         }
       }
     }
   }
   //EEPROM.Mode = 0;
-  HAL_PWR_EnableBkUpAccess();
-  uint16_t faultCode = HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_INDEX_ERROR_CODE);
-  if (faultCode != 0U){
-    switch (faultCode)
-        {
-        case FAULT_CODE_NMI:
-            ERRCODE.STATUS |= STATUS_NMI_OCCURRED;
-            break;
-        case FAULT_CODE_HARDFAULT:
-            ERRCODE.STATUS |= STATUS_HARDFAULT_OCCURRED;
-            break;
-        case FAULT_CODE_MEMMANAGE:
-            ERRCODE.STATUS |= STATUS_MEMMANAGE_FAULT;
-            break;
-        case FAULT_CODE_BUSFAULT:
-            ERRCODE.STATUS |= STATUS_BUSFAULT_OCCURRED;
-            break;
-        case FAULT_CODE_USAGEFAULT:
-            ERRCODE.STATUS |= STATUS_USAGEFAULT_OCCURRED;
-            break;
-        default:
-            // РќРµРёР·РІРµСЃС‚РЅС‹Р№ РєРѕРґ вЂ” РѕР±СЂР°Р±Р°С‚С‹РІР°РµРј РїСЂРё Р¶РµР»Р°РЅРёРё
-            break;
-        }
-        HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE, 0U);
-  }
 
   uint32_t value = HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_INDEX_RESET_PROG);
   if (value == DATA_RESET_PROG){  
-    // Р•СЃР»Рё СЃР±СЂРѕСЃ РёР· РїРµСЂРµС…РѕРґР° РІ С†РёРєР»
-    HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_RESET_PROG, 0x00); // СЃР±СЂР°СЃС‹РІР°РІРµРј С„Р»Р°Рі
+    // Если сброс из перехода в цикл
+    HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_RESET_PROG, 0x00); // сбрасывавем флаг
   }
   else{
     //EEPROM.Mode = 0;
     if (__HAL_PWR_GET_FLAG(PWR_FLAG_SB) == RESET){
-      // Р•СЃР»Рё СЃР±СЂРѕСЃ РЅРµ РёР· РїРµСЂРµС…РѕРґР° РІ С†РёРєР» Рё РЅРµ РёР· Р·Р° wakeup
+      // Если сброс не из перехода в цикл и не из за wakeup
       EEPROM.Mode = 0;
       if (ERRCODE.STATUS & STATUS_EEPROM_INIT_ERROR)
       {
@@ -313,29 +289,56 @@ int main(void)
       }
     }
   }
-  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB); // РЎР±СЂРѕСЃ С„Р»Р°РіР° РїСЂРѕР±СѓР¶РґРµРЅРёСЏ РёР· СЃРЅР°, РґР»СЏ РєРѕСЂСЂРµРєС‚РЅРѕР№ СЂР°Р±РѕС‚С‹ СЃРЅР°
+  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB); // Сброс флага пробуждения из сна, для корректной работы сна
+
+  HAL_PWR_EnableBkUpAccess();
+  uint32_t errcode_low = HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_INDEX_ERROR_CODE_1);
+  uint32_t errcode_high = HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_INDEX_ERROR_CODE_2);
+  ERRCODE.STATUS = (((uint64_t)errcode_high << 32) | errcode_low);
+  if (EEPROM.Mode != 0){
+    // Проверяем есть ли подтвержденная фатальная ошибка
+    if (ERRCODE.STATUS & STATUS_STACK_OVERFLOW) if (ERRCODE.STATUS & STATUS_STACK_OVERFLOW_ACK) Enter_StandbyMode_NoWakeup();
+    if (ERRCODE.STATUS & STATUS_HARDFAULT_OCCURRED) if (ERRCODE.STATUS & STATUS_HARDFAULT_OCCURRED_ACK) Enter_StandbyMode_NoWakeup();
+    if (ERRCODE.STATUS & STATUS_NMI_OCCURRED) if (ERRCODE.STATUS & STATUS_NMI_OCCURRED_ACK) Enter_StandbyMode_NoWakeup();
+    if (ERRCODE.STATUS & STATUS_MEMMANAGE_FAULT) if (ERRCODE.STATUS & STATUS_MEMMANAGE_FAULT_ACK) Enter_StandbyMode_NoWakeup();
+    if (ERRCODE.STATUS & STATUS_BUSFAULT_OCCURRED) if (ERRCODE.STATUS & STATUS_BUSFAULT_OCCURRED_ACK) Enter_StandbyMode_NoWakeup();
+    if (ERRCODE.STATUS & STATUS_USAGEFAULT_OCCURRED) if (ERRCODE.STATUS & STATUS_USAGEFAULT_OCCURRED_ACK) Enter_StandbyMode_NoWakeup();
+  }
+  if (ERRCODE.STATUS & STATUS_STACK_OVERFLOW)  ERRCODE.STATUS |= STATUS_STACK_OVERFLOW_ACK;
+  if (ERRCODE.STATUS & STATUS_HARDFAULT_OCCURRED)  ERRCODE.STATUS |= STATUS_HARDFAULT_OCCURRED_ACK;
+  if (ERRCODE.STATUS & STATUS_NMI_OCCURRED)  ERRCODE.STATUS |= STATUS_NMI_OCCURRED_ACK;
+  if (ERRCODE.STATUS & STATUS_MEMMANAGE_FAULT)  ERRCODE.STATUS |= STATUS_MEMMANAGE_FAULT_ACK;
+  if (ERRCODE.STATUS & STATUS_BUSFAULT_OCCURRED)  ERRCODE.STATUS |= STATUS_BUSFAULT_OCCURRED_ACK;
+  if (ERRCODE.STATUS & STATUS_USAGEFAULT_OCCURRED)  ERRCODE.STATUS |= STATUS_USAGEFAULT_OCCURRED_ACK;
+  ERRCODE.STATUS = ERRCODE.STATUS & (STATUS_FAULTS_ACK); // Сбрасываем все ошибки кроме ACK
+  errcode_low  = (uint32_t)(ERRCODE.STATUS & 0xFFFFFFFF);
+  errcode_high = (uint32_t)(ERRCODE.STATUS >> 32);
+  HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_1, errcode_low);
+  HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_2, errcode_high);
   HAL_PWR_DisableBkUpAccess();
   
   HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
   HAL_NVIC_SetPriority(UART4_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(UART4_IRQn);
   
+  
+
 
   if ((EEPROM.USB_mode == 1) || (EEPROM.USB_mode == 2)){
-    MX_USB_DEVICE_Init_COMPORT(); // Р РµР¶РёРј СЂР°Р±РѕС‚С‹ РІ VirtualComPort
-    HAL_NVIC_SetPriority(OTG_FS_IRQn, 6, 0); // РџСЂРёРѕСЂРёС‚РµС‚ РїСЂРµСЂС‹РІР°РЅРёСЏ
-    HAL_NVIC_EnableIRQ(OTG_FS_IRQn);         // Р’РєР»СЋС‡РµРЅРёРµ РїСЂРµСЂС‹РІР°РЅРёСЏ
+    MX_USB_DEVICE_Init_COMPORT(); // Режим работы в VirtualComPort
+    HAL_NVIC_SetPriority(OTG_FS_IRQn, 6, 0); // Приоритет прерывания
+    HAL_NVIC_EnableIRQ(OTG_FS_IRQn);         // Включение прерывания
   }
-  // Р—Р°РїСѓСЃРє РІ СЂРµР¶РёРјРµ РЅР°СЃС‚СЂРѕР№РєРё (СЌРєСЂР°РЅ РІРєР»)
+  // Запуск в режиме настройки (экран вкл)
   if (EEPROM.Mode == 0){
-    // Р’РєР»СЋС‡РµРЅРёРµ РїРµСЂРµС„РµСЂРёРё
-    MX_IWDG_Init();
+    // Включение переферии
     #if Debug_mode == 0
-    HAL_IWDG_Refresh(&hiwdg);
+    MX_IWDG_Init();
     #endif
-    //HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 1); // Р’РєР»СЋС‡РµРЅРёРµ РґР°С‚С‡РёРєР° РґР°РІР»РµРЅРёСЏ Рё !!!  РёР·РјРµСЂРµРЅРёРµ С‚РµРєСѓС‰РµРіРѕ РЅР°РїСЂСЏР¶РµРЅРёСЏ РїРёС‚Р°РЅРёСЏ 1:10
-    HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 1); // Р’РєР»СЋС‡Р°РµРј СЌРєСЂР°РЅ
-    HAL_Delay(10);
+    HAL_IWDG_Refresh(&hiwdg);
+    //HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 1); // Включение датчика давления и !!!  измерение текущего напряжения питания 1:10
+    HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 1); // Включаем экран
+    HAL_Delay(50);
     OLED_Init(&hi2c2);
     HAL_Delay(20);
 
@@ -350,11 +353,11 @@ int main(void)
     HAL_NVIC_EnableIRQ(EXTI4_IRQn);
     HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
     
-    // РўР°Р№РјРµСЂ СѓС…РѕРґР° РІ СЃРѕРЅ (Р»РёР±Рѕ Р·Р°СЃС‚Р°РІРєРё)
+    // Таймер ухода в сон (либо заставки)
 
-    // РќР°СЃС‚СЂРѕР№РєР° С‚Р°Р№РјРµСЂР° РєР»Р°РІРёР°С‚СѓСЂС‹
-    HAL_NVIC_SetPriority(TIM6_DAC_IRQn, 8, 0); // РЈСЃС‚Р°РЅРѕРІРёС‚Рµ РїСЂРёРѕСЂРёС‚РµС‚
-    HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);        // Р’РєР»СЋС‡РёС‚Рµ РїСЂРµСЂС‹РІР°РЅРёРµ
+    // Настройка таймера клавиатуры
+    HAL_NVIC_SetPriority(TIM6_DAC_IRQn, 8, 0); // Установите приоритет
+    HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);        // Включите прерывание
   }
   else{
     HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
@@ -377,7 +380,7 @@ int main(void)
   
   if (EEPROM.Mode == 0){
     USB_COM_taskHandle = osThreadNew(USB_COM_task, NULL, &USB_COM_task_attributes);
-    MainHandle = osThreadNew(Main, NULL, &Main_attributes); // Р—Р°РґР°С‡Р° РґР»СЏ РЅР°СЃС‚СЂРѕРµС‡РЅРѕРіРѕ СЂРµР¶РёРјР°
+    MainHandle = osThreadNew(Main, NULL, &Main_attributes); // Задача для настроечного режима
     Keyboard_taskHandle = osThreadNew(Keyboard_task, NULL, &Keyboard_task_attributes);
     Display_I2CHandle = osThreadNew(Display_I2C, NULL, &Display_I2C_attributes);
     ERROR_INDICATE_taskHandle = osThreadNew(Erroe_indicate, NULL, &Erroe_indicate_task_attributes);
@@ -385,8 +388,8 @@ int main(void)
   }
   if (EEPROM.Mode == 1)
   {
-    Main_Cycle_taskHandle = osThreadNew(Main_Cycle, NULL, &Main_Cycle_task_attributes); // Р—Р°РґР°С‡Р° РґР»СЏ С†РёРєР»РёС‡РµСЃРєРѕРіРѕ СЂРµР¶РёРјР°
-    // РџСЂРёРѕСЃС‚Р°РЅРѕРІРєР° РІСЃРµС… Р·Р°РґР°С‡
+    Main_Cycle_taskHandle = osThreadNew(Main_Cycle, NULL, &Main_Cycle_task_attributes); // Задача для циклического режима
+    // Приостановка всех задач
     osThreadSuspend(ADC_readHandle);
     osThreadSuspend(RS485_dataHandle);
   }
@@ -404,40 +407,40 @@ int main(void)
 
 void SetTimerPeriod(uint32_t period_ms)
 {
-    // РћСЃС‚Р°РЅРѕРІРёРј С‚Р°Р№РјРµСЂ, С‡С‚РѕР±С‹ РёР·Р±РµР¶Р°С‚СЊ РєРѕРЅС„Р»РёРєС‚РѕРІ
+    // Остановим таймер, чтобы избежать конфликтов
     if (htim5.Init.Period == period_ms-1) return;
     HAL_TIM_Base_Stop_IT(&htim5);
-    // Р Р°СЃС‡С‘С‚ РїСЂРµРґРґРµР»РёС‚РµР»СЏ Рё РїРµСЂРёРѕРґР°
-    // Р§Р°СЃС‚РѕС‚Р° С‚Р°Р№РјРµСЂР° (TIM5) = 40 РњР“С† (СЃРѕРіР»Р°СЃРЅРѕ РєРѕРЅС„РёРіСѓСЂР°С†РёРё SystemClock)
-    // РџСЂРµРґРїРѕР»РѕР¶РёРј РґРµР»РёС‚РµР»СЊ РґР»СЏ СѓРґРѕР±РЅРѕРіРѕ СЂР°СЃС‡С‘С‚Р°: 40 000 (40 РњР“С† / 40 000 = 1 РєР“С†)
-    uint32_t prescaler = 39999;  // Р”РµР»РёС‚РµР»СЊ: РґРµР»РёС‚ С‚Р°РєС‚РѕРІСѓСЋ С‡Р°СЃС‚РѕС‚Сѓ РґРѕ 1 РєР“С†
+    // Расчёт предделителя и периода
+    // Частота таймера (TIM5) = 40 МГц (согласно конфигурации SystemClock)
+    // Предположим делитель для удобного расчёта: 40 000 (40 МГц / 40 000 = 1 кГц)
+    uint32_t prescaler = 39999;  // Делитель: делит тактовую частоту до 1 кГц
 
-    // РџРµСЂРёРѕРґ (ARR) = (С‚СЂРµР±СѓРµРјС‹Р№ РїРµСЂРёРѕРґ * С‡Р°СЃС‚РѕС‚Р° С‚Р°Р№РјРµСЂР°) - 1
+    // Период (ARR) = (требуемый период * частота таймера) - 1
     uint32_t auto_reload = period_ms - 1;
 
-    // РћРіСЂР°РЅРёС‡РµРЅРёРµ Р·РЅР°С‡РµРЅРёР№ ARR (16-Р±РёС‚ РёР»Рё 32-Р±РёС‚ С‚Р°Р№РјРµСЂ)
-    if (auto_reload > 0xFFFFFFFF) // TIM5 - 32-Р±РёС‚РЅС‹Р№, РЅРѕ РѕРіСЂР°РЅРёС‡РµРЅРёРµ РґР»СЏ РґСЂСѓРіРёС… С‚Р°Р№РјРµСЂРѕРІ
+    // Ограничение значений ARR (16-бит или 32-бит таймер)
+    if (auto_reload > 0xFFFFFFFF) // TIM5 - 32-битный, но ограничение для других таймеров
     {
         auto_reload = 0xFFFFFFFF;
     }
 
-    // РќР°СЃС‚СЂР°РёРІР°РµРј С‚Р°Р№РјРµСЂ
+    // Настраиваем таймер
     htim5.Init.Prescaler = prescaler;
-    htim5.Init.Period = auto_reload; // РџРµСЂРёРѕРґ СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓРµС‚ РІСЂРµРјРµРЅРё РІ РјСЃ
+    htim5.Init.Period = auto_reload; // Период соответствует времени в мс
     htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
     htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
     htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
 
-    // РџСЂРёРјРµРЅСЏРµРј РЅР°СЃС‚СЂРѕР№РєРё
+    // Применяем настройки
     if (HAL_TIM_Base_Init(&htim5) != HAL_OK)
     {
         Error_Handler();
     }
 
-    // РЎР±СЂРѕСЃ СЃС‡С‘С‚С‡РёРєР°
+    // Сброс счётчика
     __HAL_TIM_SET_COUNTER(&htim5, 0);
 
-    // Р—Р°РїСѓСЃРєР°РµРј С‚Р°Р№РјРµСЂ СЃ РїСЂРµСЂС‹РІР°РЅРёСЏРјРё
+    // Запускаем таймер с прерываниями
     HAL_TIM_Base_Start_IT(&htim5);
 }
 
@@ -459,14 +462,22 @@ void Main(void *argument)
   vSemaphoreCreateBinary(USB_COM_semaphore);
   vSemaphoreCreateBinary(UART_PARSER_semaphore);
   vSemaphoreCreateBinary(Main_semaphore);
-    // Р—Р°РїСѓСЃРє РіР»РѕР±Р°Р»СЊРЅРѕРіРѕ С‚Р°Р№РјРµСЂР° РґР»СЏ РѕР±РЅРѕРІР»РµРЅРёСЏ СЌРєСЂР°РЅР°
-  HAL_NVIC_SetPriority(TIM5_IRQn, 8, 0); // РЈСЃС‚Р°РЅРѕРІРёС‚Рµ РїСЂРёРѕСЂРёС‚РµС‚
-  HAL_NVIC_EnableIRQ(TIM5_IRQn);        // Р’РєР»СЋС‡РёС‚Рµ РїСЂРµСЂС‹РІР°РЅРёРµ
-  HAL_TIM_Base_Start_IT(&htim5);
-  HAL_TIM_Base_Start_IT(&htim16);
+  vSemaphoreCreateBinary(SLEEP_semaphore);
+  xSemaphoreTake(SLEEP_semaphore, 0);
 
-  // Р•СЃР»Рё Р±С‹Р»Р° РєСЂРёС‚РёС‡РµСЃРєР°СЏ РѕС€РёР±РєР°
-  if (ERRCODE.STATUS & STATUS_FAULTS){
+    // Запуск глобального таймера для обновления экрана
+  HAL_NVIC_SetPriority(TIM5_IRQn, 8, 0); // Установите приоритет
+  HAL_NVIC_EnableIRQ(TIM5_IRQn);        // Включите прерывание
+  HAL_TIM_Base_Start_IT(&htim5);
+
+
+  __HAL_TIM_CLEAR_FLAG(&htim8, TIM_FLAG_UPDATE);
+  HAL_NVIC_SetPriority(TIM8_UP_IRQn, 10, 0);
+  HAL_NVIC_EnableIRQ(TIM8_UP_IRQn);
+  HAL_TIM_Base_Start_IT(&htim8);
+
+  // Если была критическая ошибка
+  if (ERRCODE.STATUS & (FAULTS_MASK)){
     Collect_DATA();
     flash_append_record(save_data, 0);
   }
@@ -480,7 +491,7 @@ void Main(void *argument)
     osDelay(10);
   }
 }
-// Р—Р°РїСѓСЃРєР°РµС‚СЃСЏ С‚РѕР»СЊРєРѕ РїСЂРё С†РёРєР»РёС‡РµСЃРєРѕРј СЂРµР¶РёРјРµ
+// Запускается только при циклическом режиме
 void Main_Cycle(void *argument)
 {
   UNUSED(argument);
@@ -490,25 +501,19 @@ void Main_Cycle(void *argument)
   vSemaphoreCreateBinary(USB_COM_semaphore);
   vSemaphoreCreateBinary(UART_PARSER_semaphore);
   vSemaphoreCreateBinary(Main_semaphore);
-  // 1. Р’РєР»СЋС‡РµРЅРѕ -  РђР¦Рџ, flash, EEPROM
-  // 2. РЈР¶Рµ РєРѕРЅС„РёРіСѓСЂР°С†РёСЏ EEPROM РїСЂРѕС‡РёС‚Р°РЅР°
-
-  // Р•СЃР»Рё Р±С‹Р»Р° РєСЂРёС‚РёС‡РµСЃРєР°СЏ РѕС€РёР±РєР°
-  if (ERRCODE.STATUS & STATUS_FAULTS){
-    Collect_DATA();
-    flash_append_record(save_data, 0);
-  }
+  // 1. Включено -  АЦП, flash, EEPROM
+  // 2. Уже конфигурация EEPROM прочитана
   for (;;)
   {
     osDelay(10);
-    // 3. Р’С‹РєР»СЋС‡РёС‚СЊ EEPROM
-    //HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0); // Р’С‹РєР»СЋС‡РµРЅРёРµ РџР°РјСЏС‚Рё РЅР° РїР»Р°С‚Рµ
+    // 3. Выключить EEPROM
+    //HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0); // Выключение Памяти на плате
 
     uint8_t status = 0;
-    // 4. Р—Р°РїСЂРѕСЃ РЅР°СЃС‚СЂРѕРµРє СЃ СЃР°Р№С‚Р° РґР»СЏ С‚РµРєСѓС‰РµР№ РєРѕРЅС„РёРіСѓСЂР°С†РёРё, Р·Р°РїСѓСЃРє Р·Р°РґР°С‡Рё РїР°СЂР°Р»Р»РµР»СЊРЅРѕ, РµСЃР»Рё С„Р°С‚Р°Р»СЊРЅР°СЏ РѕС€РёР±РєР° - РѕС‚РєР»СЋС‡РёС‚СЊ GSM
+    // 4. Запрос настроек с сайта для текущей конфигурации, запуск задачи параллельно, если фатальная ошибка - отключить GSM
     if (EEPROM.Communication != 0)
     {
-      // 60 СЃРµРєСѓРЅРґ РЅР° РїРѕРїС‹С‚РєРё Р·Р°СЂР°РіРёСЃС‚СЂРёСЂРѕРІР°С‚СЊСЃСЏ
+      // 60 секунд на попытки зарагистрироваться
       for (int i = 0; i < 120; i++)
       {
         if ((GSM_data.Status & NETWORK_REGISTERED) && (GSM_data.Status & SIGNAL_PRESENT))
@@ -516,7 +521,7 @@ void Main_Cycle(void *argument)
           status = 1;
           break;
         }
-        // Р•СЃР»Рё РїСЂРѕС€Р»Рѕ Р±РѕР»СЊС€Рµ 22.5 СЃРµРєСѓРЅРґ Рё СЃРёРј РєР°СЂС‚Р° РЅРµ РІСЃС‚Р°РІР»РµРЅР° - РїРµСЂРїРµР·Р°РїСѓСЃРєР°РµРј РјРѕРґСѓР»СЊ
+        // Если прошло больше 22.5 секунд и сим карта не вставлена - перпезапускаем модуль
         if ((i==45) && (!(GSM_data.Status & SIM_PRESENT))){
           osThreadSuspend(UART_PARSER_taskHandle);
           HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
@@ -531,7 +536,7 @@ void Main_Cycle(void *argument)
         osDelay(500);
       }
       if ((status == 0) && ((GSM_data.Status & SIM_PRESENT))){
-        // Р•СЃР»Рё СЂРµРіРёСЃС‚СЂР°С†РёСЏ РЅРµ РїСЂРѕС€Р»Р°, РЅРѕ СЃРёРј РєР°СЂС‚Р° РµСЃС‚СЊ - РїРµСЂРµР·Р°РіСЂСѓР¶Р°РµРј РјРѕРґРµРј
+        // Если регистрация не прошла, но сим карта есть - перезагружаем модем
         HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
         osDelay(1000);
         HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 1);
@@ -551,14 +556,14 @@ void Main_Cycle(void *argument)
       }
       if (status == 0)
       {
-        // РЎРІСЏР·Рё РЅРµС‚ Рё РЅРµ РїСЂРµРґРІРёРґРёС‚СЃСЏ - РѕС‚РєР»СЋС‡Р°РµРј GSM РјРѕРґСѓР»СЊ
+        // Связи нет и не предвидится - отключаем GSM модуль
         HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
         osThreadSuspend(UART_PARSER_taskHandle);
       }
       EEPROM_CHECK();
       if (status == 1)
       {
-        // Р•СЃР»Рё Р·Р°СЂРµРіРµРёСЃС‚СЂРёСЂРѕРІР°Р»РёСЃСЊ - Р·Р°РїСЂР°С€РёРІР°РµРј РЅР°СЃС‚СЂРѕР№РєРё
+        // Если зарегеистрировались - запрашиваем настройки
         GSM_data.Status |= HTTP_READ;
         for (int i = 0; i < 120; i++)
         {
@@ -581,14 +586,16 @@ void Main_Cycle(void *argument)
     
 
     osDelay(500);
-    // Р§РёС‚Р°РµРј С‚РµРєСѓС‰РµРµ РЅР°РїСЂСЏР¶РµРЅРёРµ РїРёС‚Р°РЅРёСЏ
+    // Читаем текущее напряжение питания
     for (int i = 0; i < 10; i++)
     {
       Read_ADC_Voltage();
     }
+    if (ERRCODE.STATUS & STATUS_VOLTAGE_TOO_LOW) Enter_StandbyMode_NoWakeup();
     osDelay(1000);
-    // 5. РџРѕР»СѓС‡РµРЅРёСЏ РїРѕРєР°Р·Р°РЅРёР№ РђР¦Рџ
-    //  Р—Р°РїСѓСЃРєР°РµРј РїСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёСЏ
+    
+    // 5. Получения показаний АЦП
+    //  Запускаем преобразования
     uint8_t  status_ADC = 0;
     if (!(ERRCODE.STATUS & STATUS_ADC_EXTERNAL_INIT_ERROR))
     {
@@ -609,23 +616,23 @@ void Main_Cycle(void *argument)
       }
     }
 
-    // 6. РћС‚РєР»СЋС‡РёС‚СЊ РђР¦Рџ (РґР°С‚С‡РёРє)
+    // 6. Отключить АЦП (датчик)
     //osThreadSuspend(ADC_readHandle);
     suspend = 0xFF;
     osDelay(350);
     
     HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
     osThreadSuspend(ADC_readHandle);
-    // Р’С‹Р·РѕРІ С„СѓРЅРєС†РёРё РѕС‚РїСЂР°РІРєРё Рё РїРѕР»С‡СѓС‡РµРЅРёСЏ РЅР°СЃС‚СЂРѕРµРє
+    // Вызов функции отправки и полчучения настроек
 
 
     
     HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);
     HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);
 
-    // РћС‚РїСЂР°РІРєР° РґР°РЅРЅС‹С… РЅР° СЃРµСЂРІРµСЂ
+    // Отправка данных на сервер
 
-    // Р•СЃР»Рё СЂРµРіРёСЃС‚СЂР°С†РёСЏ РµСЃС‚СЊ
+    // Если регистрация есть
     if (status == 1)
     {
       if (EEPROM.Communication != 0)
@@ -678,14 +685,14 @@ void Main_Cycle(void *argument)
     HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);
     osDelay(10);
 
-    // 8.  РЎРѕС…СЂР°РЅРµРЅРёРµ РґР°РЅРЅС‹С…
+    // 8.  Сохранение данных
 
     Collect_DATA();
     uint8_t send_status = 1;
     if ((ERRCODE.STATUS & STATUS_HTTP_SERVER_COMM_ERROR) || (ERRCODE.STATUS & STATUS_GSM_REG_ERROR)){
-      send_status = 0; // РћС‚РјРµС‚РёС‚СЊ РєР°Рє РЅРµ РѕС‚РїСЂР°РІР»РµРЅРЅСѓСЋ 
+      send_status = 0; // Отметить как не отправленную 
     }
-    // ! РїРµСЂРµРЅРµСЃС‚Рё РІ РѕС‚РґРµР»СЊРЅСѓСЋ Р·Р°РґР°С‡Сѓ
+    // ! перенести в отдельную задачу
     flash_append_record(save_data, send_status);
     osDelay(200);
 
@@ -693,7 +700,7 @@ void Main_Cycle(void *argument)
     HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, 1);
     HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ADC_Pin, 1);
     HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
-    HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0); // РќРµ РІРєР»СЋС‡Р°РµРј RS РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
+    HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0); // Не включаем RS по умолчанию
     HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 0);
     HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 0);
     HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
@@ -736,8 +743,8 @@ void RS485_data(void *argument)
   for (;;)
   {
     osDelay(3000);
-    Read_ADC_Voltage(); // РР·РјРµСЂРµРЅРёРµ РЅР°РїСЂСЏР¶РµРЅРёСЏ РЅР° РђРљР‘
-    if (EEPROM.Mode == 1) osThreadSuspend(RS485_dataHandle); // РћСЃС‚Р°РЅРѕРІРёС‚СЊ, РµСЃР»Рё С†РёРєР»РёС‡РµСЃРєРёР№ СЂРµР¶РёРј (РґР»СЏ РѕРґРЅРѕРєСЂР°С‚РЅРѕРіРѕ РІС‹РїРѕР»РЅРµРЅРёСЏ)
+    Read_ADC_Voltage(); // Измерение напряжения на АКБ
+    if (EEPROM.Mode == 1) osThreadSuspend(RS485_dataHandle); // Остановить, если циклический режим (для однократного выполнения)
   }
 }
 
@@ -774,6 +781,42 @@ void Watch_dog_task(void *argument)
   {
     HAL_IWDG_Refresh(&hiwdg);
     osDelay(1000);
+    if (xSemaphoreTake(SLEEP_semaphore, 10) == pdTRUE)
+    {
+      __HAL_TIM_SET_COUNTER(&htim8, 0);
+      if (ERRCODE.STATUS & STATUS_VOLTAGE_TOO_LOW) Enter_StandbyMode_NoWakeup();
+      if (EEPROM.block == 2) return;
+
+      if (EEPROM.block == 1)
+      {
+        Screen_saver();
+        continue;
+      }
+
+      // Если бездействие больше 5 минут
+      ERRCODE.STATUS |= STATUS_IDLE_LOOP_MODE;
+      EEPROM.Mode = 1;
+      EEPROM.time_sleep_h = 1;
+      EEPROM.time_sleep_m = 0;
+
+      EEPROM_SaveSettings(&EEPROM);
+      if (EEPROM_CheckDataValidity() != HAL_OK)
+      {
+        ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
+      }
+
+      HAL_PWR_EnableBkUpAccess();
+      HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_RESET_PROG, DATA_RESET_PROG);
+      uint32_t errcode_low  = (uint32_t)(ERRCODE.STATUS & 0xFFFFFFFF);
+      uint32_t errcode_high = (uint32_t)(ERRCODE.STATUS >> 32);
+      HAL_PWR_EnableBkUpAccess();
+      HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_1, errcode_low);
+      HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_2, errcode_high);
+
+      HAL_PWR_DisableBkUpAccess();
+      NVIC_SystemReset();
+      HAL_Delay(1000);
+    }
   }
 }
 
@@ -783,7 +826,7 @@ void USB_COM_task(void *argument)
   UNUSED(argument);
   for (;;)
   {
-    // РћР¶РёРґР°РµРј СЃРµРјР°С„РѕСЂ (РґР°РЅРЅС‹Рµ РіРѕС‚РѕРІС‹ Рє РѕР±СЂР°Р±РѕС‚РєРµ)
+    // Ожидаем семафор (данные готовы к обработке)
     xSemaphoreTake(USB_COM_semaphore, portMAX_DELAY);
     USB_COM();
   }
@@ -793,21 +836,21 @@ void BlinkLED(GPIO_TypeDef *LEDPort, uint16_t LEDPin, uint8_t blinkCount, uint32
 {
     for (uint8_t i = 0; i < blinkCount; i++)
     {
-        // Р’РєР»СЋС‡Р°РµРј СЃРІРµС‚РѕРґРёРѕРґ
+        // Включаем светодиод
         HAL_GPIO_WritePin(LEDPort, LEDPin, GPIO_PIN_SET);
         osDelay(onTime);
         
-        // Р’С‹РєР»СЋС‡Р°РµРј СЃРІРµС‚РѕРґРёРѕРґ
+        // Выключаем светодиод
         HAL_GPIO_WritePin(LEDPort, LEDPin, GPIO_PIN_RESET);
         osDelay(offTime);
     }
     
-    // Р—Р°РґРµСЂР¶РєР° РјРµР¶РґСѓ С†РёРєР»Р°РјРё РјРѕСЂРіР°РЅРёСЏ
+    // Задержка между циклами моргания
     osDelay(cycleDelay);
 }
 
 
-// РРЅРґРёРєР°С†РёСЏ РѕС€РёР±РѕРє
+// Индикация ошибок
 
 
 void Erroe_indicate(void *argument)
@@ -817,11 +860,17 @@ void Erroe_indicate(void *argument)
   if (EEPROM.USB_mode == 0){
     MX_USB_HOST_Init();
   }
+  Collect_DATA();
   for (;;)
   {
+    //Collect_DATA();
+    //flash_append_record(save_data, 0);
+    //osDelay(1);
+    //continue;
+  
     Diagnostics();
     BlinkLED(GPIOC, GPIO_PIN_13, 1, 2000, 2000, 0);
-    // РћС€РёР±РєР° РёРЅРёС†РёР°Р»РёР·Р°С†РёРё EEPROM
+    // Ошибка инициализации EEPROM
     ErrorMask = STATUS_EEPROM_INIT_ERROR
     | STATUS_EEPROM_READY_ERROR
     | STATUS_EEPROM_WRITE_ERROR
@@ -832,7 +881,7 @@ void Erroe_indicate(void *argument)
       BlinkLED(GPIOC, GPIO_PIN_13, 1, 500, 500, 0);
       goto skip;
     }
-    // РћС€РёР±РєР° РёРЅРёС†РёР°Р»РёР·Р°С†РёРё РђР¦Рџ
+    // Ошибка инициализации АЦП
     ErrorMask = STATUS_ADC_EXTERNAL_INIT_ERROR
     | STATUS_ADC_TIMEOUT_ERROR
     | STATUS_ADC_READY_ERROR
@@ -842,7 +891,7 @@ void Erroe_indicate(void *argument)
       goto skip;
     }
     
-    // РћС€РёР±РєР° РёРЅРёС†РёР°Р»РёР·Р°С†РёРё Flash
+    // Ошибка инициализации Flash
     ErrorMask = STATUS_FLASH_INIT_ERROR
     | STATUS_FLASH_READY_ERROR
     | STATUS_FLASH_SEND_ERROR
@@ -861,7 +910,7 @@ void Erroe_indicate(void *argument)
   }
 }
 
-static uint8_t delay_AT_OK = 0; // РљРѕР»РёС‡РµСЃС‚РІРѕ РїРѕРїС‹С‚РѕРє РїРѕР»СѓС‡РёС‚СЊ OK РѕС‚ РјРѕРґРµРјР° 
+static uint8_t delay_AT_OK = 0; // Количество попыток получить OK от модема 
 void UART_PARSER_task(void *argument)
 {
   UNUSED(argument);
@@ -885,26 +934,26 @@ void UART_PARSER_task(void *argument)
       }
     }
 
-    // Р•СЃР»Рё GSM РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РІРєР»СЋС‡РµРЅ
+    // Если GSM должен быть включен
     if ((EEPROM.Communication == 1) && (EEPROM.Mode != 1))
     {
-      // Р•СЃР»Рё GSM Р±С‹Р» РІС‹РєР»СЋС‡РµРЅ
+      // Если GSM был выключен
       if (HAL_GPIO_ReadPin(EN_3P8V_GPIO_Port, EN_3P8V_Pin) == 0)
       {
-        HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 1); // Р’РєР»СЋС‡РµРЅРёРµ GSM
+        HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 1); // Включение GSM
         osDelay(100);
         HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 1);
         osDelay(600);
         HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 0);
       }
     }
-    // Р•СЃР»Рё GSM РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РІС‹РєР»СЋС‡РµРЅ
+    // Если GSM должен быть выключен
     if (EEPROM.Communication == 0)
     {
       HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
       continue;
     }
-    // if (EEPROM.Mode != 0) osThreadSuspend(SIM800_dataHandle); // РћСЃС‚Р°РЅРѕРІРёС‚СЊ, РµСЃР»Рё С†РёРєР»РёС‡РµСЃРєРёР№ СЂРµР¶РёРј (РґР»СЏ РѕРґРЅРѕРєСЂР°С‚РЅРѕРіРѕ РІС‹РїРѕР»РЅРµРЅРёСЏ)
+    // if (EEPROM.Mode != 0) osThreadSuspend(SIM800_dataHandle); // Остановить, если циклический режим (для однократного выполнения)
 
     if ((!(GSM_data.Status & GSM_RDY)) && (EEPROM.USB_mode != 2))
     {
@@ -960,7 +1009,7 @@ void UART_PARSER_task(void *argument)
 
     if (GSM_data.Status & SMS_SEND)
     {
-      // С„Р»Р°Рі С‚РѕРіРѕ С‡С‚Рѕ РЅСѓР¶РЅРѕ РѕС‚РїСЂР°РІРёС‚СЊ СЃРјСЃ
+      // флаг того что нужно отправить смс
       GSM_data.Status &= ~SMS_SEND;
       Collect_DATA();
       if (sendSMS() == HAL_OK)
@@ -999,7 +1048,7 @@ void UART_PARSER_task(void *argument)
     }
     if (GSM_data.Status & HTTP_READ)
     {
-      // С„Р»Р°Рі С‚РѕРіРѕ С‡С‚Рѕ РЅСѓР¶РЅРѕ РѕС‚РїСЂР°РІРёС‚СЊ HTTP
+      // флаг того что нужно отправить HTTP
       GSM_data.Status &= ~HTTP_READ;
       SETTINGS_REQUEST_DATA();
       if (READ_Settings_sendHTTP() == HAL_OK)
@@ -1028,22 +1077,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   if (htim->Instance == TIM2)
   {
     HAL_IncTick();
-  }
-  if (htim->Instance == TIM16)
-  {
-    if (EEPROM.Mode == 3){
-      Screen_saver();
-      return;
-    }
-    EEPROM.Mode = 1;
-    EEPROM_SaveSettings(&EEPROM);
-    if (EEPROM_CheckDataValidity() != HAL_OK){
-      ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
-    }
-    HAL_PWR_EnableBkUpAccess();
-    HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_RESET_PROG, DATA_RESET_PROG);
-    HAL_PWR_DisableBkUpAccess();
-    NVIC_SystemReset();
   }
 }
 

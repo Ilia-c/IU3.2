@@ -11,30 +11,30 @@ int SendCommandAndParse(const char *command_in, int (*parser)(), uint32_t timeou
     snprintf(tempBuf, sizeof(tempBuf), "SEND: %s", command_in);
     CDC_Transmit_FS((uint8_t *)tempBuf, strlen(tempBuf));
 
-    // РЎР±СЂРѕСЃ С‚РµРєСѓС‰РµРіРѕ Р±СѓС„РµСЂР° РїРµСЂРµРґ РѕС‚РїСЂР°РІРєРѕР№
+    // Сброс текущего буфера перед отправкой
     SendSomeCommandAndSetFlag();  
-    // РћС‚РїСЂР°РІРєР° РєРѕРјР°РЅРґС‹
+    // Отправка команды
     GSM_data.Status |= DATA_READ;
     osDelay(10);
     HAL_UART_Transmit(&huart4, (uint8_t *)command_in, strlen(command_in), 1000);
 
-    // РЎР±СЂР°СЃС‹РІР°РµРј РІРёСЃСЏС‰РёР№ СЃРµРјР°С„РѕСЂ, РµСЃР»Рё РѕРЅ РµСЃС‚СЊ
+    // Сбрасываем висящий семафор, если он есть
     xSemaphoreTake(UART_PARSER_semaphore, 0);
 
-    // Р–РґС‘Рј РїСЂРёС…РѕРґР° РґР°РЅРЅС‹С… (РїРѕ РїСЂРµСЂС‹РІР°РЅРёСЋ) РґРѕ Р·Р°РґР°РЅРЅРѕРіРѕ С‚Р°Р№РјР°СѓС‚Р°
+    // Ждём прихода данных (по прерыванию) до заданного таймаута
     if (xSemaphoreTake(UART_PARSER_semaphore, timeout) == pdFALSE)
     {
-        // РќРµ РґРѕР¶РґР°Р»РёСЃСЊ Р·Р°РІРµСЂС€РµРЅРёСЏ РїСЂРёС‘РјР° РІ С‚РµС‡РµРЅРёРµ timeout
+        // Не дождались завершения приёма в течение timeout
         GSM_data.Status &= ~DATA_READ;
         return -1; 
     }
 
-    // Р—РґРµСЃСЊ parseBuffer СѓР¶Рµ СЃРѕРґРµСЂР¶РёС‚ РїСЂРёРЅСЏС‚С‹Рµ РґР°РЅРЅС‹Рµ (РїРѕР»РЅРѕСЃС‚СЊСЋ РёР»Рё С‡Р°СЃС‚РёС‡РЅРѕ)
-    // Р’С‹Р·С‹РІР°РµРј РїР°СЂСЃРµСЂ, РєРѕС‚РѕСЂС‹Р№ РёС‰РµС‚ OK/ERROR/С‡С‚Рѕ СѓРіРѕРґРЅРѕ
+    // Здесь parseBuffer уже содержит принятые данные (полностью или частично)
+    // Вызываем парсер, который ищет OK/ERROR/что угодно
     int result = 0;
-    if (parser != NULL) result = parser();  // РІР°С€ parse_ERROR_OK РёР»Рё Р»СЋР±РѕР№ РґСЂСѓРіРѕР№
+    if (parser != NULL) result = parser();  // ваш parse_ERROR_OK или любой другой
 
-    // РџРѕСЃР»Рµ СЂР°Р·Р±РѕСЂР° РјРѕР¶РЅРѕ РѕС‚РєР»СЋС‡РёС‚СЊ РїСЂРёС‘Рј
+    // После разбора можно отключить приём
     GSM_data.Status &= ~DATA_READ;
     
     return result;
@@ -59,22 +59,22 @@ int parse_CPIN()
 int parse_CSQ(void)
 {
     int16_t rssi, ber;
-    // РС‰РµРј РІ Р±СѓС„РµСЂРµ РїРѕРґСЃС‚СЂРѕРєСѓ "+CSQ:"
+    // Ищем в буфере подстроку "+CSQ:"
     char *p = strstr(parseBuffer, "+CSQ:");
     if (p != NULL)
     {
-        // РЎРјРµС‰Р°РµРј СѓРєР°Р·Р°С‚РµР»СЊ Р·Р° "+CSQ:" Рё РїСЂРѕРїСѓСЃРєР°РµРј РІРѕР·РјРѕР¶РЅС‹Рµ РїСЂРѕР±РµР»С‹
+        // Смещаем указатель за "+CSQ:" и пропускаем возможные пробелы
         p += strlen("+CSQ:");
         while (*p == ' ' || *p == '\t')
         {
             p++;
         }
         
-        // РџС‹С‚Р°РµРјСЃСЏ СЂР°Р·РѕР±СЂР°С‚СЊ РґРІР° С‡РёСЃР»РѕРІС‹С… Р·РЅР°С‡РµРЅРёСЏ (16-Р±РёС‚РЅС‹С…), СЂР°Р·РґРµР»С‘РЅРЅС‹С… Р·Р°РїСЏС‚РѕР№
+        // Пытаемся разобрать два числовых значения (16-битных), разделённых запятой
         if (sscanf(p, "%hd,%hd", &rssi, &ber) == 2)
         {
-            //rssi - РєР°С‡РµСЃС‚РІРѕ СЃРёРіРЅР°Р»Р° 0-31, 99
-            //ber - СѓСЂРѕРІРµРЅСЊ РѕС€РёР±РѕРє 0-7, 99
+            //rssi - качество сигнала 0-31, 99
+            //ber - уровень ошибок 0-7, 99
             GSM_data.GSM_Signal_Level = rssi;
             GSM_data.GSM_Signal_Errors = ber;
 
@@ -93,18 +93,18 @@ int parse_CEREG(void)
     char *p = strstr(parseBuffer, "+CEREG:");
     if (p == NULL)
     {
-        // РџРѕРґСЃС‚СЂРѕРєР° РЅРµ РЅР°Р№РґРµРЅР°
+        // Подстрока не найдена
         return -1;
     }
     
     p += strlen("+CEREG:");
     
-    // РџС‹С‚Р°РµРјСЃСЏ СЂР°Р·РѕР±СЂР°С‚СЊ СЃС‚СЂРѕРєСѓ РІ С„РѕСЂРјР°С‚Рµ:
+    // Пытаемся разобрать строку в формате:
     // <n>, <stat>, "<tac>", "<ci>", <act>
-    // РџСЂРёРјРµСЂ РѕС‚РІРµС‚Р°: +CEREG: 0, 1,"02b3","cea80000",0
+    // Пример ответа: +CEREG: 0, 1,"02b3","cea80000",0
     if (sscanf(p, " %d , %d , \"%15[^\"]\" , \"%15[^\"]\" , %d", &n, &stat, tac, ci, &act) == 5)
     {
-        //stat - X Рё act - Y
+        //stat - X и act - Y
         if (stat == 1 && act == 0)
         {
             GSM_data.Modem_mode = MODEM_STATUS[0];
@@ -123,21 +123,21 @@ int parse_CEREG(void)
 int parse_COPS(void)
 {
     int mode, format, act;
-    char oper[32] = {0};  // Р‘СѓС„РµСЂ РґР»СЏ РѕРїРµСЂР°С‚РѕСЂР° (РґРѕСЃС‚Р°С‚РѕС‡РЅРѕРіРѕ СЂР°Р·РјРµСЂР° РґР»СЏ С…СЂР°РЅРµРЅРёСЏ СЃС‚СЂРѕРєРё РѕРїРµСЂР°С‚РѕСЂР°)
+    char oper[32] = {0};  // Буфер для оператора (достаточного размера для хранения строки оператора)
     
-    // РС‰РµРј РІ parseBuffer РїРѕРґСЃС‚СЂРѕРєСѓ "+COPS:"
+    // Ищем в parseBuffer подстроку "+COPS:"
     char *p = strstr(parseBuffer, "+COPS:");
     if (p == NULL)
     {
-        // Р•СЃР»Рё РїРѕРґСЃС‚СЂРѕРєР° РЅРµ РЅР°Р№РґРµРЅР°, РІРѕР·РІСЂР°С‰Р°РµРј -1
+        // Если подстрока не найдена, возвращаем -1
         return -1;
     }
     
-    // РЎРјРµС‰Р°РµРј СѓРєР°Р·Р°С‚РµР»СЊ Р·Р° "+COPS:"
+    // Смещаем указатель за "+COPS:"
     p += strlen("+COPS:");
     
-    // РџС‹С‚Р°РµРјСЃСЏ СЂР°Р·РѕР±СЂР°С‚СЊ СЃС‚СЂРѕРєСѓ РІ С„РѕСЂРјР°С‚Рµ: mode, format, "oper", act
-    // РџСЂРёРјРµСЂ РѕС‚РІРµС‚Р°: +COPS: 0,2,"25001", 0
+    // Пытаемся разобрать строку в формате: mode, format, "oper", act
+    // Пример ответа: +COPS: 0,2,"25001", 0
     if (sscanf(p, " %d , %d , \"%31[^\"]\" , %d", &mode, &format, oper, &act) == 4)
     {
         GSM_data.Operator_code = atoi(oper);
@@ -150,13 +150,13 @@ int parse_ERROR_OK(void)
 {
     if (strstr(parseBuffer, "ERROR") != NULL)
     {
-        return 0; // РќР°С€Р»Рё "ERROR"
+        return 0; // Нашли "ERROR"
     }
     if (strstr(parseBuffer, "OK") != NULL)
     {
-        return 1; // РќР°С€Р»Рё "OK"
+        return 1; // Нашли "OK"
     }
-    return -1;     // РќРµ РЅР°С€Р»Рё РЅРё "ERROR", РЅРё "OK"
+    return -1;     // Не нашли ни "ERROR", ни "OK"
 }
 
 int waitForOKResponse()
@@ -166,11 +166,11 @@ int waitForOKResponse()
     TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
     if (strstr(parseBuffer, "OK") != NULL)
     {
-        return 1; // РџРѕР»СѓС‡РµРЅ РѕС‚РІРµС‚ OK
+        return 1; // Получен ответ OK
     }
     if (strstr(parseBuffer, "ERROR") != NULL)
     {
-        return 0; // РџРѕР»СѓС‡РµРЅ РѕС‚РІРµС‚ ERROR
+        return 0; // Получен ответ ERROR
     }
     while ((xTaskGetTickCount() - startTick) < timeoutTicks)
     {
@@ -178,49 +178,49 @@ int waitForOKResponse()
         {
             if (strstr(parseBuffer, "OK") != NULL)
             {
-                return 1; // РџРѕР»СѓС‡РµРЅ РѕС‚РІРµС‚ OK
+                return 1; // Получен ответ OK
             }
             if (strstr(parseBuffer, "ERROR") != NULL)
             {
-                return 0; // РџРѕР»СѓС‡РµРЅ РѕС‚РІРµС‚ ERROR
+                return 0; // Получен ответ ERROR
             }
         }
     }
-    return -1; // РўР°Р№РјР°СѓС‚: РЅРё OK, РЅРё ERROR РЅРµ РѕР±РЅР°СЂСѓР¶РµРЅС‹
+    return -1; // Таймаут: ни OK, ни ERROR не обнаружены
 }
 
 int waitForGreaterThanResponse(void)
 {
-    uint32_t timeout = 10000; // РўР°Р№РјР°СѓС‚ РІ РјСЃ
+    uint32_t timeout = 10000; // Таймаут в мс
     TickType_t startTick = xTaskGetTickCount();
     TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
-    // Р•СЃР»Рё РІ Р±СѓС„РµСЂРµ РѕР±РЅР°СЂСѓР¶РµРЅ СЃРёРјРІРѕР» '>', СЃС‡РёС‚Р°РµРј, С‡С‚Рѕ РїСЂРёРіР»Р°С€РµРЅРёРµ РїРѕР»СѓС‡РµРЅРѕ
+    // Если в буфере обнаружен символ '>', считаем, что приглашение получено
     if (strstr(parseBuffer, ">") != NULL)
     {
-        return 1; // РџРѕР»СѓС‡РµРЅ СЃРёРјРІРѕР» '>'
+        return 1; // Получен символ '>'
     }
-    // Р•СЃР»Рё РѕР±РЅР°СЂСѓР¶РµРЅ ERROR, РІРѕР·РІСЂР°С‰Р°РµРј РѕС€РёР±РєСѓ
+    // Если обнаружен ERROR, возвращаем ошибку
     if (strstr(parseBuffer, "ERROR") != NULL)
     {
-        return 0; // РџРѕР»СѓС‡РµРЅ РѕС‚РІРµС‚ ERROR
+        return 0; // Получен ответ ERROR
     }
     while ((xTaskGetTickCount() - startTick) < timeoutTicks)
     {
         if (xSemaphoreTake(UART_PARSER_semaphore, pdMS_TO_TICKS(5000)) == pdTRUE)
         {
-            // Р•СЃР»Рё РІ Р±СѓС„РµСЂРµ РѕР±РЅР°СЂСѓР¶РµРЅ СЃРёРјРІРѕР» '>', СЃС‡РёС‚Р°РµРј, С‡С‚Рѕ РїСЂРёРіР»Р°С€РµРЅРёРµ РїРѕР»СѓС‡РµРЅРѕ
+            // Если в буфере обнаружен символ '>', считаем, что приглашение получено
             if (strstr(parseBuffer, ">") != NULL)
             {
-                return 1; // РџРѕР»СѓС‡РµРЅ СЃРёРјРІРѕР» '>'
+                return 1; // Получен символ '>'
             }
-            // Р•СЃР»Рё РѕР±РЅР°СЂСѓР¶РµРЅ ERROR, РІРѕР·РІСЂР°С‰Р°РµРј РѕС€РёР±РєСѓ
+            // Если обнаружен ERROR, возвращаем ошибку
             if (strstr(parseBuffer, "ERROR") != NULL)
             {
-                return 0; // РџРѕР»СѓС‡РµРЅ РѕС‚РІРµС‚ ERROR
+                return 0; // Получен ответ ERROR
             }
         }
     }
-    return -1; // РўР°Р№РјР°СѓС‚: СЃРёРјРІРѕР» '>' РЅРµ РѕР±РЅР°СЂСѓР¶РµРЅ
+    return -1; // Таймаут: символ '>' не обнаружен
 }
 
 int waitForHTTPResponse()
@@ -230,8 +230,8 @@ int waitForHTTPResponse()
     TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
     int32_t m, s, d;
     ERRCODE.STATUS &= ~STATUS_HTTP_WRONG_PASSWORD_ERROR;
-    // РџС‹С‚Р°РµРјСЃСЏ СЂР°Р·РѕР±СЂР°С‚СЊ СЃС‚СЂРѕРєСѓ. Р•СЃР»Рё РІ РѕС‚РІРµС‚Рµ РїСЂРёСЃСѓС‚СЃС‚РІСѓРµС‚ Р»РёС€РЅРёР№ СЃРёРјРІРѕР», РЅР°РїСЂРёРјРµСЂ,
-    // С‚РѕС‡РєР° РІ РєРѕРЅС†Рµ "162.", sscanf СѓСЃРїРµС€РЅРѕ РІРµСЂРЅС‘С‚ 3, С‚Р°Рє РєР°Рє С†РёС„СЂС‹ Р±СѓРґСѓС‚ СЂР°Р·РѕР±СЂР°РЅС‹ РєРѕСЂСЂРµРєС‚РЅРѕ.
+    // Пытаемся разобрать строку. Если в ответе присутствует лишний символ, например,
+    // точка в конце "162.", sscanf успешно вернёт 3, так как цифры будут разобраны корректно.
     if (sscanf(parseBuffer, "%ld %ld %ld", &m, &s, &d) == 3)
     {
         if (s == 200)
@@ -240,7 +240,7 @@ int waitForHTTPResponse()
             ERRCODE.STATUS |= STATUS_HTTP_WRONG_PASSWORD_ERROR;
             return -1;
         }
-        return 0; // РЈСЃРїРµС€РЅРѕ РїРѕР»СѓС‡РµРЅ Рё СЂР°Р·РѕР±СЂР°РЅ РѕС‚РІРµС‚
+        return 0; // Успешно получен и разобран ответ
     }
     while ((xTaskGetTickCount() - startTick) < timeoutTicks)
     {
@@ -254,12 +254,12 @@ int waitForHTTPResponse()
                     ERRCODE.STATUS |= STATUS_HTTP_WRONG_PASSWORD_ERROR;
                     return -1;
                 }
-                return 0; // РЈСЃРїРµС€РЅРѕ РїРѕР»СѓС‡РµРЅ Рё СЂР°Р·РѕР±СЂР°РЅ РѕС‚РІРµС‚
+                return 0; // Успешно получен и разобран ответ
             }
         }
     }
     CDC_Transmit_FS(parseBuffer, sizeof(parseBuffer));
-    return -1; // РўР°Р№РјР°СѓС‚: РѕС‚РІРµС‚ РЅРµ РїРѕР»СѓС‡РµРЅ РёР»Рё РЅРµ СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓРµС‚ С„РѕСЂРјР°С‚Сѓ
+    return -1; // Таймаут: ответ не получен или не соответствует формату
 }
 
 
@@ -268,7 +268,7 @@ int waitForHTTPResponse()
 int sendSMS(void)
 {
     int attempt;
-    uint8_t smsSent = 0; // Р¤Р»Р°Рі СѓСЃРїРµС€РЅРѕР№ РѕС‚РїСЂР°РІРєРё SMS
+    uint8_t smsSent = 0; // Флаг успешной отправки SMS
     if (strlen(save_data) + 3 < sizeof(save_data) )
     {
         strcat(save_data, "\x1A\r");
@@ -289,21 +289,21 @@ int sendSMS(void)
 
     for (attempt = 0; attempt < MAX_SMS_ATTEMPTS; attempt++)
     {
-        // РљРѕРјР°РЅРґР° РґР»СЏ РІС‹Р±РѕСЂР° С‚РµРєСЃС‚РѕРІРѕРіРѕ СЂРµР¶РёРјР°
+        // Команда для выбора текстового режима
         if (SendCommandAndParse("AT+CMGF=1\r", waitForOKResponse, 1000) != 1)
         {
-            osDelay(5000); // Р—Р°РґРµСЂР¶РєР° 5 СЃРµРєСѓРЅРґ РїРµСЂРµРґ РїРѕРІС‚РѕСЂРЅРѕР№ РїРѕРїС‹С‚РєРѕР№
-            continue;      // РџРµСЂРµС…РѕРґРёРј Рє СЃР»РµРґСѓСЋС‰РµР№ РїРѕРїС‹С‚РєРµ
+            osDelay(5000); // Задержка 5 секунд перед повторной попыткой
+            continue;      // Переходим к следующей попытке
         }
 
-        // РљРѕРјР°РЅРґР° РґР»СЏ РІС‹Р±РѕСЂР° РєРѕРґРёСЂРѕРІРєРё СЃРёРјРІРѕР»РѕРІ
+        // Команда для выбора кодировки символов
         if (SendCommandAndParse("AT+CSCS=\"GSM\"\r", waitForOKResponse, 1000) != 1)
         {
             osDelay(5000);
             continue;
         }
 
-        // РљРѕРјР°РЅРґР° РґР»СЏ РЅР°С‡Р°Р»Р° РѕС‚РїСЂР°РІРєРё SMS
+        // Команда для начала отправки SMS
         // "AT+CMGS=\"+79150305966\"\r"
         memset(command, 0, sizeof(command));
         sprintf(command, "AT+CMGS=\"%s\"\r", EEPROM.Phone);
@@ -315,12 +315,12 @@ int sendSMS(void)
         }
         HAL_UART_Transmit(&huart4, save_data, strlen(save_data), 1000);
 
-        // Р•СЃР»Рё РІСЃРµ РєРѕРјР°РЅРґС‹ РІС‹РїРѕР»РЅРµРЅС‹ СѓСЃРїРµС€РЅРѕ, СЃС‡РёС‚Р°РµРј, С‡С‚Рѕ SMS РѕС‚РїСЂР°РІР»РµРЅР°
+        // Если все команды выполнены успешно, считаем, что SMS отправлена
         smsSent = 1;
         break;
     }
 
-    // Р•СЃР»Рё РЅРё РѕРґРЅР° РёР· РїРѕРїС‹С‚РѕРє РЅРµ СѓРІРµРЅС‡Р°Р»Р°СЃСЊ СѓСЃРїРµС…РѕРј, РІС‹СЃС‚Р°РІР»СЏРµРј С„Р»Р°Рі РѕС€РёР±РєРё
+    // Если ни одна из попыток не увенчалась успехом, выставляем флаг ошибки
     if (!smsSent) {
         ERRCODE.STATUS |= STATUS_GSM_SMS_SEND_ERROR;
         return -1;
@@ -332,7 +332,7 @@ int sendSMS(void)
 
 int sendHTTP(void) {
     int attempt;
-    uint8_t httpSent = 0; // Р¤Р»Р°Рі СѓСЃРїРµС€РЅРѕР№ РѕС‚РїСЂР°РІРєРё HTTP
+    uint8_t httpSent = 0; // Флаг успешной отправки HTTP
     char send[512] = "AT+HTTPPARA=\"URL\",\"http://geosp-data.ru/api/save-data?data=";
     if ( (strlen(send) + strlen(save_data) + 3) < sizeof(send) )
     {
@@ -351,20 +351,20 @@ int sendHTTP(void) {
         if (SendCommandAndParse("AT+HTTPPARA=\"CID\",\"1\"\r", waitForOKResponse, 1000) != 1) {
             goto http_error_1;
         }
-        // РћС‚РїСЂР°РІРєР° HTTP Р·Р°РїСЂРѕСЃР° (send - СЃС‚СЂРѕРєР° СЃ РєРѕСЂСЂРµРєС‚РЅРѕ СЃС„РѕСЂРјРёСЂРѕРІР°РЅРЅС‹Рј URL)
+        // Отправка HTTP запроса (send - строка с корректно сформированным URL)
         if (SendCommandAndParse(send, waitForOKResponse, 20000) != 1) {
             goto http_error_1;
         }
         osDelay(100);
-        // Р’С‹РїРѕР»РЅРµРЅРёРµ HTTPACTION, РїСЂРѕРІРµСЂРєР° РѕС‚РІРµС‚Р°
+        // Выполнение HTTPACTION, проверка ответа
         int res = SendCommandAndParse("AT+HTTPACTION=0\r", waitForHTTPResponse, 30000);
         if (res == -1) {
-            // Р—РЅР°С‡РёС‚ РґРѕСЃС‚СѓРї Р·Р°РїСЂРµС‰РµРЅ, РІРµСЂРѕСЏС‚РЅРѕ РЅРµРІРµСЂРЅС‹Р№ РїР°СЂРѕР»СЊ
+            // Значит доступ запрещен, вероятно неверный пароль
             SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 120000);
             break;
         }
         if (res == 0){
-            // Р•СЃР»Рё РѕС€РёР±РєР°
+            // Если ошибка
             goto http_error_1;
         }
         osDelay(1000);
@@ -373,15 +373,15 @@ int sendHTTP(void) {
             readResult = SendCommandAndParse("AT+HTTPREAD=0,200\r", waitAndParseSiteResponse, 1000);
         }
         osDelay(100);
-        // РџРѕСЃР»Рµ РїРѕРїС‹С‚РѕРє, РІРЅРµ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ СЂРµР·СѓР»СЊС‚Р°С‚Р°, Р·Р°РІРµСЂС€Р°РµРј HTTP СЃРµСЃСЃРёСЋ
+        // После попыток, вне зависимости от результата, завершаем HTTP сессию
         SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 120000);
-        // Р•СЃР»Рё РґР°РЅРЅС‹Рµ С‚Р°Рє Рё РЅРµ РїРѕР»СѓС‡РµРЅС‹, СЃС‡РёС‚Р°РµРј РїРѕРїС‹С‚РєСѓ РЅРµСѓСЃРїРµС€РЅРѕР№
+        // Если данные так и не получены, считаем попытку неуспешной
         if (readResult != 1) {
             ERRCODE.STATUS |= STATUS_UART_NO_RESPONSE;
             ERRCODE.STATUS |= STATUS_HTTP_SERVER_COMM_ERROR;
             goto http_error_1;
         }
-        // Р•СЃР»Рё РґРѕ СЃСЋРґР° РґРѕС€Р»Рё, Р·РЅР°С‡РёС‚ РІСЃРµ РєРѕРјР°РЅРґС‹ РІС‹РїРѕР»РЅРµРЅС‹ СѓСЃРїРµС€РЅРѕ
+        // Если до сюда дошли, значит все команды выполнены успешно
         httpSent = 1;
         break;
 
@@ -397,10 +397,10 @@ http_error_1:
     SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 1000);
     osDelay(500);
     SendCommandAndParse("AT+CDNSCFG=\"8.8.8.8\",\"77.88.8.8\"\r", waitForOKResponse, 1000);
-    osDelay(5000); // Р—Р°РґРµСЂР¶РєР° 5 СЃРµРєСѓРЅРґ РїРµСЂРµРґ СЃР»РµРґСѓСЋС‰РµР№ РїРѕРїС‹С‚РєРѕР№
+    osDelay(5000); // Задержка 5 секунд перед следующей попыткой
     }
 
-    // Р•СЃР»Рё РЅРё РѕРґРЅР° РёР· РїРѕРїС‹С‚РѕРє РЅРµ СѓРІРµРЅС‡Р°Р»Р°СЃСЊ СѓСЃРїРµС…РѕРј, РІС‹СЃС‚Р°РІР»СЏРµРј С„Р»Р°Рі РѕС€РёР±РєРё
+    // Если ни одна из попыток не увенчалась успехом, выставляем флаг ошибки
     if (!httpSent) {
         ERRCODE.STATUS |= STATUS_HTTP_SERVER_COMM_ERROR;
         return -1;
@@ -410,10 +410,10 @@ http_error_1:
 
 int READ_Settings_sendHTTP(void) {
     int attempt;
-    uint8_t httpSent = 0; // Р¤Р»Р°Рі СѓСЃРїРµС€РЅРѕР№ РѕС‚РїСЂР°РІРєРё HTTP
+    uint8_t httpSent = 0; // Флаг успешной отправки HTTP
     char send[512] = "AT+HTTPPARA=\"URL\",\"http://geosp-data.ru/api/save-data?request=";
     
-    // РџСЂРѕРІРµСЂСЏРµРј, РїРѕРјРµСЃС‚РёС‚СЃСЏ Р»Рё РґРѕРїРѕР»РЅРµРЅРёРµ: РґР»РёРЅР° send + РґР»РёРЅР° save_data + 2 СЃРёРјРІРѕР»Р° (РґР»СЏ " Рё \r) + Р·Р°РІРµСЂС€Р°СЋС‰РёР№ \0
+    // Проверяем, поместится ли дополнение: длина send + длина save_data + 2 символа (для " и \r) + завершающий \0
     if ( (strlen(send) + strlen(save_data) + 3) < sizeof(send) )
     {
         strcat(send, save_data);
@@ -426,11 +426,11 @@ int READ_Settings_sendHTTP(void) {
 
 
     for (attempt = 0; attempt < MAX_HTTP_ATTEMPTS; attempt++) {
-        // РџСЂРµРґРІР°СЂРёС‚РµР»СЊРЅР°СЏ РѕС‡РёСЃС‚РєР° СЃРѕСЃС‚РѕСЏРЅРёСЏ РїРµСЂРµРґ РЅР°С‡Р°Р»РѕРј
+        // Предварительная очистка состояния перед началом
         //SendCommandAndParse("AT+HTTPTERM\r", parse_ERROR_OK, 1000);
         //SendCommandAndParse("AT+CGACT=0\r", parse_ERROR_OK, 1000);
         //SendCommandAndParse("AT+CGDCONT=1\r", parse_ERROR_OK, 1000);
-        // РќР°С‡Р°Р»Рѕ РЅР°СЃС‚СЂРѕР№РєРё СЃРѕРµРґРёРЅРµРЅРёСЏ
+        // Начало настройки соединения
         /*
         if (SendCommandAndParse("AT+CGDCONT=1,\"IP\",\"internet.mts.ru\"\r", waitForOKResponse, 1000) != 1) {
             goto http_error_2;
@@ -451,20 +451,20 @@ int READ_Settings_sendHTTP(void) {
             goto http_error_2;
         }
         osDelay(100);
-        // РћС‚РїСЂР°РІРєР° HTTP Р·Р°РїСЂРѕСЃР° (send - СЃС‚СЂРѕРєР° СЃ РєРѕСЂСЂРµРєС‚РЅРѕ СЃС„РѕСЂРјРёСЂРѕРІР°РЅРЅС‹Рј URL)
+        // Отправка HTTP запроса (send - строка с корректно сформированным URL)
         if (SendCommandAndParse(send, waitForOKResponse, 20000) != 1) {
             goto http_error_2;
         }
         osDelay(100);
-        // Р’С‹РїРѕР»РЅРµРЅРёРµ HTTPACTION, РїСЂРѕРІРµСЂРєР° РѕС‚РІРµС‚Р°
+        // Выполнение HTTPACTION, проверка ответа
         int res = SendCommandAndParse("AT+HTTPACTION=0\r", waitForHTTPResponse, 30000);
         if (res == -1) {
-            // Р—РЅР°С‡РёС‚ РґРѕСЃС‚СѓРї Р·Р°РїСЂРµС‰РµРЅ, РІРµСЂРѕСЏС‚РЅРѕ РЅРµРІРµСЂРЅС‹Р№ РїР°СЂРѕР»СЊ
+            // Значит доступ запрещен, вероятно неверный пароль
             SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 120000);
             break;
         }
         if (res == 0){
-            // Р•СЃР»Рё РѕС€РёР±РєР°
+            // Если ошибка
             goto http_error_2;
         }
         osDelay(2000);
@@ -473,19 +473,19 @@ int READ_Settings_sendHTTP(void) {
             readResult = SendCommandAndParse("AT+HTTPREAD=0,200\r", waitAndParseSiteResponse, 1000);
         }
         osDelay(200);
-        // РџРѕСЃР»Рµ РїРѕРїС‹С‚РѕРє, РІРЅРµ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ СЂРµР·СѓР»СЊС‚Р°С‚Р°, Р·Р°РІРµСЂС€Р°РµРј HTTP СЃРµСЃСЃРёСЋ
+        // После попыток, вне зависимости от результата, завершаем HTTP сессию
         SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000);
-        // Р•СЃР»Рё РґР°РЅРЅС‹Рµ С‚Р°Рє Рё РЅРµ РїРѕР»СѓС‡РµРЅС‹, СЃС‡РёС‚Р°РµРј РїРѕРїС‹С‚РєСѓ РЅРµСѓСЃРїРµС€РЅРѕР№
+        // Если данные так и не получены, считаем попытку неуспешной
         if (readResult != 1) {
             ERRCODE.STATUS |= STATUS_UART_NO_RESPONSE;
         }
         
-        // Р•СЃР»Рё РґРѕ СЃСЋРґР° РґРѕС€Р»Рё, Р·РЅР°С‡РёС‚ РІСЃРµ РєРѕРјР°РЅРґС‹ РІС‹РїРѕР»РЅРµРЅС‹ СѓСЃРїРµС€РЅРѕ
+        // Если до сюда дошли, значит все команды выполнены успешно
         httpSent = 1;
         break;
 
 http_error_2:
-        // Р’ СЃР»СѓС‡Р°Рµ РѕС€РёР±РєРё РІС‹РїРѕР»РЅСЏРµРј В«РѕС‡РёСЃС‚РєСѓВ» СЃРѕСЃС‚РѕСЏРЅРёСЏ:
+        // В случае ошибки выполняем «очистку» состояния:
         SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000);
         osDelay(500);
         SendCommandAndParse("AT+CGACT=0\r", waitForOKResponse, 1000);
@@ -497,10 +497,10 @@ http_error_2:
         SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 1000);
         osDelay(500);
         SendCommandAndParse("AT+CDNSCFG=\"8.8.8.8\",\"77.88.8.8\"\r", waitForOKResponse, 1000);
-        osDelay(5000);  // Р—Р°РґРµСЂР¶РєР° 5 СЃРµРєСѓРЅРґ РїРµСЂРµРґ СЃР»РµРґСѓСЋС‰РµР№ РїРѕРїС‹С‚РєРѕР№
+        osDelay(5000);  // Задержка 5 секунд перед следующей попыткой
     }
 
-    // Р•СЃР»Рё РЅРё РѕРґРЅР° РёР· РїРѕРїС‹С‚РѕРє РЅРµ СѓРІРµРЅС‡Р°Р»Р°СЃСЊ СѓСЃРїРµС…РѕРј, РІС‹СЃС‚Р°РІР»СЏРµРј С„Р»Р°Рі РѕС€РёР±РєРё
+    // Если ни одна из попыток не увенчалась успехом, выставляем флаг ошибки
     if (!httpSent) {
         ERRCODE.STATUS |= STATUS_HTTP_SERVER_COMM_ERROR;
         return -1;
@@ -523,31 +523,31 @@ int Send_data(){
 
 int parse_site_response(void) {
 
-    // РС‰РµРј РѕС‚РєСЂС‹РІР°СЋС‰СѓСЋ Рё Р·Р°РєСЂС‹РІР°СЋС‰СѓСЋ РєРІР°РґСЂР°С‚РЅС‹Рµ СЃРєРѕР±РєРё
+    // Ищем открывающую и закрывающую квадратные скобки
     char *start = strchr(parseBuffer, '[');
     char *end = strrchr(parseBuffer, ']');
     if (start == NULL || end == NULL || start > end) {
         return -1;
     }
     
-    // РР·РІР»РµРєР°РµРј СЃРѕРґРµСЂР¶РёРјРѕРµ РјРµР¶РґСѓ СЃРєРѕР±РєР°РјРё
+    // Извлекаем содержимое между скобками
     size_t len = end - start - 1;
-    if (len == 0 || len >= 128) {  // 128 вЂ“ СЂР°Р·РјРµСЂ РІСЂРµРјРµРЅРЅРѕРіРѕ Р±СѓС„РµСЂР°, РјРѕР¶РЅРѕ РЅР°СЃС‚СЂРѕРёС‚СЊ
+    if (len == 0 || len >= 128) {  // 128 – размер временного буфера, можно настроить
         return -1;
     }
     char dataStr[128] = {0};
     memcpy(dataStr, start + 1, len);
     dataStr[len] = '\0';
 
-    /* Р Р°Р·Р±РёРІР°РµРј СЃС‚СЂРѕРєСѓ РЅР° РїРѕР»СЏ, СЂР°Р·РґРµР»С‘РЅРЅС‹Рµ СЃРёРјРІРѕР»РѕРј ';'
-       РћР¶РёРґР°РµС‚СЃСЏ 7 РїРѕР»РµР№:
-         1. РќРѕРјРµСЂ СѓСЃС‚СЂРѕР№СЃС‚РІР° (СЃС‚СЂРѕРєР°)
-         2. Р РµР¶РёРј СЂР°Р±РѕС‚С‹ (С†РµР»РѕРµ С‡РёСЃР»Рѕ)
-         3. Р РµР¶РёРј СЂР°Р±РѕС‚С‹ СЃРЅР° (С†РµР»РѕРµ С‡РёСЃР»Рѕ)
-         4. Р’СЂРµРјСЏ СЃРЅР° (С†РµР»РѕРµ С‡РёСЃР»Рѕ)
-         5. РљРѕСЂСЂРµРєС‚РёСЂРѕРІРєР° (double)
-         6. РњР°РєСЃРёРјР°Р»СЊРЅР°СЏ РіР»СѓР±РёРЅР° РёР·РјРµСЂРµРЅРёР№ (double)
-         7. РќРѕРјРµСЂ С‚РµР»РµС„РѕРЅР° (СЃС‚СЂРѕРєР°)
+    /* Разбиваем строку на поля, разделённые символом ';'
+       Ожидается 7 полей:
+         1. Номер устройства (строка)
+         2. Режим работы (целое число)
+         3. Режим работы сна (целое число)
+         4. Время сна (целое число)
+         5. Корректировка (double)
+         6. Максимальная глубина измерений (double)
+         7. Номер телефона (строка)
     */
    #define BUFFER_SIZE 128
     char dataCopy[BUFFER_SIZE];
@@ -601,18 +601,18 @@ int parse_site_response(void) {
 
     if (tokenCount != 7)
     {
-        // Р•СЃР»Рё С‡РёСЃР»Рѕ С‚РѕРєРµРЅРѕРІ РѕС‚Р»РёС‡Р°РµС‚СЃСЏ РѕС‚ 7, РґР°РЅРЅС‹Рµ СЃС‡РёС‚Р°СЋС‚СЃСЏ РЅРµРІРµСЂРЅС‹РјРё
+        // Если число токенов отличается от 7, данные считаются неверными
         return -1;
     }
 
-    // РџСЂРѕРІРµСЂСЏРµРј, СЃРѕРІРїР°РґР°РµС‚ Р»Рё РїРѕР»СѓС‡РµРЅРЅС‹Р№ РЅРѕРјРµСЂ СѓСЃС‚СЂРѕР№СЃС‚РІР° СЃ РѕР¶РёРґР°РµРјС‹Рј
+    // Проверяем, совпадает ли полученный номер устройства с ожидаемым
     if (strcmp(devNum, EEPROM.version.VERSION_PCB) != 0) {
         return -1;
     }
     
-    // РЎРѕС…СЂР°РЅСЏРµРј СЂР°Р·РѕР±СЂР°РЅРЅС‹Рµ РґР°РЅРЅС‹Рµ РІ EEPROM
+    // Сохраняем разобранные данные в EEPROM
     if (EEPROM.Mode != 0) EEPROM.Mode = (uint8_t)mode;
-    // Р•СЃР»Рё СЂРµР¶РёРј СЃРЅР° СЂР°РІРµРЅ 0, РІСЂРµРјСЏ СЃРЅР° С‚СЂР°РєС‚СѓРµРј РєР°Рє РјРёРЅСѓС‚С‹, РёРЅР°С‡Рµ РєР°Рє С‡Р°СЃС‹
+    // Если режим сна равен 0, время сна трактуем как минуты, иначе как часы
     if (sleepMode == 1) {
         EEPROM.time_sleep_m = (uint16_t)sleepTime;
         EEPROM.time_sleep_h = 0;
@@ -622,7 +622,7 @@ int parse_site_response(void) {
     }
     EEPROM.GVL_correct = correct;
     EEPROM.MAX_LVL = maxLvl;
-    // РљРѕРїРёСЂСѓРµРј РЅРѕРјРµСЂ С‚РµР»РµС„РѕРЅР°, РіР°СЂР°РЅС‚РёСЂСѓСЏ РЅР°Р»РёС‡РёРµ Р·Р°РІРµСЂС€Р°СЋС‰РµРіРѕ РЅСѓР»СЏ
+    // Копируем номер телефона, гарантируя наличие завершающего нуля
     strncpy(EEPROM.Phone, phone, sizeof(EEPROM.Phone) - 1);
     EEPROM.Phone[sizeof(EEPROM.Phone) - 1] = '\0';
 
@@ -637,7 +637,7 @@ int parse_site_response(void) {
 
 int waitAndParseSiteResponse(void)
 {
-    uint32_t timeout = 20000;  // РўР°Р№РјР°СѓС‚ РѕР¶РёРґР°РЅРёСЏ РІ РјСЃ
+    uint32_t timeout = 20000;  // Таймаут ожидания в мс
     TickType_t startTick = xTaskGetTickCount();
     TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
     
@@ -648,16 +648,16 @@ int waitAndParseSiteResponse(void)
     char *start = strchr(parseBuffer, '[');
     if (start != NULL && strchr(start, ']') != NULL) {
         int res = parse_site_response();
-        return res;  // 1 РїСЂРё СѓСЃРїРµС…Рµ, -1 РїСЂРё РѕС€РёР±РєРµ
+        return res;  // 1 при успехе, -1 при ошибке
     }
     
-    // Р¦РёРєР» РѕР¶РёРґР°РЅРёСЏ РїРѕСЃС‚СѓРїР»РµРЅРёСЏ РґР°РЅРЅС‹С…
+    // Цикл ожидания поступления данных
     while ((xTaskGetTickCount() - startTick) < timeoutTicks)
     {
-        // РћР¶РёРґР°РµРј РїРѕСЏРІР»РµРЅРёСЏ РЅРѕРІС‹С… РґР°РЅРЅС‹С… СЃ РїРµСЂРёРѕРґРѕРј РґРѕ 5 СЃРµРєСѓРЅРґ
+        // Ожидаем появления новых данных с периодом до 5 секунд
         if (xSemaphoreTake(UART_PARSER_semaphore, pdMS_TO_TICKS(5000)) == pdTRUE)
         {
-            // РџСЂРё РєР°Р¶РґРѕРј РїРѕР»СѓС‡РµРЅРёРё РЅРѕРІС‹С… РґР°РЅРЅС‹С… РїСЂРѕРІРµСЂСЏРµРј:
+            // При каждом получении новых данных проверяем:
             if (strstr(parseBuffer, "NO_BINDING") != NULL) {
                 ERRCODE.STATUS |= STATUS_HTTP_NO_BINDING_ERROR;
                 return 0;
@@ -670,6 +670,6 @@ int waitAndParseSiteResponse(void)
             }
         }
     }
-    // Р•СЃР»Рё Р·Р° РІСЂРµРјСЏ РѕР¶РёРґР°РЅРёСЏ РЅСѓР¶РЅС‹Р№ РїР°РєРµС‚ С‚Р°Рє Рё РЅРµ РѕР±РЅР°СЂСѓР¶РµРЅ, РІРѕР·РІСЂР°С‰Р°РµРј -1
+    // Если за время ожидания нужный пакет так и не обнаружен, возвращаем -1
     return -1;
 }

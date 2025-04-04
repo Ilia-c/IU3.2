@@ -12,7 +12,7 @@ extern ADC_HandleTypeDef hadc3;
 extern TIM_HandleTypeDef htim5;
 extern TIM_HandleTypeDef htim6;
 extern TIM_HandleTypeDef htim7;
-extern TIM_HandleTypeDef htim16;
+extern TIM_HandleTypeDef htim8;
 extern IWDG_HandleTypeDef hiwdg;
 
 extern const uint16_t Timer_key_press;
@@ -99,49 +99,49 @@ void PeriphCommonClock_Config(void)
  {
      ADC_ChannelConfTypeDef sConfig = {0};
  
-     // Р’РєР»СЋС‡Р°РµРј С‚Р°РєС‚РёСЂРѕРІР°РЅРёРµ РђР¦Рџ1 Рё РїРѕСЂС‚Р° PC0
+     // Включаем тактирование АЦП1 и порта PC0
      __HAL_RCC_ADC_CLK_ENABLE();
      __HAL_RCC_GPIOC_CLK_ENABLE();
  
-     // РќР°СЃС‚СЂР°РёРІР°РµРј PC0 РєР°Рє Р°РЅР°Р»РѕРіРѕРІС‹Р№ РІС…РѕРґ (Р±РµР· РїРѕРґС‚СЏР¶РєРё)
+     // Настраиваем PC0 как аналоговый вход (без подтяжки)
      GPIO_InitTypeDef GPIO_InitStruct = {0};
      GPIO_InitStruct.Pin = GPIO_PIN_0;
      GPIO_InitStruct.Mode = GPIO_MODE_ANALOG_ADC_CONTROL;
      GPIO_InitStruct.Pull = GPIO_NOPULL;
      HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
  
-     // РќР°СЃС‚СЂР°РёРІР°РµРј ADC1: 12-Р±РёС‚РЅРѕРµ СЂР°Р·СЂРµС€РµРЅРёРµ, РѕРґРёРЅРѕС‡РЅРѕРµ РїСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёРµ, РїСЂРѕРіСЂР°РјРјРЅС‹Р№ Р·Р°РїСѓСЃРє
+     // Настраиваем ADC1: 12-битное разрешение, одиночное преобразование, программный запуск
      hadc1.Instance = ADC1;
-     hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;    // РђСЃРёРЅС…СЂРѕРЅРЅС‹Р№ РєР»РѕРє Р±РµР· РїСЂРµРґРґРµР»РёС‚РµР»СЏ
-     hadc1.Init.Resolution = ADC_RESOLUTION_12B;          // 12-Р±РёС‚РЅРѕРµ СЂР°Р·СЂРµС€РµРЅРёРµ РђР¦Рџ (Р·РЅР°С‡РµРЅРёСЏ РѕС‚ 0 РґРѕ 4095)
-     hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;          // Р’С‹СЂР°РІРЅРёРІР°РЅРёРµ СЂРµР·СѓР»СЊС‚Р°С‚Р° РїРѕ РїСЂР°РІРѕРјСѓ РєСЂР°СЋ
-     hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;          // РћС‚РєР»СЋС‡Р°РµРј СЃРєР°РЅРёСЂРѕРІР°РЅРёРµ (РѕРґРЅРѕРєР°РЅР°Р»СЊРЅС‹Р№ СЂРµР¶РёРј)
-     hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;       // Р¤Р»Р°Рі РєРѕРЅС†Р° РєР°Р¶РґРѕРіРѕ РѕРґРёРЅРѕС‡РЅРѕРіРѕ РїСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёСЏ
+     hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;    // Асинхронный клок без предделителя
+     hadc1.Init.Resolution = ADC_RESOLUTION_12B;          // 12-битное разрешение АЦП (значения от 0 до 4095)
+     hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;          // Выравнивание результата по правому краю
+     hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;          // Отключаем сканирование (одноканальный режим)
+     hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;       // Флаг конца каждого одиночного преобразования
      hadc1.Init.LowPowerAutoWait = DISABLE;
-     hadc1.Init.ContinuousConvMode = DISABLE;             // РќРµРїСЂРµСЂС‹РІРЅС‹Р№ СЂРµР¶РёРј РѕС‚РєР»СЋС‡РµРЅ (РѕРґРЅРѕРєСЂР°С‚РЅРѕРµ РїСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёРµ)
+     hadc1.Init.ContinuousConvMode = DISABLE;             // Непрерывный режим отключен (однократное преобразование)
      hadc1.Init.NbrOfConversion = 1;
      hadc1.Init.DiscontinuousConvMode = DISABLE;
-     hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;    // РџСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёРµ Р·Р°РїСѓСЃРєР°РµС‚СЃСЏ РїСЂРѕРіСЂР°РјРјРЅРѕ (СЃРѕС„С‚РІРµСЂРЅС‹Р№ С‚СЂРёРіРіРµСЂ)
+     hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;    // Преобразование запускается программно (софтверный триггер)
      hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
      hadc1.Init.DMAContinuousRequests = DISABLE;
      hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
      hadc1.Init.OversamplingMode = DISABLE;
      if (HAL_ADC_Init(&hadc1) != HAL_OK)
      {
-         // РћР±СЂР°Р±РѕС‚РєР° РѕС€РёР±РєРё РёРЅРёС†РёР°Р»РёР·Р°С†РёРё
+         // Обработка ошибки инициализации
          Error_Handler();
      }
  
-     // Р’С‹Р±РёСЂР°РµРј РєР°РЅР°Р», СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‰РёР№ PC0 (РєР°РЅР°Р» 1 ADC1)
-     sConfig.Channel = ADC_CHANNEL_1;         // PC0 РїРѕРґРєР»СЋС‡РµРЅ Рє Channel 1 РђР¦Рџ1
+     // Выбираем канал, соответствующий PC0 (канал 1 ADC1)
+     sConfig.Channel = ADC_CHANNEL_1;         // PC0 подключен к Channel 1 АЦП1
      sConfig.Rank = ADC_REGULAR_RANK_1;
      sConfig.SingleDiff = ADC_SINGLE_ENDED;
-     sConfig.SamplingTime = ADC_SAMPLETIME_47CYCLES_5;  // Р’СЂРµРјСЏ РІС‹Р±РѕСЂРєРё РєР°РЅР°Р»Р° (47.5 С‚Р°РєС‚РѕРІ, РїСЂРёРјРµСЂ)
+     sConfig.SamplingTime = ADC_SAMPLETIME_47CYCLES_5;  // Время выборки канала (47.5 тактов, пример)
      sConfig.OffsetNumber = ADC_OFFSET_NONE;
      sConfig.Offset = 0;
      if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
      {
-         // РћР±СЂР°Р±РѕС‚РєР° РѕС€РёР±РєРё РЅР°СЃС‚СЂРѕР№РєРё РєР°РЅР°Р»Р°
+         // Обработка ошибки настройки канала
          Error_Handler();
      }
  }
@@ -168,9 +168,9 @@ void PeriphCommonClock_Config(void)
      TIM_MasterConfigTypeDef sMasterConfig = {0};
  
      htim5.Instance = TIM5;
-     htim5.Init.Prescaler = 40000-1;                       // РџСЂРµРґРґРµР»РёС‚РµР»СЊ (40 РњР“С† / 40 000 = 1 РєР“С†)
+     htim5.Init.Prescaler = 40000-1;                       // Предделитель (40 МГц / 40 000 = 1 кГц)
      htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
-     htim5.Init.Period = 20000-1;                          // РџРµСЂРёРѕРґ (1 РєР“С† / 20 000 = 0.05 Р“С† РёР»Рё 20 СЃРµРє)
+     htim5.Init.Period = 20000-1;                          // Период (1 кГц / 20 000 = 0.05 Гц или 20 сек)
      htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
      htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
  
@@ -252,23 +252,35 @@ void PeriphCommonClock_Config(void)
  
  }
 
- void MX_TIM16_Init(void)
+ void MX_TIM8_Init(void)
  {
+   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+   TIM_MasterConfigTypeDef sMasterConfig = {0};
 
-   htim16.Instance = TIM16;
-   htim16.Init.Prescaler = 50000-1;
-   htim16.Init.CounterMode = TIM_COUNTERMODE_UP;
-   htim16.Init.Period = 60000;
-   htim16.Init.ClockDivision = TIM_CLOCKDIVISION_DIV4;
-   htim16.Init.RepetitionCounter = 0;
-   htim16.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-   if (HAL_TIM_Base_Init(&htim16) != HAL_OK)
+   htim8.Instance = TIM8;
+   htim8.Init.Prescaler = 40000-1;
+   htim8.Init.CounterMode = TIM_COUNTERMODE_UP;
+   htim8.Init.Period = 1000;
+   htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV4;
+   htim8.Init.RepetitionCounter = 0;
+   htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+   if (HAL_TIM_Base_Init(&htim8) != HAL_OK)
    {
      Error_Handler();
    }
- 
+   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+   if (HAL_TIM_ConfigClockSource(&htim8, &sClockSourceConfig) != HAL_OK)
+   {
+     Error_Handler();
+   }
+   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+   sMasterConfig.MasterOutputTrigger2 = TIM_TRGO2_RESET;
+   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+   if (HAL_TIMEx_MasterConfigSynchronization(&htim8, &sMasterConfig) != HAL_OK)
+   {
+     Error_Handler();
+   }
  }
- 
 
 
  
@@ -277,13 +289,13 @@ void PeriphCommonClock_Config(void)
    ADC_ChannelConfTypeDef sConfig = {0};
  
    hadc3.Instance                      = ADC3;
-   hadc3.Init.ClockPrescaler          = ADC_CLOCK_ASYNC_DIV1;     // Р”РµР»РёС‚РµР»СЊ С‚Р°РєС‚РёСЂРѕРІР°РЅРёСЏ
-   hadc3.Init.Resolution              = ADC_RESOLUTION_12B;       // 12 Р±РёС‚
+   hadc3.Init.ClockPrescaler          = ADC_CLOCK_ASYNC_DIV1;     // Делитель тактирования
+   hadc3.Init.Resolution              = ADC_RESOLUTION_12B;       // 12 бит
    hadc3.Init.DataAlign               = ADC_DATAALIGN_RIGHT;
-   hadc3.Init.ScanConvMode            = ADC_SCAN_DISABLE;         // РћРґРёРЅ РєР°РЅР°Р»
+   hadc3.Init.ScanConvMode            = ADC_SCAN_DISABLE;         // Один канал
    hadc3.Init.EOCSelection            = ADC_EOC_SINGLE_CONV;
    hadc3.Init.LowPowerAutoWait        = DISABLE;
-   hadc3.Init.ContinuousConvMode      = DISABLE;                  // РћРґРёРЅРѕС‡РЅРѕРµ РїСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёРµ
+   hadc3.Init.ContinuousConvMode      = DISABLE;                  // Одиночное преобразование
    hadc3.Init.NbrOfConversion         = 1;
    hadc3.Init.DiscontinuousConvMode   = DISABLE;
    hadc3.Init.ExternalTrigConv        = ADC_SOFTWARE_START;
@@ -297,10 +309,10 @@ void PeriphCommonClock_Config(void)
      Error_Handler();
    }
  
-   // РќР°СЃС‚СЂР°РёРІР°РµРј СЂРµРіСѓР»СЏСЂРЅС‹Р№ РєР°РЅР°Р» вЂ” PC0 = Channel 1 (ADC123_IN1)
+   // Настраиваем регулярный канал — PC0 = Channel 1 (ADC123_IN1)
    sConfig.Channel      = ADC_CHANNEL_1;
    sConfig.Rank         = ADC_REGULAR_RANK_1;
-   sConfig.SamplingTime = ADC_SAMPLETIME_24CYCLES_5; // РџСЂРё РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚Рё РІС‹Р±СЂР°С‚СЊ Р±РѕР»СЊС€Рµ (РЅР°РїСЂРёРјРµСЂ, 47.5 РёР»Рё 92.5)
+   sConfig.SamplingTime = ADC_SAMPLETIME_24CYCLES_5; // При необходимости выбрать больше (например, 47.5 или 92.5)
    sConfig.SingleDiff   = ADC_SINGLE_ENDED;
    sConfig.OffsetNumber = ADC_OFFSET_NONE;
    sConfig.Offset       = 0;

@@ -1,21 +1,21 @@
 #include "keyboard.h"
 
-// ----- Р’РЅРµС€РЅРёРµ РѕР±СЉРµРєС‚С‹ -----
+// ----- Внешние объекты -----
 extern xSemaphoreHandle Keyboard_semapfore;
 extern xSemaphoreHandle Display_semaphore;
-extern char Keyboard_press_code;  // РС‚РѕРіРѕРІС‹Р№ РєРѕРґ, РєРѕС‚РѕСЂС‹Р№ РёСЃРїРѕР»СЊР·СѓРµС‚ Display
-char Prot_Keyboard_press_code;    // РЎС‹СЂС‹Рµ РґР°РЅРЅС‹Рµ РїСЂРё СЃРєР°РЅРёСЂРѕРІР°РЅРёРё
+extern char Keyboard_press_code;  // Итоговый код, который использует Display
+char Prot_Keyboard_press_code;    // Сырые данные при сканировании
 
 extern TIM_HandleTypeDef htim6;
-extern TIM_HandleTypeDef htim16;
+extern TIM_HandleTypeDef htim8;
 extern const uint16_t Timer_key_press;
 extern const uint16_t Timer_key_press_fast;
 uint8_t Timer = 0;
 
-extern int mode_redact;  // Р РµР¶РёРј СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ
-static char last_key = 0xFF;  // Р—Р°РїРѕРјРёРЅР°РµРј РїРѕСЃР»РµРґРЅСЋСЋ РЅР°Р¶Р°С‚СѓСЋ РєР»Р°РІРёС€Сѓ
+extern int mode_redact;  // Режим редактирования
+static char last_key = 0xFF;  // Запоминаем последнюю нажатую клавишу
 
-// РљР°СЂС‚Р° РєР»Р°РІРёС€ РјР°С‚СЂРёС†С‹ (4x4)
+// Карта клавиш матрицы (4x4)
 const char keyMap[4][4] = {
     {'1', '2', '3', 'U'},
     {'4', '5', '6', 'D'},
@@ -23,7 +23,7 @@ const char keyMap[4][4] = {
     {'0', 'P', 'O', 'R'}
 };
 
-// РћРїСЂРµРґРµР»СЏРµРј РјР°СЃСЃРёРІС‹ РїРѕСЂС‚РѕРІ Рё РїРёРЅРѕРІ
+// Определяем массивы портов и пинов
 GPIO_TypeDef* COL_PORTS[4] = {COL_B1_GPIO_Port, COL_B2_GPIO_Port, COL_B3_GPIO_Port, COL_B4_GPIO_Port};
 uint16_t COL_PINS[4] = {COL_B1_Pin, COL_B2_Pin, COL_B3_Pin, COL_B4_Pin};
 
@@ -32,7 +32,7 @@ uint16_t STR_PINS[4] = {STR_B1_Pin, STR_B2_Pin, STR_B3_Pin, STR_B4_Pin};
 
 void ret_keyboard(void)
 {
-    // Р’РѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµРј Р»РёРЅРёРё СЃС‚РѕР»Р±С†РѕРІ Рё РІРєР»СЋС‡Р°РµРј РїСЂРµСЂС‹РІР°РЅРёСЏ
+    // Восстанавливаем линии столбцов и включаем прерывания
     for (int i = 0; i < 4; i++)
     {
         HAL_GPIO_WritePin(COL_PORTS[i], COL_PINS[i], GPIO_PIN_SET);
@@ -60,7 +60,7 @@ void ret_keyboard(void)
 
 void Keyboard(void)
 {
-    __HAL_TIM_SET_COUNTER(&htim16, 0);
+    __HAL_TIM_SET_COUNTER(&htim8, 0);
     Keyboard_press_code = ScanKeypad();
     if ((mode_redact == 0) && ((Keyboard_press_code == 'L') || (Keyboard_press_code == 'R')) && ((Keyboard_press_code != 0xFF))){
         HAL_TIM_Base_Stop_IT(&htim6);
@@ -73,7 +73,7 @@ void Keyboard(void)
     
     if (Timer == 1){
         Timer = 0;
-        // Р•СЃР»Рё РєР»Р°РІРёС€Р° РЅРµ РЅР°Р¶Р°С‚Р° вЂ” РѕСЃС‚Р°РЅР°РІР»РёРІР°РµРј С‚Р°Р№РјРµСЂ
+        // Если клавиша не нажата — останавливаем таймер
         if ((Keyboard_press_code == 0xFF))
         {
             HAL_TIM_Base_Stop_IT(&htim6);
@@ -89,7 +89,7 @@ void Keyboard(void)
     else
     {
 
-        // РћСЃС‚Р°РЅРѕРІРєР° С‚Р°Р№РјРµСЂР°, РµСЃР»Рё РєР»Р°РІРёС€Р° РЅРµ РЅР°Р¶Р°С‚Р°
+        // Остановка таймера, если клавиша не нажата
         HAL_TIM_Base_Stop_IT(&htim6);
         TIM6->SR &= ~TIM_SR_UIF;
         TIM6->CNT = 0;
@@ -99,7 +99,7 @@ void Keyboard(void)
         if (Keyboard_press_code != 0xFF)
         {
             xSemaphoreGive(Display_semaphore);
-            // Р—Р°РїСѓСЃРє С‚Р°Р№РјРµСЂР° Р°РІС‚РѕРїРѕРІС‚РѕСЂР°
+            // Запуск таймера автоповтора
             HAL_TIM_Base_Start_IT(&htim6);
             //__HAL_TIM_SET_AUTORELOAD(&htim6, Timer_key_press_fast);
         }
@@ -113,20 +113,20 @@ char ScanKeypad(void)
 {
     HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
     HAL_NVIC_DisableIRQ(EXTI4_IRQn);
-    char detected_key = 0xFF; // РџРµСЂРµРјРµРЅРЅР°СЏ РґР»СЏ С…СЂР°РЅРµРЅРёСЏ РЅР°Р¶Р°С‚РѕР№ РєР»Р°РІРёС€Рё
+    char detected_key = 0xFF; // Переменная для хранения нажатой клавиши
 
-    // ----- РџРµСЂРµРґ РЅР°С‡Р°Р»РѕРј СЃРєР°РЅРёСЂРѕРІР°РЅРёСЏ РІС‹РєР»СЋС‡Р°РµРј РІСЃРµ РєРѕР»РѕРЅРєРё -----
+    // ----- Перед началом сканирования выключаем все колонки -----
     for (int i = 0; i < 4; i++)
     {
         HAL_GPIO_WritePin(COL_PORTS[i], COL_PINS[i], GPIO_PIN_RESET);
     }
 
-    osDelay(1); // РќРµР±РѕР»СЊС€Р°СЏ Р·Р°РґРµСЂР¶РєР°
+    osDelay(10); // Небольшая задержка
 
-    // ----- РЎРєР°РЅРёСЂРѕРІР°РЅРёРµ РєР»Р°РІРёР°С‚СѓСЂС‹ -----
+    // ----- Сканирование клавиатуры -----
     for (int col = 0; col < 4; col++)
     {
-        // Р’РєР»СЋС‡Р°РµРј С‚РµРєСѓС‰РёР№ СЃС‚РѕР»Р±РµС†
+        // Включаем текущий столбец
         HAL_GPIO_WritePin(COL_PORTS[col], COL_PINS[col], GPIO_PIN_SET);
         osDelay(1);
         for (int row = 0; row < 4; row++)
@@ -144,20 +144,6 @@ char ScanKeypad(void)
 
 void HAL_TIM6_Callback(void)
 {
-    /*
-    Keyboard_press_code = ScanKeypad();
-    
-    // Р•СЃР»Рё РєР»Р°РІРёС€Р° РЅРµ РЅР°Р¶Р°С‚Р° вЂ” РѕСЃС‚Р°РЅР°РІР»РёРІР°РµРј С‚Р°Р№РјРµСЂ
-    if (Keyboard_press_code == 0xFF)
-    {
-        HAL_TIM_Base_Stop_IT(&htim6);
-        TIM6->SR &= ~TIM_SR_UIF;
-        TIM6->CNT = 0;
-        ret_keyboard();
-        return;
-    }
-    */
-    // РћС‚РїСЂР°РІР»СЏРµРј СЃРёРіРЅР°Р» РґР»СЏ РѕР±РЅРѕРІР»РµРЅРёСЏ РґРёСЃРїР»РµСЏ
     __HAL_TIM_SET_AUTORELOAD(&htim6, Timer_key_press_fast);
     Timer = 1;
     static portBASE_TYPE xTaskWoken;

@@ -9,6 +9,7 @@ extern "C"
 #include "main.h"
 #include "Settings.h"
 #include "AT24C02.h"
+#include "Status_codes.h"
 
 extern EEPROM_Settings_item EEPROM;
 extern ADC_HandleTypeDef hadc1;

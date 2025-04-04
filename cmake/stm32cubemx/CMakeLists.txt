@@ -49,7 +49,6 @@ target_include_directories(stm32cubemx INTERFACE
     ../../Library/EEPROM
     ../../Library/Diagnostics
     ../../Library/USB_FATFS_SAVE
-    ../../Library/OneWire
 )
 
 target_sources(stm32cubemx INTERFACE
@@ -151,8 +150,6 @@ target_sources(stm32cubemx INTERFACE
     ../../Library/EEPROM/AT24C02.c
     ../../Library/Diagnostics/Diagnostics.c
     ../../Library/USB_FATFS_SAVE/USB_FATFS_SAVE.c
-    ../../Library/OneWire/ds18b20.c
-    ../../Library/OneWire/OneWire.c
 )
 
 target_link_directories(stm32cubemx INTERFACE

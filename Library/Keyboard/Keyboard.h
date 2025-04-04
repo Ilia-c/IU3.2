@@ -10,3 +10,4 @@ void ret_keyboard();
 char ScanKeypad(void);
 void exit_key_no_press();
 void Keyboard(void);
+void HAL_TIM6_Callback(void);

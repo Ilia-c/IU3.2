@@ -1,22 +1,22 @@
 #include "w25q128.h"
-#include "USB_FATFS_SAVE.h"   // Р•СЃР»Рё РІР°Рј РЅСѓР¶РЅР° РїРѕРґРґРµСЂР¶РєР° USB-С„Р°Р№Р»РѕРІРѕР№ СЃРёСЃС‚РµРјС‹
-#include "Settings.h"         // Р•СЃР»Рё РІ РІР°С€РµРј РїСЂРѕРµРєС‚Рµ EEPROM/version Рё С‚.Рґ.
+#include "USB_FATFS_SAVE.h"   // Если вам нужна поддержка USB-файловой системы
+#include "Settings.h"         // Если в вашем проекте EEPROM/version и т.д.
 
 extern SPI_HandleTypeDef hspi2;
 extern USBH_HandleTypeDef hUsbHostFS;
 extern ApplicationTypeDef Appli_state;
-extern FATFS USBFatFs;    /* Р¤Р°Р№Р»РѕРІР°СЏ СЃРёСЃС‚РµРјР° РґР»СЏ USB */
-extern FIL MyFile;        /* РћР±СЉРµРєС‚ С„Р°Р№Р»Р° */
-extern char USBHPath[4];  /* Р›РѕРіРёС‡РµСЃРєРёР№ РїСѓС‚СЊ USB РґРёСЃРєР° */
+extern FATFS USBFatFs;    /* Файловая система для USB */
+extern FIL MyFile;        /* Объект файла */
+extern char USBHPath[4];  /* Логический путь USB диска */
 extern EEPROM_Settings_item EEPROM;
 
-// РЈРїСЂР°РІР»РµРЅРёРµ CS (Chip Select)
+// Управление CS (Chip Select)
 #define cs_set()   HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, GPIO_PIN_RESET)
 #define cs_reset() HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, GPIO_PIN_SET)
 
 uint32_t g_total_records_count = 0;
 
-// ------------------ Р’СЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹Рµ SPI-С„СѓРЅРєС†РёРё ------------------
+// ------------------ Вспомогательные SPI-функции ------------------
 static int SPI2_Send(uint8_t *dt, uint16_t cnt)
 {
     HAL_StatusTypeDef status = HAL_SPI_Transmit(&hspi2, dt, cnt, 1000);
@@ -62,7 +62,7 @@ static int SPI2_Recv(uint8_t *dt, uint16_t cnt)
 }
 
 //------------------------------------------------------------------------------
-// РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ С„Р»РµС€Р°: СЃР±СЂРѕСЃ, РїСЂРѕРІРµСЂРєР° ID
+// Инициализация флеша: сброс, проверка ID
 void w25_init(void)
 {
     if (W25_Reset() != 0) {
@@ -83,7 +83,7 @@ void w25_init(void)
 }
 
 //------------------------------------------------------------------------------
-// Р§С‚РµРЅРёРµ ID С„Р»РµС€Р°
+// Чтение ID флеша
 int W25_Read_ID(uint32_t *id)
 {
     if (!id) return -1;
@@ -105,7 +105,7 @@ int W25_Read_ID(uint32_t *id)
 }
 
 //------------------------------------------------------------------------------
-// РЎР±СЂРѕСЃ С„Р»РµС€Р°
+// Сброс флеша
 int W25_Reset(void)
 {
     uint8_t tx_buf[2] = {W25_ENABLE_RESET, W25_RESET};
@@ -120,7 +120,7 @@ int W25_Reset(void)
 }
 
 //------------------------------------------------------------------------------
-// Р§С‚РµРЅРёРµ РґР°РЅРЅС‹С… РёР· С„Р»РµС€Р°
+// Чтение данных из флеша
 int W25_Read_Data(uint32_t addr, uint8_t *data, uint32_t sz)
 {
     if (!data) return -1;
@@ -144,7 +144,7 @@ int W25_Read_Data(uint32_t addr, uint8_t *data, uint32_t sz)
 }
 
 //------------------------------------------------------------------------------
-// Р Р°Р·СЂРµС€РµРЅРёРµ Р·Р°РїРёСЃРё
+// Разрешение записи
 int W25_Write_Enable(void)
 {
     uint8_t cmd = W25_WRITE_ENABLE;
@@ -158,7 +158,7 @@ int W25_Write_Enable(void)
 }
 
 //------------------------------------------------------------------------------
-// РћР¶РёРґР°РЅРёРµ РіРѕС‚РѕРІРЅРѕСЃС‚Рё С„Р»РµС€Р° (FreeRTOS)
+// Ожидание готовности флеша (FreeRTOS)
 int W25_WaitForReady(uint32_t timeout_ms)
 {
     TickType_t start_tick = xTaskGetTickCount();
@@ -173,7 +173,7 @@ int W25_WaitForReady(uint32_t timeout_ms)
 }
 
 //------------------------------------------------------------------------------
-// Р§С‚РµРЅРёРµ СЃС‚Р°С‚СѓСЃРЅРѕРіРѕ СЂРµРіРёСЃС‚СЂР°
+// Чтение статусного регистра
 uint8_t W25_Read_Status(void)
 {
     uint8_t cmd = W25_READ_STATUS_REG;
@@ -192,13 +192,13 @@ uint8_t W25_Read_Status(void)
 }
 
 //------------------------------------------------------------------------------
-// Р—Р°РїРёСЃСЊ РґР°РЅРЅС‹С… РІРѕ С„Р»РµС€ (Page Program)
+// Запись данных во флеш (Page Program)
 int W25_Write_Data(uint32_t addr, uint8_t *data, uint32_t sz)
 {
     if (!data) return -1;
 
-    // РџСЂРµРґРїРѕР»Р°РіР°РµРј, С‡С‚Рѕ sz <= 256 Рё РЅРµ РїРµСЂРµСЃРµРєР°РµС‚ РіСЂР°РЅРёС†Сѓ СЃС‚СЂР°РЅРёС†С‹
-    // (С‚.Рє. РІС‹ РїРёС€РµС‚Рµ СЂРѕРІРЅРѕ 128 Р±Р°Р№С‚ Р·Р° СЂР°Р·).
+    // Предполагаем, что sz <= 256 и не пересекает границу страницы
+    // (т.к. вы пишете ровно 128 байт за раз).
     if (W25_Write_Enable() != 0) {
         return -1;
     }
@@ -228,7 +228,7 @@ int W25_Write_Data(uint32_t addr, uint8_t *data, uint32_t sz)
 }
 
 //------------------------------------------------------------------------------
-// РЎС‚РёСЂР°РЅРёРµ СЃРµРєС‚РѕСЂР° (4 РљР‘)
+// Стирание сектора (4 КБ)
 int W25_Erase_Sector(uint32_t addr)
 {
     uint8_t cmd[4];
@@ -248,7 +248,7 @@ int W25_Erase_Sector(uint32_t addr)
     }
     cs_reset();
 
-    // Р–РґС‘Рј ~400 РјСЃ, РїРѕРєР° СЃРѕС‚СЂС‘С‚СЃСЏ
+    // Ждём ~400 мс, пока сотрётся
     if (W25_WaitForReady(400) != 0) {
         return -1;
     }
@@ -257,7 +257,7 @@ int W25_Erase_Sector(uint32_t addr)
 }
 
 //------------------------------------------------------------------------------
-// РџРѕР»РЅРѕРµ СЃС‚РёСЂР°РЅРёРµ С„Р»РµС€Р°
+// Полное стирание флеша
 int W25_Chip_Erase(void)
 {
     uint8_t cmd = W25_CHIP_ERASE;
@@ -273,7 +273,7 @@ int W25_Chip_Erase(void)
     TickType_t start_time = xTaskGetTickCount();
     uint8_t status = 0;
     while ((status = W25_Read_Status()) & 0x01) {
-        // РџСЂРѕРІРµСЂСЏРµРј С‚Р°Р№РјР°СѓС‚
+        // Проверяем таймаут
         if (((xTaskGetTickCount() - start_time) * portTICK_PERIOD_MS) >= TIMEOUT_CHIP_ERASE_MS) {
             break;
         }
@@ -284,71 +284,71 @@ int W25_Chip_Erase(void)
 }
 
 //------------------------------------------------------------------------------
-// Р’РѕР·РІСЂР°С‰Р°РµС‚ Р°РґСЂРµСЃ СЃРІРѕР±РѕРґРЅРѕРіРѕ Р±Р»РѕРєР° РІ "РїСѓСЃС‚РѕРј" СЃРµРєС‚РѕСЂРµ РёР»Рё СЃС‚РёСЂР°РµС‚ СЃРµРєС‚РѕСЂ в„–0, РµСЃР»Рё РІСЃС‘ Р·Р°РїРѕР»РЅРµРЅРѕ.
+// Возвращает адрес свободного блока в "пустом" секторе или стирает сектор №0, если всё заполнено.
 int32_t search_sector_empty(void)
 {
-    uint8_t sector_header;  // РїРµСЂРІС‹Р№ Р±Р°Р№С‚ СЃРµРєС‚РѕСЂР°
+    uint8_t sector_header;  // первый байт сектора
     for (uint16_t sec = 0; sec < TOTAL_SECTORS; sec++) {
         uint32_t sector_addr = sec * SECTOR_SIZE;
 
-        // РЎС‡РёС‚С‹РІР°РµРј 1 Р±Р°Р№С‚ (Sector_mark)
+        // Считываем 1 байт (Sector_mark)
         if (W25_Read_Data(sector_addr, &sector_header, 1) != 0) {
-            // РћС€РёР±РєР° С‡С‚РµРЅРёСЏ - РїСЂРѕРїСѓСЃРєР°РµРј
+            // Ошибка чтения - пропускаем
             continue;
         }
 
         if (sector_header != SET) {
-            // РЎС‡РёС‚Р°РµРј, С‡С‚Рѕ СЃРµРєС‚РѕСЂ "РЅРµРїРѕР»РЅРѕСЃС‚СЊСЋ Р·Р°РїРѕР»РЅРµРЅ"
-            // РС‰РµРј РІ СЃРµРєС‚РѕСЂРµ СЃРІРѕР±РѕРґРЅС‹Р№ Р±Р»РѕРє
+            // Считаем, что сектор "неполностью заполнен"
+            // Ищем в секторе свободный блок
             for (uint32_t i = 0; i < RECORDS_PER_SECTOR; i++) {
                 uint32_t addr = sector_addr + BLOCK_MARK_WRITE_START + i * RECORD_SIZE;
                 uint8_t frag_status;
                 if (W25_Read_Data(addr, &frag_status, 1) != 0) {
-                    // РћС€РёР±РєР° С‡С‚РµРЅРёСЏ - РїСЂРѕРїСѓСЃРєР°РµРј
+                    // Ошибка чтения - пропускаем
                     ERRCODE.STATUS |= STATUS_FLASH_CRC_ERROR;
                     continue;
                 }
                 if (frag_status == EMPTY) {
-                    // РЅР°С€Р»Рё СЃРІРѕР±РѕРґРЅС‹Р№ Р±Р»РѕРє
+                    // нашли свободный блок
                     g_total_records_count = sec * RECORDS_PER_SECTOR + i;
                     return (int32_t)(addr - BLOCK_MARK_WRITE_START);
                 }
             }
-            // Р•СЃР»Рё РІРµСЃСЊ СЃРµРєС‚РѕСЂ РЅР° СЃР°РјРѕРј РґРµР»Рµ Р·Р°РїРѕР»РЅРµРЅ, СЃС‚Р°РІРёРј 0x00 (SECTOR_MARK=SET)
+            // Если весь сектор на самом деле заполнен, ставим 0x00 (SECTOR_MARK=SET)
             uint8_t full_val = SET; // 0x00
             if (W25_Write_Data(sector_addr, &full_val, 1) == 0) {
-                // Р—Р°РїРёСЃР°Р»Рё, С‡С‚Рѕ СЃРµРєС‚РѕСЂ РїРѕР»РЅС‹Р№
+                // Записали, что сектор полный
             }
         }
     }
 
-    // Р•СЃР»Рё РІСЃС‘ Р·Р°РїРѕР»РЅРµРЅРѕ, СЃС‚РёСЂР°РµРј СЃРµРєС‚РѕСЂ в„–0 (РєРѕР»СЊС†Рѕ), РІРѕР·РІСЂР°С‰Р°РµРј Р°РґСЂРµСЃ РЅР°С‡Р°Р»Р°
+    // Если всё заполнено, стираем сектор №0 (кольцо), возвращаем адрес начала
     if (W25_Erase_Sector(0) != 0) {
-        // РћС€РёР±РєР° СЃС‚РёСЂР°РЅРёСЏ - РІРѕР·РІСЂР°С‰Р°РµРј -1
+        // Ошибка стирания - возвращаем -1
         return -1;
     }
 
-    // РўРµРїРµСЂСЊ СЃРµРєС‚РѕСЂ в„–0 РїСѓСЃС‚, РјРѕР¶РЅРѕ РІРµСЂРЅСѓС‚СЊ 0 (Р°РґСЂРµСЃ РЅР°С‡Р°Р»Р°)
+    // Теперь сектор №0 пуст, можно вернуть 0 (адрес начала)
     return 0;
 }
 
 //------------------------------------------------------------------------------
-// Р—Р°РїРёСЃСЊ РґР°РЅРЅС‹С… РІРѕ С„Р»РµС€ 
+// Запись данных во флеш 
 int flash_append_record(const char *record_data, uint8_t sector_mark_send_flag)
 {
     int32_t addr = search_sector_empty();
     if (addr < 0 || addr >= FLASH_TOTAL_SIZE) return -1;
     if (!record_data) return -1;
 
-    // РџСЂРѕРІРµСЂРёРј РґР»РёРЅСѓ РґР°РЅРЅС‹С…, РјР°РєСЃРёРјСѓРј (RECORD_SIZE - 6)
+    // Проверим длину данных, максимум (RECORD_SIZE - 6)
     size_t len = strlen(record_data);
     if (len > (RECORD_SIZE - 6)) {
         len = RECORD_SIZE - 6;
     }
 
-    // РЎС„РѕСЂРјРёСЂСѓРµРј СЃС‚СЂСѓРєС‚СѓСЂСѓ
+    // Сформируем структуру
     record_t new_rec;
-    // РџРѕ РІР°С€РµР№ Р»РѕРіРёРєРµ:
+    // По вашей логике:
     new_rec.Sector_mark       = WRITE_START; // [0] 0xF0 
     new_rec.Sector_mark_send  = EMPTY; // [1]
     new_rec.rec_status_start  = SET;   // [2] => 0x00
@@ -359,12 +359,12 @@ int flash_append_record(const char *record_data, uint8_t sector_mark_send_flag)
     memset(new_rec.data, 0xFF, sizeof(new_rec.data));
     memcpy(new_rec.data, record_data, len);
 
-    // Р—Р°РїРёС€РµРј 128 Р±Р°Р№С‚ РІ Р±Р»РѕРє
+    // Запишем 128 байт в блок
     if (W25_Write_Data(addr, (uint8_t *)&new_rec, sizeof(record_t)) != 0) {
         return -1;
     }
 
-    // РЎС‚Р°РІРёРј rec_status_end = 0x00 => Р·Р°РїРёСЃСЊ Р·Р°РІРµСЂС€РµРЅР°
+    // Ставим rec_status_end = 0x00 => запись завершена
     {
         uint8_t complete_flag = SET; // 0x00
         uint32_t status_addr = addr + offsetof(record_t, rec_status_end);
@@ -373,28 +373,31 @@ int flash_append_record(const char *record_data, uint8_t sector_mark_send_flag)
         }
     }
 
-    // ---- Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹Р№ С€Р°Рі: РµСЃР»Рё СЌС‚Рѕ РїРѕСЃР»РµРґРЅРёР№ Р±Р»РѕРє СЃРµРєС‚РѕСЂР° => СЃС‚РёСЂР°РµРј СЃР»РµРґСѓСЋС‰РёР№ СЃРµРєС‚РѕСЂ, РµСЃР»Рё РѕРЅ РЅРµ РїСѓСЃС‚РѕР№ ----
+    // ---- Дополнительный шаг: если это последний блок сектора => стираем следующий сектор, если он не пустой ----
+
+    // 1) выясним индекс сектора и блок внутри сектора
+    uint32_t sector_index = (uint32_t)addr / SECTOR_SIZE;
+    uint32_t block_index = ((uint32_t)addr % SECTOR_SIZE) / RECORD_SIZE;
+
+    if (block_index == (RECORDS_PER_SECTOR - 1))
     {
-        // 1) РІС‹СЏСЃРЅРёРј РёРЅРґРµРєСЃ СЃРµРєС‚РѕСЂР° Рё Р±Р»РѕРє РІРЅСѓС‚СЂРё СЃРµРєС‚РѕСЂР°
-        uint32_t sector_index = (uint32_t)addr / SECTOR_SIZE;
-        uint32_t block_index  = ((uint32_t)addr % SECTOR_SIZE) / RECORD_SIZE;
+        // это последний блок сектора
+        uint32_t next_sector = (sector_index + 1) % TOTAL_SECTORS;
+        uint32_t next_sector_addr = next_sector * SECTOR_SIZE;
 
-        if (block_index == (RECORDS_PER_SECTOR - 1)) {
-            // СЌС‚Рѕ РїРѕСЃР»РµРґРЅРёР№ Р±Р»РѕРє СЃРµРєС‚РѕСЂР°
-            uint32_t next_sector = (sector_index + 1) % TOTAL_SECTORS;
-            uint32_t next_sector_addr = next_sector * SECTOR_SIZE;
-
-            if (next_sector_addr >= FLASH_TOTAL_SIZE){
-                next_sector_addr = 0;
-                ERRCODE.STATUS |= STATUS_FLASH_OVERFLOW_ERROR;
-            }
-            // С‡РёС‚Р°РµРј Р±Р°Р№С‚ [0] РІ СЃР»РµРґСѓСЋС‰РµРј СЃРµРєС‚РѕСЂРµ
-            uint8_t next_sector_mark = 0xFF;
-            if (W25_Read_Data(next_sector_addr, &next_sector_mark, 1) == 0) {
-                // РµСЃР»Рё != 0xFF, Р·РЅР°С‡РёС‚ СЃРµРєС‚РѕСЂ РЅРµ РїСѓСЃС‚РѕР№ => СЃС‚РёСЂР°РµРј
-                if (next_sector_mark != EMPTY) {
-                    W25_Erase_Sector(next_sector_addr);
-                }
+        if (next_sector_addr >= FLASH_TOTAL_SIZE)
+        {
+            next_sector_addr = 0;
+            ERRCODE.STATUS |= STATUS_FLASH_OVERFLOW_ERROR;
+        }
+        // читаем байт [0] в следующем секторе
+        uint8_t next_sector_mark = 0xFF;
+        if (W25_Read_Data(next_sector_addr, &next_sector_mark, 1) == 0)
+        {
+            // если != 0xFF, значит сектор не пустой => стираем
+            if (next_sector_mark != EMPTY)
+            {
+                W25_Erase_Sector(next_sector_addr);
             }
         }
     }
@@ -403,63 +406,63 @@ int flash_append_record(const char *record_data, uint8_t sector_mark_send_flag)
 }
 
 //------------------------------------------------------------------------------
-// РџРѕРјРµС‚РєР° СѓРєР°Р·Р°РЅРЅРѕРіРѕ Р±Р»РѕРєР° РєР°Рє "РѕС‚РїСЂР°РІР»РµРЅРЅРѕРіРѕ" + РїСЂРѕРІРµСЂРєР°, РѕС‚РїСЂР°РІР»РµРЅ Р»Рё РІРµСЃСЊ СЃРµРєС‚РѕСЂ
+// Пометка указанного блока как "отправленного" + проверка, отправлен ли весь сектор
 int mark_block_sent(int32_t addr_block)
 {
-    // РџСЂРѕРІРµСЂРєР° РіСЂР°РЅРёС†
+    // Проверка границ
     if (addr_block < 0 || addr_block > (int32_t)(FLASH_TOTAL_SIZE - RECORD_SIZE)) {
         return -1;
     }
-    // РџСЂРѕРІРµСЂРєР°, С‡С‚Рѕ РїРѕРїР°РґР°РµС‚ РІ РЅР°С‡Р°Р»Рѕ Р±Р»РѕРєР°
+    // Проверка, что попадает в начало блока
     if ((addr_block % RECORD_SIZE) != 0) {
         return -1;
     }
 
-    // РџСЂРѕРІРµСЂСЏРµРј, РЅРµ РїСѓСЃС‚ Р»Рё Р±Р»РѕРє
+    // Проверяем, не пуст ли блок
     uint8_t read_byte = 0xFF;
     if (W25_Read_Data(addr_block, &read_byte, 1) != 0) {
         return -1;
     }
     if (read_byte == EMPTY) {
-        // РџСѓСЃС‚РѕР№ Р±Р»РѕРє
+        // Пустой блок
         return 0;
     }
 
-    // РЎС‚Р°РІРёРј "block_mark_send" = 0x00
+    // Ставим "block_mark_send" = 0x00
     uint8_t block_send = SET; // 0x00
     if (W25_Write_Data(addr_block + BLOCK_MARK_DATA_SEND, &block_send, 1) != 0) {
         return -1;
     }
 
-    // РўРµРїРµСЂСЊ РїСЂРѕРІРµСЂСЏРµРј, РІСЃРµ Р»Рё Р±Р»РѕРєРё СЌС‚РѕРіРѕ СЃРµРєС‚РѕСЂР° РѕС‚РїСЂР°РІР»РµРЅС‹
+    // Теперь проверяем, все ли блоки этого сектора отправлены
     uint32_t sector_idx  = (uint32_t)addr_block / SECTOR_SIZE;
     uint32_t sector_addr = sector_idx * SECTOR_SIZE;
-    uint8_t marker = 0;  // 0 => РІСЃРµ Р±Р»РѕРєРё РѕС‚РїСЂР°РІР»РµРЅС‹, 0xFF => РµСЃС‚СЊ РЅРµРѕС‚РїСЂР°РІР»РµРЅРЅС‹Рµ
+    uint8_t marker = 0;  // 0 => все блоки отправлены, 0xFF => есть неотправленные
 
     for (uint32_t i = 0; i < RECORDS_PER_SECTOR; i++) {
         uint32_t cur_block_addr = sector_addr + BLOCK_MARK_DATA_SEND + i * RECORD_SIZE;
         uint8_t mark_val = 0xFF;
         if (W25_Read_Data(cur_block_addr, &mark_val, 1) != 0) {
-            // РћС€РёР±РєР° С‡С‚РµРЅРёСЏ - РїСЂРѕРїСѓСЃРєР°РµРј
+            // Ошибка чтения - пропускаем
             continue;
         }
-        // Р•СЃР»Рё block_mark_send = 0xFF, Р·РЅР°С‡РёС‚ РЅРµ РѕС‚РїСЂР°РІР»РµРЅ
-        // РќРѕ РЅР°РґРѕ РµС‰С‘ СЃРјРѕС‚СЂРµС‚СЊ, РїСѓСЃС‚ Р»Рё Р±Р»РѕРє (С‡С‚РѕР± РЅРµ СЃС‡РёС‚Р°С‚СЊ РїСѓСЃС‚С‹Рµ)
-        // Р”Р»СЏ РїСЂРѕСЃС‚РѕС‚С‹, РµСЃР»Рё mark_val == SET => СЌС‚РѕС‚ Р±Р»РѕРє СѓР¶Рµ РїРѕРјРµС‡РµРЅ РєР°Рє РѕС‚РїСЂР°РІР»РµРЅРЅС‹Р№. 
-        // РРЅР°С‡Рµ => 0xFF = РЅРµРѕС‚РїСЂР°РІР»РµРЅРЅС‹Р№
+        // Если block_mark_send = 0xFF, значит не отправлен
+        // Но надо ещё смотреть, пуст ли блок (чтоб не считать пустые)
+        // Для простоты, если mark_val == SET => этот блок уже помечен как отправленный. 
+        // Иначе => 0xFF = неотправленный
         if (mark_val == EMPTY) {
-            // РњРѕР¶РµС‚ Р±Р»РѕРє РїСѓСЃС‚? РџСЂРѕРїСѓСЃС‚РёРј. 
+            // Может блок пуст? Пропустим. 
             continue;
         }
-        // Р•СЃР»Рё СЌС‚Рѕ 0xFF => Р±Р»РѕРє РµСЃС‚СЊ, РЅРѕ РЅРµ РѕС‚РїСЂР°РІР»РµРЅ
+        // Если это 0xFF => блок есть, но не отправлен
         if (mark_val == EMPTY) {
-            // РЅРёС‡РµРіРѕ
+            // ничего
         } else if (mark_val != SET) {
-            // РµСЃР»Рё С‡С‚Рѕ-С‚Рѕ СЃС‚СЂР°РЅРЅРѕРµ, С‚РѕР¶Рµ СЃС‡РёС‚Р°РµРј РЅРµРѕС‚РїСЂР°РІР»РµРЅРЅС‹Рј
+            // если что-то странное, тоже считаем неотправленным
             marker = 0xFF;
             break;
         } else {
-            // mark_val == SET => OK, СѓР¶Рµ РѕС‚РїСЂР°РІР»РµРЅ
+            // mark_val == SET => OK, уже отправлен
         }
         if (mark_val == 0xFF) {
             marker = 0xFF;
@@ -467,7 +470,7 @@ int mark_block_sent(int32_t addr_block)
         }
     }
 
-    // Р•СЃР»Рё marker == 0 => РІСЃРµ Р±Р»РѕРєРё РѕС‚РїСЂР°РІР»РµРЅС‹ => СЃС‚Р°РІРёРј sector_mark_send = 0x00
+    // Если marker == 0 => все блоки отправлены => ставим sector_mark_send = 0x00
     if (marker == 0) {
         uint32_t sectorMarkerAddr = sector_addr + SECTOR_MARK_SEND; 
         uint8_t val = SET; // 0x00
@@ -524,8 +527,8 @@ int Save_one_to_USB(void)
 
 
     uint16_t len_data = strlen(save_data);
-    save_data[len_data-1] = '\n'; // РѕР±СЂРµР·Р°РµРј
-    save_data[len_data] = '\0'; // РѕР±СЂРµР·Р°РµРј  
+    save_data[len_data-1] = '\n'; // обрезаем
+    save_data[len_data] = '\0'; // обрезаем  
     char *data = save_data + 1; 
     res = f_write(&MyFile, data, strlen(data), &bw);
     if (res != FR_OK)
@@ -551,10 +554,10 @@ int Save_one_to_USB(void)
 
 
 //------------------------------------------------------------------------------
-// Р¤СѓРЅРєС†РёСЏ СЂРµР·РµСЂРІРЅРѕРіРѕ РєРѕРїРёСЂРѕРІР°РЅРёСЏ РґР°РЅРЅС‹С… РІРѕ РІРЅРµС€РЅРµРµ С…СЂР°РЅРёР»РёС‰Рµ (USB)
+// Функция резервного копирования данных во внешнее хранилище (USB)
 int backup_records_to_external(void)
 {
-    // РџСЂРёРјРµСЂ РІР°С€РµРіРѕ РєРѕРґР° СЃ РјРёРЅРёРјР°Р»СЊРЅС‹РјРё РїСЂР°РІРєР°РјРё
+    // Пример вашего кода с минимальными правками
 
     FRESULT res;
     UINT bw;
@@ -588,9 +591,9 @@ int backup_records_to_external(void)
         return -1;
     }
     ERRCODE.STATUS &= ~STATUS_USB_LSEEK_ERROR;
-    // Р”РѕРїСѓСЃС‚РёРј, flash_end_ptr РЅРµ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ, С‚РѕРіРґР° РјРѕР¶РЅРѕ СѓР±СЂР°С‚СЊ РІСЃС‘ СЃ last_written / start_sector.
+    // Допустим, flash_end_ptr не используется, тогда можно убрать всё с last_written / start_sector.
 
-    // РЎРєР°РЅРёСЂСѓРµРј РІСЃРµ СЃРµРєС‚РѕСЂС‹
+    // Сканируем все секторы
     record_t rec;
     osDelay(300);
     memset(&rec, 0, sizeof(rec));
@@ -600,31 +603,31 @@ int backup_records_to_external(void)
         uint32_t sector_addr = sec * SECTOR_SIZE;
         uint8_t sector_header = 0xFF;
         if (W25_Read_Data(sector_addr, &sector_header, 1) != 0) {
-            // РћС€РёР±РєР° С‡С‚РµРЅРёСЏ - РїСЂРѕРїСѓСЃРєР°РµРј
+            // Ошибка чтения - пропускаем
             continue;
         }
-        // Р•СЃР»Рё СЃРµРєС‚РѕСЂ "РїСѓСЃС‚РѕР№" (0xFF) - РїСЂРѕРїСѓСЃРєР°РµРј
+        // Если сектор "пустой" (0xFF) - пропускаем
         if (sector_header == EMPTY) {
             continue;
         }
 
-        // РёРЅР°С‡Рµ РїРµСЂРµР±РёСЂР°РµРј Р±Р»РѕРєРё
+        // иначе перебираем блоки
         for (uint32_t i = 0; i < RECORDS_PER_SECTOR; i++) {
-            // Р°РґСЂРµСЃ "rec_status_start" (СЃРјРµС‰РµРЅРёРµ=2)
+            // адрес "rec_status_start" (смещение=2)
             uint32_t block_addr = sector_addr + (i * RECORD_SIZE) + BLOCK_MARK_WRITE_START;
             uint8_t block_header = 0xFF;
             if (W25_Read_Data(block_addr, &block_header, 1) != 0) {
                 ERRCODE.STATUS |= STATUS_USB_FLASH_READ_ERROR;
-                // РѕС€РёР±РєР° С‡С‚РµРЅРёСЏ
+                // ошибка чтения
                 continue;
             }
-            // Р•СЃР»Рё Р±Р»РѕРє С‚РѕР¶Рµ РїСѓСЃС‚РѕР№, РїСЂРѕРїСѓСЃРєР°РµРј
+            // Если блок тоже пустой, пропускаем
             if (block_header == EMPTY) {
                 continue;
             }
 
-            // Р§РёС‚Р°РµРј РІРµСЃСЊ Р±Р»РѕРє
-            // СЃРјРµСЃС‚РёРјСЃСЏ РЅР°Р·Р°Рґ РЅР° 2 Р±Р°Р№С‚Р°
+            // Читаем весь блок
+            // сместимся назад на 2 байта
             block_addr -= BLOCK_MARK_WRITE_START;
             if (W25_Read_Data(block_addr, (uint8_t *)&rec, sizeof(rec)) != 0) {
                 ERRCODE.STATUS |= STATUS_USB_FLASH_READ_ERROR;
@@ -632,14 +635,14 @@ int backup_records_to_external(void)
             }
             size_t realLen = rec.length;
             if (realLen > 110){
-                rec.data[110] = '\n'; // РѕР±СЂРµР·Р°РµРј
-                rec.data[111] = '\0'; // РѕР±СЂРµР·Р°РµРј  
+                rec.data[110] = '\n'; // обрезаем
+                rec.data[111] = '\0'; // обрезаем  
             } 
             else{
-                rec.data[realLen-1] = '\n'; // РѕР±СЂРµР·Р°РµРј
-                rec.data[realLen] = '\0'; // РѕР±СЂРµР·Р°РµРј  
+                rec.data[realLen-1] = '\n'; // обрезаем
+                rec.data[realLen] = '\0'; // обрезаем  
             }
-            // Р•СЃР»Рё РґР°РЅРЅС‹Рµ РЅРµ Р·Р°РїРёСЃС‹РЅС‹ - РїРѕРІСЂРµР¶РґРµРЅРёРµ data+";data_error\n"
+            // Если данные не записыны - повреждение data+";data_error\n"
             if (rec.rec_status_end == EMPTY){
                 rec.data[realLen-1] = ';';
                 rec.data[realLen] = 'E';
@@ -664,7 +667,7 @@ int backup_records_to_external(void)
                 rec.data[realLen+8] = '\0';
             }
 
-            // Р—Р°РїРёСЃС‹РІР°РµРј РІ С„Р°Р№Р»
+            // Записываем в файл
             char *data = rec.data + 1; 
             res = f_write(&MyFile, data, strlen(data), &bw);
             if (res != FR_OK)
@@ -681,20 +684,20 @@ int backup_records_to_external(void)
     res = f_sync(&MyFile);
     if (res != FR_OK) {
         ERRCODE.STATUS |= STATUS_USB_FLASH_SYNC_ERROR;
-        // РѕС€РёР±РєР° СЃРёРЅС…СЂРѕРЅРёР·Р°С†РёРё
+        // ошибка синхронизации
     }
     ERRCODE.STATUS &= ~STATUS_USB_FLASH_SYNC_ERROR;
     f_close(&MyFile);
-    // f_mount(NULL, USBHPath, 0); // Р•СЃР»Рё РЅСѓР¶РЅРѕ
+    // f_mount(NULL, USBHPath, 0); // Если нужно
     return 1;
 }
 
 //------------------------------------------------------------------------------
-// РџСЂРёРјРµСЂ СЃРѕР·РґР°РЅРёСЏ РёРјРµРЅРё С„Р°Р№Р»Р°
+// Пример создания имени файла
 void createFilename(char *dest, size_t destSize)
 {
-    // РџСЂРµРґРїРѕР»Р°РіР°РµРј, С‡С‚Рѕ EEPROM.version.VERSION_PCB СЃСѓС‰РµСЃС‚РІСѓРµС‚
-    const char *version = EEPROM.version.VERSION_PCB; // РЅР°РїСЂ. "3.75-A001V"
+    // Предполагаем, что EEPROM.version.VERSION_PCB существует
+    const char *version = EEPROM.version.VERSION_PCB; // напр. "3.75-A001V"
     char tmp[32];
     int j = 0;
 

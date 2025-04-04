@@ -6,46 +6,46 @@ extern xSemaphoreHandle UART_PARSER_semaphore;
 extern xSemaphoreHandle USB_COM_SEND_semaphore;
 extern EEPROM_Settings_item EEPROM;
 
-/* РћРґРЅРѕР±Р°Р№С‚РѕРІС‹Р№ РїСЂРёС‘Рј */
+/* Однобайтовый приём */
 uint8_t gsmRxChar;
 
-/* Р”РІРѕР№РЅРѕРµ Р±СѓС„РµСЂРёСЂРѕРІР°РЅРёРµ: Р±СѓС„РµСЂС‹ СЂР°Р·РјРµС‰Р°СЋС‚СЃСЏ РІ РѕР±Р»Р°СЃС‚Рё РћР—РЈ ".ram2" */
+/* Двойное буферирование: буферы размещаются в области ОЗУ ".ram2" */
 static char buffer1[CMD_BUFFER_SIZE] __attribute__((section(".ram2"))) = {0};
 static char buffer2[CMD_BUFFER_SIZE] __attribute__((section(".ram2"))) = {0};
 
 
-/* РЈРєР°Р·Р°С‚РµР»Рё РЅР° Р°РєС‚РёРІРЅС‹Р№ Рё РѕР±СЂР°Р±Р°С‚С‹РІР°РµРјС‹Р№ (РїР°СЂСЃРµСЂР°) Р±СѓС„РµСЂС‹ */
+/* Указатели на активный и обрабатываемый (парсера) буферы */
 static char *activeBuffer = buffer1;
 char *parseBuffer = buffer2;
 static uint16_t activeIndex = 0;
 
-/* РћРґРёРЅРѕС‡РЅС‹Р№ С‚Р°Р№РјРµСЂ, РєРѕС‚РѕСЂС‹Р№ СЃР±СЂР°СЃС‹РІР°РµС‚СЃСЏ РїСЂРё РєР°Р¶РґРѕРј РїСЂРёРЅСЏС‚РѕРј СЃРёРјРІРѕР»Рµ */
+/* Одиночный таймер, который сбрасывается при каждом принятом символе */
 static TimerHandle_t gsmTimer = NULL;
 
 
-/* РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РјРѕРґСѓР»СЏ GSM: СЃРѕР·РґР°РЅРёРµ С‚Р°Р№РјРµСЂР° Рё Р·Р°РїСѓСЃРє РїСЂРёС‘РјР° РїРѕ UART */
+/* Инициализация модуля GSM: создание таймера и запуск приёма по UART */
 void GSM_Init(void)
 {
     gsmTimer = xTimerCreate("GSM_Timer",
                             pdMS_TO_TICKS(RX_TIMEOUT_MS),
-                            pdFALSE,       // РѕРґРЅРѕРєСЂР°С‚РЅС‹Р№ С‚Р°Р№РјРµСЂ (one-shot)
+                            pdFALSE,       // однократный таймер (one-shot)
                             NULL,
                             GSM_TimerCallback);
     if (gsmTimer == NULL) {
-        // РћР±СЂР°Р±РѕС‚РєР° РѕС€РёР±РєРё СЃРѕР·РґР°РЅРёСЏ С‚Р°Р№РјРµСЂР° (РЅР°РїСЂРёРјРµСЂ, Р»РѕРіРёСЂРѕРІР°РЅРёРµ РёР»Рё Р°РІР°СЂРёР№РЅС‹Р№ СЃР±РѕР№)
+        // Обработка ошибки создания таймера (например, логирование или аварийный сбой)
     }
     HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
 }
 
-/* РљРѕР»Р±СЌРє С‚Р°Р№РјРµСЂР°: РІС‹Р·С‹РІР°РµС‚СЃСЏ, РµСЃР»Рё РІ С‚РµС‡РµРЅРёРµ RX_TIMEOUT_MS РЅРµ РїРѕР»СѓС‡РµРЅРѕ РЅРѕРІС‹С… СЃРёРјРІРѕР»РѕРІ */
+/* Колбэк таймера: вызывается, если в течение RX_TIMEOUT_MS не получено новых символов */
 static void GSM_TimerCallback(TimerHandle_t xTimer)
 {
     if (activeIndex > 0)
     {
-        /* Р—Р°РІРµСЂС€Р°РµРј СЃС‚СЂРѕРєСѓ РІ Р°РєС‚РёРІРЅРѕРј Р±СѓС„РµСЂРµ */
+        /* Завершаем строку в активном буфере */
         activeBuffer[activeIndex++] = '\0';
         
-        /* РњРµРЅСЏРµРј РјРµСЃС‚Р°РјРё Р±СѓС„РµСЂС‹: РЅР°РєРѕРїР»РµРЅРЅС‹Рµ РґР°РЅРЅС‹Рµ Р±СѓРґСѓС‚ РѕР±СЂР°Р±Р°С‚С‹РІР°С‚СЊСЃСЏ С‡РµСЂРµР· parseBuffer */
+        /* Меняем местами буферы: накопленные данные будут обрабатываться через parseBuffer */
         char *temp = activeBuffer;
         activeBuffer = parseBuffer;
         parseBuffer = temp;
@@ -54,19 +54,19 @@ static void GSM_TimerCallback(TimerHandle_t xTimer)
         {
             CDC_Transmit_FS((uint8_t *)parseBuffer, activeIndex);
         }
-        /* РЎРёРіРЅР°Р»РёР·РёСЂСѓРµРј Р·Р°РґР°С‡Рµ РїР°СЂСЃРµСЂР° Рѕ РіРѕС‚РѕРІРЅРѕСЃС‚Рё РґР°РЅРЅС‹С… */
+        /* Сигнализируем задаче парсера о готовности данных */
         BaseType_t xHigherPriorityTaskWoken = pdFALSE;
         xSemaphoreGiveFromISR(UART_PARSER_semaphore, &xHigherPriorityTaskWoken);
         portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
     }
     
-    /* РЎР±СЂР°СЃС‹РІР°РµРј РЅР°РєРѕРїР»РµРЅРёРµ РІ Р°РєС‚РёРІРЅРѕРј Р±СѓС„РµСЂРµ РґР»СЏ РЅРѕРІРѕРіРѕ РїСЂРёС‘РјР° */
+    /* Сбрасываем накопление в активном буфере для нового приёма */
     activeIndex = 0;
     memset(activeBuffer, 0, CMD_BUFFER_SIZE);
 }
 
 
-/* РљРѕР»Р±СЌРє, РІС‹Р·С‹РІР°РµРјС‹Р№ РїРѕ Р·Р°РІРµСЂС€РµРЅРёРё РїСЂРёС‘РјР° РѕРґРЅРѕРіРѕ Р±Р°Р№С‚Р° РїРѕ UART4 */
+/* Колбэк, вызываемый по завершении приёма одного байта по UART4 */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     if (huart->Instance == UART4)
@@ -82,7 +82,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         if ((!(GSM_data.Status & DATA_READ)) && (EEPROM.USB_mode != 2)){
             return;
         }
-        /* Р•СЃР»Рё РµСЃС‚СЊ РјРµСЃС‚Рѕ РІ Р°РєС‚РёРІРЅРѕРј Р±СѓС„РµСЂРµ вЂ“ СЃРѕС…СЂР°РЅСЏРµРј РїСЂРёРЅСЏС‚С‹Р№ СЃРёРјРІРѕР» */
+        /* Если есть место в активном буфере – сохраняем принятый символ */
         if (activeIndex < CMD_BUFFER_SIZE - 1)
         {
             activeBuffer[activeIndex] = gsmRxChar;
@@ -104,7 +104,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     }
 }
 
-/* Р¤СѓРЅРєС†РёСЏ, РІС‹Р·С‹РІР°РµРјР°СЏ РїРµСЂРµРґ РѕС‚РїСЂР°РІРєРѕР№ РЅРѕРІРѕР№ РєРѕРјР°РЅРґС‹ вЂ“ РѕС‡РёС‰Р°РµС‚ РЅР°РєРѕРїР»РµРЅРЅС‹Р№ Р±СѓС„РµСЂ */
+/* Функция, вызываемая перед отправкой новой команды – очищает накопленный буфер */
 void SendSomeCommandAndSetFlag(void)
 {
     activeIndex = 0;
@@ -112,23 +112,23 @@ void SendSomeCommandAndSetFlag(void)
     
 }
 
-/* Р¤СѓРЅРєС†РёСЏ РѕР±РЅРѕРІР»РµРЅРёСЏ РґР°РЅРЅС‹С… GSM */
+/* Функция обновления данных GSM */
 void Update_Data(void)
 {
     if (!(GSM_data.Status & GSM_RDY))
     {
-        /* РњРѕРґСѓР»СЊ РЅРµР°РєС‚РёРІРµРЅ: СЃР±СЂР°СЃС‹РІР°РµРј РІСЃРµ СЃРѕСЃС‚РѕСЏРЅРёСЏ */
+        /* Модуль неактивен: сбрасываем все состояния */
         GSM_data.Status &= (1<<DATA_READ);
         GSM_data.GSM_Signal_Level = 99;
         GSM_data.GSM_Signal_Level_3 = -2;
-        GSM_data.GSM_status_char = (char *)STATUS_CHAR[1];         // "ND" вЂ“ СЃС‚Р°С‚СѓСЃ РЅРµ РѕРїСЂРµРґРµР»С‘РЅ
-        GSM_data.GSM_SIMCARD_char = (char *)SIM_STATUS[2];           // SIM РЅРµ СѓСЃС‚Р°РЅРѕРІР»РµРЅР°
-        GSM_data.Modem_mode = MODEM_STATUS[2];                       // "UNKNOWN" вЂ“ СЂРµР¶РёРј РЅРµРёР·РІРµСЃС‚РµРЅ
-        GSM_data.GSM_status_ready_char = (char *)GSM_READY_STATUS[1];  // "NRDY" вЂ“ GSM РЅРµ РіРѕС‚РѕРІ
-        GSM_data.GSM_status_reg_char = (char *)GSM_REG_STATUS[2];      // "UNKNOWN" вЂ“ СЂРµРіРёСЃС‚СЂР°С†РёСЏ РЅРµРёР·РІРµСЃС‚РЅР°
-        GSM_data.GSM_region_char = (char *)Countries[0].iso;           // РќР°РїСЂРёРјРµСЂ, "UNDEF"
-        GSM_data.GSM_operator_char = (char *)GSM_Operators[0].name;      // РќР°РїСЂРёРјРµСЂ, "Undefine"
-        strcpy(GSM_data.GSM_signal_lvl_char, "99");                  // РўРµРєСЃС‚РѕРІРѕРµ РїСЂРµРґСЃС‚Р°РІР»РµРЅРёРµ
+        GSM_data.GSM_status_char = (char *)STATUS_CHAR[1];         // "ND" – статус не определён
+        GSM_data.GSM_SIMCARD_char = (char *)SIM_STATUS[2];           // SIM не установлена
+        GSM_data.Modem_mode = MODEM_STATUS[2];                       // "UNKNOWN" – режим неизвестен
+        GSM_data.GSM_status_ready_char = (char *)GSM_READY_STATUS[1];  // "NRDY" – GSM не готов
+        GSM_data.GSM_status_reg_char = (char *)GSM_REG_STATUS[2];      // "UNKNOWN" – регистрация неизвестна
+        GSM_data.GSM_region_char = (char *)Countries[0].iso;           // Например, "UNDEF"
+        GSM_data.GSM_operator_char = (char *)GSM_Operators[0].name;      // Например, "Undefine"
+        strcpy(GSM_data.GSM_signal_lvl_char, "99");                  // Текстовое представление
         strcpy(GSM_data.GSM_gprs_on_char, (char *)GPRS_STATUS[1]);     // "DISCONNECTED"
         InitMenus();
         return;
@@ -139,12 +139,12 @@ void Update_Data(void)
 
     if (!(GSM_data.Status & SIM_PRESENT))
     {
-        /* SIM-РєР°СЂС‚Р° РЅРµ РѕР±РЅР°СЂСѓР¶РµРЅР°: СЃР±СЂРѕСЃ СЃРѕСЃС‚РѕСЏРЅРёР№ */
+        /* SIM-карта не обнаружена: сброс состояний */
         GSM_data.Status = GSM_RDY;
         GSM_data.GSM_Signal_Level = 99;
         GSM_data.GSM_Signal_Level_3 = -2;
-        GSM_data.GSM_SIMCARD_char = (char *)SIM_STATUS[1];           // SIM РЅРµ СѓСЃС‚Р°РЅРѕРІР»РµРЅР°
-        GSM_data.Modem_mode = MODEM_STATUS[2];                       // "UNKNOWN" вЂ“ РёСЃРїСЂР°РІР»РµРЅРѕ (РїСЂРёСЃРІРѕРµРЅРёРµ)
+        GSM_data.GSM_SIMCARD_char = (char *)SIM_STATUS[1];           // SIM не установлена
+        GSM_data.Modem_mode = MODEM_STATUS[2];                       // "UNKNOWN" – исправлено (присвоение)
         GSM_data.GSM_status_reg_char = (char *)GSM_REG_STATUS[2];      // "UNKNOWN"
         GSM_data.GSM_region_char = (char *)Countries[0].iso;
         GSM_data.GSM_operator_char = (char *)GSM_Operators[0].name;
@@ -157,11 +157,11 @@ void Update_Data(void)
     GSM_data.GSM_SIMCARD_char = (char *)SIM_STATUS[0]; // "PRESENT"
     if ((GSM_data.GSM_Signal_Level < 0) || (GSM_data.GSM_Signal_Level >= 99))
     {
-        /* РќРµРїСЂРёРµРјР»РµРјС‹Р№ СѓСЂРѕРІРµРЅСЊ СЃРёРіРЅР°Р»Р° вЂ“ СЃР±СЂРѕСЃ СЃРѕСЃС‚РѕСЏРЅРёР№ */
+        /* Неприемлемый уровень сигнала – сброс состояний */
         GSM_data.Status = SIM_PRESENT | GSM_RDY;
         GSM_data.GSM_Signal_Level = 99;
         GSM_data.GSM_Signal_Level_3 = -1;
-        GSM_data.Modem_mode = MODEM_STATUS[2];                       // "UNKNOWN" вЂ“ РёСЃРїСЂР°РІР»РµРЅРѕ (РїСЂРёСЃРІРѕРµРЅРёРµ)
+        GSM_data.Modem_mode = MODEM_STATUS[2];                       // "UNKNOWN" – исправлено (присвоение)
         GSM_data.GSM_status_reg_char = (char *)GSM_REG_STATUS[2];
         GSM_data.GSM_region_char = (char *)Countries[0].iso;
         GSM_data.GSM_operator_char = (char *)GSM_Operators[0].name;
@@ -177,9 +177,9 @@ void Update_Data(void)
 
     if (strcmp(GSM_data.Modem_mode, MODEM_STATUS[2]) == 0)
     {
-        /* Р•СЃР»Рё РЅРµ СЂРµР¶РёРј GSM */
+        /* Если не режим GSM */
         GSM_data.Status = SIM_PRESENT | GSM_RDY | SIGNAL_PRESENT;
-        GSM_data.GSM_status_reg_char = (char *)GSM_REG_STATUS[1]; // РќРµС‚ СЂРµРіРёСЃС‚СЂР°С†РёРё
+        GSM_data.GSM_status_reg_char = (char *)GSM_REG_STATUS[1]; // Нет регистрации
         GSM_data.GSM_region_char = (char *)Countries[0].iso;
         GSM_data.GSM_operator_char = (char *)GSM_Operators[0].name;
         GSM_data.GSM_gprs_on_char = (char *)GPRS_STATUS[1];
@@ -199,7 +199,7 @@ void Update_Data(void)
         return;
     }
     
-    /* РћРїСЂРµРґРµР»РµРЅРёРµ С‚РµРєСЃС‚РѕРІРѕРіРѕ РїСЂРµРґСЃС‚Р°РІР»РµРЅРёСЏ СѓСЂРѕРІРЅСЏ СЃРёРіРЅР°Р»Р° */
+    /* Определение текстового представления уровня сигнала */
     if (GSM_data.GSM_Signal_Level < 5)
         GSM_data.GSM_Signal_Level_3 = 0;
     else if (GSM_data.GSM_Signal_Level < 15)
@@ -212,13 +212,13 @@ void Update_Data(void)
     InitMenus();
 }
 
-/* Р¤СѓРЅРєС†РёСЏ РѕРїСЂРµРґРµР»РµРЅРёСЏ СЂРµРіРёРѕРЅР° Рё РѕРїРµСЂР°С‚РѕСЂР° РїРѕ РєРѕРґСѓ РѕРїРµСЂР°С‚РѕСЂР° */
+/* Функция определения региона и оператора по коду оператора */
 int determineRegionAndOperator(void)
 {
-    uint32_t opCode = GSM_data.Operator_code; // РќР°РїСЂРёРјРµСЂ, 25001 РёР»Рё 310410
+    uint32_t opCode = GSM_data.Operator_code; // Например, 25001 или 310410
     uint16_t mcc = 0;
     
-    /* РћРїСЂРµРґРµР»СЏРµРј MCC (РєРѕРґ СЂРµРіРёРѕРЅР°) РІ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ РєРѕР»РёС‡РµСЃС‚РІР° С†РёС„СЂ РІ opCode */
+    /* Определяем MCC (код региона) в зависимости от количества цифр в opCode */
     if (opCode >= 100000) {
         mcc = opCode / 1000;
     } else if (opCode >= 10000) {
@@ -238,7 +238,7 @@ int determineRegionAndOperator(void)
         }
     }
     
-    /* Р•СЃР»Рё СЂРµРіРёРѕРЅ РЅРµ РЅР°Р№РґРµРЅ, РІРѕР·РІСЂР°С‰Р°РµРј РѕС€РёР±РєСѓ */
+    /* Если регион не найден, возвращаем ошибку */
     if (!regionFound) {
         return 0;
     }
@@ -254,12 +254,12 @@ int determineRegionAndOperator(void)
         }
     }
     
-    /* Р•СЃР»Рё РѕРїРµСЂР°С‚РѕСЂ РЅРµ РЅР°Р№РґРµРЅ, РёСЃРїРѕР»СЊР·СѓРµРј Р·РЅР°С‡РµРЅРёРµ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ */
+    /* Если оператор не найден, используем значение по умолчанию */
     if (!operatorFound) {
         operatorName = GSM_Operators[0].name;
     }
     
-    /* Р—Р°РїРёСЃС‹РІР°РµРј РЅР°Р№РґРµРЅРЅС‹Рµ РґР°РЅРЅС‹Рµ РІ GSM_data */
+    /* Записываем найденные данные в GSM_data */
     GSM_data.GSM_region_char   = (char *)regionIso;
     GSM_data.GSM_operator_char = (char *)operatorName;
     return 1;

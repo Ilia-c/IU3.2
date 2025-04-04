@@ -161,7 +161,8 @@ void calculate_ADC_data_temp(int32_t adValue) {
     ADC_data.ADC_MS5193T_temp = koeff+*ADC_data.Temp_correct_A;
     for (int i = 0; i<11; i++) ADC_data.ADC_MS5193T_temp_char[i] = '\0';
     snprintf(ADC_data.ADC_MS5193T_temp_char, sizeof(ADC_data.ADC_MS5193T_temp_char), "%4.1f", ADC_data.ADC_MS5193T_temp);
-    
+    if ((ADC_data.ADC_MS5193T_temp<-40) || (ADC_data.ADC_MS5193T_temp>150)) ERRCODE.STATUS |= STATUS_ADC_TEMP_ERROR;
+    else ERRCODE.STATUS &= ~STATUS_ADC_TEMP_ERROR;
     //uint8_t ModeRegisterMsg[2] = {0b00000000, 0b00000111};  
     //uint8_t ConfigRegisterMsg[2] = {0b00010000, 0b10000000}; // канал на АЦП
     // Настройка регистра режима

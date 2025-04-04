@@ -186,8 +186,9 @@ menuSelect_item SAVE_IN_STRUCT = {
 menuSelect_item Block = {
     (uint8_t *)&EEPROM.block,
     {
-        {"Разбл.", "Unlocked"},
-        {"Забл.", "Locked"}
+        {"Нормальный", "Unlocked"},
+        {"Выставка", "Demo"},
+        {"Блокировка", "Locked"}
     }
 };
 
@@ -464,7 +465,7 @@ MAKE_MENU(Menu_1, "Режимы", "Modes", 0, UPTADE_OFF, NO_SIGNED, Menu_2, PREVISION
 			MAKE_MENU(Menu_1_2_3_7, "Оператор", "Mobile operator", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_3_8, Menu_1_2_3_6, Menu_1_2_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
 			MAKE_MENU(Menu_1_2_3_8, "Уровень сигн.", "Signal level", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_3_9, Menu_1_2_3_7, Menu_1_2_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
 			MAKE_MENU(Menu_1_2_3_9, "Потери", "Signal err", 0, UPTADE_ON, NO_SIGNED, NEXT_MENU, Menu_1_2_3_8, Menu_1_2_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-		MAKE_MENU(Menu_1_2_4, "АЦП", "ADC", 0, UPTADE_OFF, NO_SIGNED, Menu_1_2_5, Menu_1_2_3, Menu_1_2, Menu_1_2_4_1, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_status_char);
+		MAKE_MENU(Menu_1_2_4, "АЦП", "ADC", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_5, Menu_1_2_3, Menu_1_2, Menu_1_2_4_1, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_status_char);
 			MAKE_MENU(Menu_1_2_4_1, "АЦП", "ADC", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_4_2, PREVISION_MENU, Menu_1_2_4, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_value_char);
 			MAKE_MENU(Menu_1_2_4_2, "Глубина", "Metering", 0, UPTADE_ON, UNITS_MODE_DATA, Menu_1_2_4_3, Menu_1_2_4_1, Menu_1_2_4, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char);
 			MAKE_MENU(Menu_1_2_4_3, "УГВ", "GWL", 0, UPTADE_ON, UNITS_MODE_DATA, Menu_1_2_4_4, Menu_1_2_4_2, Menu_1_2_4, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_correct_char);
@@ -506,9 +507,8 @@ MAKE_MENU(Menu_2, "Настройки", "Settings", 0, UPTADE_OFF, NO_SIGNED, Menu_3, Men
 		MAKE_MENU(Menu_2_15_13, "Тест FLASH", "FLASH test", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_14, Menu_2_15_12, Menu_2_15, CHILD_MENU, flash_test, SELECT_BAR, DATA_IN, DATA_OUT);
 		MAKE_MENU(Menu_2_15_14, "Тест EEPROM", "EEPROM test", 0, 0, NO_SIGNED, Menu_2_15_15, Menu_2_15_13, Menu_2_15, CHILD_MENU, EEPROM_test, SELECT_BAR, DATA_IN, DATA_OUT);
 		MAKE_MENU(Menu_2_15_15, "Тест SD-карты", "SD-card test", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_16, Menu_2_15_14, Menu_2_15, CHILD_MENU, SD_test, SELECT_BAR, DATA_IN, DATA_OUT);
-		MAKE_MENU(Menu_2_15_16, "Режим", "Mode", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_17, Menu_2_15_15, Menu_2_15, CHILD_MENU, SELECT_BAR, Mode_select, DATA_IN, DATA_OUT);
-		MAKE_MENU(Menu_2_15_17, "БЛОКИРОВКА", "BLOCK", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_18, Menu_2_15_16, Menu_2_15, CHILD_MENU, SELECT_BAR, Block, DATA_IN, DATA_OUT);
-		MAKE_MENU(Menu_2_15_18, "Полный Сброс", "FULL RESET", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_15_17, Menu_2_15, CHILD_MENU, ALL_Reset_settings, SELECT_BAR, DATA_IN, DATA_OUT);
+		MAKE_MENU(Menu_2_15_16, "Режим", "Mode", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_17, Menu_2_15_15, Menu_2_15, CHILD_MENU, SELECT_BAR, Block, DATA_IN, DATA_OUT);
+		MAKE_MENU(Menu_2_15_17, "Полный Сброс", "FULL RESET", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_15_16, Menu_2_15, CHILD_MENU, ALL_Reset_settings, SELECT_BAR, DATA_IN, DATA_OUT);
 	MAKE_MENU(Menu_2_16, "Формат. SD", "SD formatting", 0, UPTADE_OFF, NO_SIGNED, Menu_2_17, Menu_2_15, Menu_2, CHILD_MENU, SD_Format, SELECT_BAR, DATA_IN, DATA_OUT); // ! Форматирование SD
 	MAKE_MENU(Menu_2_17, "Формат. Flash", "SD formatting", 0, UPTADE_OFF, NO_SIGNED, Menu_2_18, Menu_2_16, Menu_2, CHILD_MENU, Flash_Format, SELECT_BAR, DATA_IN, DATA_OUT); // ! Форматирование FLASH
 	MAKE_MENU(Menu_2_18, "Сброс настроек", "Factory reset", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_17, Menu_2, CHILD_MENU, Reset_settings, SELECT_BAR, DATA_IN, DATA_OUT);
@@ -539,7 +539,7 @@ void Remove_units(void)
 void InitMenus(void)
 {
     // Теперь присваиваем указатели на строки, полученные из GSM_data
-    Menu_1_2_4.data_out   = GSM_data.GSM_status_char;       // Вкладка связь
+    Menu_1_2_3.data_out   = GSM_data.GSM_status_char;       // Вкладка связь
     Menu_1_2_3_3.data_out = GSM_data.GSM_SIMCARD_char;
     Menu_1_2_3_4.data_out = GSM_data.Modem_mode;
     Menu_1_2_3_5.data_out = GSM_data.GSM_status_reg_char;
@@ -748,6 +748,7 @@ void SAVE_USB(){
 
 void Screen_saver(){
     mode_redact = 4;
+    osDelay(200);
     OLED_Clear(0);
     OLED_DrawXBM(0, 0, ScreenSaver_Static);
     OLED_UpdateScreen();
@@ -935,7 +936,7 @@ void ALL_Reset_settings(){
         .GVL_correct_20m = 0.02,   // Реальные 20мА
         // Коррекция температуры (смещение):
         .Crorrect_TEMP_A = 0, // Смещение датчика аналоговой температуры
-        .Colibrate_koeff = 1.0,
+        .Colibrate_koeff = 10.81,
     
         // Параметры select_bar:
         .Mode = 0,              // Текущий режим работы (0 - режим текущие показания, 1 - циклический режим 2 - режим выставки)

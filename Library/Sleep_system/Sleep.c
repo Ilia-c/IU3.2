@@ -7,13 +7,13 @@ extern RTC_HandleTypeDef hrtc;
 
 
 /**
- * @brief  Ð¤ÑƒÐ½ÐºÑ†Ð¸Ñ Ð°Ð½Ð°Ð»Ð¸Ð·Ð° Ñ„Ð»Ð°Ð³Ð¾Ð² ÑÐ±Ñ€Ð¾ÑÐ° Ð¸ Ð²Ð¾Ð·Ð²Ñ€Ð°Ñ‚Ð° ÐºÐ¾Ð´Ð° ÑÐ±Ñ€Ð¾ÑÐ°.
- * @return uint8_t: ÐºÐ¾Ð´ ÑÐ±Ñ€Ð¾ÑÐ°, Ð¾Ð´Ð¸Ð½ Ð¸Ð· RESET_CODE_XXX.
+ * @brief  Ôóíêöèÿ àíàëèçà ôëàãîâ ñáðîñà è âîçâðàòà êîäà ñáðîñà.
+ * @return uint8_t: êîä ñáðîñà, îäèí èç RESET_CODE_XXX.
  *
- * Ð¤ÑƒÐ½ÐºÑ†Ð¸Ñ Ð¿Ñ€Ð¾Ð²ÐµÑ€ÑÐµÑ‚ Ñ„Ð»Ð°Ð³Ð¸ Ð² Ñ€ÐµÐ³Ð¸ÑÑ‚Ñ€Ðµ RCC->CSR. ÐŸÑ€Ð¸Ð¾Ñ€Ð¸Ñ‚ÐµÑ‚ Ð¿Ñ€Ð¾Ð²ÐµÑ€ÐºÐ¸ Ð¼Ð¾Ð¶Ð½Ð¾ Ð·Ð°Ð´Ð°Ñ‚ÑŒ
- * Ñ‚Ð°Ðº, Ñ‡Ñ‚Ð¾ ÐµÑÐ»Ð¸ ÑƒÑÑ‚Ð°Ð½Ð¾Ð²Ð»ÐµÐ½Ð¾ Ð½ÐµÑÐºÐ¾Ð»ÑŒÐºÐ¾ Ñ„Ð»Ð°Ð³Ð¾Ð², Ð²Ñ‹Ð±Ð¸Ñ€Ð°ÐµÑ‚ÑÑ Ð¿ÐµÑ€Ð²Ñ‹Ð¹ Ð¿Ð¾ Ð¿Ð¾Ñ€ÑÐ´ÐºÑƒ.
- * Ð—Ð´ÐµÑÑŒ Ð¿Ñ€Ð¾Ð²ÐµÑ€ÑÐµÑ‚ÑÑ ÑÐ½Ð°Ñ‡Ð°Ð»Ð° Ð²Ð½ÐµÑˆÐ½Ð¸Ð¹ ÑÐ±Ñ€Ð¾Ñ (PINRST), Ð·Ð°Ñ‚ÐµÐ¼ Ð¿Ñ€Ð¾Ð³Ñ€Ð°Ð¼Ð¼Ð½Ñ‹Ð¹ (SFTRST),
- * Ð¿Ð¾Ñ‚Ð¾Ð¼ ÑÐ±Ñ€Ð¾ÑÑ‹ Ð¾Ñ‚ watchdog Ð¸ Ñ‚.Ð´.
+ * Ôóíêöèÿ ïðîâåðÿåò ôëàãè â ðåãèñòðå RCC->CSR. Ïðèîðèòåò ïðîâåðêè ìîæíî çàäàòü
+ * òàê, ÷òî åñëè óñòàíîâëåíî íåñêîëüêî ôëàãîâ, âûáèðàåòñÿ ïåðâûé ïî ïîðÿäêó.
+ * Çäåñü ïðîâåðÿåòñÿ ñíà÷àëà âíåøíèé ñáðîñ (PINRST), çàòåì ïðîãðàììíûé (SFTRST),
+ * ïîòîì ñáðîñû îò watchdog è ò.ä.
  */
 uint8_t GetResetCode(void)
 {
@@ -39,7 +39,7 @@ uint8_t GetResetCode(void)
         resetCode = RESET_CODE_BOR;
     }
 
-    // ÐžÑ‡Ð¸ÑÑ‚ÐºÐ° Ñ„Ð»Ð°Ð³Ð¾Ð² ÑÐ±Ñ€Ð¾ÑÐ°: ÑƒÑÑ‚Ð°Ð½Ð¾Ð²ÐºÐ° Ð±Ð¸Ñ‚Ð° RMVF Ð² Ñ€ÐµÐ³Ð¸ÑÑ‚Ñ€Ðµ RCC->CSR
+    // Î÷èñòêà ôëàãîâ ñáðîñà: óñòàíîâêà áèòà RMVF â ðåãèñòðå RCC->CSR
     RCC->CSR |= RCC_CSR_RMVF;
 
     return resetCode;
@@ -59,7 +59,7 @@ uint8_t IsLeapYear(uint8_t rtcYear)
     return 0;
 }
 
-// Ð’Ð¾Ð·Ð²Ñ€Ð°Ñ‰Ð°ÐµÑ‚ ÐºÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð¾ Ð´Ð½ÐµÐ¹ Ð² Ð¼ÐµÑÑÑ†Ðµ (month=1..12) Ð´Ð»Ñ Ð³Ð¾Ð´Ð° (20xx)
+// Âîçâðàùàåò êîëè÷åñòâî äíåé â ìåñÿöå (month=1..12) äëÿ ãîäà (20xx)
 uint8_t DaysInMonth(uint8_t month, uint8_t rtcYear)
 {
     switch (month)
@@ -89,22 +89,22 @@ uint8_t DaysInMonth(uint8_t month, uint8_t rtcYear)
     case 12:
         return 31; // Dec
     default:
-        return 31; // Ð½Ð° Ð²ÑÑÐºÐ¸Ð¹ ÑÐ»ÑƒÑ‡Ð°Ð¹
+        return 31; // íà âñÿêèé ñëó÷àé
     }
 }
 
 /**
- * @brief Ð£ÑÑ‚Ð°Ð½Ð¾Ð²Ð¸Ñ‚ÑŒ Alarm A Ð½Ð° "Ñ‚ÐµÐºÑƒÑ‰ÐµÐµ Ð²Ñ€ÐµÐ¼Ñ + hours:minutes".
- *        ÐžÐ³Ñ€Ð°Ð½Ð¸Ñ‡ÐµÐ½Ð¸Ñ:
+ * @brief Óñòàíîâèòü Alarm A íà "òåêóùåå âðåìÿ + hours:minutes".
+ *        Îãðàíè÷åíèÿ:
  *         - hours [0..99]
  *         - minutes [5..59]
- * @param hours   ÐšÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð¾ Ñ‡Ð°ÑÐ¾Ð² ÑÐ½Ð° (0..99)
- * @param minutes ÐšÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð¾ Ð¼Ð¸Ð½ÑƒÑ‚ ÑÐ½Ð° (5..59)
+ * @param hours   Êîëè÷åñòâî ÷àñîâ ñíà (0..99)
+ * @param minutes Êîëè÷åñòâî ìèíóò ñíà (5..59)
  */
 void RTC_SetAlarm_HoursMinutes(uint8_t hours, uint8_t minutes)
 {
     __HAL_RCC_PWR_CLK_ENABLE();
-    // ÐžÐ³Ñ€Ð°Ð½Ð¸Ñ‡ÐµÐ½Ð¸Ðµ Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ð¾Ð²
+    // Îãðàíè÷åíèå ïàðàìåòðîâ
     if (minutes > 59)
         minutes = 59;
     if (hours > 99)
@@ -112,24 +112,24 @@ void RTC_SetAlarm_HoursMinutes(uint8_t hours, uint8_t minutes)
 
     HAL_RTC_DeactivateAlarm(&hrtc, RTC_ALARM_A);
 
-    // Ð˜ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÐ¼ ÑÐ¾Ñ…Ñ€Ð°Ð½Ñ‘Ð½Ð½Ð¾Ðµ Ð¾Ð¿Ð¾Ñ€Ð½Ð¾Ðµ Ð²Ñ€ÐµÐ¼Ñ Ð¸ Ð´Ð°Ñ‚Ñƒ
+    // Èñïîëüçóåì ñîõðàí¸ííîå îïîðíîå âðåìÿ è äàòó
     RTC_TimeTypeDef sTime = Time_start;
     RTC_DateTypeDef sDate = Date_start;
 
-    // Ð’Ñ‹Ñ‡Ð¸ÑÐ»ÑÐµÐ¼ Ð¼Ð¸Ð½ÑƒÑ‚Ñ‹ Ð¾Ñ‚ Ð½Ð°Ñ‡Ð°Ð»Ð° Ð´Ð½Ñ Ð¿Ð¾ Ð¾Ð¿Ð¾Ñ€Ð½Ð¾Ð¼Ñƒ Ð²Ñ€ÐµÐ¼ÐµÐ½Ð¸
+    // Âû÷èñëÿåì ìèíóòû îò íà÷àëà äíÿ ïî îïîðíîìó âðåìåíè
     uint16_t startMinutes = sTime.Hours * 60 + sTime.Minutes;
     uint16_t deltaMinutes = (uint16_t)(hours * 60 + minutes);
     uint32_t totalMinutes = startMinutes + deltaMinutes;
 
-    // ÐžÐ¿Ñ€ÐµÐ´ÐµÐ»ÑÐµÐ¼, ÑÐºÐ¾Ð»ÑŒÐºÐ¾ Ð´Ð½ÐµÐ¹ Ð½Ð°Ð´Ð¾ Ð¿Ñ€Ð¸Ð±Ð°Ð²Ð¸Ñ‚ÑŒ, ÐµÑÐ»Ð¸ Ð²Ñ€ÐµÐ¼Ñ Ð¿ÐµÑ€ÐµÑ…Ð¾Ð´Ð¸Ñ‚ Ð·Ð° Ð³Ñ€Ð°Ð½Ð¸Ñ†Ñƒ ÑÑƒÑ‚Ð¾Ðº
+    // Îïðåäåëÿåì, ñêîëüêî äíåé íàäî ïðèáàâèòü, åñëè âðåìÿ ïåðåõîäèò çà ãðàíèöó ñóòîê
     uint32_t daysToAdd = totalMinutes / 1440;
     uint16_t futureDayMinutes = totalMinutes % 1440;
     uint8_t newHours = futureDayMinutes / 60;
     uint8_t newMinutes = futureDayMinutes % 60;
-    // Ð¡Ð¾Ñ…Ñ€Ð°Ð½ÑÐµÐ¼ ÑÐµÐºÑƒÐ½Ð´Ñ‹ Ð¸Ð· Ð¾Ð¿Ð¾Ñ€Ð½Ð¾Ð³Ð¾ Ð²Ñ€ÐµÐ¼ÐµÐ½Ð¸
+    // Ñîõðàíÿåì ñåêóíäû èç îïîðíîãî âðåìåíè
     uint8_t newSeconds = sTime.Seconds;
 
-    // ÐŸÑ€Ð¸Ð±Ð°Ð²Ð»ÑÐµÐ¼ Ð´Ð½Ð¸ Ðº Ð´Ð°Ñ‚Ðµ, ÐµÑÐ»Ð¸ Ð½ÐµÐ¾Ð±Ñ…Ð¾Ð´Ð¸Ð¼Ð¾
+    // Ïðèáàâëÿåì äíè ê äàòå, åñëè íåîáõîäèìî
     while (daysToAdd > 0)
     {
         sDate.Date++;
@@ -147,16 +147,16 @@ void RTC_SetAlarm_HoursMinutes(uint8_t hours, uint8_t minutes)
         daysToAdd--;
     }
 
-    // Ð’Ñ‹Ñ‡Ð¸ÑÐ»ÑÐµÐ¼ Ð¾Ð±Ñ‰ÐµÐµ Ñ‡Ð¸ÑÐ»Ð¾ ÑÐµÐºÑƒÐ½Ð´ Ð¾Ñ‚ Ð½Ð°Ñ‡Ð°Ð»Ð° ÑÑƒÑ‚Ð¾Ðº Ð´Ð»Ñ Ð½Ð¾Ð²Ð¾Ð³Ð¾ Ð²Ñ€ÐµÐ¼ÐµÐ½Ð¸ Ð±ÑƒÐ´Ð¸Ð»ÑŒÐ½Ð¸ÐºÐ°
+    // Âû÷èñëÿåì îáùåå ÷èñëî ñåêóíä îò íà÷àëà ñóòîê äëÿ íîâîãî âðåìåíè áóäèëüíèêà
     uint32_t computedAlarmSeconds = newHours * 3600 + newMinutes * 60 + newSeconds;
 
-    // ÐŸÐ¾Ð»ÑƒÑ‡Ð°ÐµÐ¼ Ñ‚ÐµÐºÑƒÑ‰ÐµÐµ Ð²Ñ€ÐµÐ¼Ñ Ð¸ Ð´Ð°Ñ‚Ñƒ Ð´Ð»Ñ Ð¿Ñ€Ð¾Ð²ÐµÑ€ÐºÐ¸
+    // Ïîëó÷àåì òåêóùåå âðåìÿ è äàòó äëÿ ïðîâåðêè
     RTC_TimeTypeDef nowTime;
     RTC_DateTypeDef nowDate;
     HAL_RTC_GetTime(&hrtc, &nowTime, RTC_FORMAT_BIN);
     HAL_RTC_GetDate(&hrtc, &nowDate, RTC_FORMAT_BIN);
 
-    // Ð¤Ð»Ð°Ð³, Ð¿Ð¾ÐºÐ°Ð·Ñ‹Ð²Ð°ÑŽÑ‰Ð¸Ð¹, Ñ‡Ñ‚Ð¾ Ð²Ñ‹Ñ‡Ð¸ÑÐ»ÐµÐ½Ð½Ð¾Ðµ Ð²Ñ€ÐµÐ¼Ñ Ð½Ð°Ñ…Ð¾Ð´Ð¸Ñ‚ÑÑ Ð² Ð¿Ñ€Ð¾ÑˆÐ»Ð¾Ð¼ (0 â€“ Ð½ÐµÑ‚, 1 â€“ Ð´Ð°)
+    // Ôëàã, ïîêàçûâàþùèé, ÷òî âû÷èñëåííîå âðåìÿ íàõîäèòñÿ â ïðîøëîì (0 – íåò, 1 – äà)
     int alarmInPast = 0;
     if ((nowDate.Year > sDate.Year) ||
         (nowDate.Year == sDate.Year && nowDate.Month > sDate.Month) ||
@@ -171,11 +171,11 @@ void RTC_SetAlarm_HoursMinutes(uint8_t hours, uint8_t minutes)
             alarmInPast = 1;
     }
 
-    // Ð•ÑÐ»Ð¸ Ñ€Ð°ÑÑÑ‡Ð¸Ñ‚Ð°Ð½Ð½Ð¾Ðµ Ð²Ñ€ÐµÐ¼Ñ ÑƒÐ¶Ðµ Ð¿Ñ€Ð¾ÑˆÐ»Ð¾, Ð¿Ñ€Ð¸Ð±Ð°Ð²Ð»ÑÐµÐ¼ 30 Ð¼Ð¸Ð½ÑƒÑ‚
+    // Åñëè ðàññ÷èòàííîå âðåìÿ óæå ïðîøëî, ïðèáàâëÿåì 30 ìèíóò
     if (alarmInPast == 1)
     {
         uint32_t newTotalSeconds = computedAlarmSeconds + (30 * 60);
-        // Ð•ÑÐ»Ð¸ Ð½Ð¾Ð²Ð¾Ðµ Ð²Ñ€ÐµÐ¼Ñ Ð²Ñ‹Ñ…Ð¾Ð´Ð¸Ñ‚ Ð·Ð° Ð¿Ñ€ÐµÐ´ÐµÐ»Ñ‹ ÑÑƒÑ‚Ð¾Ðº, Ð¾Ð¿Ñ€ÐµÐ´ÐµÐ»ÑÐµÐ¼ ÐºÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð¾ Ð´Ð¾Ð¿Ð¾Ð»Ð½Ð¸Ñ‚ÐµÐ»ÑŒÐ½Ñ‹Ñ… Ð´Ð½ÐµÐ¹
+        // Åñëè íîâîå âðåìÿ âûõîäèò çà ïðåäåëû ñóòîê, îïðåäåëÿåì êîëè÷åñòâî äîïîëíèòåëüíûõ äíåé
         uint32_t extraDays = newTotalSeconds / 86400;
         uint32_t secondsOfDay = newTotalSeconds % 86400;
         newHours   = secondsOfDay / 3600;
@@ -199,7 +199,7 @@ void RTC_SetAlarm_HoursMinutes(uint8_t hours, uint8_t minutes)
         }
     }
 
-    // Ð¤Ð¾Ñ€Ð¼Ð¸Ñ€ÑƒÐµÐ¼ ÑÑ‚Ñ€ÑƒÐºÑ‚ÑƒÑ€Ñƒ Ð±ÑƒÐ´Ð¸Ð»ÑŒÐ½Ð¸ÐºÐ°
+    // Ôîðìèðóåì ñòðóêòóðó áóäèëüíèêà
     RTC_AlarmTypeDef sAlarm = {0};
     sAlarm.Alarm = RTC_ALARM_A;
     sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
@@ -250,14 +250,22 @@ void GPIO_AnalogConfig(void)
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc3;
 
-// Ð•ÑÐ»Ð¸ USB Ð¼Ð¾Ð¶ÐµÑ‚ Ñ€Ð°Ð±Ð¾Ñ‚Ð°Ñ‚ÑŒ ÐºÐ°Ðº Ð² Ñ€ÐµÐ¶Ð¸Ð¼Ðµ Device, Ñ‚Ð°Ðº Ð¸ Ð² Ñ€ÐµÐ¶Ð¸Ð¼Ðµ Host,
-// Ð¾Ð±ÑŠÑÐ²Ð¸Ñ‚Ðµ Ð¾Ð±Ð° Ð´ÐµÑÐºÑ€Ð¸Ð¿Ñ‚Ð¾Ñ€Ð° (ÐµÑÐ»Ð¸ Ð¾Ð½Ð¸ Ð¸ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÑŽÑ‚ÑÑ):
-extern PCD_HandleTypeDef hpcd_USB_OTG_FS; // Ð´Ð»Ñ Ñ€ÐµÐ¶Ð¸Ð¼Ð° Device
-extern HCD_HandleTypeDef hhcd_USB_OTG_FS; // Ð´Ð»Ñ Ñ€ÐµÐ¶Ð¸Ð¼Ð° Host
+// Åñëè USB ìîæåò ðàáîòàòü êàê â ðåæèìå Device, òàê è â ðåæèìå Host,
+// îáúÿâèòå îáà äåñêðèïòîðà (åñëè îíè èñïîëüçóþòñÿ):
+extern PCD_HandleTypeDef hpcd_USB_OTG_FS; // äëÿ ðåæèìà Device
+extern HCD_HandleTypeDef hhcd_USB_OTG_FS; // äëÿ ðåæèìà Host
 
 void Enter_StandbyMode(uint8_t hours, uint8_t minutes)
 {
     vTaskSuspendAll();
+
+    ERRCODE.STATUS = 0;
+    uint32_t errcode_low  = (uint32_t)(ERRCODE.STATUS & 0xFFFFFFFF);
+    uint32_t errcode_high = (uint32_t)(ERRCODE.STATUS >> 32);
+    HAL_PWR_EnableBkUpAccess();
+    HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_1, errcode_low);
+    HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_2, errcode_high);
+    
 
     HAL_ADC_DeInit(&hadc1);
     HAL_ADC_DeInit(&hadc3); 
@@ -265,7 +273,7 @@ void Enter_StandbyMode(uint8_t hours, uint8_t minutes)
     HAL_PCD_DeInit(&hpcd_USB_OTG_FS);
     HAL_HCD_DeInit(&hhcd_USB_OTG_FS);
     __HAL_RCC_USB_OTG_FS_CLK_DISABLE();
-    __HAL_RCC_GPIOA_CLK_ENABLE(); // Ð’Ñ€ÐµÐ¼ÐµÐ½Ð½Ð¾ Ð²ÐºÐ»ÑŽÑ‡Ð¸Ñ‚ÑŒ ÐºÐ»Ð¾Ðº, Ñ‡Ñ‚Ð¾Ð±Ñ‹ Ð¿ÐµÑ€ÐµÐ½Ð°ÑÑ‚Ñ€Ð¾Ð¸Ñ‚ÑŒ Ð½Ð¾Ð¶ÐºÐ¸
+    __HAL_RCC_GPIOA_CLK_ENABLE(); // Âðåìåííî âêëþ÷èòü êëîê, ÷òîáû ïåðåíàñòðîèòü íîæêè
     GPIO_InitTypeDef GPIO_InitStruct = {0};
     GPIO_InitStruct.Pin = GPIO_PIN_11 | GPIO_PIN_12; // DM/DP
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
@@ -283,13 +291,57 @@ void Enter_StandbyMode(uint8_t hours, uint8_t minutes)
     PWR->SCR |= (PWR_SCR_CWUF1 | PWR_SCR_CWUF2 | PWR_SCR_CWUF3 | PWR_SCR_CWUF4 | PWR_SCR_CWUF5);
     __HAL_RTC_ALARM_CLEAR_FLAG(&hrtc, RTC_FLAG_ALRAF);
 
-
     RTC_SetAlarm_HoursMinutes(hours, minutes);
-    //RTC_SetAlarm_HoursMinutes(0, 2);
     HAL_PWR_EnterSTANDBYMode();
 }
 
-// Ð”Ð»Ñ Ð¾Ñ‚Ð»Ð°Ð´ÐºÐ¸ FreeRTOS
+void Enter_StandbyMode_NoWakeup(void)
+{
+    // Ïðèîñòàíîâêà âñåõ çàäà÷ (åñëè èñïîëüçóåòñÿ FreeRTOS)
+    vTaskSuspendAll();
+    uint32_t errcode_low  = (uint32_t)(ERRCODE.STATUS & 0xFFFFFFFF);
+    uint32_t errcode_high = (uint32_t)(ERRCODE.STATUS >> 32);
+    HAL_PWR_EnableBkUpAccess();
+    HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_1, errcode_low);
+    HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_2, errcode_high);
+    // Äåèíèöèàëèçàöèÿ ïåðèôåðèè: ADC, USB è ò.ä.
+    HAL_ADC_DeInit(&hadc1);
+    HAL_ADC_DeInit(&hadc3);
+    __HAL_RCC_DMA2_CLK_DISABLE();
+    HAL_PCD_DeInit(&hpcd_USB_OTG_FS);
+    HAL_HCD_DeInit(&hhcd_USB_OTG_FS);
+    __HAL_RCC_USB_OTG_FS_CLK_DISABLE();
+
+    // Ïåðåíàñòðîéêà íîæåê USB â ðåæèì àíàëîãîâîãî âõîäà
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    GPIO_InitStruct.Pin = GPIO_PIN_11 | GPIO_PIN_12;
+    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    __HAL_RCC_GPIOA_CLK_DISABLE();
+
+    // Îòêëþ÷åíèå îòëàä÷èêà è ïðî÷èõ ìîäóëåé
+    DBGMCU->CR = 0x0;
+    HAL_RCC_DeInit();
+    HAL_SuspendTick();
+    GPIO_AnalogConfig();
+
+    __HAL_RCC_PWR_CLK_ENABLE();
+    HAL_PWR_EnableBkUpAccess();
+
+    // Î÷èñòêà ôëàãîâ ïðîáóæäåíèÿ
+    PWR->SCR |= (PWR_SCR_CWUF1 | PWR_SCR_CWUF2 | PWR_SCR_CWUF3 | PWR_SCR_CWUF4 | PWR_SCR_CWUF5);
+
+    // RTC áóäèëüíèê íå íàñòðàèâàåòñÿ – óñòðîéñòâî íå ïðîáóäèòñÿ ñàìîñòîÿòåëüíî
+
+    // Ïåðåõîä â ðåæèì Standby
+    HAL_PWR_EnterSTANDBYMode();
+
+    // Êîä ïîñëå HAL_PWR_EnterSTANDBYMode() íå âûïîëíÿåòñÿ
+}
+
+// Äëÿ îòëàäêè FreeRTOS
 void DWT_Init(void)
 {
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;

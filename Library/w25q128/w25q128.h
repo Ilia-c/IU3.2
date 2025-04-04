@@ -13,7 +13,7 @@
 #include "SD.h"
 
 extern uint32_t g_total_records_count;
-// РљРѕРјР°РЅРґС‹ С„Р»РµС€-РїР°РјСЏС‚Рё
+// Команды флеш-памяти
 #define W25_GET_JEDEC_ID    0x9F
 #define W25_ENABLE_RESET    0x66
 #define W25_RESET           0x99
@@ -24,25 +24,25 @@ extern uint32_t g_total_records_count;
 #define W25_READ_STATUS_REG 0x05
 #define W25_PAGE_PROGRAM    0x02
 
-// РўР°Р№РјР°СѓС‚ РЅР° РїРѕР»РЅРѕРµ СЃС‚РёСЂР°РЅРёРµ
+// Таймаут на полное стирание
 #define TIMEOUT_CHIP_ERASE_MS 40000
 
-// ------------------ РџР°СЂР°РјРµС‚СЂС‹ РѕСЂРіР°РЅРёР·Р°С†РёРё РїР°РјСЏС‚Рё ------------------
+// ------------------ Параметры организации памяти ------------------
 #define SECTOR_SIZE         4096
 #define RECORD_SIZE         128
 #define RECORDS_PER_SECTOR  (SECTOR_SIZE / RECORD_SIZE)
 
-// РџРѕР»РЅС‹Р№ СЂР°Р·РјРµСЂ С„Р»РµС€
+// Полный размер флеш
 #define FLASH_TOTAL_SIZE    ((15 * 1024 * 1024) + 512*1024)
 #define TOTAL_SECTORS       (FLASH_TOTAL_SIZE / SECTOR_SIZE)
 #define TOTAL_RECORDS       (TOTAL_SECTORS * RECORDS_PER_SECTOR)
 
-// РњР°РєСЂРѕСЃС‹ РґР»СЏ "РјРµС‚РѕРє"
-#define EMPTY  0xFF  // РѕР±РѕР·РЅР°С‡РµРЅРёРµ "РїСѓСЃС‚Рѕ / СЃС‚С‘СЂС‚Рѕ"
-#define WRITE_START 0xF0  //  Р—Р°РїРёСЃСЊ РІ СЃРµРєС‚РѕСЂ РЅР°С‡Р°С‚Р°
-#define SET    0x00  // РѕР±РѕР·РЅР°С‡РµРЅРёРµ "СѓСЃС‚Р°РЅРѕРІР»РµРЅРѕ / Р·Р°РЅСЏС‚Рѕ"
+// Макросы для "меток"
+#define EMPTY  0xFF  // обозначение "пусто / стёрто"
+#define WRITE_START 0xF0  //  Запись в сектор начата
+#define SET    0x00  // обозначение "установлено / занято"
 
-// РЎРјРµС‰РµРЅРёСЏ РІРЅСѓС‚СЂРё Р±Р»РѕРєР°
+// Смещения внутри блока
 #define SECTOR_MARK             0  // [0]
 #define SECTOR_MARK_SEND        1  // [1]
 #define BLOCK_MARK_WRITE_START  2  // [2]
@@ -50,21 +50,21 @@ extern uint32_t g_total_records_count;
 #define BLOCK_MARK_DATA_SEND    4  // [4]
 #define BLOCK_MARK_LEN          5  // [5]
 
-// ------------------ РЎС‚СЂСѓРєС‚СѓСЂР° Р·Р°РїРёСЃРё (128 Р±Р°Р№С‚) ------------------
+// ------------------ Структура записи (128 байт) ------------------
 typedef struct {
-    uint8_t Sector_mark;         // [0]  : РџРѕРјРµС‚РєР° СЃРµРєС‚РѕСЂР° (С‚РѕР»СЊРєРѕ РґР»СЏ Р±Р»РѕРє=0), РёРЅР°С‡Рµ РјРѕР¶РµС‚ Р±С‹С‚СЊ 0xFF
-    uint8_t Sector_mark_send;    // [1]  : РџРѕРјРµС‚РєР°, С‡С‚Рѕ СЃРµРєС‚РѕСЂ РѕС‚РїСЂР°РІР»РµРЅ
-    uint8_t rec_status_start;    // [2]  : РќР°С‡Р°Р»Рѕ Р·Р°РїРёСЃРё
-    uint8_t rec_status_end;      // [3]  : РљРѕРЅРµС† Р·Р°РїРёСЃРё
-    uint8_t block_mark_send;     // [4]  : Р”Р°РЅРЅС‹Рµ РѕС‚РїСЂР°РІР»РµРЅС‹?
-    uint8_t length;              // [5]  : Р”Р»РёРЅР° РїРѕР»РµР·РЅС‹С… РґР°РЅРЅС‹С…
+    uint8_t Sector_mark;         // [0]  : Пометка сектора (только для блок=0), иначе может быть 0xFF
+    uint8_t Sector_mark_send;    // [1]  : Пометка, что сектор отправлен
+    uint8_t rec_status_start;    // [2]  : Начало записи
+    uint8_t rec_status_end;      // [3]  : Конец записи
+    uint8_t block_mark_send;     // [4]  : Данные отправлены?
+    uint8_t length;              // [5]  : Длина полезных данных
     char    data[RECORD_SIZE - 6]; // [6..127]
 } record_t;
 
-// Р­РєСЃРїРѕСЂС‚РёСЂСѓРµРјС‹Рµ РїРµСЂРµРјРµРЅРЅС‹Рµ (РµСЃР»Рё РЅСѓР¶РЅС‹)
+// Экспортируемые переменные (если нужны)
 extern uint32_t flash_end_ptr;
 
-// РџСЂРѕС‚РѕС‚РёРїС‹ РЅРёР·РєРѕСѓСЂРѕРІРЅРµРІС‹С… С„СѓРЅРєС†РёР№
+// Прототипы низкоуровневых функций
 void w25_init(void);
 int  W25_Read_ID(uint32_t *id);
 int  W25_Reset(void);
@@ -76,14 +76,14 @@ int  W25_WaitForReady(uint32_t timeout_ms);
 int  W25_Erase_Sector(uint32_t addr);
 int  W25_Chip_Erase(void);
 
-// РџСЂРѕС‚РѕС‚РёРїС‹ РѕСЃРЅРѕРІРЅС‹С… С„СѓРЅРєС†РёР№
+// Прототипы основных функций
 int32_t search_sector_empty(void);
 int flash_append_record(const char *record_data, uint8_t sector_mark_send);
 int mark_block_sent(int32_t addr_block);
 int Save_one_to_USB(void);
 int backup_records_to_external(void);
 
-// РџСЂРё Р¶РµР»Р°РЅРёРё вЂ“ С„СѓРЅРєС†РёРё РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ РёРјРµРЅРµРј С„Р°Р№Р»Р°, USB Рё С‚.Рґ.
+// При желании – функции для работы с именем файла, USB и т.д.
 void createFilename(char *dest, size_t destSize);
 
 #endif // W25Q128_NEW_H

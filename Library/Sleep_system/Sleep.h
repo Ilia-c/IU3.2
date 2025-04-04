@@ -20,3 +20,4 @@ void RTC_SetAlarm_HoursMinutes(uint8_t hours, uint8_t minutes);
 void GPIO_AnalogConfig(void);
 void Enter_StandbyMode(uint8_t hours, uint8_t minutes);
 void DWT_Init(void);
+void Enter_StandbyMode_NoWakeup(void);

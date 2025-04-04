@@ -9,11 +9,11 @@
 #include "string.h"
 #include "stdbool.h"
 
-/* Р’РЅРµС€РЅРёРµ РїРµСЂРµРјРµРЅРЅС‹Рµ, РѕРїСЂРµРґРµР»С‘РЅРЅС‹Рµ РІ РґСЂСѓРіРѕРј С„Р°Р№Р»Рµ */
+/* Внешние переменные, определённые в другом файле */
 extern FATFS SDFatFS;
 extern SD_HandleTypeDef hsd1;
 extern FIL SDFile;
-extern char SDPath[4]; // РџСЂРµРґРїРѕР»РѕР¶РёРј, С‡С‚Рѕ Р·РґРµСЃСЊ Р»РµР¶РёС‚ "0:"
+extern char SDPath[4]; // Предположим, что здесь лежит "0:"
 
 
 extern RTC_TimeTypeDef Time;
@@ -29,28 +29,28 @@ void format_uint8_t_2(char *buffer, size_t size, uint8_t data) {
 
 void base62_encode(uint64_t value, char *buffer, size_t bufferSize) {
     if (bufferSize < 12) {
-        // РќРµРґРѕСЃС‚Р°С‚РѕС‡РЅРѕ РјРµСЃС‚Р° РІ Р±СѓС„РµСЂРµ
+        // Недостаточно места в буфере
         return;
     }
 
     char result[12];
     result[11] = '\0';
 
-    // РђР»С„Р°РІРёС‚ Base62: С†РёС„СЂС‹, Р·Р°РіР»Р°РІРЅС‹Рµ Рё СЃС‚СЂРѕС‡РЅС‹Рµ Р±СѓРєРІС‹.
+    // Алфавит Base62: цифры, заглавные и строчные буквы.
     const char *alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
-    int pos = 10;  // РРЅРґРµРєСЃ РґР»СЏ Р·Р°РїРѕР»РЅРµРЅРёСЏ СЃ РєРѕРЅС†Р° (11 СЃРёРјРІРѕР»РѕРІ, РёРЅРґРµРєСЃС‹ 0..10, РіРґРµ 10 вЂ“ РїРѕСЃР»РµРґРЅРёР№ СЃРёРјРІРѕР» РґРѕ '\0')
+    int pos = 10;  // Индекс для заполнения с конца (11 символов, индексы 0..10, где 10 – последний символ до '\0')
     do {
         result[pos--] = alphabet[value % 62];
         value /= 62;
     } while (value > 0);
 
-    // Р•СЃР»Рё С‡РёСЃР»Рѕ РјРµРЅСЊС€Рµ РјР°РєСЃРёРјР°Р»СЊРЅРѕРіРѕ, Р·Р°РїРѕР»РЅРёРј РѕСЃС‚Р°РІС€РёРµСЃСЏ РїРѕР·РёС†РёРё РІРµРґСѓС‰РёРјРё '0'
+    // Если число меньше максимального, заполним оставшиеся позиции ведущими '0'
     while (pos >= 0) {
         result[pos--] = '0';
     }
 
-    // РљРѕРїРёСЂСѓРµРј СЂРµР·СѓР»СЊС‚Р°С‚ РІ РІС‹С…РѕРґРЅРѕР№ Р±СѓС„РµСЂ
+    // Копируем результат в выходной буфер
     strncpy(buffer, result, bufferSize);
 }
 
@@ -63,7 +63,7 @@ int containsRussian(const char *str) {
     while (*str) {
         unsigned char ch = (unsigned char)*str;
         if (ch >= 0xC0 && ch <= 0xFF) {
-            return 1; // РќР°Р№РґРµРЅ СЂСѓСЃСЃРєРёР№ СЃРёРјРІРѕР»
+            return 1; // Найден русский символ
         }
         str++;
     }
@@ -85,8 +85,8 @@ void Collect_DATA(){
     HAL_RTC_GetTime(&hrtc, &Time, RTC_FORMAT_BIN);
     base62_encode(ERRCODE.STATUS, ERRCODE.STATUSCHAR, sizeof(ERRCODE.STATUSCHAR));
 
-    // Р•СЃР»Рё РІ ADC_data.ADC_SI_value_char РёР»Рё ADC_data.ADC_SI_value_correct_char СЃРѕРґРµСЂР¶Р°С‚СЃСЏ СЂСѓСЃСЃРєРёРµ СЃРёРјРІРѕР»С‹,
-    // Р·Р°РјРµРЅСЏРµРј РёС… РЅР° "cable break"
+    // Если в ADC_data.ADC_SI_value_char или ADC_data.ADC_SI_value_correct_char содержатся русские символы,
+    // заменяем их на "cable break"
     if (containsRussian(ADC_data.ADC_SI_value_char) || containsRussian(ADC_data.ADC_SI_value_correct_char)) {
         strcpy(ADC_data.ADC_SI_value_char, CableB);
         strcpy(ADC_data.ADC_SI_value_correct_char, CableB);
@@ -94,21 +94,21 @@ void Collect_DATA(){
     
     snprintf(save_data, CMD_BUFFER_SIZE,
         "[%s;%s;%s;%s;%s;%s;%s;%s;%02d:%02d%s%02d/%02d/%02d;%s;%s;%u;%u]",
-        EEPROM.version.VERSION_PCB,                // СЃС‚СЂРѕРєР°
-        EEPROM.version.password,                   // СЃС‚СЂРѕРєР°
-        ADC_data.ADC_value_char,                   // СЃС‚СЂРѕРєР°
-        ADC_data.ADC_SI_value_char,                // СЃС‚СЂРѕРєР° (РІРѕР·РјРѕР¶РЅРѕ Р·Р°РјРµРЅС‘РЅРЅР°СЏ)
-        ADC_data.ADC_SI_value_correct_char,        // СЃС‚СЂРѕРєР° (РІРѕР·РјРѕР¶РЅРѕ Р·Р°РјРµРЅС‘РЅРЅР°СЏ)
-        IntADC.ADC_AKB_volts_char,                 // СЃС‚СЂРѕРєР°
-        IntADC.ADC_AKB_Proc_char,                  // СЃС‚СЂРѕРєР°
-        ERRCODE.STATUSCHAR,                        // СЃС‚СЂРѕРєР°
-        Time.Hours, Time.Minutes,     // РІСЂРµРјСЏ (С‡Р°СЃС‹, РјРёРЅСѓС‚С‹, СЃРµРєСѓРЅРґС‹)
+        EEPROM.version.VERSION_PCB,                // строка
+        EEPROM.version.password,                   // строка
+        ADC_data.ADC_value_char,                   // строка
+        ADC_data.ADC_SI_value_char,                // строка (возможно заменённая)
+        ADC_data.ADC_SI_value_correct_char,        // строка (возможно заменённая)
+        IntADC.ADC_AKB_volts_char,                 // строка
+        IntADC.ADC_AKB_Proc_char,                  // строка
+        ERRCODE.STATUSCHAR,                        // строка
+        Time.Hours, Time.Minutes,     // время (часы, минуты, секунды)
         "-",
-        Date.Date, Date.Month, Date.Year,          // РґР°С‚Р° (РґРµРЅСЊ, РјРµСЃСЏС†, РіРѕРґ)
-        "0",                                       // time_sleep_mode РІСЃРµРіРґР° "0"
+        Date.Date, Date.Month, Date.Year,          // дата (день, месяц, год)
+        "0",                                       // time_sleep_mode всегда "0"
         "0", 
-        EEPROM.time_sleep_m,                       // С‡РёСЃР»Рѕ
-        EEPROM.time_sleep_h);                      // С‡РёСЃР»Рѕ
+        EEPROM.time_sleep_m,                       // число
+        EEPROM.time_sleep_h);                      // число
         remove_whitespace(save_data);
 }
 
@@ -117,6 +117,6 @@ void SETTINGS_REQUEST_DATA(){
     
     snprintf(save_data, CMD_BUFFER_SIZE,
     "[%s;%s]",
-    EEPROM.version.VERSION_PCB,              // СЃС‚СЂРѕРєР°
-    EEPROM.version.password);                      // С‡РёСЃР»Рѕ
+    EEPROM.version.VERSION_PCB,              // строка
+    EEPROM.version.password);                      // число
 }
