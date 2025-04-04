@@ -47,7 +47,7 @@ char trans_str[11];
 
 extern char Keyboard_press_code;
 extern int ADC_AKB_Proc;
-
+extern const char VERSION_PROGRAMM[20];
 
 const int max_munu_in_page = 4; // максимальное количество пунктов меню на странице видимое (+1)
 int select_menu_in_page = 0;    // метущий пункт менюc
@@ -63,7 +63,6 @@ uint8_t Intermediate = 0;           // Промежуточная переменная, куда сохраняетс
 #define font my5x7fonts
 
 extern char ver_board[];
-extern const char VERSION_PROGRAMM[10];
 extern char time_work_char[];
 
 menuItem Null_Menu = {{0}, {0}, 0, "", '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0'};
@@ -514,7 +513,7 @@ MAKE_MENU(Menu_2, "Настройки", "Settings", 0, UPTADE_OFF, NO_SIGNED, Menu_3, Men
 	MAKE_MENU(Menu_2_18, "Сброс настроек", "Factory reset", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_17, Menu_2, CHILD_MENU, Reset_settings, SELECT_BAR, DATA_IN, DATA_OUT);
 MAKE_MENU(Menu_3, "Сведения", "Info", 0, UPTADE_OFF, NO_SIGNED, Menu_4, Menu_2, PARENT_MENU, Menu_3_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
 	MAKE_MENU(Menu_3_1, "Сер. ном.", "Ser. Number", 0, UPTADE_OFF, NO_SIGNED, Menu_3_2, PREVISION_MENU, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, EEPROM.version.VERSION_PCB);
-	MAKE_MENU(Menu_3_2, "Вер. ПО", "Software version", 0, UPTADE_OFF, NO_SIGNED, Menu_3_3, Menu_3_1, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, EEPROM.version.VERSION_PROGRAMM);
+	MAKE_MENU(Menu_3_2, "Вер. ПО", "Software version", 0, UPTADE_OFF, NO_SIGNED, Menu_3_3, Menu_3_1, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, VERSION_PROGRAMM);
 	MAKE_MENU(Menu_3_3, "Время работы", "Elapsed time", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_3_2, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, EEPROM.version.time_work_char);
 MAKE_MENU(Menu_4, "Инструкция", "Instruction", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_3, PARENT_MENU, CHILD_MENU, Instruction, SELECT_BAR, DATA_IN, DATA_OUT);
 
@@ -910,8 +909,7 @@ void ALL_Reset_settings(){
     EEPROM_Settings_item EEPROM_RESET = {
         .version = {
             // Текущая версия устройства
-            .VERSION_PROGRAMM = "0.15b", // Версия программы
-            .VERSION_PCB = "3.75-A001V",    // Версия печатной платы
+            .VERSION_PCB = "3.75-A000D",    // Версия печатной платы
             .password = "1234",
             .time_work_char = "0",       // Время работы в виде строки
         },

@@ -47,7 +47,6 @@ extern "C"
 
   typedef struct Prgramm_version
   {
-    char VERSION_PROGRAMM[10];
     char VERSION_PCB[11];
     char password[10];
     char time_work_char[10];

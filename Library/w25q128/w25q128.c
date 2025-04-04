@@ -697,7 +697,7 @@ int backup_records_to_external(void)
 void createFilename(char *dest, size_t destSize)
 {
     // Предполагаем, что EEPROM.version.VERSION_PCB существует
-    const char *version = EEPROM.version.VERSION_PCB; // напр. "3.75-A001V"
+    const char *version = EEPROM.version.VERSION_PCB; // напр. "3.75-A000D"
     char tmp[32];
     int j = 0;
 
