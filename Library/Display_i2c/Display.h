@@ -22,6 +22,7 @@ extern "C"
 #include "Status_codes.h"
 #include "Internal_ADC.h"
 #include "w25q128.h"
+#include "Settings_default.h"
 
 extern osThreadId_t  ADC_readHandle;
 extern osThreadId_t  ERROR_INDICATE_taskHandle;

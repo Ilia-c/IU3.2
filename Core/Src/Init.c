@@ -379,14 +379,6 @@ void PeriphCommonClock_Config(void)
   */
  void MX_I2C2_Init(void)
  {
- 
-   /* USER CODE BEGIN I2C2_Init 0 */
- 
-   /* USER CODE END I2C2_Init 0 */
- 
-   /* USER CODE BEGIN I2C2_Init 1 */
- 
-   /* USER CODE END I2C2_Init 1 */
    hi2c2.Instance = I2C2;
    hi2c2.Init.Timing = 0x00F12981;
    hi2c2.Init.OwnAddress1 = 0;
@@ -400,21 +392,14 @@ void PeriphCommonClock_Config(void)
    {
      Error_Handler();
    }
- 
-   /** Configure Analogue filter
-   */
    if (HAL_I2CEx_ConfigAnalogFilter(&hi2c2, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
    {
      Error_Handler();
    }
- 
-   /** Configure Digital filter
-   */
-   if (HAL_I2CEx_ConfigDigitalFilter(&hi2c2, 0) != HAL_OK)
+   if (HAL_I2CEx_ConfigDigitalFilter(&hi2c2, 2) != HAL_OK)
    {
      Error_Handler();
    }
- 
  }
  
  

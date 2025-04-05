@@ -236,10 +236,6 @@ int waitForHTTPResponse()
     {
         if (s == 200)
             return 1;
-        if (s == 403){
-            ERRCODE.STATUS |= STATUS_HTTP_WRONG_PASSWORD_ERROR;
-            return -1;
-        }
         return 0; // Успешно получен и разобран ответ
     }
     while ((xTaskGetTickCount() - startTick) < timeoutTicks)
@@ -250,10 +246,6 @@ int waitForHTTPResponse()
             {
                 if (s == 200)
                     return 1;
-                if (s == 403){
-                    ERRCODE.STATUS |= STATUS_HTTP_WRONG_PASSWORD_ERROR;
-                    return -1;
-                }
                 return 0; // Успешно получен и разобран ответ
             }
         }
@@ -280,7 +272,7 @@ int sendSMS(void)
     if (SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000) != 1)
     {
     };
-    if (SendCommandAndParse("AT+CGACT=0\r", waitForOKResponse, 1000) != 1)
+    if (SendCommandAndParse("AT+CGACT=0\r", waitForOKResponse, 60000) != 1)
     {
     };
     if (SendCommandAndParse("AT+CGDCONT=1\r", waitForOKResponse, 1000) != 1)
@@ -314,7 +306,7 @@ int sendSMS(void)
             continue;
         }
         HAL_UART_Transmit(&huart4, save_data, strlen(save_data), 1000);
-
+        osDelay(30000);
         // Если все команды выполнены успешно, считаем, что SMS отправлена
         smsSent = 1;
         break;
@@ -358,26 +350,21 @@ int sendHTTP(void) {
         osDelay(100);
         // Выполнение HTTPACTION, проверка ответа
         int res = SendCommandAndParse("AT+HTTPACTION=0\r", waitForHTTPResponse, 30000);
-        if (res == -1) {
-            // Значит доступ запрещен, вероятно неверный пароль
-            SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 120000);
+        if (ERRCODE.STATUS & STATUS_HTTP_WRONG_PASSWORD_ERROR) {
+            // Неверный пароль код 403
+            SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 12000);
             break;
         }
         if (res == 0){
-            // Если ошибка
             goto http_error_1;
         }
-        osDelay(1000);
+
         int readResult = SendCommandAndParse("AT+HTTPREAD=0,200\r", waitAndParseSiteResponse, 1000);
-        if (readResult != 1) {
-            readResult = SendCommandAndParse("AT+HTTPREAD=0,200\r", waitAndParseSiteResponse, 1000);
-        }
-        osDelay(100);
-        // После попыток, вне зависимости от результата, завершаем HTTP сессию
-        SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 120000);
+        SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 12000);
+
+        if (ERRCODE.STATUS & STATUS_HTTP_NO_BINDING_ERROR) break;
         // Если данные так и не получены, считаем попытку неуспешной
-        if (readResult != 1) {
-            ERRCODE.STATUS |= STATUS_UART_NO_RESPONSE;
+        if (readResult != 1){
             ERRCODE.STATUS |= STATUS_HTTP_SERVER_COMM_ERROR;
             goto http_error_1;
         }
@@ -388,13 +375,13 @@ int sendHTTP(void) {
 http_error_1:
     SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000);
     osDelay(500);
-    SendCommandAndParse("AT+CGACT=0\r", waitForOKResponse, 1000);
+    SendCommandAndParse("AT+CGACT=0\r", waitForOKResponse, 60000);
     osDelay(500);
     SendCommandAndParse("AT+CGDCONT=1\r", waitForOKResponse, 1000);
     osDelay(500);
     SendCommandAndParse("AT+CGDCONT=1,\"IP\",\"internet.mts.ru\"\r", waitForOKResponse, 1000);
     osDelay(500);
-    SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 1000);
+    SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 60000);
     osDelay(500);
     SendCommandAndParse("AT+CDNSCFG=\"8.8.8.8\",\"77.88.8.8\"\r", waitForOKResponse, 1000);
     osDelay(5000); // Задержка 5 секунд перед следующей попыткой
@@ -426,22 +413,6 @@ int READ_Settings_sendHTTP(void) {
 
 
     for (attempt = 0; attempt < MAX_HTTP_ATTEMPTS; attempt++) {
-        // Предварительная очистка состояния перед началом
-        //SendCommandAndParse("AT+HTTPTERM\r", parse_ERROR_OK, 1000);
-        //SendCommandAndParse("AT+CGACT=0\r", parse_ERROR_OK, 1000);
-        //SendCommandAndParse("AT+CGDCONT=1\r", parse_ERROR_OK, 1000);
-        // Начало настройки соединения
-        /*
-        if (SendCommandAndParse("AT+CGDCONT=1,\"IP\",\"internet.mts.ru\"\r", waitForOKResponse, 1000) != 1) {
-            goto http_error_2;
-        }
-        if (SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 1000) != 1) {
-            goto http_error_2;
-        }
-        if (SendCommandAndParse("AT+CDNSCFG=\"8.8.8.8\",\"77.88.8.8\"\r", waitForOKResponse, 1000) != 1) {
-            goto http_error_2;
-        } 
-        */
         if (SendCommandAndParse("AT+HTTPINIT\r", waitForOKResponse, 1000) != 1) {
             goto http_error_2;
         }
@@ -458,26 +429,25 @@ int READ_Settings_sendHTTP(void) {
         osDelay(100);
         // Выполнение HTTPACTION, проверка ответа
         int res = SendCommandAndParse("AT+HTTPACTION=0\r", waitForHTTPResponse, 30000);
-        if (res == -1) {
-            // Значит доступ запрещен, вероятно неверный пароль
+        if (ERRCODE.STATUS & STATUS_HTTP_WRONG_PASSWORD_ERROR) {
+            // Неверный пароль код 403
             SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 120000);
             break;
         }
         if (res == 0){
-            // Если ошибка
             goto http_error_2;
         }
-        osDelay(2000);
+        osDelay(1000);
         int readResult = SendCommandAndParse("AT+HTTPREAD=0,200\r", waitAndParseSiteResponse, 1000);
-        if (readResult != 1) {
-            readResult = SendCommandAndParse("AT+HTTPREAD=0,200\r", waitAndParseSiteResponse, 1000);
+        SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 120000);
+
+        if (ERRCODE.STATUS & STATUS_HTTP_NO_BINDING_ERROR){
+            httpSent = 1;
+            break;
         }
-        osDelay(200);
-        // После попыток, вне зависимости от результата, завершаем HTTP сессию
-        SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000);
         // Если данные так и не получены, считаем попытку неуспешной
         if (readResult != 1) {
-            ERRCODE.STATUS |= STATUS_UART_NO_RESPONSE;
+            ERRCODE.STATUS |= STATUS_HTTP_SERVER_COMM_ERROR;
         }
         
         // Если до сюда дошли, значит все команды выполнены успешно
@@ -488,13 +458,13 @@ http_error_2:
         // В случае ошибки выполняем «очистку» состояния:
         SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000);
         osDelay(500);
-        SendCommandAndParse("AT+CGACT=0\r", waitForOKResponse, 1000);
+        SendCommandAndParse("AT+CGACT=0\r", waitForOKResponse, 60000);
         osDelay(500);
         SendCommandAndParse("AT+CGDCONT=1\r", waitForOKResponse, 1000);
         osDelay(500);
         SendCommandAndParse("AT+CGDCONT=1,\"IP\",\"internet.mts.ru\"\r", waitForOKResponse, 1000); 
         osDelay(500);
-        SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 1000);
+        SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 60000);
         osDelay(500);
         SendCommandAndParse("AT+CDNSCFG=\"8.8.8.8\",\"77.88.8.8\"\r", waitForOKResponse, 1000);
         osDelay(5000);  // Задержка 5 секунд перед следующей попыткой
@@ -645,6 +615,10 @@ int waitAndParseSiteResponse(void)
         ERRCODE.STATUS |= STATUS_HTTP_NO_BINDING_ERROR;
         return 0;
     }
+    if (strstr(parseBuffer, "INCORRECT_PASSWORD") != NULL) {
+        ERRCODE.STATUS |= STATUS_HTTP_WRONG_PASSWORD_ERROR;
+        return 0;
+    }
     char *start = strchr(parseBuffer, '[');
     if (start != NULL && strchr(start, ']') != NULL) {
         int res = parse_site_response();
@@ -660,6 +634,10 @@ int waitAndParseSiteResponse(void)
             // При каждом получении новых данных проверяем:
             if (strstr(parseBuffer, "NO_BINDING") != NULL) {
                 ERRCODE.STATUS |= STATUS_HTTP_NO_BINDING_ERROR;
+                return 0;
+            }
+            if (strstr(parseBuffer, "INCORRECT_PASSWORD") != NULL) {
+                ERRCODE.STATUS |= STATUS_HTTP_WRONG_PASSWORD_ERROR;
                 return 0;
             }
             start = strchr(parseBuffer, '[');

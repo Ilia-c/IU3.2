@@ -53,7 +53,7 @@
 #define OLED_SET_COM_PINS								0xDA
 #define OLED_CHARGE_PUMP								0x8D
 // Timing & Driving Scheme Setting Commands
-#define OLED_SET_DISPLAY_CLOCK_DIV_RATIO				0x80
+#define OLED_SET_DISPLAY_CLOCK_DIV_RATIO				0xD5
 #define OLED_SET_PRECHARGE_PERIOD						0xD9  // 0xD9
 #define OLED_SET_VCOM_DESELECT							0xDB // 0xDB
 

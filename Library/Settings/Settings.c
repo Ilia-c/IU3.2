@@ -16,48 +16,48 @@ char save_data[CMD_BUFFER_SIZE] __attribute__((section(".ram2"))); // Переменная
 ////////////////////////////////////////////////////////////////////////////////
 // Глобальная структура настроек, сохраняемых в EEPROM
 ////////////////////////////////////////////////////////////////////////////////
-const char VERSION_PROGRAMM[20] = "Ver0.45";
+const char VERSION_PROGRAMM[20] = DEFAULT_VERSION_PROGRAMM;
 EEPROM_Settings_item EEPROM = {
     .version = {
         // Текущая версия устройства
-        .VERSION_PCB = "3.75-A000D",    // Версия печатной платы
-        .password = "1234",
-        .time_work_char = "0",       // Время работы в виде строки
+        .VERSION_PCB = DEFAULT_VERSION_PCB,    // Версия печатной платы
+        .password = DEFAULT_PASSWORD,
+        .time_work_char = DEFAULT_TIME_WORK_CHAR, // Время работы в виде строки
     },
-    .last_error_code = {0x00, 0x00, 0x00, 0x00}, // Последний код ошибки
-    .time_work_h = 0,                            // Время работы устройства (часы)
-    .time_work_m = 0,                            // Время работы устройства (минуты)
+    .last_error_code = DEFAULT_LAST_ERROR_CODE, // Последний код ошибки
+    .time_work_h = DEFAULT_TIME_WORK_H,         // Время работы устройства (часы)
+    .time_work_m = DEFAULT_TIME_WORK_M,         // Время работы устройства (минуты)
 
     // Вводимые данные:
-    .time_sleep_h = 1, // Время сна устройства (часы)
-    .time_sleep_m = 0, // Время сна устройства (минуты)
+    .time_sleep_h = DEFAULT_TIME_SLEEP_H,        // Время сна устройства (часы)
+    .time_sleep_m = DEFAULT_TIME_SLEEP_M,        // Время сна устройства (минуты)
 
-    .Phone = "+79150305966",
+    .Phone = DEFAULT_PHONE,
 
     // Параметры АЦП:
-    .ADC_ION = 1.17,     // Напряжение ИОН АЦП
-    .ADC_RESISTOR = 49.99, // Сопротивление резистора
-    .GVL_correct = 0,    // Коррекция нулевой точки (смещение ± от текущего значения) УГВ
-    .k_koeff = 0,        // Коэффициэнт наклона линейной зависимости (по 2 точкам, 20мА и 4мА)
-    .MAX_LVL = 15,       // Максимальный уровень (например, 15 метров) ВПИ
-    .ZERO_LVL = 0,       // Нулевое значение (например, 0 метров) НПИ
-    .GVL_correct_4m = 0.004,    // Реальные 4мА
-    .GVL_correct_20m = 0.02,   // Реальные 20мА
+    .ADC_ION = DEFAULT_ADC_ION,                  // Напряжение ИОН АЦП
+    .ADC_RESISTOR = DEFAULT_ADC_RESISTOR,        // Сопротивление резистора
+    .GVL_correct = DEFAULT_GVL_CORRECT,          // Коррекция нулевой точки (смещение ± от текущего значения) УГВ
+    .k_koeff = DEFAULT_K_KOEFF,                  // Коэффициэнт наклона линейной зависимости (по 2 точкам, 20мА и 4мА)
+    .MAX_LVL = DEFAULT_MAX_LVL,                  // Максимальный уровень (например, 15 метров) ВПИ
+    .ZERO_LVL = DEFAULT_ZERO_LVL,                // Нулевое значение (например, 0 метров) НПИ
+    .GVL_correct_4m = DEFAULT_GVL_CORRECT_4M,     // Реальные 4мА
+    .GVL_correct_20m = DEFAULT_GVL_CORRECT_20M,   // Реальные 20мА
     // Коррекция температуры (смещение):
-    .Crorrect_TEMP_A = 0, // Смещение датчика аналоговой температуры
-    .Colibrate_koeff = 10.81, // Коэффициэнт калибровки 24 вольт
+    .Crorrect_TEMP_A = DEFAULT_CRORRECT_TEMP_A,  // Смещение датчика аналоговой температуры
+    .Colibrate_koeff = DEFAULT_COLIBRATE_KOEFF,    // Коэффициэнт калибровки 24 вольт
 
     // Параметры select_bar:
-    .Mode = 0,              // Текущий режим работы (0 - режим текущие показания, 1 - циклический режим 2 - режим выставки)
-    .Communication = 1,     // Включен GSM или нет
-    .RS485_prot = 0,        // Протокол RS-485
-    .units_mes = 1,         // Единицы измерения (по умолчанию метры)
-    .screen_sever_mode = 1, // Включить или нет заставку при включении
-    .USB_mode = 0,          // Режим работы USB
-    .Save_in = 0,          // Куда сохранять данные 0 - FLASH, 1 - SD, 2 - USB, 3 - Сайт
-    .len = 0,               // Язык меню
-    .mode_ADC = 0,           // Режим работы АЦП, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
-    .block = 0              // Блокировка устройства 1 - заблокировано 0 - разблокировано
+    .Mode = DEFAULT_MODE,                        // Текущий режим работы (0 - режим текущие показания, 1 - циклический режим, 2 - режим выставки)
+    .Communication = DEFAULT_COMMUNICATION,      // Включен GSM или нет
+    .RS485_prot = DEFAULT_RS485_PROT,              // Протокол RS-485
+    .units_mes = DEFAULT_UNITS_MES,                // Единицы измерения (по умолчанию метры)
+    .screen_sever_mode = DEFAULT_SCREEN_SEVER_MODE, // Включить или нет заставку при включении
+    .USB_mode = DEFAULT_USB_MODE,                  // Режим работы USB
+    .Save_in = DEFAULT_SAVE_IN,                    // Куда сохранять данные: 0 - FLASH, 1 - SD, 2 - USB, 3 - Сайт
+    .len = DEFAULT_LEN,                            // Язык меню
+    .mode_ADC = DEFAULT_MODE_ADC,                  // Режим работы АЦП, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
+    .block = DEFAULT_BLOCK                         // Блокировка устройства: 1 - заблокировано, 0 - разблокировано
 };
 ////////////////////////////////////////////////////////////////////////////////
 // Описание структуры ERRCODE

@@ -10,7 +10,7 @@ extern "C"
 #include "RTC_data.h"
 #include "MS5193T.h"
 #include "GSM.h"
-
+#include "Settings_default.h"
 
 
 // define для режима работы

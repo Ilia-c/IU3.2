@@ -101,13 +101,13 @@ void HAL_TIM5_Callback(void);
 osThreadId_t MainHandle;
 const osThreadAttr_t Main_attributes = {
     .name = "Main",
-    .stack_size = 512 * 3,
+    .stack_size = 512 * 4,
     .priority = (osPriority_t)osPriorityHigh5,
 };
 osThreadId_t Main_Cycle_taskHandle;
 const osThreadAttr_t Main_Cycle_task_attributes = {
     .name = "Main_Cycle_task",
-    .stack_size = 1024 * 3,
+    .stack_size = 1024 * 4,
     .priority = (osPriority_t)osPriorityHigh5,
 };
 
@@ -115,7 +115,7 @@ const osThreadAttr_t Main_Cycle_task_attributes = {
 osThreadId_t Display_I2CHandle;
 const osThreadAttr_t Display_I2C_attributes = {
     .name = "Display_I2C",
-    .stack_size = 1024 * 3,
+    .stack_size = 1024 * 4,
     .priority = (osPriority_t)osPriorityHigh,
 };
 /* Definitions for ADC_read */
@@ -144,28 +144,28 @@ const osThreadAttr_t Keyboard_task_attributes = {
 osThreadId_t USB_COM_taskHandle;
 const osThreadAttr_t USB_COM_task_attributes = {
     .name = "USB_COM_task",
-    .stack_size = 512 * 3,
+    .stack_size = 512 * 4,
     .priority = (osPriority_t)osPriorityLow2,
 };
 
 osThreadId_t  ERROR_INDICATE_taskHandle;
 const osThreadAttr_t Erroe_indicate_task_attributes = {
     .name = "Erroe_indicate_task",
-    .stack_size = 1024 * 1,
+    .stack_size = 1024 * 2,
     .priority = (osPriority_t)osPriorityLow1,
 };
 
 osThreadId_t  UART_PARSER_taskHandle;
 const osThreadAttr_t UART_PARSER_task_attributes = {
     .name = "UART_PARSER_task",
-    .stack_size = 1024 * 3,
+    .stack_size = 1024 * 4,
     .priority = (osPriority_t)osPriorityHigh4,
 };
 
 osThreadId_t WATCDOG_taskHandle;
 const osThreadAttr_t WATCDOG_task_attributes = {
     .name = "Watch_dog_task",
-    .stack_size = 1024 * 1,
+    .stack_size = 1024 * 2,
     .priority = (osPriority_t)osPriorityHigh3,
 };
 
@@ -269,8 +269,7 @@ int main(void)
       }
     }
   }
-  //EEPROM.Mode = 0;
-
+  
   uint32_t value = HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_INDEX_RESET_PROG);
   if (value == DATA_RESET_PROG){  
     // Если сброс из перехода в цикл
@@ -337,11 +336,10 @@ int main(void)
     MX_IWDG_Init();
     #endif
     HAL_IWDG_Refresh(&hiwdg);
-    //HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 1); // Включение датчика давления и !!!  измерение текущего напряжения питания 1:10
     HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 1); // Включаем экран
-    HAL_Delay(50);
+    HAL_Delay(300);
     OLED_Init(&hi2c2);
-    HAL_Delay(20);
+    HAL_Delay(150);
 
     if (EEPROM.screen_sever_mode == 1) Start_video();
 
@@ -570,13 +568,10 @@ void Main_Cycle(void *argument)
         {
           if (GSM_data.Status & HTTP_READ_Successfully)
           {
-            status = 1;
             break;
           }
           if (ERRCODE.STATUS & STATUS_HTTP_SERVER_COMM_ERROR)
           {
-
-            status = 0;
             break;
           }
           osDelay(500);
@@ -656,6 +651,7 @@ void Main_Cycle(void *argument)
         }
         if ((ERRCODE.STATUS & STATUS_HTTP_SERVER_COMM_ERROR) || (status == 0))
         {
+          GSM_data.Status &= ~HTTP_SEND;
           GSM_data.Status |= SMS_SEND;
           for (int i = 0; i < 60; i++)
           {
@@ -918,25 +914,8 @@ void UART_PARSER_task(void *argument)
   GSM_Init();
   for (;;)
   {
-    osDelay(5000);
-    if (EEPROM.Mode == 0)
-    {
-      if (!(GSM_data.Status & SMS_SEND))
-      {
-        strcpy(GSM_data.GSM_sms_status, "");
-      }
-      if (!(GSM_data.Status & HTTP_READ))
-      {
-        strcpy(GSM_data.GSM_site_read_status, "");
-      }
-      if (!(GSM_data.Status & HTTP_SEND))
-      {
-        strcpy(GSM_data.GSM_site_status, "");
-      }
-    }
-
     // Если GSM должен быть включен
-    if ((EEPROM.Communication == 1) && (EEPROM.Mode != 1))
+    if ((EEPROM.Communication == 1))
     {
       // Если GSM был выключен
       if (HAL_GPIO_ReadPin(EN_3P8V_GPIO_Port, EN_3P8V_Pin) == 0)
@@ -954,6 +933,23 @@ void UART_PARSER_task(void *argument)
       HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
       continue;
     }
+    osDelay(5000);
+    if (EEPROM.Mode == 0)
+    {
+      if (!(GSM_data.Status & SMS_SEND))
+      {
+        strcpy(GSM_data.GSM_sms_status, "");
+      }
+      if (!(GSM_data.Status & HTTP_READ))
+      {
+        strcpy(GSM_data.GSM_site_read_status, "");
+      }
+      if (!(GSM_data.Status & HTTP_SEND))
+      {
+        strcpy(GSM_data.GSM_site_status, "");
+      }
+    }
+
     // if (EEPROM.Mode != 0) osThreadSuspend(SIM800_dataHandle); // Остановить, если циклический режим (для однократного выполнения)
 
     if ((!(GSM_data.Status & GSM_RDY)) && (EEPROM.USB_mode != 2))
@@ -993,7 +989,7 @@ void UART_PARSER_task(void *argument)
     if (GSM_data.Status & NETWORK_REGISTERED_SET_HTTP){
       GSM_data.Status&=~NETWORK_REGISTERED_SET_HTTP;
       SendCommandAndParse("AT+CGDCONT=1,\"IP\",\"internet.mts.ru\"\r", waitForOKResponse, 1000); 
-      SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 150000);
+      SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 60000);
       SendCommandAndParse("AT+CDNSCFG=\"8.8.8.8\",\"77.88.8.8\"\r", waitForOKResponse, 1000);
     }
 
@@ -1064,8 +1060,10 @@ void UART_PARSER_task(void *argument)
       else
       {
         if (EEPROM.Mode == 0)
+        {
           strcpy(GSM_data.GSM_site_read_status, "ERR");
-        if (EEPROM.Mode == 0) xSemaphoreGive(Display_semaphore);
+          xSemaphoreGive(Display_semaphore);
+        }
         ERRCODE.STATUS |= STATUS_HTTP_SERVER_COMM_ERROR;
       }
     }
