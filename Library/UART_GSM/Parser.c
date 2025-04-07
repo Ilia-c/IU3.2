@@ -17,22 +17,9 @@ int SendCommandAndParse(const char *command_in, int (*parser)(), uint32_t timeou
     GSM_data.Status |= DATA_READ;
     osDelay(10);
     HAL_UART_Transmit(&huart4, (uint8_t *)command_in, strlen(command_in), 1000);
-
-    // Сбрасываем висящий семафор, если он есть
-    xSemaphoreTake(UART_PARSER_semaphore, 0);
-
-    // Ждём прихода данных (по прерыванию) до заданного таймаута
-    if (xSemaphoreTake(UART_PARSER_semaphore, timeout) == pdFALSE)
-    {
-        // Не дождались завершения приёма в течение timeout
-        GSM_data.Status &= ~DATA_READ;
-        return -1; 
-    }
-
+    
     // Здесь parseBuffer уже содержит принятые данные (полностью или частично)
-    // Вызываем парсер, который ищет OK/ERROR/что угодно
-    int result = 0;
-    if (parser != NULL) result = parser();  // ваш parse_ERROR_OK или любой другой
+    int result = parser(timeout);  // ваш parse_ERROR_OK или любой другой
 
     // После разбора можно отключить приём
     GSM_data.Status &= ~DATA_READ;
@@ -40,141 +27,183 @@ int SendCommandAndParse(const char *command_in, int (*parser)(), uint32_t timeou
     return result;
 }
 
-void ND(){
-    osDelay(100);
-}
 
-int parse_CPIN()
+int waitForCPINResponse(uint32_t timeout)
 {
-    if (strstr(parseBuffer, "+CPIN:READY") != NULL){
-        GSM_data.Status |= SIM_PRESENT;
-        ERRCODE.STATUS &= ~STATUS_GSM_NO_SIM;
-        return 1;
+    TickType_t startTick = xTaskGetTickCount();
+    TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
+
+    while ((xTaskGetTickCount() - startTick) < timeoutTicks)
+    {
+        if (xSemaphoreTake(UART_PARSER_semaphore, pdMS_TO_TICKS(100)) == pdTRUE)
+        {
+            if (strstr(parseBuffer, "+CPIN:READY") != NULL)
+            {
+                GSM_data.Status |= SIM_PRESENT;
+                ERRCODE.STATUS &= ~STATUS_GSM_NO_SIM;
+                return 1; 
+            }
+            if (strstr(parseBuffer, "ERROR") != NULL ||
+                strstr(parseBuffer, "+CME ERROR") != NULL)
+            {
+                GSM_data.Status &= ~SIM_PRESENT;
+                ERRCODE.STATUS |= STATUS_GSM_NO_SIM;
+                return 0;
+            }
+        }
     }
     GSM_data.Status &= ~SIM_PRESENT;
     ERRCODE.STATUS |= STATUS_GSM_NO_SIM;
-    return 0;
+    return -1;  // Таймаут
 }
 
-int parse_CSQ(void)
-{
-    int16_t rssi, ber;
-    // Ищем в буфере подстроку "+CSQ:"
-    char *p = strstr(parseBuffer, "+CSQ:");
-    if (p != NULL)
-    {
-        // Смещаем указатель за "+CSQ:" и пропускаем возможные пробелы
-        p += strlen("+CSQ:");
-        while (*p == ' ' || *p == '\t')
-        {
-            p++;
-        }
-        
-        // Пытаемся разобрать два числовых значения (16-битных), разделённых запятой
-        if (sscanf(p, "%hd,%hd", &rssi, &ber) == 2)
-        {
-            //rssi - качество сигнала 0-31, 99
-            //ber - уровень ошибок 0-7, 99
-            GSM_data.GSM_Signal_Level = rssi;
-            GSM_data.GSM_Signal_Errors = ber;
 
-            if (GSM_data.GSM_Signal_Level <= 5) ERRCODE.STATUS |= STATUS_GSM_SIGNEL_ERROR;
-            else ERRCODE.STATUS &= ~STATUS_GSM_SIGNEL_ERROR;
-            return 1;
-        }
-    }
-    return -1;
-}
-int parse_CEREG(void)
+int waitForCSQResponse(uint32_t timeout)
 {
-    int n, stat, act;
-    char tac[16] = {0};
-    char ci[16] = {0};
-    char *p = strstr(parseBuffer, "+CEREG:");
-    if (p == NULL)
-    {
-        // Подстрока не найдена
-        return -1;
-    }
-    
-    p += strlen("+CEREG:");
-    
-    // Пытаемся разобрать строку в формате:
-    // <n>, <stat>, "<tac>", "<ci>", <act>
-    // Пример ответа: +CEREG: 0, 1,"02b3","cea80000",0
-    if (sscanf(p, " %d , %d , \"%15[^\"]\" , \"%15[^\"]\" , %d", &n, &stat, tac, ci, &act) == 5)
-    {
-        //stat - X и act - Y
-        if (stat == 1 && act == 0)
-        {
-            GSM_data.Modem_mode = MODEM_STATUS[0];
-            return 1;
-        }
-        if (stat == 1 && act == 9)
-        {
-            GSM_data.Modem_mode = MODEM_STATUS[1];
-            return 1;
-        }
-        GSM_data.Modem_mode = MODEM_STATUS[2];
-        return 0;
-    }
-    return -1;
-}
-int parse_COPS(void)
-{
-    int mode, format, act;
-    char oper[32] = {0};  // Буфер для оператора (достаточного размера для хранения строки оператора)
-    
-    // Ищем в parseBuffer подстроку "+COPS:"
-    char *p = strstr(parseBuffer, "+COPS:");
-    if (p == NULL)
-    {
-        // Если подстрока не найдена, возвращаем -1
-        return -1;
-    }
-    
-    // Смещаем указатель за "+COPS:"
-    p += strlen("+COPS:");
-    
-    // Пытаемся разобрать строку в формате: mode, format, "oper", act
-    // Пример ответа: +COPS: 0,2,"25001", 0
-    if (sscanf(p, " %d , %d , \"%31[^\"]\" , %d", &mode, &format, oper, &act) == 4)
-    {
-        GSM_data.Operator_code = atoi(oper);
-        return 1;
-    }
-    
-    return -1;
-}
-int parse_ERROR_OK(void)
-{
-    if (strstr(parseBuffer, "ERROR") != NULL)
-    {
-        return 0; // Нашли "ERROR"
-    }
-    if (strstr(parseBuffer, "OK") != NULL)
-    {
-        return 1; // Нашли "OK"
-    }
-    return -1;     // Не нашли ни "ERROR", ни "OK"
-}
-
-int waitForOKResponse()
-{
-    uint32_t timeout = 10000;
     TickType_t startTick = xTaskGetTickCount();
     TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
-    if (strstr(parseBuffer, "OK") != NULL)
-    {
-        return 1; // Получен ответ OK
-    }
-    if (strstr(parseBuffer, "ERROR") != NULL)
-    {
-        return 0; // Получен ответ ERROR
-    }
     while ((xTaskGetTickCount() - startTick) < timeoutTicks)
     {
-        if (xSemaphoreTake(UART_PARSER_semaphore, pdMS_TO_TICKS(5000)) == pdTRUE)
+        if (xSemaphoreTake(UART_PARSER_semaphore, pdMS_TO_TICKS(100)) == pdTRUE)
+        {
+            // Ищем в parseBuffer подстроку "+CSQ:"
+            char *p = strstr(parseBuffer, "+CSQ:");
+            if (p != NULL)
+            {
+                int16_t rssi, ber;
+                p += strlen("+CSQ:");
+                while (*p == ' ' || *p == '\t')
+                {
+                    p++;
+                }
+                if (sscanf(p, "%hd,%hd", &rssi, &ber) == 2)
+                {
+                    GSM_data.GSM_Signal_Level = rssi;
+                    GSM_data.GSM_Signal_Errors = ber;
+                    if (GSM_data.GSM_Signal_Level <= 5)
+                    {
+                        ERRCODE.STATUS |= STATUS_GSM_SIGNEL_ERROR;
+                    }
+                    else
+                    {
+                        ERRCODE.STATUS &= ~STATUS_GSM_SIGNEL_ERROR;
+                    }
+
+                    return 1;
+                }
+            }
+            if (strstr(parseBuffer, "ERROR") != NULL ||
+                strstr(parseBuffer, "+CME ERROR") != NULL)
+            {
+                return 0;
+            }
+        }
+    }
+    return -1;
+}
+
+
+int waitForCEREGResponse(uint32_t timeout)
+{
+    TickType_t startTick = xTaskGetTickCount();
+    TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
+
+    // Можно заранее сбрасывать/инициализировать GSM_data.Modem_mode
+    // Но если это нежелательно, оставьте как есть
+
+    while ((xTaskGetTickCount() - startTick) < timeoutTicks)
+    {
+        // Ждем, пока парсер сообщит о свежих данных в parseBuffer
+        if (xSemaphoreTake(UART_PARSER_semaphore, pdMS_TO_TICKS(100)) == pdTRUE)
+        {
+            // Ищем нужную подстроку
+            char *p = strstr(parseBuffer, "+CEREG:");
+            if (p != NULL)
+            {
+                p += strlen("+CEREG:");
+
+                int n, stat, act;
+                char tac[16] = {0};
+                char ci[16]  = {0};
+
+                // Пытаемся считать поля:
+                // +CEREG: <n>, <stat>, "<tac>", "<ci>", <act>
+                // Пример: +CEREG: 0,1,"02b3","cea80000",0
+                if (sscanf(p, " %d , %d , \"%15[^\"]\" , \"%15[^\"]\" , %d", 
+                           &n, &stat, tac, ci, &act) == 5)
+                {
+                    if (stat == 1 && act == 0)
+                    {
+                        GSM_data.Modem_mode = MODEM_STATUS[0];
+                        return 1; 
+                    }
+                    if (stat == 1 && act == 9)
+                    {
+                        GSM_data.Modem_mode = MODEM_STATUS[1];
+                        return 1; 
+                    }
+                    GSM_data.Modem_mode = MODEM_STATUS[2];
+                    return 0;
+                }
+            }
+            if (strstr(parseBuffer, "ERROR") != NULL ||
+                strstr(parseBuffer, "+CME ERROR") != NULL)
+            {
+                return 0;
+            }
+        }
+    }
+    return -1;
+}
+
+
+
+int waitForCOPSResponse(uint32_t timeout)
+{
+    TickType_t startTick = xTaskGetTickCount();
+    TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
+
+    while ((xTaskGetTickCount() - startTick) < timeoutTicks)
+    {
+        // Ждём, когда придут новые данные (семафор от парсера).
+        if (xSemaphoreTake(UART_PARSER_semaphore, pdMS_TO_TICKS(100)) == pdTRUE)
+        {
+            // Ищем в буфере нужную подстроку
+            char *p = strstr(parseBuffer, "+COPS:");
+            if (p != NULL)
+            {
+                p += strlen("+COPS:");
+
+                int mode, format, act;
+                char oper[32] = {0}; 
+                if (sscanf(p, " %d , %d , \"%31[^\"]\" , %d", &mode, &format, oper, &act) == 4)
+                {
+                    GSM_data.Operator_code = atoi(oper);
+                    return 1; 
+                }
+            }
+            
+            // Дополнительно можем отлавливать "ERROR" / "+CME ERROR"
+            if (strstr(parseBuffer, "ERROR") != NULL ||
+                strstr(parseBuffer, "+CME ERROR") != NULL)
+            {
+                // Возвращаем 0 или иной код в случае ошибки
+                return 0;
+            }
+        }
+    }
+    return -1;
+}
+
+
+int waitForOKResponse(uint32_t timeout)
+{
+    TickType_t startTick = xTaskGetTickCount();
+    TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
+
+    while ((xTaskGetTickCount() - startTick) < timeoutTicks)
+    {
+        if (xSemaphoreTake(UART_PARSER_semaphore, pdMS_TO_TICKS(1000)) == pdTRUE)
         {
             if (strstr(parseBuffer, "OK") != NULL)
             {
@@ -189,9 +218,8 @@ int waitForOKResponse()
     return -1; // Таймаут: ни OK, ни ERROR не обнаружены
 }
 
-int waitForGreaterThanResponse(void)
+int waitForGreaterThanResponse(uint32_t timeout)
 {
-    uint32_t timeout = 10000; // Таймаут в мс
     TickType_t startTick = xTaskGetTickCount();
     TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
     // Если в буфере обнаружен символ '>', считаем, что приглашение получено
@@ -223,9 +251,8 @@ int waitForGreaterThanResponse(void)
     return -1; // Таймаут: символ '>' не обнаружен
 }
 
-int waitForHTTPResponse()
+int waitForHTTPResponse(uint32_t timeout)
 {
-    uint32_t timeout = 60000;
     TickType_t startTick = xTaskGetTickCount();
     TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
     int32_t m, s, d;
@@ -284,14 +311,14 @@ int sendSMS(void)
         // Команда для выбора текстового режима
         if (SendCommandAndParse("AT+CMGF=1\r", waitForOKResponse, 1000) != 1)
         {
-            osDelay(5000); // Задержка 5 секунд перед повторной попыткой
+            osDelay(1000); // Задержка 5 секунд перед повторной попыткой
             continue;      // Переходим к следующей попытке
         }
 
         // Команда для выбора кодировки символов
         if (SendCommandAndParse("AT+CSCS=\"GSM\"\r", waitForOKResponse, 1000) != 1)
         {
-            osDelay(5000);
+            osDelay(1000);
             continue;
         }
 
@@ -300,9 +327,9 @@ int sendSMS(void)
         memset(command, 0, sizeof(command));
         sprintf(command, "AT+CMGS=\"%s\"\r", EEPROM.Phone);
         strcat(command, save_data);
-        if (SendCommandAndParse(command, waitForGreaterThanResponse, 1000) != 1)
+        if (SendCommandAndParse(command, waitForGreaterThanResponse, 2000) != 1)
         {
-            osDelay(2000);
+            osDelay(1000);
             continue;
         }
         HAL_UART_Transmit(&huart4, save_data, strlen(save_data), 1000);
@@ -340,7 +367,7 @@ int sendHTTP(void) {
             goto http_error_1;
         }
         osDelay(100);
-        if (SendCommandAndParse("AT+HTTPPARA=\"CID\",\"1\"\r", waitForOKResponse, 1000) != 1) {
+        if (SendCommandAndParse("AT+HTTPPARA=\"CID\",\"1\"\r", waitForOKResponse, 2000) != 1) {
             goto http_error_1;
         }
         // Отправка HTTP запроса (send - строка с корректно сформированным URL)
@@ -349,18 +376,18 @@ int sendHTTP(void) {
         }
         osDelay(100);
         // Выполнение HTTPACTION, проверка ответа
-        int res = SendCommandAndParse("AT+HTTPACTION=0\r", waitForHTTPResponse, 30000);
+        int res = SendCommandAndParse("AT+HTTPACTION=0\r", waitForHTTPResponse, 60000);
         if (ERRCODE.STATUS & STATUS_HTTP_WRONG_PASSWORD_ERROR) {
             // Неверный пароль код 403
-            SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 12000);
+            SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 2000);
             break;
         }
         if (res == 0){
             goto http_error_1;
         }
 
-        int readResult = SendCommandAndParse("AT+HTTPREAD=0,200\r", waitAndParseSiteResponse, 1000);
-        SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 12000);
+        int readResult = SendCommandAndParse("AT+HTTPREAD=0,200\r", waitAndParseSiteResponse, 2000);
+        SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 2000);
 
         if (ERRCODE.STATUS & STATUS_HTTP_NO_BINDING_ERROR) break;
         // Если данные так и не получены, считаем попытку неуспешной
@@ -373,7 +400,7 @@ int sendHTTP(void) {
         break;
 
 http_error_1:
-    SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000);
+    SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 2000);
     osDelay(500);
     SendCommandAndParse("AT+CGACT=0\r", waitForOKResponse, 60000);
     osDelay(500);
@@ -413,12 +440,12 @@ int READ_Settings_sendHTTP(void) {
 
 
     for (attempt = 0; attempt < MAX_HTTP_ATTEMPTS; attempt++) {
-        if (SendCommandAndParse("AT+HTTPINIT\r", waitForOKResponse, 1000) != 1) {
+        if (SendCommandAndParse("AT+HTTPINIT\r", waitForOKResponse, 2000) != 1) {
             goto http_error_2;
         }
         osDelay(100);
         
-        if (SendCommandAndParse("AT+HTTPPARA=\"CID\",\"1\"\r", waitForOKResponse, 1000) != 1) {
+        if (SendCommandAndParse("AT+HTTPPARA=\"CID\",\"1\"\r", waitForOKResponse, 2000) != 1) {
             goto http_error_2;
         }
         osDelay(100);
@@ -428,18 +455,18 @@ int READ_Settings_sendHTTP(void) {
         }
         osDelay(100);
         // Выполнение HTTPACTION, проверка ответа
-        int res = SendCommandAndParse("AT+HTTPACTION=0\r", waitForHTTPResponse, 30000);
+        int res = SendCommandAndParse("AT+HTTPACTION=0\r", waitForHTTPResponse, 60000);
         if (ERRCODE.STATUS & STATUS_HTTP_WRONG_PASSWORD_ERROR) {
             // Неверный пароль код 403
-            SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 120000);
+            SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 2000);
             break;
         }
         if (res == 0){
             goto http_error_2;
         }
         osDelay(1000);
-        int readResult = SendCommandAndParse("AT+HTTPREAD=0,200\r", waitAndParseSiteResponse, 1000);
-        SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 120000);
+        int readResult = SendCommandAndParse("AT+HTTPREAD=0,200\r", waitAndParseSiteResponse, 2000);
+        SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 2000);
 
         if (ERRCODE.STATUS & STATUS_HTTP_NO_BINDING_ERROR){
             httpSent = 1;
@@ -456,7 +483,7 @@ int READ_Settings_sendHTTP(void) {
 
 http_error_2:
         // В случае ошибки выполняем «очистку» состояния:
-        SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000);
+        SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 2000);
         osDelay(500);
         SendCommandAndParse("AT+CGACT=0\r", waitForOKResponse, 60000);
         osDelay(500);
@@ -605,31 +632,19 @@ int parse_site_response(void) {
     return 1;
 }
 
-int waitAndParseSiteResponse(void)
+int waitAndParseSiteResponse(uint32_t timeout)
 {
-    uint32_t timeout = 20000;  // Таймаут ожидания в мс
     TickType_t startTick = xTaskGetTickCount();
     TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
     
-    if (strstr(parseBuffer, "NO_BINDING") != NULL) {
-        ERRCODE.STATUS |= STATUS_HTTP_NO_BINDING_ERROR;
-        return 0;
-    }
-    if (strstr(parseBuffer, "INCORRECT_PASSWORD") != NULL) {
-        ERRCODE.STATUS |= STATUS_HTTP_WRONG_PASSWORD_ERROR;
-        return 0;
-    }
-    char *start = strchr(parseBuffer, '[');
-    if (start != NULL && strchr(start, ']') != NULL) {
-        int res = parse_site_response();
-        return res;  // 1 при успехе, -1 при ошибке
-    }
+
+    char *start = 0;
     
     // Цикл ожидания поступления данных
     while ((xTaskGetTickCount() - startTick) < timeoutTicks)
     {
         // Ожидаем появления новых данных с периодом до 5 секунд
-        if (xSemaphoreTake(UART_PARSER_semaphore, pdMS_TO_TICKS(5000)) == pdTRUE)
+        if (xSemaphoreTake(UART_PARSER_semaphore, pdMS_TO_TICKS(100)) == pdTRUE)
         {
             // При каждом получении новых данных проверяем:
             if (strstr(parseBuffer, "NO_BINDING") != NULL) {

@@ -649,7 +649,7 @@ void Main_Cycle(void *argument)
           }
           osDelay(1000);
         }
-        if ((ERRCODE.STATUS & STATUS_HTTP_SERVER_COMM_ERROR) || (status == 0))
+        if (((ERRCODE.STATUS & STATUS_HTTP_SERVER_COMM_ERROR) || (status == 0)) && !(ERRCODE.STATUS & STATUS_HTTP_NO_BINDING_ERROR))
         {
           GSM_data.Status &= ~HTTP_SEND;
           GSM_data.Status |= SMS_SEND;
@@ -954,31 +954,31 @@ void UART_PARSER_task(void *argument)
 
     if ((!(GSM_data.Status & GSM_RDY)) && (EEPROM.USB_mode != 2))
     {
-      int result = SendCommandAndParse("AT\r", parse_ERROR_OK, 1000);
+      int result = SendCommandAndParse("AT\r", waitForOKResponse, 2000);
       delay_AT_OK++;
       if (result == 1)
       {
         delay_AT_OK = 0;
         GSM_data.Status |= GSM_RDY;
-        if (SendCommandAndParse("AT+CFUN=0\r", waitForOKResponse, 1000) != 1)
+        if (SendCommandAndParse("AT+CFUN=0\r", waitForOKResponse, 2000) != 1)
         {
         }
         osDelay(300);
-        if (SendCommandAndParse("AT+CFGDUALMODE=1,0\r", waitForOKResponse, 1000) != 1)
+        if (SendCommandAndParse("AT+CFGDUALMODE=1,0\r", waitForOKResponse, 2000) != 1)
         {
         }
         osDelay(300);
-        if (SendCommandAndParse("AT+CFGRATPRIO=2\r", waitForOKResponse, 1000) != 1)
+        if (SendCommandAndParse("AT+CFGRATPRIO=2\r", waitForOKResponse, 2000) != 1)
         {
         }
         osDelay(300);
-        if (SendCommandAndParse("AT+CFUN=1\r", waitForOKResponse, 1000) != 1)
+        if (SendCommandAndParse("AT+CFUN=1\r", waitForOKResponse, 2000) != 1)
         {
         }
-        if (SendCommandAndParse("AT+CSCON=0\r", waitForOKResponse, 1000) != 1)
+        if (SendCommandAndParse("AT+CSCON=0\r", waitForOKResponse, 2000) != 1)
         {
         }
-        if (SendCommandAndParse("AT&W\r", waitForOKResponse, 1000) != 1)
+        if (SendCommandAndParse("AT&W\r", waitForOKResponse, 2000) != 1)
         {
         }
       }
@@ -995,10 +995,10 @@ void UART_PARSER_task(void *argument)
 
     if ((GSM_data.Status & GSM_RDY) && (EEPROM.USB_mode != 2))
     {
-      SendCommandAndParse("AT+CPIN?\r", parse_CPIN, 1000);
-      SendCommandAndParse("AT+CSQ\r", parse_CSQ, 1000);
-      SendCommandAndParse("AT+CEREG?\r", parse_CEREG, 1000);
-      SendCommandAndParse("AT+COPS?\r", parse_COPS, 1000);
+      SendCommandAndParse("AT+CPIN?\r", waitForCPINResponse, 1000);
+      SendCommandAndParse("AT+CSQ\r", waitForCSQResponse, 1000);
+      SendCommandAndParse("AT+CEREG?\r", waitForCEREGResponse, 1000);
+      SendCommandAndParse("AT+COPS?\r", waitForCOPSResponse, 1000);
       GSM_data.update_value();
       if (EEPROM.Mode == 0)
       if (EEPROM.Mode == 0) xSemaphoreGive(Display_semaphore);
