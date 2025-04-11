@@ -70,3 +70,13 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 set(linker_flags
     "${linker_flags} -Wl,-Map=project.map"
 )
+
+# Convert output to hex and binary
+add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE:${CMAKE_PROJECT_NAME}> ${CMAKE_PROJECT_NAME}.hex
+)
+
+# Convert to bin file -> add conditional check?
+add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:${CMAKE_PROJECT_NAME}> ${CMAKE_PROJECT_NAME}.bin
+)

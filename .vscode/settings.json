@@ -43,5 +43,6 @@
         "usb_fatfs_save.h": "c",
         "xutility": "c"
     },
-    "cortex-debug.variableUseNaturalFormat": true
+    "cortex-debug.variableUseNaturalFormat": true,
+    "cmake.allowCommentsInPresetsFile": true
 }

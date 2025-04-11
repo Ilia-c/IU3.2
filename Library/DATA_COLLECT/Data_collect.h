@@ -10,7 +10,6 @@
 
 extern EEPROM_Settings_item EEPROM;
 
-
 void base62_encode(uint64_t value, char *buffer, size_t bufferSize);
 void SD_write_log(char *string, char *path);
 void Collect_DATA();

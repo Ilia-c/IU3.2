@@ -1,4 +1,4 @@
-#include "SD.h"
+#include "Data_collect.h"
 
 #include "fatfs.h"
 #include "string.h"
@@ -15,20 +15,20 @@ extern SD_HandleTypeDef hsd1;
 extern FIL SDFile;
 extern char SDPath[4]; // Предположим, что здесь лежит "0:"
 
-
 extern RTC_TimeTypeDef Time;
 extern RTC_DateTypeDef Date;
 extern FRESULT res;
 const static char file_log[12] = "0:log.txt";
 
-void format_uint8_t_2(char *buffer, size_t size, uint8_t data) {
+void format_uint8_t_2(char *buffer, size_t size, uint8_t data)
+{
     snprintf(buffer, size, "%u", data);
 }
 
-
-
-void base62_encode(uint64_t value, char *buffer, size_t bufferSize) {
-    if (bufferSize < 12) {
+void base62_encode(uint64_t value, char *buffer, size_t bufferSize)
+{
+    if (bufferSize < 12)
+    {
         // Недостаточно места в буфере
         return;
     }
@@ -39,14 +39,16 @@ void base62_encode(uint64_t value, char *buffer, size_t bufferSize) {
     // Алфавит Base62: цифры, заглавные и строчные буквы.
     const char *alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
-    int pos = 10;  // Индекс для заполнения с конца (11 символов, индексы 0..10, где 10 – последний символ до '\0')
-    do {
+    int pos = 10; // Индекс для заполнения с конца (11 символов, индексы 0..10, где 10 – последний символ до '\0')
+    do
+    {
         result[pos--] = alphabet[value % 62];
         value /= 62;
     } while (value > 0);
 
     // Если число меньше максимального, заполним оставшиеся позиции ведущими '0'
-    while (pos >= 0) {
+    while (pos >= 0)
+    {
         result[pos--] = '0';
     }
 
@@ -54,24 +56,28 @@ void base62_encode(uint64_t value, char *buffer, size_t bufferSize) {
     strncpy(buffer, result, bufferSize);
 }
 
-
 extern char save_data[CMD_BUFFER_SIZE];
 extern RTC_HandleTypeDef hrtc;
 extern EEPROM_Settings_item EEPROM;
 
-int containsRussian(const char *str) {
-    while (*str) {
+int containsRussian(const char *str)
+{
+    while (*str)
+    {
         unsigned char ch = (unsigned char)*str;
-        if (ch >= 0xC0 && ch <= 0xFF) {
+        if (ch >= 0xC0 && ch <= 0xFF)
+        {
             return 1; // Найден русский символ
         }
         str++;
     }
     return 0;
 }
-void remove_whitespace(char *str) {
+void remove_whitespace(char *str)
+{
     char *dst = str;
-    while (*str) {
+    while (*str)
+    {
         if (!isspace((unsigned char)*str))
             *dst++ = *str;
         str++;
@@ -80,43 +86,46 @@ void remove_whitespace(char *str) {
 }
 
 const char CableB[] = "cable_break";
-void Collect_DATA(){
+void Collect_DATA()
+{
     HAL_RTC_GetDate(&hrtc, &Date, RTC_FORMAT_BIN);
     HAL_RTC_GetTime(&hrtc, &Time, RTC_FORMAT_BIN);
     base62_encode(ERRCODE.STATUS, ERRCODE.STATUSCHAR, sizeof(ERRCODE.STATUSCHAR));
 
     // Если в ADC_data.ADC_SI_value_char или ADC_data.ADC_SI_value_correct_char содержатся русские символы,
     // заменяем их на "cable break"
-    if (containsRussian(ADC_data.ADC_SI_value_char) || containsRussian(ADC_data.ADC_SI_value_correct_char)) {
+    if (containsRussian(ADC_data.ADC_SI_value_char) || containsRussian(ADC_data.ADC_SI_value_correct_char))
+    {
         strcpy(ADC_data.ADC_SI_value_char, CableB);
         strcpy(ADC_data.ADC_SI_value_correct_char, CableB);
     }
-    
+
     snprintf(save_data, CMD_BUFFER_SIZE,
-        "[%s;%s;%s;%s;%s;%s;%s;%s;%02d:%02d%s%02d/%02d/%02d;%s;%s;%u;%u]",
-        EEPROM.version.VERSION_PCB,                // строка
-        EEPROM.version.password,                   // строка
-        ADC_data.ADC_value_char,                   // строка
-        ADC_data.ADC_SI_value_char,                // строка (возможно заменённая)
-        ADC_data.ADC_SI_value_correct_char,        // строка (возможно заменённая)
-        IntADC.ADC_AKB_volts_char,                 // строка
-        IntADC.ADC_AKB_Proc_char,                  // строка
-        ERRCODE.STATUSCHAR,                        // строка
-        Time.Hours, Time.Minutes,     // время (часы, минуты, секунды)
-        "-",
-        Date.Date, Date.Month, Date.Year,          // дата (день, месяц, год)
-        "0",                                       // time_sleep_mode всегда "0"
-        "0", 
-        EEPROM.time_sleep_m,                       // число
-        EEPROM.time_sleep_h);                      // число
-        remove_whitespace(save_data);
+             "[%s;%s;%s;%s;%s;%s;%s;%s;%02d:%02d%s%02d/%02d/%02d;%s;%s;%u;%u]",
+             EEPROM.version.VERSION_PCB,         // строка
+             EEPROM.version.password,            // строка
+             ADC_data.ADC_value_char,            // строка
+             ADC_data.ADC_SI_value_char,         // строка (возможно заменённая)
+             ADC_data.ADC_SI_value_correct_char, // строка (возможно заменённая)
+             IntADC.ADC_AKB_volts_char,          // строка
+             IntADC.ADC_AKB_Proc_char,           // строка
+             ERRCODE.STATUSCHAR,                 // строка
+             Time.Hours, Time.Minutes,           // время (часы, минуты, секунды)
+             "-",
+             Date.Date, Date.Month, Date.Year, // дата (день, месяц, год)
+             ADC_data.ADC_MS5193T_temp_char,   // time_sleep_mode всегда "0"
+             VERSION_PROGRAMM,
+             EEPROM.time_sleep_m,  // число
+             EEPROM.time_sleep_h); // число
+    remove_whitespace(save_data);
 }
 
-void SETTINGS_REQUEST_DATA(){
+void SETTINGS_REQUEST_DATA()
+{
     base62_encode(ERRCODE.STATUS, ERRCODE.STATUSCHAR, sizeof(ERRCODE.STATUSCHAR));
-    
+
     snprintf(save_data, CMD_BUFFER_SIZE,
-    "[%s;%s]",
-    EEPROM.version.VERSION_PCB,              // строка
-    EEPROM.version.password);                      // число
+             "[%s;%s]",
+             EEPROM.version.VERSION_PCB, // строка
+             EEPROM.version.password);   // число
 }

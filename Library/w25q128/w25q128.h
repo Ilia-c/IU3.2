@@ -10,7 +10,7 @@
 #include "stm32l4xx_hal.h"
 #include "FreeRTOS.h"
 #include "task.h"
-#include "SD.h"
+#include "Data_collect.h"
 
 extern uint32_t g_total_records_count;
 // Команды флеш-памяти
@@ -36,6 +36,9 @@ extern uint32_t g_total_records_count;
 #define FLASH_TOTAL_SIZE    ((15 * 1024 * 1024) + 512*1024)
 #define TOTAL_SECTORS       (FLASH_TOTAL_SIZE / SECTOR_SIZE)
 #define TOTAL_RECORDS       (TOTAL_SECTORS * RECORDS_PER_SECTOR)
+#define TARGET_FLASH_SIZE   (512 * 1024)
+#define TARGET_FLASH_START  FLASH_TOTAL_SIZE
+#define TARGET_FLASH_END (16 * 1024 * 1024)
 
 // Макросы для "меток"
 #define EMPTY  0xFF  // обозначение "пусто / стёрто"
@@ -63,6 +66,7 @@ typedef struct {
 
 // Экспортируемые переменные (если нужны)
 extern uint32_t flash_end_ptr;
+extern IWDG_HandleTypeDef hiwdg;
 
 // Прототипы низкоуровневых функций
 void w25_init(void);
@@ -85,5 +89,7 @@ int backup_records_to_external(void);
 
 // При желании – функции для работы с именем файла, USB и т.д.
 void createFilename(char *dest, size_t destSize);
+
+void Update_PO();
 
 #endif // W25Q128_NEW_H

@@ -29,7 +29,7 @@
 #include "semphr.h"
 #include "w25q128.h"
 #include "MS5193T.h"
-#include "SD.h"
+#include "Data_collect.h"
 #include "usb_host.h"
 #include "usb_device.h"
 #include "usbd_cdc_if.h"
@@ -63,8 +63,6 @@ extern const uint16_t Timer_key_press_fast;
 extern uint8_t gsmRxChar;
 extern EEPROM_Settings_item EEPROM;
 extern ERRCODE_item ERRCODE;
-
-
 
 I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c2;
@@ -115,7 +113,7 @@ const osThreadAttr_t Main_Cycle_task_attributes = {
 osThreadId_t Display_I2CHandle;
 const osThreadAttr_t Display_I2C_attributes = {
     .name = "Display_I2C",
-    .stack_size = 1024 * 4,
+    .stack_size = 1024 * 5,
     .priority = (osPriority_t)osPriorityHigh,
 };
 /* Definitions for ADC_read */
@@ -195,6 +193,7 @@ uint8_t suspend = 0;
 
 int main(void)
 {
+  SCB->VTOR = 0x08008000;
   __HAL_RCC_PWR_CLK_ENABLE();
   HAL_Init();
 

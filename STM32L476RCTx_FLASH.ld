@@ -63,12 +63,16 @@ MEMORY
 {
 RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 96K
 RAM2 (xrw)      : ORIGIN = 0x10000000, LENGTH = 32K
-FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 512K
+FLASH(rx)  : ORIGIN = 0x08000000, LENGTH = 32K    /* Bootloader area */
+APP  (rx)  : ORIGIN = 0x08008000, LENGTH = 480K   /* Main application */
 }
 
 /* Define output sections */
 SECTIONS
 {
+
+
+
   .ram2 (NOLOAD) :
   {
     . = ALIGN(4);
@@ -81,7 +85,7 @@ SECTIONS
     . = ALIGN(4);
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);
-  } >FLASH
+  } >APP
 
   /* The program code and other data goes into FLASH */
   .text :
@@ -98,7 +102,7 @@ SECTIONS
 
     . = ALIGN(4);
     _etext = .;        /* define a global symbols at end of code */
-  } >FLASH
+  } >APP
 
   /* Constant data goes into FLASH */
   .rodata :
@@ -107,21 +111,21 @@ SECTIONS
     *(.rodata)         /* .rodata sections (constants, strings, etc.) */
     *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
     . = ALIGN(4);
-  } >FLASH
+  } >APP
 
   .ARM.extab   : 
   { 
   . = ALIGN(4);
   *(.ARM.extab* .gnu.linkonce.armextab.*)
   . = ALIGN(4);
-  } >FLASH
+  } >APP
   .ARM : {
 	. = ALIGN(4);
     __exidx_start = .;
     *(.ARM.exidx*)
     __exidx_end = .;
 	. = ALIGN(4);
-  } >FLASH
+  } >APP
 
   .preinit_array     :
   {
@@ -130,7 +134,7 @@ SECTIONS
     KEEP (*(.preinit_array*))
     PROVIDE_HIDDEN (__preinit_array_end = .);
 	. = ALIGN(4);
-  } >FLASH
+  } >APP
   
   .init_array :
   {
@@ -140,7 +144,7 @@ SECTIONS
     KEEP (*(.init_array*))
     PROVIDE_HIDDEN (__init_array_end = .);
 	. = ALIGN(4);
-  } >FLASH
+  } >APP
   .fini_array :
   {
 	. = ALIGN(4);
@@ -149,7 +153,7 @@ SECTIONS
     KEEP (*(.fini_array*))
     PROVIDE_HIDDEN (__fini_array_end = .);
 	. = ALIGN(4);
-  } >FLASH
+  } >APP
 
   /* used by the startup to initialize data */
   _sidata = LOADADDR(.data);
@@ -164,7 +168,7 @@ SECTIONS
 
     . = ALIGN(4);
     _edata = .;        /* define a global symbol at data end */
-  } >RAM AT> FLASH
+  } >RAM AT> APP
 
   
   /* Uninitialized data section */

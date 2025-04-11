@@ -112,10 +112,8 @@ void full_test();
 void USB_FLASH_SAVE();
 void GSM_sms_test();
 void flash_test();
-void SD_test();
 void EEPROM_test();
 void SAVE_IZM();
-void SD_Format();
 void Flash_Format();
 void GSM_internet_test();
 void Programm_Update_USB();
@@ -133,6 +131,7 @@ void PROGRESS_BAR(uint8_t procent);
 void SAVE_USB();
 void GSM_HTTP_SYNC();
 void colibrate_24v();
+void Update_programm();
 
 
 #ifdef __cplusplus

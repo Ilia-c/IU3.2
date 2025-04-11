@@ -6,7 +6,7 @@
 #include "string.h"
 #include "usbd_cdc_if.h"
 #include "AT24C02.h"
-#include "SD.h"
+#include "Data_collect.h"
 #include "Settings.h"
 // Внешние переменные и объекты
 extern UART_HandleTypeDef huart4;

@@ -110,6 +110,7 @@ const char FORMAT[2][40] = {"Форматировать Flash?",  "Format Flash?"};
 const char CYCLE[2][40] = {"Перейти в режим Цикл?",  "Format Flash?"};
 const char ALL_RESET[2][40] = {"Полный сброс?",  "All reset?"};
 const char RESET_ST[2][40] = {"Сбросить?",  "Reset?"};
+const char UPDATE[2][40] = {"Обновление..",  "Update.."};
 
 // Выбираемые значения и статус
 menuSelect_item Communication_DATA = {
@@ -484,13 +485,13 @@ MAKE_MENU(Menu_2, "Настройки", "Settings", 0, UPTADE_OFF, NO_SIGNED, Menu_3, Men
 	MAKE_MENU(Menu_2_6, "НПИ", "L-range", 0, UPTADE_OFF, UNITS_MODE_DATA, Menu_2_7, Menu_2_5, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Min_Level_Mesurment, DATA_OUT);
 	MAKE_MENU(Menu_2_7, "Связь", "Network", 0, UPTADE_OFF, NO_SIGNED, Menu_2_8, Menu_2_6, Menu_2, CHILD_MENU, ACTION_MENU, Communication_DATA, DATA_IN, DATA_OUT);
 	MAKE_MENU(Menu_2_8, "Синхронизация", "Sin", 0, UPTADE_OFF, NO_SIGNED, Menu_2_9, Menu_2_7, Menu_2, CHILD_MENU, GSM_HTTP_SYNC, SELECT_BAR, DATA_IN, GSM_data.GSM_site_read_status);
-	MAKE_MENU(Menu_2_9, "Сохранить в", "Save in", 0, UPTADE_OFF, NO_SIGNED, Menu_2_10, Menu_2_8, Menu_2, CHILD_MENU, ACTION_MENU, SAVE_IN_STRUCT, DATA_IN, DATA_OUT); // ! Выбор куда сохранить (USB, SD, FLASH, сайт)
-	MAKE_MENU(Menu_2_10, "Выгрузка на USB", "USB write", 0, UPTADE_OFF, NO_SIGNED, Menu_2_11, Menu_2_9, Menu_2, CHILD_MENU, SAVE_USB, SELECT_BAR, DATA_IN, DATA_OUT); // ! Выгрузка на USB
+	MAKE_MENU(Menu_2_9, "Сохранить в", "Save in", 0, UPTADE_OFF, NO_SIGNED, Menu_2_10, Menu_2_8, Menu_2, CHILD_MENU, ACTION_MENU, SAVE_IN_STRUCT, DATA_IN, DATA_OUT);
+	MAKE_MENU(Menu_2_10, "Выгрузка на USB", "USB write", 0, UPTADE_OFF, NO_SIGNED, Menu_2_11, Menu_2_9, Menu_2, CHILD_MENU, SAVE_USB, SELECT_BAR, DATA_IN, DATA_OUT); 
 	MAKE_MENU(Menu_2_11, "Токовая петля", "Current loop ", 0, UPTADE_OFF, NO_SIGNED, Menu_2_12, Menu_2_10, Menu_2, CHILD_MENU, ACTION_MENU, CURRENT_LOOP, DATA_IN, DATA_OUT);
 	MAKE_MENU(Menu_2_12, "RS-485", "RS-485", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13, Menu_2_11, Menu_2, CHILD_MENU, ACTION_MENU, RS485_MODE_DATA, DATA_IN, DATA_OUT);
 	MAKE_MENU(Menu_2_13, "Ед. изм.", "Unit measure", 0, UPTADE_OFF, NO_SIGNED, Menu_2_14, Menu_2_12, Menu_2, CHILD_MENU, ACTION_MENU, UNITS_MODE_DATA, DATA_IN, DATA_OUT);
 	MAKE_MENU(Menu_2_14, "Язык", "Language", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15, Menu_2_13, Menu_2, CHILD_MENU, ACTION_MENU, LANGUAGE, DATA_IN, DATA_OUT);
-	MAKE_MENU(Menu_2_15, "Инж. меню", "Administration menu", 0, UPTADE_OFF, NO_SIGNED, Menu_2_16, Menu_2_14, Menu_2, Menu_2_15_1, PASSWORD, SELECT_BAR, DATA_IN, DATA_OUT); // ! Пароль на вход
+	MAKE_MENU(Menu_2_15, "Инж. меню", "Administration menu", 0, UPTADE_OFF, NO_SIGNED, Menu_2_16, Menu_2_14, Menu_2, Menu_2_15_1, PASSWORD, SELECT_BAR, DATA_IN, DATA_OUT); 
 		MAKE_MENU(Menu_2_15_1, "Заставка", "Startup screen", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_2, PREVISION_MENU, Menu_2_15, CHILD_MENU, ACTION_MENU, SCREENSAVER, DATA_IN, DATA_OUT);
 		MAKE_MENU(Menu_2_15_2, "Сер. ном.", "Ser. Number", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_3, Menu_2_15_1, Menu_2_15, CHILD_MENU, ACTION_MENU, SELECT_BAR, Serial_number, DATA_OUT);
 		MAKE_MENU(Menu_2_15_3, "Пароль", "Password", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_4, Menu_2_15_2, Menu_2_15, CHILD_MENU, ACTION_MENU, SELECT_BAR, Password, DATA_OUT);
@@ -499,23 +500,22 @@ MAKE_MENU(Menu_2, "Настройки", "Settings", 0, UPTADE_OFF, NO_SIGNED, Menu_3, Men
 		MAKE_MENU(Menu_2_15_6, "Калибровка 24в", "Calibration 24V", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_7, Menu_2_15_5, Menu_2_15, CHILD_MENU, colibrate_24v, SELECT_BAR, DATA_IN, DATA_OUT);
 		MAKE_MENU(Menu_2_15_7, "Калибровка 20мА", "Calibration(up)", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_8, Menu_2_15_6, Menu_2_15, CHILD_MENU, colibrate_20ma, SELECT_BAR, DATA_IN, DATA_OUT);
 		MAKE_MENU(Menu_2_15_8, "Калибровка 4мА", "Calibration(low)", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_9, Menu_2_15_7, Menu_2_15, CHILD_MENU, colibrate_4ma, SELECT_BAR, DATA_IN, DATA_OUT);
-		MAKE_MENU(Menu_2_15_9, "Калиб. темп.", "Shunt resistance", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_10, Menu_2_15_8, Menu_2_15, CHILD_MENU, temperature_colibrate, SELECT_BAR, DATA_IN, DATA_OUT); // ! Связаться с датчиком цифровым и откорректировать аналоговый
-		MAKE_MENU(Menu_2_15_10, "Темп. корр.", "Offset temperature", 0, UPTADE_OFF, Unit_degree, Menu_2_15_11, Menu_2_15_9, Menu_2_15, CHILD_MENU, ACTION_MENU, SELECT_BAR, Temp_correct, DATA_OUT); // ! Вводе корректирующего коэффициента
-		MAKE_MENU(Menu_2_15_11, "Темп. анал.", "Analog temp.", 0, UPTADE_ON, Unit_degree, Menu_2_15_12, Menu_2_15_10, Menu_2_15, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_MS5193T_temp_char);
-		MAKE_MENU(Menu_2_15_12, "Темп. цифр.", "Digital sensor temp.", 0, UPTADE_ON, Unit_degree, Menu_2_15_13, Menu_2_15_11, Menu_2_15, CHILD_MENU, SELECT_BAR, SELECT_BAR, DATA_IN, OneWire_temp_char); // ! обновить статус
-		MAKE_MENU(Menu_2_15_13, "Тест FLASH", "FLASH test", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_14, Menu_2_15_12, Menu_2_15, CHILD_MENU, flash_test, SELECT_BAR, DATA_IN, DATA_OUT);
-		MAKE_MENU(Menu_2_15_14, "Тест EEPROM", "EEPROM test", 0, 0, NO_SIGNED, Menu_2_15_15, Menu_2_15_13, Menu_2_15, CHILD_MENU, EEPROM_test, SELECT_BAR, DATA_IN, DATA_OUT);
-		MAKE_MENU(Menu_2_15_15, "Тест SD-карты", "SD-card test", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_16, Menu_2_15_14, Menu_2_15, CHILD_MENU, SD_test, SELECT_BAR, DATA_IN, DATA_OUT);
-		MAKE_MENU(Menu_2_15_16, "Режим", "Mode", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_17, Menu_2_15_15, Menu_2_15, CHILD_MENU, SELECT_BAR, Block, DATA_IN, DATA_OUT);
-		MAKE_MENU(Menu_2_15_17, "Полный Сброс", "FULL RESET", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_15_16, Menu_2_15, CHILD_MENU, ALL_Reset_settings, SELECT_BAR, DATA_IN, DATA_OUT);
-	MAKE_MENU(Menu_2_16, "Формат. SD", "SD formatting", 0, UPTADE_OFF, NO_SIGNED, Menu_2_17, Menu_2_15, Menu_2, CHILD_MENU, SD_Format, SELECT_BAR, DATA_IN, DATA_OUT); // ! Форматирование SD
-	MAKE_MENU(Menu_2_17, "Формат. Flash", "SD formatting", 0, UPTADE_OFF, NO_SIGNED, Menu_2_18, Menu_2_16, Menu_2, CHILD_MENU, Flash_Format, SELECT_BAR, DATA_IN, DATA_OUT); // ! Форматирование FLASH
+		MAKE_MENU(Menu_2_15_9, "Темп. корр.", "Offset temperature", 0, UPTADE_OFF, Unit_degree, Menu_2_15_10, Menu_2_15_8, Menu_2_15, CHILD_MENU, ACTION_MENU, SELECT_BAR, Temp_correct, DATA_OUT);
+		MAKE_MENU(Menu_2_15_10, "Темп. анал.", "Analog temp.", 0, UPTADE_ON, Unit_degree, Menu_2_15_11, Menu_2_15_9, Menu_2_15, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_MS5193T_temp_char);
+		MAKE_MENU(Menu_2_15_11, "Темп. МК", "MK temp.", 0, UPTADE_ON, Unit_degree, Menu_2_15_12, Menu_2_15_10, Menu_2_15, CHILD_MENU, SELECT_BAR, SELECT_BAR, DATA_IN, MK_temp_char); // ! обновить статус
+		MAKE_MENU(Menu_2_15_12, "Тест FLASH", "FLASH test", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_13, Menu_2_15_11, Menu_2_15, CHILD_MENU, flash_test, SELECT_BAR, DATA_IN, DATA_OUT);
+		MAKE_MENU(Menu_2_15_13, "Тест EEPROM", "EEPROM test", 0, 0, NO_SIGNED, Menu_2_15_14, Menu_2_15_12, Menu_2_15, CHILD_MENU, EEPROM_test, SELECT_BAR, DATA_IN, DATA_OUT);
+		MAKE_MENU(Menu_2_15_14, "Режим", "Mode", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_15, Menu_2_15_13, Menu_2_15, CHILD_MENU, SELECT_BAR, Block, DATA_IN, DATA_OUT);
+		MAKE_MENU(Menu_2_15_15, "Полный Сброс", "FULL RESET", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_15_14, Menu_2_15, CHILD_MENU, ALL_Reset_settings, SELECT_BAR, DATA_IN, DATA_OUT);
+    MAKE_MENU(Menu_2_16, "Обновление ПО", "Update", 0, UPTADE_OFF, NO_SIGNED, Menu_2_17, Menu_2_15, Menu_2, CHILD_MENU, Update_programm, SELECT_BAR, DATA_IN, DATA_OUT); 
+    MAKE_MENU(Menu_2_17, "Формат. Flash", "SD formatting", 0, UPTADE_OFF, NO_SIGNED, Menu_2_18, Menu_2_16, Menu_2, CHILD_MENU, Flash_Format, SELECT_BAR, DATA_IN, DATA_OUT); 
 	MAKE_MENU(Menu_2_18, "Сброс настроек", "Factory reset", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_17, Menu_2, CHILD_MENU, Reset_settings, SELECT_BAR, DATA_IN, DATA_OUT);
 MAKE_MENU(Menu_3, "Сведения", "Info", 0, UPTADE_OFF, NO_SIGNED, Menu_4, Menu_2, PARENT_MENU, Menu_3_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
 	MAKE_MENU(Menu_3_1, "Сер. ном.", "Ser. Number", 0, UPTADE_OFF, NO_SIGNED, Menu_3_2, PREVISION_MENU, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, EEPROM.version.VERSION_PCB);
 	MAKE_MENU(Menu_3_2, "Вер. ПО", "Software version", 0, UPTADE_OFF, NO_SIGNED, Menu_3_3, Menu_3_1, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, VERSION_PROGRAMM);
 	MAKE_MENU(Menu_3_3, "Время работы", "Elapsed time", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_3_2, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, EEPROM.version.time_work_char);
 MAKE_MENU(Menu_4, "Инструкция", "Instruction", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_3, PARENT_MENU, CHILD_MENU, Instruction, SELECT_BAR, DATA_IN, DATA_OUT);
+
 
 void Add_units(void)
 {
@@ -630,8 +630,34 @@ void USB_FLASH_SAVE(){}
 
 
 void flash_test(){}
-void SD_test(){}
 void EEPROM_test(){}
+
+
+void Update_programm(){
+    mode_redact = 2;
+    OLED_Clear(0);
+    FontSet(font);
+    Display_TopBar(selectedMenuItem);
+    #define X 20
+    #define Y 25
+
+    OLED_DrawCenteredString(UPDATE, Y);
+    OLED_UpdateScreen();
+
+    osThreadSuspend(ADC_readHandle);
+    osThreadSuspend(ERROR_INDICATE_taskHandle);
+
+    Update_PO();
+
+    osThreadResume(ADC_readHandle);
+    osThreadResume(ERROR_INDICATE_taskHandle);
+
+    OLED_Clear(0);
+    Display_TopBar(selectedMenuItem);   
+    OLED_DrawCenteredString(ERROR_TEXT, Y);
+    OLED_UpdateScreen();
+    osDelay(200);
+}
 
 // Сохранить изменения, учесть куда выбрано сохранение данных 
 void SAVE_IZM(){
@@ -769,13 +795,6 @@ void PASSWORD(){
     osDelay(200);
 }
 
-void SD_Format(){
-    OLED_Clear(0);
-    FontSet(font);
-    Display_TopBar(selectedMenuItem);
-    if (YES_OR_NO(ALL_RESET) == 0){ mode_redact = 0; return;}
-}
-
 
 // Выводит на экран вопрос Да или Нет. 1 -да 0 - нет
 int YES_OR_NO(const char strArray[][40]){
@@ -806,6 +825,15 @@ int YES_OR_NO(const char strArray[][40]){
     mode_redact = 2;
     OLED_DrawRectangleFill(0, 15, winth_display, 60, 0);
     return YES_NO;
+}
+
+// Обновление ПО. 
+// 1. Проверка USB, если есть то копируем файл
+// 2. Если USB нету, ставим флаг загрузки файла с сайта
+// 3. Перезагрузка в режиме Boot
+void Update(){
+    
+
 }
 
 void Flash_Format(){

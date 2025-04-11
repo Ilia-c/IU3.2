@@ -7,7 +7,7 @@ extern I2C_HandleTypeDef hi2c1;
 _Static_assert(sizeof(EepromRecord) <= EEPROM_TOTAL_SIZE, "EepromRecord exceeds EEPROM size");
 
 //=============================================================================
-// Р¤СѓРЅРєС†РёСЏ СЂР°СЃС‡С‘С‚Р° 32-Р±РёС‚РЅРѕРіРѕ CRC (POLY=0xEDB88320)
+// Функция расчёта 32-битного CRC (POLY=0xEDB88320)
 static uint32_t CalculateCRC(const uint8_t *data, size_t length) {
     uint32_t crc = 0xFFFFFFFF;
     for (size_t i = 0; i < length; i++) {
@@ -23,7 +23,7 @@ static uint32_t CalculateCRC(const uint8_t *data, size_t length) {
 }
 
 //=============================================================================
-// Р¤СѓРЅРєС†РёСЏ Р·Р°РїРёСЃРё РґР°РЅРЅС‹С… РІРѕ EEPROM СЃ СѓС‡С‘С‚РѕРј РїРѕСЃС‚СЂР°РЅРёС‡РЅРѕР№ Р·Р°РїРёСЃРё (AT24C02)
+// Функция записи данных во EEPROM с учётом постраничной записи (AT24C02)
 static HAL_StatusTypeDef EEPROM_WriteData(uint16_t memAddr, const uint8_t *pData, uint16_t size) {
     uint16_t bytesWritten = 0;
     HAL_StatusTypeDef status;
@@ -46,7 +46,7 @@ static HAL_StatusTypeDef EEPROM_WriteData(uint16_t memAddr, const uint8_t *pData
         status = HAL_I2C_Mem_Write(&hi2c1,
                                    EEPROM_I2C_ADDRESS,
                                    currentAddr,
-                                   I2C_MEMADD_SIZE_8BIT, // Р’Р°Р¶РЅРѕ РґР»СЏ AT24C02
+                                   I2C_MEMADD_SIZE_8BIT, // Важно для AT24C02
                                    (uint8_t *)(pData + bytesWritten),
                                    bytesToWrite,
                                    1000);
@@ -70,7 +70,7 @@ static HAL_StatusTypeDef EEPROM_WriteData(uint16_t memAddr, const uint8_t *pData
         }
         ERRCODE.STATUS &= ~STATUS_EEPROM_WRITE_ERROR;
 
-        // Р—Р°РґРµСЂР¶РєР° РґР»СЏ Р·Р°РІРµСЂС€РµРЅРёСЏ РІРЅСѓС‚СЂРµРЅРЅРµР№ Р·Р°РїРёСЃРё EEPROM (РѕР±С‹С‡РЅРѕ 5 РјСЃ)
+        // Задержка для завершения внутренней записи EEPROM (обычно 5 мс)
         HAL_Delay(5);
 
         bytesWritten += bytesToWrite;
@@ -79,17 +79,17 @@ static HAL_StatusTypeDef EEPROM_WriteData(uint16_t memAddr, const uint8_t *pData
 }
 
 //=============================================================================
-// Р¤СѓРЅРєС†РёСЏ С‡С‚РµРЅРёСЏ РґР°РЅРЅС‹С… РёР· EEPROM
+// Функция чтения данных из EEPROM
 static HAL_StatusTypeDef EEPROM_ReadData(uint16_t memAddr, uint8_t *pData, uint16_t size)
 {
-    // РџСЂРѕРІРµСЂСЏРµРј, РіРѕС‚РѕРІРѕ Р»Рё СѓСЃС‚СЂРѕР№СЃС‚РІРѕ (EEPROM) Рє СЂР°Р±РѕС‚Рµ
+    // Проверяем, готово ли устройство (EEPROM) к работе
     if (HAL_I2C_IsDeviceReady(&hi2c1, EEPROM_I2C_ADDRESS, 3, 10) != HAL_OK)
     {
         ERRCODE.STATUS |= STATUS_EEPROM_READY_ERROR;
         return HAL_ERROR;
     }
     ERRCODE.STATUS &= ~STATUS_EEPROM_READY_ERROR;
-    // Р•СЃР»Рё СѓСЃС‚СЂРѕР№СЃС‚РІРѕ РіРѕС‚РѕРІРѕ, РІС‹РїРѕР»РЅСЏРµРј С‡С‚РµРЅРёРµ
+    // Если устройство готово, выполняем чтение
     HAL_StatusTypeDef status = HAL_I2C_Mem_Read(&hi2c1,
                                                 EEPROM_I2C_ADDRESS,
                                                 memAddr,
@@ -117,18 +117,18 @@ static HAL_StatusTypeDef EEPROM_ReadData(uint16_t memAddr, uint8_t *pData, uint1
 }
 
 //=============================================================================
-// Р’РЅСѓС‚СЂРµРЅРЅСЏСЏ С„СѓРЅРєС†РёСЏ Р·Р°РїРёСЃРё EepromRecord РІ EEPROM (РЅР°С‡РёРЅР°СЏ СЃ EEPROM_START_ADDR)
+// Внутренняя функция записи EepromRecord в EEPROM (начиная с EEPROM_START_ADDR)
 static HAL_StatusTypeDef WriteSlot(const EepromRecord *record) {
     uint8_t buffer[sizeof(EepromRecord)];
-    // РљРѕРїРёСЂСѓРµРј РІСЃСЋ СЃС‚СЂСѓРєС‚СѓСЂСѓ РІ Р±СѓС„РµСЂ
+    // Копируем всю структуру в буфер
     memcpy(buffer, record, sizeof(EepromRecord));
-    // РћР±РЅСѓР»СЏРµРј РїРѕР»Рµ crc РїРµСЂРµРґ РІС‹С‡РёСЃР»РµРЅРёРµРј (РЅР°С…РѕРґРёРјСЃСЏ РІ РєРѕРЅС†Рµ СЃС‚СЂСѓРєС‚СѓСЂС‹)
+    // Обнуляем поле crc перед вычислением (находимся в конце структуры)
     memset(buffer + offsetof(EepromRecord, crc), 0, sizeof(record->crc));
 
-    // Р’С‹С‡РёСЃР»СЏРµРј CRC РїРѕ РІСЃРµРјСѓ Р±СѓС„РµСЂСѓ (РіРґРµ crc = 0)
+    // Вычисляем CRC по всему буферу (где crc = 0)
     uint32_t crc = CalculateCRC(buffer, sizeof(EepromRecord));
 
-    // Р—Р°РїРёСЃС‹РІР°РµРј CRC РІ Р±СѓС„РµСЂ РІ Little-Endian РїРѕСЂСЏРґРєРµ
+    // Записываем CRC в буфер в Little-Endian порядке
     buffer[offsetof(EepromRecord, crc) + 0] = (uint8_t)(crc & 0xFF);
     buffer[offsetof(EepromRecord, crc) + 1] = (uint8_t)((crc >> 8) & 0xFF);
     buffer[offsetof(EepromRecord, crc) + 2] = (uint8_t)((crc >> 16) & 0xFF);
@@ -141,8 +141,8 @@ static HAL_StatusTypeDef WriteSlot(const EepromRecord *record) {
 }
 
 //=============================================================================
-// Р’РЅСѓС‚СЂРµРЅРЅСЏСЏ С„СѓРЅРєС†РёСЏ С‡С‚РµРЅРёСЏ EepromRecord РёР· EEPROM (РЅР°С‡РёРЅР°СЏ СЃ EEPROM_START_ADDR)
-// Р¤СѓРЅРєС†РёСЏ С‚Р°РєР¶Рµ РїСЂРѕРІРµСЂСЏРµС‚ СЃРёРіРЅР°С‚СѓСЂСѓ, РІРµСЂСЃРёСЋ С„РѕСЂРјР°С‚Р° Рё CRC.
+// Внутренняя функция чтения EepromRecord из EEPROM (начиная с EEPROM_START_ADDR)
+// Функция также проверяет сигнатуру, версию формата и CRC.
 static HAL_StatusTypeDef ReadSlot(EepromRecord *record) {
     uint8_t buffer[sizeof(EepromRecord)];
 
@@ -161,12 +161,12 @@ static HAL_StatusTypeDef ReadSlot(EepromRecord *record) {
     }
 
     uint32_t savedCrc = record->crc;
-    // РћР±РЅСѓР»СЏРµРј РїРѕР»Рµ crc РІ Р±СѓС„РµСЂРµ РґР»СЏ РІС‹С‡РёСЃР»РµРЅРёСЏ РєРѕРЅС‚СЂРѕР»СЊРЅРѕР№ СЃСѓРјРјС‹
+    // Обнуляем поле crc в буфере для вычисления контрольной суммы
     memset(buffer + offsetof(EepromRecord, crc), 0, sizeof(record->crc));
     uint32_t calcCrc = CalculateCRC(buffer, sizeof(EepromRecord));
 
     if (calcCrc != savedCrc) {
-        // Р•СЃР»Рё РєРѕРЅС‚СЂРѕР»СЊРЅР°СЏ СЃСѓРјРјР° РЅРµ СЃРѕРІРїР°РґР°РµС‚, РґР°РЅРЅС‹Рµ РЅРµРєРѕСЂСЂРµРєС‚РЅС‹
+        // Если контрольная сумма не совпадает, данные некорректны
         ERRCODE.STATUS |= STATUS_EEPROM_CRC_ERROR;
         return HAL_ERROR;
     }
@@ -175,7 +175,7 @@ static HAL_StatusTypeDef ReadSlot(EepromRecord *record) {
 }
 
 //=============================================================================
-// Р¤СѓРЅРєС†РёСЏ РїСЂРѕРІРµСЂРєРё СЃСѓС‰РµСЃС‚РІРѕРІР°РЅРёСЏ РІР°Р»РёРґРЅС‹С… РґР°РЅРЅС‹С… РІ EEPROM
+// Функция проверки существования валидных данных в EEPROM
 HAL_StatusTypeDef EEPROM_IsDataExists(void) {
     if (ERRCODE.STATUS & STATUS_EEPROM_INIT_ERROR) return HAL_ERROR;
     EepromRecord record;
@@ -183,7 +183,7 @@ HAL_StatusTypeDef EEPROM_IsDataExists(void) {
 }
 
 //=============================================================================
-// Р¤СѓРЅРєС†РёСЏ Р·Р°РіСЂСѓР·РєРё РЅР°СЃС‚СЂРѕРµРє РёР· EEPROM
+// Функция загрузки настроек из EEPROM
 HAL_StatusTypeDef EEPROM_LoadSettings(EEPROM_Settings_item *dst) {
     if (ERRCODE.STATUS & STATUS_EEPROM_INIT_ERROR) return HAL_ERROR;
     if (!dst) {
@@ -200,7 +200,7 @@ HAL_StatusTypeDef EEPROM_LoadSettings(EEPROM_Settings_item *dst) {
 }
 
 //=============================================================================
-// Р¤СѓРЅРєС†РёСЏ СЃРѕС…СЂР°РЅРµРЅРёСЏ РЅР°СЃС‚СЂРѕРµРє РІ EEPROM
+// Функция сохранения настроек в EEPROM
 HAL_StatusTypeDef EEPROM_SaveSettings(const EEPROM_Settings_item *src) {
     if (ERRCODE.STATUS & STATUS_EEPROM_INIT_ERROR) return HAL_ERROR;
     if (!src) {
@@ -208,9 +208,9 @@ HAL_StatusTypeDef EEPROM_SaveSettings(const EEPROM_Settings_item *src) {
     }
     EEPROM_Settings_item currentSettings;
     if (EEPROM_LoadSettings(&currentSettings) == HAL_OK) {
-        // Р•СЃР»Рё РґР°РЅРЅС‹Рµ СЃРѕРІРїР°РґР°СЋС‚, С‚Рѕ РїРѕРІС‚РѕСЂРЅСѓСЋ Р·Р°РїРёСЃСЊ РЅРµ РІС‹РїРѕР»РЅСЏРµРј
+        // Если данные совпадают, то повторную запись не выполняем
         if (memcmp(src, &currentSettings, sizeof(EEPROM_Settings_item)) == 0) {
-            // Р”Р°РЅРЅС‹Рµ СѓР¶Рµ СЃРѕС…СЂР°РЅРµРЅС‹, Р·Р°РїРёСЃС‹РІР°С‚СЊ РїРѕРІС‚РѕСЂРЅРѕ РЅРµ РЅСѓР¶РЅРѕ
+            // Данные уже сохранены, записывать повторно не нужно
             return HAL_OK;
         }
     }
@@ -220,26 +220,26 @@ HAL_StatusTypeDef EEPROM_SaveSettings(const EEPROM_Settings_item *src) {
 
     newRecord.signature     = EEPROM_SIGNATURE;
     newRecord.formatVersion = EEPROM_FORMAT_VERSION;
-    newRecord.version       = 1;  // РњРѕР¶РЅРѕ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РєР°Рє СЃС‡С‘С‚С‡РёРє РІРµСЂСЃРёР№
+    newRecord.version       = 1;  // Можно использовать как счётчик версий
     memcpy(&newRecord.data, src, sizeof(EEPROM_Settings_item));
-    // РџРѕР»Рµ crc Р·Р°РїРѕР»РЅСЏРµС‚СЃСЏ РІРЅСѓС‚СЂРё WriteSlot
+    // Поле crc заполняется внутри WriteSlot
 
     return WriteSlot(&newRecord);
 }
 
 //=============================================================================
-// РќРѕРІР°СЏ С„СѓРЅРєС†РёСЏ РґР»СЏ РїСЂРѕРІРµСЂРєРё РєРѕСЂСЂРµРєС‚РЅРѕСЃС‚Рё СЃРѕС…СЂР°РЅС‘РЅРЅС‹С… РґР°РЅРЅС‹С…
+// Новая функция для проверки корректности сохранённых данных
 HAL_StatusTypeDef EEPROM_CheckDataValidity(void) {
     if (ERRCODE.STATUS & STATUS_EEPROM_INIT_ERROR) return HAL_ERROR;
 
     uint8_t buffer[sizeof(EepromRecord)];
 
-    // РЎС‡РёС‚С‹РІР°РµРј РґР°РЅРЅС‹Рµ РёР· EEPROM
+    // Считываем данные из EEPROM
     if (EEPROM_ReadData(EEPROM_START_ADDR, buffer, sizeof(EepromRecord)) != HAL_OK) {
         return HAL_ERROR;
     }
 
-    // РџСЂРѕРІРµСЂСЏРµРј СЃРёРіРЅР°С‚СѓСЂСѓ Рё РІРµСЂСЃРёСЋ С„РѕСЂРјР°С‚Р°
+    // Проверяем сигнатуру и версию формата
     EepromRecord *record = (EepromRecord *)buffer;
     if (record->signature != EEPROM_SIGNATURE) {
         return HAL_ERROR;
@@ -248,13 +248,13 @@ HAL_StatusTypeDef EEPROM_CheckDataValidity(void) {
         return HAL_ERROR;
     }
 
-    // РЎРѕС…СЂР°РЅСЏРµРј Р·Р°РїРёСЃР°РЅРЅС‹Р№ CRC
+    // Сохраняем записанный CRC
     uint32_t savedCrc = record->crc;
-    // РћР±РЅСѓР»СЏРµРј CRC РІ Р±СѓС„РµСЂРµ РїРµСЂРµРґ РІС‹С‡РёСЃР»РµРЅРёРµРј
+    // Обнуляем CRC в буфере перед вычислением
     memset(buffer + offsetof(EepromRecord, crc), 0, sizeof(record->crc));
     uint32_t calcCrc = CalculateCRC(buffer, sizeof(EepromRecord));
 
-    // Р•СЃР»Рё РєРѕРЅС‚СЂРѕР»СЊРЅР°СЏ СЃСѓРјРјР° РЅРµ СЃРѕРІРїР°РґР°РµС‚, РґР°РЅРЅС‹Рµ РЅРµРєРѕСЂСЂРµРєС‚РЅС‹
+    // Если контрольная сумма не совпадает, данные некорректны
     if ((calcCrc != savedCrc)){
         return HAL_ERROR;
     }

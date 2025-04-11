@@ -1,0 +1,54 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../IU32_Bootloader"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"compare": "c",
+			"stdint.h": "c",
+			"oled.h": "c",
+			"oled_fonts.h": "c",
+			"oled_icons.h": "c",
+			"fatfs.h": "c",
+			"display.h": "c",
+			"stm32l4xx_hal.h": "c",
+			"string.h": "c",
+			"settings.h": "c",
+			"usb_device.h": "c",
+			"cmsis_os.h": "c",
+			"keyboard.h": "c",
+			"main.h": "c",
+			"rtc_data.h": "c",
+			"stdlib.h": "c",
+			"typeinfo": "c",
+			"w25q128.h": "c",
+			"limits": "c",
+			"semphr.h": "c",
+			"ms5193t.h": "c",
+			"ff.h": "c",
+			"diskio.h": "c",
+			"type_traits": "c",
+			"usbh_core.h": "c",
+			"stm32l4xx_hal_flash_ex.h": "c",
+			"stdio.h": "c",
+			"freertos.h": "c",
+			"cmsis_os2.h": "c",
+			"usbh_diskio.h": "c",
+			"stm32l4xx.h": "c",
+			"onewire.h": "c",
+			"ds18b20config.h": "c",
+			"usbd_cdc_if.h": "c",
+			"at24c02.h": "c",
+			"status_codes.h": "c",
+			"stm32l4xx_it.h": "c",
+			"diagnostics.h": "c",
+			"gsm.h": "c"
+		},
+		"cortex-debug.variableUseNaturalFormat": true
+	}
+}

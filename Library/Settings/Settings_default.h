@@ -1,12 +1,14 @@
 #ifndef SETTINGS_DEFAULT_H
 #define SETTINGS_DEFAULT_H
 
-// Макросы с дефолтными значениями
-#define DEFAULT_VERSION_PROGRAMM       "Ver0.45"
 
-#define DEFAULT_VERSION_PCB            "3.75-A000D"   // Версия печатной платы
+#define Debug_mode 1                                // Включен или выключен режим отладки
+#define DEFAULT_VERSION_PROGRAMM       "Ver0.45"    // Версия программы
+#define EEPROM_FORMAT_VERSION           0x00000003U // Версия формата данных EEPROM
+
+#define DEFAULT_VERSION_PCB            "3.75-A000D" // Версия печатной платы
 #define DEFAULT_PASSWORD               "Defau"
-#define DEFAULT_TIME_WORK_CHAR         "0"           // Время работы в виде строки
+#define DEFAULT_TIME_WORK_CHAR         "0"          // Время работы в виде строки
 
 #define DEFAULT_LAST_ERROR_CODE        {0x00, 0x00, 0x00, 0x00}
 #define DEFAULT_TIME_WORK_H            0

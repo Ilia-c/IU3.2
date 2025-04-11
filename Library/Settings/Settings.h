@@ -30,9 +30,6 @@ extern "C"
   ////////////////////////////////////////////////////////////////////////////////
   extern char save_data[CMD_BUFFER_SIZE];
 
-#define Mode_set 0
-#define Mode_cycle 0
-#define Mode_demo 0
 
 
 
@@ -250,11 +247,13 @@ extern uint16_t time_update_display; // Время обновления экрана (для обновления 
 ////////////////////////////////////////////////////////////////////////////////
 extern char Keyboard_press_code;   // Код нажатой клавиши на клавиатуре
 extern char error_code[4];         // Код глобальной ошибки
-extern double OneWire_temp;        // Температура OneWire
-extern char OneWire_temp_char[5];  // Температура OneWire в виде строки
+extern double MK_temp;        // Температура МК
+extern char MK_temp_char[5];  // Температура МК в виде строки
 
 extern char EEPROM_status_char[10]; // Статус доступности EEPROM
 extern char FLASH_status_char[10];  // Статус доступности FLASH
+
+extern const char VERSION_PROGRAMM[20];
 
 extern RTC_TimeTypeDef Time; // Дата
 extern RTC_DateTypeDef Date; // Время

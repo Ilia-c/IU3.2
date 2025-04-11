@@ -707,6 +707,74 @@ void createFilename(char *dest, size_t destSize)
         }
     }
     tmp[j] = '\0';
-
     snprintf(dest, destSize, "%s%s.csv", USBHPath, tmp);
+}
+
+
+//---------------------------------------//
+//             ОБНОВЛЕНИЕ ПО             //
+//---------------------------------------//
+// Максимальный размер буфера ограничен 512 байт, здесь используем 256 байт
+#define UPDATE_BUFFER_SIZE  256
+
+// Функция обновления прошивки Update_PO
+void Update_PO(void) {
+    FRESULT res;
+    UINT bw;
+    FATFS *fs;
+    DWORD file_size;
+    uint32_t flash_addr;
+    DWORD total_read = 0;
+    uint8_t buffer[256];
+    UINT br;
+    
+
+    // 2. Открываем найденный файл для чтения
+    res = f_open(&MyFile, "UPDATE.bin", FA_READ);
+    if (res != FR_OK) {
+        return;
+    }
+    //HAL_IWDG_Refresh(&hiwdg);
+    // Определяем размер файла
+    file_size = f_size(&MyFile);
+    // Если размер файла равен нулю или превышает 512 КБ — прерываем обновление
+    if (file_size == 0 || file_size > TARGET_FLASH_SIZE) {
+        f_close(&MyFile);
+        return;
+    }
+    
+    // 3. Стираем область целевой прошивки во флеше (последние 512 КБ)
+    for (flash_addr = TARGET_FLASH_START; flash_addr < TARGET_FLASH_END; flash_addr += SECTOR_SIZE) {
+        if (W25_Erase_Sector(flash_addr) != 0) {
+            f_close(&MyFile);
+            return;
+        }
+    }
+    
+    // 4. Копирование содержимого файла во флеш
+    flash_addr = TARGET_FLASH_START;  // Начинаем запись с начала обновляемой области
+    while (total_read < file_size) {
+        // Читаем не более UPDATE_BUFFER_SIZE байт за раз
+        UINT to_read = ((file_size - total_read) > UPDATE_BUFFER_SIZE) ? UPDATE_BUFFER_SIZE : (file_size - total_read);
+        res = f_read(&MyFile, buffer, to_read, &br);
+        HAL_IWDG_Refresh(&hiwdg);
+        if (res != FR_OK || br != to_read) {
+            // При ошибке чтения файла прекращаем обновление
+            f_close(&MyFile);
+            return;
+        }
+        
+        // Записываем прочитанные данные во флеш. Функция W25_Write_Data должна корректно работать с передаваемым количеством байт.
+        if (W25_Write_Data(flash_addr, buffer, to_read) != 0) {
+            f_close(&MyFile);
+            return;
+        }
+        
+        flash_addr += to_read;
+        total_read += to_read;
+    }
+    
+    f_close(&MyFile);
+    
+    // Перезагрузить в режиме
 }
