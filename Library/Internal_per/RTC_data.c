@@ -8,11 +8,11 @@ RTC_HandleTypeDef hrtc;
 extern RTC_TimeTypeDef Time;
 extern RTC_DateTypeDef Date;
 
-#define LSI_TIMEOUT 1000  // РўР°Р№РјР°СѓС‚ РІ РјРёР»Р»РёСЃРµРєСѓРЅРґР°С… РґР»СЏ РѕР¶РёРґР°РЅРёСЏ РіРѕС‚РѕРІРЅРѕСЃС‚Рё LSI
+#define LSI_TIMEOUT 1000  // Таймаут в миллисекундах для ожидания готовности LSI
 
 void RTC_Init(void)
 {
-    // РџРµСЂРІРѕРЅР°С‡Р°Р»СЊРЅР°СЏ РЅР°СЃС‚СЂРѕР№РєР° RTC РґР»СЏ РІРЅРµС€РЅРµРіРѕ РёСЃС‚РѕС‡РЅРёРєР° (РЅР°РїСЂРёРјРµСЂ, LSE)
+    // Первоначальная настройка RTC для внешнего источника (например, LSE)
     hrtc.Instance = RTC;
     hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
     hrtc.Init.AsynchPrediv = 127;
@@ -25,20 +25,20 @@ void RTC_Init(void)
     if (HAL_RTC_Init(&hrtc) != HAL_OK)
     {
 		ERRCODE.STATUS |= ERROR_RTC;
-        // Р•СЃР»Рё РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РЅРµ СѓРґР°Р»Р°СЃСЊ, РїРµСЂРµС…РѕРґРёРј РЅР° РІРЅСѓС‚СЂРµРЅРЅРёР№ РёСЃС‚РѕС‡РЅРёРє (LSI)
+        // Если инициализация не удалась, переходим на внутренний источник (LSI)
         __HAL_RCC_LSI_ENABLE();
 
         uint32_t tickstart = HAL_GetTick();
-        // Р–РґС‘Рј РіРѕС‚РѕРІРЅРѕСЃС‚Рё LSI СЃ Р·Р°С‰РёС‚РѕР№ РѕС‚ Р·Р°РІРёСЃР°РЅРёСЏ (timeout)
+        // Ждём готовности LSI с защитой от зависания (timeout)
         while ((__HAL_RCC_GET_FLAG(RCC_FLAG_LSIRDY) == RESET) && ((HAL_GetTick() - tickstart) < LSI_TIMEOUT)){}
         if ((HAL_GetTick() - tickstart) >= LSI_TIMEOUT)
         {
-            // РўР°Р№РјР°СѓС‚ РѕР¶РёРґР°РЅРёСЏ LSI - РІС‹Р·С‹РІР°РµРј РѕР±СЂР°Р±РѕС‚С‡РёРє РѕС€РёР±РѕРє
+            // Таймаут ожидания LSI - вызываем обработчик ошибок
             Error_Handler();
         }
-        // РќР°СЃС‚СЂР°РёРІР°РµРј RTC РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ LSI. РџСЂРµСЃРєР°Р»РµСЂС‹ РјРѕРіСѓС‚ РѕС‚Р»РёС‡Р°С‚СЊСЃСЏ РѕС‚ РєРѕРЅС„РёРіСѓСЂР°С†РёРё РґР»СЏ LSE.
+        // Настраиваем RTC для работы с LSI. Прескалеры могут отличаться от конфигурации для LSE.
         hrtc.Init.AsynchPrediv = 127;
-        hrtc.Init.SynchPrediv = 249;  // РџСЂРёРјРµСЂРЅРѕ РґР»СЏ LSI ~32000 Р“С†
+        hrtc.Init.SynchPrediv = 249;  // Примерно для LSI ~32000 Гц
         if (HAL_RTC_Init(&hrtc) != HAL_OK)
         {
             Error_Handler();
@@ -62,7 +62,7 @@ void RTC_set_date()
 	HAL_PWR_EnableBkUpAccess();
 	RTC_DateTypeDef DateToUpdate = {0};
 
-	if (Date.Date>day_in_mount(Date.Month, Date.Year)) Date.Date = day_in_mount(Date.Month, Date.Year); //  РєРѕСЂСЂРµРєС†РёСЏ РґРЅСЏ
+	if (Date.Date>day_in_mount(Date.Month, Date.Year)) Date.Date = day_in_mount(Date.Month, Date.Year); //  коррекция дня
 
 	DateToUpdate.WeekDay = RTC_WEEKDAY_MONDAY;
 	DateToUpdate.Month = Date.Month;

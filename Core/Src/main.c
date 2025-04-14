@@ -193,7 +193,7 @@ uint8_t suspend = 0;
 
 int main(void)
 {
-  SCB->VTOR = 0x08008000;
+  SCB->VTOR = 0x08010000U;
   __HAL_RCC_PWR_CLK_ENABLE();
   HAL_Init();
 
