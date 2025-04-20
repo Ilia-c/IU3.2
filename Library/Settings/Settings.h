@@ -35,6 +35,8 @@ extern "C"
 
   #define BKP_REG_INDEX_ERROR_CODE_1  RTC_BKP_DR2
   #define BKP_REG_INDEX_ERROR_CODE_2  RTC_BKP_DR3
+  #define BKP_UPDATE_REG  RTC_BKP_DR5
+  #define BKP_UPDATE_FLAG 0xEAFC
   // Коды для разных Fault'ов:
   #define FAULT_CODE_NMI            1U
   #define FAULT_CODE_HARDFAULT      2U

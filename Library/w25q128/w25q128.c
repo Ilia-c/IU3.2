@@ -9,6 +9,7 @@ extern FATFS USBFatFs;    /* Файловая система для USB */
 extern FIL MyFile;        /* Объект файла */
 extern char USBHPath[4];  /* Логический путь USB диска */
 extern EEPROM_Settings_item EEPROM;
+extern RTC_HandleTypeDef hrtc;
 
 // Управление CS (Chip Select)
 #define cs_set()   HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, GPIO_PIN_RESET)
@@ -758,6 +759,7 @@ void Update_PO(void) {
         UINT to_read = ((file_size - total_read) > UPDATE_BUFFER_SIZE) ? UPDATE_BUFFER_SIZE : (file_size - total_read);
         res = f_read(&MyFile, buffer, to_read, &br);
         HAL_IWDG_Refresh(&hiwdg);
+        PROGRESS_BAR(100 * total_read / file_size); // Обновляем прогресс бар (например, 10% от общего размера файла)
         if (res != FR_OK || br != to_read) {
             // При ошибке чтения файла прекращаем обновление
             f_close(&MyFile);
@@ -773,8 +775,10 @@ void Update_PO(void) {
         flash_addr += to_read;
         total_read += to_read;
     }
-    
+
     f_close(&MyFile);
-    
-    // Перезагрузить в режиме
+
+    HAL_PWR_EnableBkUpAccess();
+    HAL_RTCEx_BKUPWrite(&hrtc, BKP_UPDATE_REG, BKP_UPDATE_FLAG);
+    NVIC_SystemReset();
 }
