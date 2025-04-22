@@ -641,8 +641,6 @@ void Update_programm(){
     #define X 20
     #define Y 25
 
-    OLED_DrawCenteredString(UPDATE, Y);
-    OLED_UpdateScreen();
 
     osThreadSuspend(ADC_readHandle);
     osThreadSuspend(ERROR_INDICATE_taskHandle);
@@ -653,7 +651,6 @@ void Update_programm(){
     osThreadResume(ERROR_INDICATE_taskHandle);
 
     OLED_Clear(0);
-    Display_TopBar(selectedMenuItem);   
     OLED_DrawCenteredString(ERROR_TEXT, Y);
     OLED_UpdateScreen();
     osDelay(200);

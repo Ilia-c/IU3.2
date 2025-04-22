@@ -715,70 +715,180 @@ void createFilename(char *dest, size_t destSize)
 //---------------------------------------//
 //             ОБНОВЛЕНИЕ ПО             //
 //---------------------------------------//
-// Максимальный размер буфера ограничен 512 байт, здесь используем 256 байт
 #define UPDATE_BUFFER_SIZE  256
+#define EXTERNAL_HEADER_SIZE 12U
+#define EXT_FW_AREA_SIZE TARGET_FLASH_SIZE
+#define EXTERNAL_FW_START FLASH_TOTAL_SIZE
+#define APP_SIZE (448U * 1024U)
+#define EXTERNAL_MAX_FW_SIZE (APP_SIZE)
+#define APP_ADDRESS 0x08010000U
+static uint32_t gFirmwareSize = 0;
 
-// Функция обновления прошивки Update_PO
-void Update_PO(void) {
+
+static int W25_Write_PageAligned(uint32_t addr,
+                                 const uint8_t *src,
+                                 uint32_t len)
+{
+    while (len)
+    {
+        uint32_t pageRest = 256U - (addr & 0xFFU); 
+        uint32_t chunk = (len < pageRest) ? len : pageRest; /* ? 256?page */
+
+        if (W25_Write_Data(addr, src, chunk) != 0) /* PP   */
+            return -1;
+        if (W25_WaitForReady(500U) != 0) /* busy */
+            return -1;
+
+        addr += chunk;
+        src += chunk;
+        len -= chunk;
+    }
+    return 0;
+}
+static uint32_t CRC32_Update(uint32_t crc, uint8_t data)
+{
+  crc ^= data;
+  for (uint8_t i = 0; i < 8; i++)
+    crc = (crc & 1U) ? (crc >> 1) ^ 0xEDB88320U : (crc >> 1);
+  return crc & 0xFFFFFFFFU; /* <?? маска на всякий случай */
+}
+
+/* ===== Функция очистки внешней флеш области ================= */
+static int EraseExternalFirmwareArea(void)
+{
+  const uint32_t sectorSize = 4096;
+  uint32_t totalSectors = EXT_FW_AREA_SIZE / sectorSize;
+  uint8_t step = 0;
+  for (uint32_t i = 0; i < totalSectors; ++i)
+  {
+    uint32_t addr = EXTERNAL_FW_START + i * sectorSize;
+    // Стираем сектор и ждём готовности
+    if (W25_Erase_Sector(addr) != 0)
+      return -1;
+    if (W25_WaitForReady(500) != 0)
+      return -1;
+    // Обновляем прогресс каждые 10%
+    uint8_t p = (uint8_t)(((i + 1) * 100) / totalSectors);
+    if (p >= step + 10)
+    {
+      step = p - (p % 10);
+      PROGRESS_BAR(step);
+      OLED_UpdateScreen();
+    }
+  }
+  return 0;
+}
+
+
+void Update_PO(void)
+{
     FRESULT res;
-    UINT bw;
-    FATFS *fs;
-    DWORD file_size;
-    uint32_t flash_addr;
-    DWORD total_read = 0;
-    uint8_t buffer[256];
-    UINT br;
-    
+    char path[32];
 
-    // 2. Открываем найденный файл для чтения
-    res = f_open(&MyFile, "UPDATE.bin", FA_READ);
-    if (res != FR_OK) {
+    // 1) Открываем UPDATE.bin
+    snprintf(path, sizeof(path), "%sUPDATE.bin", USBHPath);
+    if ((res = f_open(&MyFile, path, FA_READ)) != FR_OK) {
+        OLED_Clear(0);
+        OLED_DrawCenteredString("Файл не найден", 10);
+        OLED_UpdateScreen();
+        osDelay(1000);
         return;
     }
-    //HAL_IWDG_Refresh(&hiwdg);
-    // Определяем размер файла
-    file_size = f_size(&MyFile);
-    // Если размер файла равен нулю или превышает 512 КБ — прерываем обновление
-    if (file_size == 0 || file_size > TARGET_FLASH_SIZE) {
+
+    // 2) Проверяем размер файла
+    DWORD fullSize = f_size(&MyFile);
+    if (fullSize <= EXTERNAL_HEADER_SIZE || fullSize > EXTERNAL_HEADER_SIZE + EXTERNAL_MAX_FW_SIZE) {
         f_close(&MyFile);
+        OLED_Clear(0);
+        OLED_DrawCenteredString("Неверный размер", 10);
+        OLED_UpdateScreen();
+        osDelay(1000);
         return;
     }
-    
-    // 3. Стираем область целевой прошивки во флеше (последние 512 КБ)
-    for (flash_addr = TARGET_FLASH_START; flash_addr < TARGET_FLASH_END; flash_addr += SECTOR_SIZE) {
-        if (W25_Erase_Sector(flash_addr) != 0) {
-            f_close(&MyFile);
-            return;
+
+    // 3) Читаем 8 байт размера + 4 байта CRC32
+
+    UINT br;
+    uint8_t size_hdr[8], crc_hdr[4];
+    // Читаем 8 байт размера прошивки
+    if (f_read(&MyFile, size_hdr, 8, &br) != FR_OK || br != 8) { f_close(&MyFile); return -1; }
+    // Читаем 4 байта CRC32
+    if (f_read(&MyFile, crc_hdr, 4, &br) != FR_OK || br != 4) { f_close(&MyFile); return -1; }
+    // Вычисляем размер прошивки из первых 8 байт (little endian)
+    gFirmwareSize =  (uint64_t)size_hdr[0]
+                   | ((uint64_t)size_hdr[1] <<  8)
+                   | ((uint64_t)size_hdr[2] << 16)
+                   | ((uint64_t)size_hdr[3] << 24)
+                   | ((uint64_t)size_hdr[4] << 32)
+                   | ((uint64_t)size_hdr[5] << 40)
+                   | ((uint64_t)size_hdr[6] << 48)
+                   | ((uint64_t)size_hdr[7] << 56);
+
+    // Ожидаемый CRC32
+    uint32_t expectedCRC =  (uint32_t)crc_hdr[0]
+                          | ((uint32_t)crc_hdr[1] <<  8)
+                          | ((uint32_t)crc_hdr[2] << 16)
+                          | ((uint32_t)crc_hdr[3] << 24);
+
+    // Очистка внешнего хранилища
+    OLED_Clear(0);
+    OLED_DrawCenteredString("Подготовка места", 10);
+    PROGRESS_BAR(0);
+    OLED_UpdateScreen();
+    if (EraseExternalFirmwareArea() != 0) { f_close(&MyFile); return -1; }
+
+    // Записываем в W25Q128 все 12 байт заголовка
+    if (W25_Write_Data(EXTERNAL_FW_START,        size_hdr, 8) != 0) { f_close(&MyFile); return -1; }
+    if (W25_Write_Data(EXTERNAL_FW_START + 8, crc_hdr, 4) != 0)      { f_close(&MyFile); return -1; }
+
+    // Копируем остальной бинарник с прогрессом и проверяем CRC на лету
+    OLED_Clear(0);
+    OLED_DrawCenteredString("Копирование", 10);
+    PROGRESS_BAR(0);
+    OLED_UpdateScreen();
+
+    uint32_t total = 0;
+    uint32_t addr  = EXTERNAL_FW_START + EXTERNAL_HEADER_SIZE;
+    uint32_t crc   = 0xFFFFFFFFU;
+    uint8_t  buf[256];
+    uint8_t  step  = 0;
+
+    while (total < gFirmwareSize) {
+        UINT need = (gFirmwareSize - total > sizeof(buf)) ? sizeof(buf) : (gFirmwareSize - total);
+        if (f_read(&MyFile, buf, need, &br) != FR_OK || br == 0) { f_close(&MyFile); return -1; }
+
+        for (UINT i = 0; i < br; ++i) crc = CRC32_Update(crc, buf[i]);
+        if (W25_Write_PageAligned(addr, buf, br) != 0) { f_close(&MyFile); return -1; }
+
+        addr  += br;
+        total += br;
+
+        uint8_t p = (uint8_t)(100UL * total / gFirmwareSize);
+        if (p >= step + 10) {
+            step = p - (p % 10);
+            PROGRESS_BAR(step);
+            OLED_UpdateScreen();
         }
-    }
-    
-    // 4. Копирование содержимого файла во флеш
-    flash_addr = TARGET_FLASH_START;  // Начинаем запись с начала обновляемой области
-    while (total_read < file_size) {
-        // Читаем не более UPDATE_BUFFER_SIZE байт за раз
-        UINT to_read = ((file_size - total_read) > UPDATE_BUFFER_SIZE) ? UPDATE_BUFFER_SIZE : (file_size - total_read);
-        res = f_read(&MyFile, buffer, to_read, &br);
-        HAL_IWDG_Refresh(&hiwdg);
-        PROGRESS_BAR(100 * total_read / file_size); // Обновляем прогресс бар (например, 10% от общего размера файла)
-        if (res != FR_OK || br != to_read) {
-            // При ошибке чтения файла прекращаем обновление
-            f_close(&MyFile);
-            return;
-        }
-        
-        // Записываем прочитанные данные во флеш. Функция W25_Write_Data должна корректно работать с передаваемым количеством байт.
-        if (W25_Write_Data(flash_addr, buffer, to_read) != 0) {
-            f_close(&MyFile);
-            return;
-        }
-        
-        flash_addr += to_read;
-        total_read += to_read;
     }
 
     f_close(&MyFile);
+    crc = ~crc;
+    if (crc != expectedCRC) {
+        OLED_Clear(0);
+        OLED_DrawCenteredString("Ошибка копирования", 10);
+        OLED_UpdateScreen();
+        HAL_Delay(1000);
+        EraseExternalFirmwareArea();
+        return -1;
+    }
+
+    OLED_Clear(0);
+    OLED_DrawCenteredString("Успешно скопировано", 10);
+    OLED_UpdateScreen();
+    HAL_Delay(1000);
 
     HAL_PWR_EnableBkUpAccess();
-    HAL_RTCEx_BKUPWrite(&hrtc, BKP_UPDATE_REG, BKP_UPDATE_FLAG);
+    __HAL_RCC_RTC_ENABLE();
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR5, BKP_UPDATE_FLAG);
     NVIC_SystemReset();
 }
