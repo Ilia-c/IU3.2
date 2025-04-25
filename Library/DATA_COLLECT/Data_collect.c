@@ -141,8 +141,15 @@ void SETTINGS_REQUEST_DATA()
 {
     base62_encode(ERRCODE.STATUS, ERRCODE.STATUSCHAR, sizeof(ERRCODE.STATUSCHAR));
 
+    char Version[20] = {0};
+    strncpy(Version, EEPROM.version.VERSION_PCB, sizeof(Version)-1);
+    remove_braces_inplace(Version);
+    char Password[20] = {0};
+    strncpy(Password, EEPROM.version.password, sizeof(Password)-1);
+    remove_braces_inplace(Password);
+
     snprintf(save_data, CMD_BUFFER_SIZE,
              "[%s;%s]",
-             EEPROM.version.VERSION_PCB, // строка
-             EEPROM.version.password);   // число
+             Version, // строка
+             Password);   // число
 }
