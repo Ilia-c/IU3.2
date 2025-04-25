@@ -639,20 +639,18 @@ void Update_programm(){
     FontSet(font);
     Display_TopBar(selectedMenuItem);
     #define X 20
-    #define Y 25
+    #define Y 30
 
 
     osThreadSuspend(ADC_readHandle);
     osThreadSuspend(ERROR_INDICATE_taskHandle);
-
+    OLED_Clear(0);
+    Display_TopBar(selectedMenuItem);
     Update_PO();
 
     osThreadResume(ADC_readHandle);
     osThreadResume(ERROR_INDICATE_taskHandle);
 
-    OLED_Clear(0);
-    OLED_DrawCenteredString(ERROR_TEXT, Y);
-    OLED_UpdateScreen();
     osDelay(200);
 }
 
@@ -1138,7 +1136,9 @@ void Data_in_no_redact(menuItem *menu, int pos_y){
         }
 
         if (menu->data_in->data_type[i] == 2) if (menu->data_in->unsigned_signed[0] == 1) string[0] = '-';
+        memset(buffer, 0, sizeof(buffer));
         formatters[menu->data_in->data_type[i]](buffer, sizeof(buffer), menu->data_in->data[i]);
+        if (menu->data_in->data_type[i] == 3) remove_braces_inplace(buffer);
         // äîïèñàòü íóëè ïåðåä ñèìâîëîì
         if (menu->data_in->data_type[i] != 3) 
         {
@@ -1231,7 +1231,6 @@ void Select_diplay_functions(menuItem *menu, int pos_y)
     if (len_signat > 0) len_signat += 4;
     OLED_DrawStr(menu->add_signat->Name[*menu->add_signat->data][EEPROM.len], winth_display-len_signat, pos_y * dist_y + height_up_menu, 1);
     
-    
     // Âûâîä ðåæèìà (ïðîêðóòêà)
     if (menu->select_bar != (void *)&NULL_ENTRY)
     {   
@@ -1263,9 +1262,12 @@ void Display_punkt_menu(menuItem *menu, int pos_y) // îòîáðàæåíèå îäíîãî ïóíêòà 
 
     if (menu->data_out != (void *)&NULL_ENTRY)
     {
+        char buffer[30] = {0};
+        strncpy(buffer, menu->data_out, sizeof(buffer)-1);
+        remove_braces_inplace(buffer);
         uint8_t len_add_signa = 0;
         len_add_signa = OLED_GetWidthStr(menu->add_signat->Name[*menu->add_signat->data][EEPROM.len]);
-        OLED_DrawStr(menu->data_out, winth_display - (OLED_GetWidthStr(menu->data_out)) - (len_add_signa+4), pos_y * dist_y + height_up_menu, 1);
+        OLED_DrawStr(buffer, winth_display - (OLED_GetWidthStr(buffer)) - (len_add_signa+4), pos_y * dist_y + height_up_menu, 1);
     }
 
     if (menu->data_in != (void *)&NULL_ENTRY)
@@ -1430,7 +1432,7 @@ void mode_check()
                 uint8_t len_dat = search_len_mass(selectedMenuItem->data_in->data_temp[i], 11, separat);
                 for (int j = 0; j < (uint8_t)selectedMenuItem->data_in->len_data_zero[i] - len_dat; j++){
                     if (selectedMenuItem->data_in->data_type[i] != 3) separat[j] = '0';
-                    if (selectedMenuItem->data_in->data_type[i] == 3) separat[j] = 0x99;
+                    if (selectedMenuItem->data_in->data_type[i] == 3) separat[j] = '{';
                 }
                 
                 strcat(separat, selectedMenuItem->data_in->data_temp[i]);
@@ -1575,7 +1577,7 @@ void up_redact()
         // åñëè òèï äàííûõ char
         if (selectedMenuItem->data_in->data_type[add_pos] == 3){ 
             if (selectedMenuItem->data_in->data_temp[add_pos][position] < 255) selectedMenuItem->data_in->data_temp[add_pos][position]++;
-            if ((selectedMenuItem->data_in->data_temp[add_pos][position] > 122) && (selectedMenuItem->data_in->data_temp[add_pos][position] < 192)) selectedMenuItem->data_in->data_temp[add_pos][position] = 192;
+            if ((selectedMenuItem->data_in->data_temp[add_pos][position] > 123) && (selectedMenuItem->data_in->data_temp[add_pos][position] < 192)) selectedMenuItem->data_in->data_temp[add_pos][position] = 192;
         // ÄÎÁÀÂÈÒÜ ÀÄÅÊÂÀÒÍÎÅ ÓÑËÎÂÈÅ ÍÀ ÏÅÐÅÊËÞ×ÅÍÈÅ ÒÎËÜÊÎ ÏÎ ÀËÔÀÂÈÒÀÌ
         
         }
@@ -1623,7 +1625,7 @@ void down_redact()
         if (selectedMenuItem->data_in->data_type[add_pos] == 3){ 
             if (selectedMenuItem->data_in->data_temp[add_pos][position] < 31) selectedMenuItem->data_in->data_temp[add_pos][position] = 33;
             if (selectedMenuItem->data_in->data_temp[add_pos][position]-1 > 32) selectedMenuItem->data_in->data_temp[add_pos][position]--;
-            if ((selectedMenuItem->data_in->data_temp[add_pos][position] > 122) && (selectedMenuItem->data_in->data_temp[add_pos][position] < 192)) selectedMenuItem->data_in->data_temp[add_pos][position] = 122;
+            if ((selectedMenuItem->data_in->data_temp[add_pos][position] > 123) && (selectedMenuItem->data_in->data_temp[add_pos][position] < 192)) selectedMenuItem->data_in->data_temp[add_pos][position] = 123;
         }
         // åñëè òèï äàííûõ ïîëîæèòåëüíûé
         if (selectedMenuItem->data_in->data_type[add_pos] != 3){ 
@@ -1833,7 +1835,7 @@ static unsigned char switch_char(unsigned char c)
             c = 90;          // 'Z'
     }
     // Ñòðî÷íûå ëàòèíñêèå [a..z] = [97..122]
-    else if (c >= 97 && c <= 122)
+    else if (c >= 97 && c <= 123)
     {
         unsigned char index = c - 97;     // 0..25
         if (index < 26) 

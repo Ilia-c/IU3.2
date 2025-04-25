@@ -205,10 +205,15 @@ int main(void)
   RTC_read();
 
   MX_GPIO_Init();
+
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
-  HAL_Delay(500);
+  HAL_Delay(100);
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
-  HAL_Delay(500);
+  HAL_Delay(100);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+  HAL_Delay(100);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+  HAL_Delay(100);
 
   MX_ADC1_Init();
   //MX_ADC3_Init();
@@ -321,13 +326,6 @@ int main(void)
   HAL_NVIC_EnableIRQ(UART4_IRQn);
   
   
-
-
-  if ((EEPROM.USB_mode == 1) || (EEPROM.USB_mode == 2)){
-    MX_USB_DEVICE_Init_COMPORT(); // Режим работы в VirtualComPort
-    HAL_NVIC_SetPriority(OTG_FS_IRQn, 6, 0); // Приоритет прерывания
-    HAL_NVIC_EnableIRQ(OTG_FS_IRQn);         // Включение прерывания
-  }
   // Запуск в режиме настройки (экран вкл)
   if (EEPROM.Mode == 0){
     // Включение переферии
@@ -346,10 +344,6 @@ int main(void)
     HAL_GPIO_WritePin(COL_B2_GPIO_Port, COL_B2_Pin, 1);
     HAL_GPIO_WritePin(COL_B3_GPIO_Port, COL_B3_Pin, 1);
     HAL_GPIO_WritePin(COL_B4_GPIO_Port, COL_B4_Pin, 1);
-    HAL_NVIC_SetPriority(EXTI4_IRQn, 7, 0);
-    HAL_NVIC_SetPriority(EXTI9_5_IRQn, 7, 0);
-    HAL_NVIC_EnableIRQ(EXTI4_IRQn);
-    HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
     
     // Таймер ухода в сон (либо заставки)
 
@@ -361,6 +355,11 @@ int main(void)
     HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
   }
 
+  if ((EEPROM.USB_mode == 1) || (EEPROM.USB_mode == 2)){
+    MX_USB_DEVICE_Init_COMPORT(); // Режим работы в VirtualComPort
+    HAL_NVIC_SetPriority(OTG_FS_IRQn, 6, 0); // Приоритет прерывания
+    HAL_NVIC_EnableIRQ(OTG_FS_IRQn);         // Включение прерывания
+  }
   MX_FATFS_Init();
   w25_init();
 
@@ -462,6 +461,11 @@ void Main(void *argument)
   vSemaphoreCreateBinary(Main_semaphore);
   vSemaphoreCreateBinary(SLEEP_semaphore);
   xSemaphoreTake(SLEEP_semaphore, 0);
+
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 7, 0);
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 7, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
     // Запуск глобального таймера для обновления экрана
   HAL_NVIC_SetPriority(TIM5_IRQn, 8, 0); // Установите приоритет

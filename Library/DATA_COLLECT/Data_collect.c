@@ -85,6 +85,17 @@ void remove_whitespace(char *str)
     *dst = '\0';
 }
 
+void remove_braces_inplace(char *str) {
+    char *dst = str;
+    while (*str) {
+        if (*str != '{') {
+            *dst++ = *str;
+        }
+        str++;
+    }
+    *dst = '\0';
+}
+
 const char CableB[] = "cable_break";
 void Collect_DATA()
 {
@@ -92,6 +103,12 @@ void Collect_DATA()
     HAL_RTC_GetTime(&hrtc, &Time, RTC_FORMAT_BIN);
     base62_encode(ERRCODE.STATUS, ERRCODE.STATUSCHAR, sizeof(ERRCODE.STATUSCHAR));
 
+    char Version[20] = {0};
+    strncpy(Version, EEPROM.version.VERSION_PCB, sizeof(Version)-1);
+    remove_braces_inplace(Version);
+    char Password[20] = {0};
+    strncpy(Password, EEPROM.version.password, sizeof(Password)-1);
+    remove_braces_inplace(Password);
     // Если в ADC_data.ADC_SI_value_char или ADC_data.ADC_SI_value_correct_char содержатся русские символы,
     // заменяем их на "cable break"
     if (containsRussian(ADC_data.ADC_SI_value_char) || containsRussian(ADC_data.ADC_SI_value_correct_char))
@@ -102,8 +119,8 @@ void Collect_DATA()
 
     snprintf(save_data, CMD_BUFFER_SIZE,
              "[%s;%s;%s;%s;%s;%s;%s;%s;%02d:%02d%s%02d/%02d/%02d;%s;%s;%u;%u]",
-             EEPROM.version.VERSION_PCB,         // строка
-             EEPROM.version.password,            // строка
+             Version,         // строка
+             Password,            // строка
              ADC_data.ADC_value_char,            // строка
              ADC_data.ADC_SI_value_char,         // строка (возможно заменённая)
              ADC_data.ADC_SI_value_correct_char, // строка (возможно заменённая)

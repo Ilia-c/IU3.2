@@ -788,10 +788,8 @@ void Update_PO(void)
     // 1) Открываем UPDATE.bin
     snprintf(path, sizeof(path), "%sUPDATE.bin", USBHPath);
     if ((res = f_open(&MyFile, path, FA_READ)) != FR_OK) {
-        OLED_Clear(0);
-        OLED_DrawCenteredString("Файл не найден", 10);
+        OLED_DrawCenteredString("Файл не найден", 30);
         OLED_UpdateScreen();
-        osDelay(1000);
         return;
     }
 
@@ -811,9 +809,21 @@ void Update_PO(void)
     UINT br;
     uint8_t size_hdr[8], crc_hdr[4];
     // Читаем 8 байт размера прошивки
-    if (f_read(&MyFile, size_hdr, 8, &br) != FR_OK || br != 8) { f_close(&MyFile); return -1; }
+    if (f_read(&MyFile, size_hdr, 8, &br) != FR_OK || br != 8) { 
+        OLED_Clear(0);
+        OLED_DrawCenteredString("Ошибка формата", 10);
+        OLED_UpdateScreen();
+        f_close(&MyFile); 
+        return -1; 
+    }
     // Читаем 4 байта CRC32
-    if (f_read(&MyFile, crc_hdr, 4, &br) != FR_OK || br != 4) { f_close(&MyFile); return -1; }
+    if (f_read(&MyFile, crc_hdr, 4, &br) != FR_OK || br != 4) { 
+        OLED_Clear(0);
+        OLED_DrawCenteredString("Ошибка формата", 10);
+        OLED_UpdateScreen();
+        f_close(&MyFile); 
+        return -1;  
+    }
     // Вычисляем размер прошивки из первых 8 байт (little endian)
     gFirmwareSize =  (uint64_t)size_hdr[0]
                    | ((uint64_t)size_hdr[1] <<  8)
@@ -835,11 +845,29 @@ void Update_PO(void)
     OLED_DrawCenteredString("Подготовка места", 10);
     PROGRESS_BAR(0);
     OLED_UpdateScreen();
-    if (EraseExternalFirmwareArea() != 0) { f_close(&MyFile); return -1; }
+    if (EraseExternalFirmwareArea() != 0) { 
+        OLED_Clear(0);
+        OLED_DrawCenteredString("Ошибка стирания", 10);
+        OLED_UpdateScreen();
+        f_close(&MyFile); 
+        return -1; 
+    }
 
     // Записываем в W25Q128 все 12 байт заголовка
-    if (W25_Write_Data(EXTERNAL_FW_START,        size_hdr, 8) != 0) { f_close(&MyFile); return -1; }
-    if (W25_Write_Data(EXTERNAL_FW_START + 8, crc_hdr, 4) != 0)      { f_close(&MyFile); return -1; }
+    if (W25_Write_Data(EXTERNAL_FW_START,        size_hdr, 8) != 0) { 
+        OLED_Clear(0);
+        OLED_DrawCenteredString("Ошибка записи", 10);
+        OLED_UpdateScreen();
+        f_close(&MyFile); 
+        return -1; 
+    }
+    if (W25_Write_Data(EXTERNAL_FW_START + 8, crc_hdr, 4) != 0)      { 
+        OLED_Clear(0);
+        OLED_DrawCenteredString("Ошибка записи", 10);
+        OLED_UpdateScreen();
+        f_close(&MyFile); 
+        return -1; 
+    }
 
     // Копируем остальной бинарник с прогрессом и проверяем CRC на лету
     OLED_Clear(0);
@@ -855,10 +883,22 @@ void Update_PO(void)
 
     while (total < gFirmwareSize) {
         UINT need = (gFirmwareSize - total > sizeof(buf)) ? sizeof(buf) : (gFirmwareSize - total);
-        if (f_read(&MyFile, buf, need, &br) != FR_OK || br == 0) { f_close(&MyFile); return -1; }
+        if (f_read(&MyFile, buf, need, &br) != FR_OK || br == 0) { 
+            OLED_Clear(0);
+            OLED_DrawCenteredString("Ошибка чтения", 10);
+            OLED_UpdateScreen();
+            f_close(&MyFile); 
+            return -1; 
+        }
 
         for (UINT i = 0; i < br; ++i) crc = CRC32_Update(crc, buf[i]);
-        if (W25_Write_PageAligned(addr, buf, br) != 0) { f_close(&MyFile); return -1; }
+        if (W25_Write_PageAligned(addr, buf, br) != 0) { 
+            OLED_Clear(0);
+            OLED_DrawCenteredString("Ошибка записи 2", 10);
+            OLED_UpdateScreen();
+            f_close(&MyFile); 
+            return -1;  
+        }
 
         addr  += br;
         total += br;

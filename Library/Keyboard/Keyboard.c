@@ -150,10 +150,24 @@ void HAL_TIM6_Callback(void)
     xSemaphoreGiveFromISR(Keyboard_semapfore, &xTaskWoken);
 }
 
+#include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h"
+
+#define DEBOUNCE_DELAY_MS 100U
+static TickType_t lastInterruptTime = 0;
+
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-    if ((GPIO_Pin == STR_B1_Pin) || (GPIO_Pin == STR_B2_Pin) ||
-        (GPIO_Pin == STR_B3_Pin) || (GPIO_Pin == STR_B4_Pin))
+    TickType_t currentTime = xTaskGetTickCountFromISR();
+    if ((currentTime - lastInterruptTime) < pdMS_TO_TICKS(DEBOUNCE_DELAY_MS)) {
+        return;
+    }
+    lastInterruptTime = currentTime;
+    if ((GPIO_Pin == STR_B1_Pin) ||
+        (GPIO_Pin == STR_B2_Pin) ||
+        (GPIO_Pin == STR_B3_Pin) ||
+        (GPIO_Pin == STR_B4_Pin))
     {
         static portBASE_TYPE xTaskWoken;
         xSemaphoreGiveFromISR(Keyboard_semapfore, &xTaskWoken);

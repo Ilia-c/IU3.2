@@ -275,6 +275,10 @@ int waitForHTTPResponse(uint32_t timeout)
                     return 1;
                 return 0; // Успешно получен и разобран ответ
             }
+            if (strstr(parseBuffer, "error") != NULL)
+            {
+                break;
+            }
         }
     }
     CDC_Transmit_FS(parseBuffer, sizeof(parseBuffer));
@@ -295,7 +299,7 @@ int sendSMS(void)
     else{
         return -1;
     }
-
+    /*
     if (SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000) != 1)
     {
     };
@@ -304,7 +308,7 @@ int sendSMS(void)
     };
     if (SendCommandAndParse("AT+CGDCONT=1\r", waitForOKResponse, 1000) != 1)
     {
-    };
+    };*/
 
     for (attempt = 0; attempt < MAX_SMS_ATTEMPTS; attempt++)
     {
@@ -326,14 +330,14 @@ int sendSMS(void)
         // "AT+CMGS=\"+79150305966\"\r"
         memset(command, 0, sizeof(command));
         sprintf(command, "AT+CMGS=\"%s\"\r", EEPROM.Phone);
-        strcat(command, save_data);
+        //strcat(command, save_data);
         if (SendCommandAndParse(command, waitForGreaterThanResponse, 2000) != 1)
         {
             osDelay(1000);
             continue;
         }
         HAL_UART_Transmit(&huart4, save_data, strlen(save_data), 1000);
-        osDelay(30000);
+        osDelay(90000);
         // Если все команды выполнены успешно, считаем, что SMS отправлена
         smsSent = 1;
         break;
@@ -660,6 +664,10 @@ int waitAndParseSiteResponse(uint32_t timeout)
             {
                 int res = parse_site_response();
                 return res;
+            }
+            if (strstr(parseBuffer, "Error") != NULL)
+            {
+                break;
             }
         }
     }

@@ -15,3 +15,4 @@ void SD_write_log(char *string, char *path);
 void Collect_DATA();
 void remove_whitespace(char *str);
 void SETTINGS_REQUEST_DATA();
+void remove_braces_inplace(char *str);
