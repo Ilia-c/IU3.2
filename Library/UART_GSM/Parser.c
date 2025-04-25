@@ -607,7 +607,12 @@ int parse_site_response(void) {
     }
 
     // Проверяем, совпадает ли полученный номер устройства с ожидаемым
-    if (strcmp(devNum, EEPROM.version.VERSION_PCB) != 0) {
+
+    char Version[20] = {0};
+    strncpy(Version, EEPROM.version.VERSION_PCB, sizeof(Version)-1);
+    remove_braces_inplace(Version);
+
+    if (strcmp(devNum, Version) != 0) {
         return -1;
     }
     
