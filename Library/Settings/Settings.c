@@ -33,7 +33,7 @@ EEPROM_Settings_item EEPROM = {
     .time_sleep_m = DEFAULT_TIME_SLEEP_M,        // Время сна устройства (минуты)
 
     .Phone = DEFAULT_PHONE,
-
+    
     // Параметры АЦП:
     .ADC_ION = DEFAULT_ADC_ION,                  // Напряжение ИОН АЦП
     .ADC_RESISTOR = DEFAULT_ADC_RESISTOR,        // Сопротивление резистора

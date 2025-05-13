@@ -205,6 +205,7 @@ void TIM8_UP_IRQHandler(void)
 {
   HAL_TIM_IRQHandler(&htim8);
   time_counter++;
+  //300
   if (time_counter>=300){
     // ≈асли прошло 5 минут - вызываем либо заставку, либо засыпаем (зависит от режима block)
     time_counter=0;

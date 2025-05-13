@@ -70,7 +70,6 @@ SPI_HandleTypeDef hspi2;
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart4;
 
-ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc3;
 
 TIM_HandleTypeDef htim5;
@@ -79,6 +78,8 @@ TIM_HandleTypeDef htim7;
 TIM_HandleTypeDef htim8;
 
 IWDG_HandleTypeDef hiwdg;
+extern ADC_HandleTypeDef    hadc1;
+extern DMA_HandleTypeDef    hdma_adc1;
 
 void MX_GPIO_Init(void);  
 void MX_ADC1_Init(void);        // 
@@ -185,6 +186,7 @@ void Erroe_indicate(void *argument);
 void HAL_TIM6_Callback(void);
 void SetTimerPeriod(uint32_t period_ms);
 void Watch_dog_task(void *argument);
+void MX_DMA_Init(void);
 
 unsigned int id = 0x00;
 extern RTC_HandleTypeDef hrtc;
@@ -215,6 +217,7 @@ int main(void)
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
   HAL_Delay(100);
 
+  MX_DMA_Init();
   MX_ADC1_Init();
   //MX_ADC3_Init();
   MX_I2C1_Init();
@@ -247,7 +250,7 @@ int main(void)
   HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);           // Включение Памяти на плате
   HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 1);         // Включение 
 
-  HAL_Delay(10);
+  HAL_Delay(20);
 
   // Чтение данных из EEPROM
   if (EEPROM_CHECK() == HAL_OK)
@@ -283,7 +286,7 @@ int main(void)
     //EEPROM.Mode = 0;
     if (__HAL_PWR_GET_FLAG(PWR_FLAG_SB) == RESET){
       // Если сброс не из перехода в цикл и не из за wakeup
-      EEPROM.Mode = 0;
+      //EEPROM.Mode = 0;
       if (ERRCODE.STATUS & STATUS_EEPROM_INIT_ERROR)
       {
         if (EEPROM_CheckDataValidity() != HAL_OK)
@@ -324,7 +327,7 @@ int main(void)
   HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
   HAL_NVIC_SetPriority(UART4_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(UART4_IRQn);
-  
+  ADC_Start();
   
   // Запуск в режиме настройки (экран вкл)
   if (EEPROM.Mode == 0){
@@ -582,14 +585,9 @@ void Main_Cycle(void *argument)
       }
     }
 
-    
-
     osDelay(500);
     // Читаем текущее напряжение питания
-    for (int i = 0; i < 10; i++)
-    {
-      Read_ADC_Voltage();
-    }
+    ADC_Voltage_Calculate();
     if (ERRCODE.STATUS & STATUS_VOLTAGE_TOO_LOW) Enter_StandbyMode_NoWakeup();
     osDelay(1000);
     
@@ -743,7 +741,7 @@ void RS485_data(void *argument)
   for (;;)
   {
     osDelay(3000);
-    Read_ADC_Voltage(); // Измерение напряжения на АКБ
+    ADC_Voltage_Calculate(); // Измерение напряжения на АКБ
     if (EEPROM.Mode == 1) osThreadSuspend(RS485_dataHandle); // Остановить, если циклический режим (для однократного выполнения)
   }
 }
@@ -786,7 +784,6 @@ void Watch_dog_task(void *argument)
       __HAL_TIM_SET_COUNTER(&htim8, 0);
       if (ERRCODE.STATUS & STATUS_VOLTAGE_TOO_LOW) Enter_StandbyMode_NoWakeup();
       if (EEPROM.block == 2) return;
-
       if (EEPROM.block == 1)
       {
         Screen_saver();

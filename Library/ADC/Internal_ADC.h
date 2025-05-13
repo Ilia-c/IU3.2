@@ -12,12 +12,11 @@ extern "C"
 #include "Status_codes.h"
 
 extern EEPROM_Settings_item EEPROM;
-extern ADC_HandleTypeDef hadc1;
-extern ADC_HandleTypeDef hadc3;
 extern Internal_ADC_item IntADC;
-void Read_ADC_Voltage(void);
+void ADC_Voltage_Calculate(void);
 int Read_ADC_Colibrate_24V(void);
 float voltageToSOC(float voltage);
+void ADC_Start(void);
 
 #ifdef __cplusplus
 }
