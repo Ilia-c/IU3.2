@@ -779,6 +779,34 @@ static int EraseExternalFirmwareArea(void)
   return 0;
 }
 
+FRESULT FindAndOpenFirstBin(FIL *pFile, const char *USBHPath) {
+    DIR dir;
+    FILINFO fno;
+    FRESULT res;
+    char fullpath[64];
+
+    // Ищем в корне USBHPath файл по маске *.BIN
+    res = f_findfirst(&dir, &fno, USBHPath, "*.BIN");
+    if (res != FR_OK) {
+        f_closedir(&dir);
+        return res;
+    }
+
+    if (fno.fname[0] == 0) {
+        // Ни один файл не найден
+        f_closedir(&dir);
+        return FR_NO_FILE;
+    }
+
+    // Собираем полный путь: USBHPath + SFN-имя
+    // USBHPath должен оканчиваться слэшем, например "0:/" или "0:/DIR/"
+    snprintf(fullpath, sizeof(fullpath), "%s%s", USBHPath, fno.fname);
+
+    // Пытаемся открыть
+    res = f_open(pFile, fullpath, FA_READ);
+    f_closedir(&dir);
+    return res;
+}
 
 void Update_PO(void)
 {
@@ -786,12 +814,18 @@ void Update_PO(void)
     char path[32];
 
     // 1) Открываем UPDATE.bin
+    /*
     snprintf(path, sizeof(path), "%sUPDATE.bin", USBHPath);
     if ((res = f_open(&MyFile, path, FA_READ)) != FR_OK) {
         OLED_DrawCenteredString("Файл не найден", 30);
         OLED_UpdateScreen();
         return;
-    }
+    }*/
+    if ((res = FindAndOpenFirstBin(&MyFile, USBHPath)) != FR_OK) {
+         OLED_DrawCenteredString("Файл не найден", 30);
+         OLED_UpdateScreen();
+         return;
+     }
 
     // 2) Проверяем размер файла
     DWORD fullSize = f_size(&MyFile);
