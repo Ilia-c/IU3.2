@@ -3,7 +3,7 @@
 
 
 #define Debug_mode 1                                // Включен или выключен режим отладки
-#define DEFAULT_VERSION_PROGRAMM       "Ver0.54"    // Версия программы
+#define DEFAULT_VERSION_PROGRAMM       "Ver0.60"    // Версия программы
 #define EEPROM_FORMAT_VERSION           0x00000004U // Версия формата данных EEPROM
 
 #define DEFAULT_VERSION_PCB            "3.75-A000{" // Версия печатной платы

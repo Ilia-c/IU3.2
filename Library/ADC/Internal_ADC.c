@@ -98,7 +98,7 @@ float voltageToSOC(float voltage) {
     if (voltage <= 22.4f) {
         return 0.0f;
     }
-    if (voltage >= 27.2f) {
+    if (voltage >= 27.1f) {
         return 100.0f;
     }
 
@@ -112,7 +112,7 @@ float voltageToSOC(float voltage) {
     } else if (voltage < 26.8f) {
         soc = 70.0f + (voltage - 26.4f) / (26.8f - 26.4f) * 20.0f;
     } else {
-        soc = 90.0f + (voltage - 26.8f) / (27.2f - 26.8f) * 10.0f;
+        soc = 90.0f + (voltage - 26.8f) / (27.1f - 26.8f) * 10.0f;
     }
 
     return soc;

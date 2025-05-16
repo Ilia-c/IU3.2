@@ -205,7 +205,6 @@ int main(void)
 	HAL_RTC_GetTime(&hrtc, &Time_start, RTC_FORMAT_BIN);
 	HAL_RTC_GetDate(&hrtc, &Date_start, RTC_FORMAT_BIN);
   RTC_read();
-
   MX_GPIO_Init();
 
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
@@ -283,7 +282,7 @@ int main(void)
     HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_RESET_PROG, 0x00); // сбрасывавем флаг
   }
   else{
-    //EEPROM.Mode = 0;
+    EEPROM.Mode = 0;
     if (__HAL_PWR_GET_FLAG(PWR_FLAG_SB) == RESET){
       // Если сброс не из перехода в цикл и не из за wakeup
       //EEPROM.Mode = 0;
@@ -327,6 +326,7 @@ int main(void)
   HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
   HAL_NVIC_SetPriority(UART4_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(UART4_IRQn);
+
   ADC_Start();
   
   // Запуск в режиме настройки (экран вкл)
@@ -392,11 +392,9 @@ int main(void)
     // Приостановка всех задач
     osThreadSuspend(ADC_readHandle);
     osThreadSuspend(RS485_dataHandle);
+    osThreadSuspend(UART_PARSER_taskHandle);
   }
-
   osKernelStart();
-
-
   while (1)
   {
   }
@@ -514,6 +512,7 @@ void Main_Cycle(void *argument)
     // 3. Выключить EEPROM
     //HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0); // Выключение Памяти на плате
 
+    /*
     uint8_t status = 0;
     // 4. Запрос настроек с сайта для текущей конфигурации, запуск задачи параллельно, если фатальная ошибка - отключить GSM
     if (EEPROM.Communication != 0)
@@ -586,6 +585,8 @@ void Main_Cycle(void *argument)
     }
 
     osDelay(500);
+    */
+
     // Читаем текущее напряжение питания
     ADC_Voltage_Calculate();
     if (ERRCODE.STATUS & STATUS_VOLTAGE_TOO_LOW) Enter_StandbyMode_NoWakeup();
@@ -620,19 +621,68 @@ void Main_Cycle(void *argument)
     
     HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
     osThreadSuspend(ADC_readHandle);
-    // Вызов функции отправки и полчучения настроек
-
-
-    
     HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);
     HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);
+    HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 0);
+    HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 0);
+    osThreadResume(UART_PARSER_taskHandle); // Вклюбчаем GSM
+    // Вызов функции отправки и полчучения настроек
 
-    // Отправка данных на сервер
-
-    // Если регистрация есть
-    if (status == 1)
+    uint8_t status = 0;
+    if (EEPROM.Communication != 0)
     {
-      if (EEPROM.Communication != 0)
+      // 60 секунд на попытки зарагистрироваться
+      for (int i = 0; i < 120; i++)
+      {
+        if ((GSM_data.Status & NETWORK_REGISTERED) && (GSM_data.Status & SIGNAL_PRESENT))
+        {
+          status = 1;
+          break;
+        }
+        // Если прошло больше 22.5 секунд и сим карта не вставлена - перпезапускаем модуль
+        if ((i == 45) && (!(GSM_data.Status & SIM_PRESENT)))
+        {
+          osThreadSuspend(UART_PARSER_taskHandle);
+          HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
+          osDelay(1000);
+          HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 1);
+          HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 1);
+          osDelay(600);
+          HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 0);
+          osThreadResume(UART_PARSER_taskHandle);
+          GSM_data.Status = 0;
+        }
+        osDelay(500);
+      }
+      if ((status == 0) && ((GSM_data.Status & SIM_PRESENT)))
+      {
+        // Если регистрация не прошла, но сим карта есть - перезагружаем модем
+        HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
+        osDelay(1000);
+        HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 1);
+        HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 1);
+        osDelay(600);
+        HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 0);
+        GSM_data.Status = 0;
+        for (int i = 0; i < 120; i++)
+        {
+          if ((GSM_data.Status & NETWORK_REGISTERED) && (GSM_data.Status & SIGNAL_PRESENT))
+          {
+            status = 1;
+            break;
+          }
+          osDelay(500);
+        }
+      }
+      if (status == 0)
+      {
+        // Связи нет и не предвидится - отключаем GSM модуль
+        HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
+        osThreadSuspend(UART_PARSER_taskHandle);
+      }
+
+      // Если регистрация есть
+      if (status == 1)
       {
         status = 0;
         GSM_data.Status |= HTTP_SEND;
@@ -654,7 +704,7 @@ void Main_Cycle(void *argument)
         {
           GSM_data.Status &= ~HTTP_SEND;
           GSM_data.Status |= SMS_SEND;
-          for (int i = 0; i < 60; i++)
+          for (int i = 0; i < 120; i++)
           {
             if (GSM_data.Status & SMS_SEND_Successfully)
             {
@@ -666,48 +716,50 @@ void Main_Cycle(void *argument)
               status = 0;
               break;
             }
-            osDelay(1000);
+            osDelay(500);
           }
         }
       }
-    }
-    else
-    {
-      ERRCODE.STATUS |= STATUS_GSM_REG_ERROR;
+      else
+      {
+        ERRCODE.STATUS |= STATUS_GSM_REG_ERROR;
+      }
     }
 
+    osThreadSuspend(ADC_readHandle);
+    osThreadSuspend(RS485_dataHandle);
     osThreadSuspend(UART_PARSER_taskHandle);
-    osDelay(10);
-    
     HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
     HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);
-    osDelay(10);
+    HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);
+    HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);
+    osDelay(50);
 
     // 8.  Сохранение данных
 
     Collect_DATA();
     uint8_t send_status = 1;
-    if ((ERRCODE.STATUS & STATUS_HTTP_SERVER_COMM_ERROR) || (ERRCODE.STATUS & STATUS_GSM_REG_ERROR)){
-      send_status = 0; // Отметить как не отправленную 
+    if ((ERRCODE.STATUS & STATUS_HTTP_SERVER_COMM_ERROR) || (ERRCODE.STATUS & STATUS_GSM_REG_ERROR))
+    {
+      send_status = 0; // Отметить как не отправленную
     }
-    // ! перенести в отдельную задачу
-    flash_append_record(save_data, send_status);
-    osDelay(200);
+      // ! перенести в отдельную задачу
+      flash_append_record(save_data, send_status);
+      osDelay(200);
 
-
-    HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, 1);
-    HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ADC_Pin, 1);
-    HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
-    HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0); // Не включаем RS по умолчанию
-    HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 0);
-    HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 0);
-    HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
-    HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 0);
-    HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);
-    osDelay(10);
-    Enter_StandbyMode(EEPROM.time_sleep_h, EEPROM.time_sleep_m);
-    osDelay(10000);
-  }
+      HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, 1);
+      HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ADC_Pin, 1);
+      HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
+      HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0); // Не включаем RS по умолчанию
+      HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 0);
+      HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 0);
+      HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
+      HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 0);
+      HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);
+      osDelay(10);
+      Enter_StandbyMode(EEPROM.time_sleep_h, EEPROM.time_sleep_m);
+      osDelay(10000);
+    }
 }
 
 /* USER CODE BEGIN Header_ADC_read */
