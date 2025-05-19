@@ -624,11 +624,11 @@ void Main_Cycle(void *argument)
     HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);
     HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);
     HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 0);
-    HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 0);
+    HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);
+
     osThreadResume(UART_PARSER_taskHandle); // Вклюбчаем GSM
     // Вызов функции отправки и полчучения настроек
-
-    uint8_t status = 0;
+    uint8_t status = HAL_ERROR;
     if (EEPROM.Communication != 0)
     {
       // 60 секунд на попытки зарагистрироваться
@@ -636,7 +636,7 @@ void Main_Cycle(void *argument)
       {
         if ((GSM_data.Status & NETWORK_REGISTERED) && (GSM_data.Status & SIGNAL_PRESENT))
         {
-          status = 1;
+          status = HAL_OK;
           break;
         }
         // Если прошло больше 22.5 секунд и сим карта не вставлена - перпезапускаем модуль
@@ -654,7 +654,7 @@ void Main_Cycle(void *argument)
         }
         osDelay(500);
       }
-      if ((status == 0) && ((GSM_data.Status & SIM_PRESENT)))
+      if ((status == HAL_ERROR) && ((GSM_data.Status & SIM_PRESENT)))
       {
         // Если регистрация не прошла, но сим карта есть - перезагружаем модем
         HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
@@ -668,13 +668,13 @@ void Main_Cycle(void *argument)
         {
           if ((GSM_data.Status & NETWORK_REGISTERED) && (GSM_data.Status & SIGNAL_PRESENT))
           {
-            status = 1;
+            status = HAL_OK;
             break;
           }
           osDelay(500);
         }
       }
-      if (status == 0)
+      if (status == HAL_ERROR)
       {
         // Связи нет и не предвидится - отключаем GSM модуль
         HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
@@ -682,25 +682,24 @@ void Main_Cycle(void *argument)
       }
 
       // Если регистрация есть
-      if (status == 1)
+      if (status == HAL_OK)
       {
-        status = 0;
+        status = HAL_ERROR;
         GSM_data.Status |= HTTP_SEND;
         for (int i = 0; i < 120; i++)
         {
           if (GSM_data.Status & HTTP_SEND_Successfully)
           {
-            status = 1;
+            status = HAL_OK;
             break;
           }
           if (ERRCODE.STATUS & STATUS_HTTP_SERVER_COMM_ERROR)
           {
-            status = 0;
             break;
           }
           osDelay(1000);
         }
-        if (((ERRCODE.STATUS & STATUS_HTTP_SERVER_COMM_ERROR) || (status == 0)) && !(ERRCODE.STATUS & STATUS_HTTP_NO_BINDING_ERROR))
+        if (((ERRCODE.STATUS & STATUS_HTTP_SERVER_COMM_ERROR) || (status == HAL_ERROR)) && !(ERRCODE.STATUS & STATUS_HTTP_NO_BINDING_ERROR))
         {
           GSM_data.Status &= ~HTTP_SEND;
           GSM_data.Status |= SMS_SEND;
