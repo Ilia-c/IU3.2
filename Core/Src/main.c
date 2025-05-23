@@ -204,6 +204,7 @@ int main(void)
   RTC_Init();
 	HAL_RTC_GetTime(&hrtc, &Time_start, RTC_FORMAT_BIN);
 	HAL_RTC_GetDate(&hrtc, &Date_start, RTC_FORMAT_BIN);
+
   RTC_read();
   MX_GPIO_Init();
 
@@ -251,15 +252,15 @@ int main(void)
 
   HAL_Delay(20);
 
-  // Чтение данных из EEPROM
+  // !Чтение данных из EEPROM
   if (EEPROM_CHECK() == HAL_OK)
   {
     if (EEPROM_IsDataExists() != HAL_OK)
     {
-      // Данных нету - первый запуск
+      // !Данных нету - первый запуск
       if (EEPROM_SaveSettings(&EEPROM) != HAL_OK)
       {
-        // Сохранение не вышло
+        //! Сохранение не вышло
       }
     }
     else
@@ -267,14 +268,17 @@ int main(void)
 
       if (EEPROM_LoadSettings(&EEPROM) != HAL_OK)
       {
-        // Ошибка - неверный идентификатор данных
+        //! Ошибка - неверный идентификатор данных
         if (EEPROM_SaveSettings(&EEPROM) != HAL_OK)
         {
-          // Сохранение не вышло
+          //! Сохранение не вышло
         }
       }
     }
   }
+
+  Uptime_CheckpointInit();
+  Uptime_AccumulateFromCheckpoint();
   
   uint32_t value = HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_INDEX_RESET_PROG);
   if (value == DATA_RESET_PROG){  
@@ -402,6 +406,37 @@ int main(void)
 }
 
 
+/* Считать 64-битное значение секунд из Backup-регистров */
+static uint64_t LoadSavedSeconds(void)
+{
+    uint32_t low  = HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_SEC_LOW);
+    uint32_t high = HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_SEC_HIGH);
+    return ((uint64_t)high << 32) | low;
+}
+
+/* Записать 64-битное значение секунд в Backup-регистры */
+static void StoreSavedSeconds(uint64_t total_seconds)
+{
+    uint32_t low  = (uint32_t)(total_seconds & 0xFFFFFFFF);
+    uint32_t high = (uint32_t)(total_seconds >> 32);
+    HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_SEC_LOW,  low);
+    HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_SEC_HIGH, high);
+}
+
+/* Получить текущее время RTC в секундах с начала суток */
+static uint32_t GetRTCSecondsSinceMidnight(void)
+{
+    RTC_TimeTypeDef sTime;
+    RTC_DateTypeDef sDate;
+    HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+    HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);  // обязательно вызывать после GetTime
+
+    return (uint32_t)sTime.Hours * 3600U
+         + (uint32_t)sTime.Minutes * 60U
+         + (uint32_t)sTime.Seconds;
+}
+
+
 
 void SetTimerPeriod(uint32_t period_ms)
 {
@@ -498,7 +533,7 @@ void Main(void *argument)
 void Main_Cycle(void *argument)
 {
   UNUSED(argument);
-  vSemaphoreCreateBinary(ADC_READY);                       
+  vSemaphoreCreateBinary(ADC_READY);
   vSemaphoreCreateBinary(Keyboard_semapfore);
   vSemaphoreCreateBinary(Display_cursor_semaphore);
   vSemaphoreCreateBinary(USB_COM_semaphore);
@@ -510,7 +545,7 @@ void Main_Cycle(void *argument)
   {
     osDelay(10);
     // 3. Выключить EEPROM
-    //HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0); // Выключение Памяти на плате
+    // HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0); // Выключение Памяти на плате
 
     /*
     uint8_t status = 0;
@@ -536,7 +571,7 @@ void Main_Cycle(void *argument)
           HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 0);
           osThreadResume(UART_PARSER_taskHandle);
           GSM_data.Status = 0;
-        } 
+        }
         osDelay(500);
       }
       if ((status == 0) && ((GSM_data.Status & SIM_PRESENT))){
@@ -591,10 +626,10 @@ void Main_Cycle(void *argument)
     ADC_Voltage_Calculate();
     if (ERRCODE.STATUS & STATUS_VOLTAGE_TOO_LOW) Enter_StandbyMode_NoWakeup();
     osDelay(1000);
-    
+
     // 5. Получения показаний АЦП
     //  Запускаем преобразования
-    uint8_t  status_ADC = 0;
+    uint8_t status_ADC = 0;
     if (!(ERRCODE.STATUS & STATUS_ADC_EXTERNAL_INIT_ERROR))
     {
       osThreadResume(ADC_readHandle);
@@ -602,9 +637,10 @@ void Main_Cycle(void *argument)
       status_ADC = 0;
       for (uint8_t i = 0; i < 50; i++)
       {
-        if ((ADC_data.ADC_SI_value_char[0] != 'N') && (ADC_data.ADC_MS5193T_temp_char[0] != 'N')){
-            status_ADC = 1;
-            break;
+        if ((ADC_data.ADC_SI_value_char[0] != 'N') && (ADC_data.ADC_MS5193T_temp_char[0] != 'N'))
+        {
+          status_ADC = 1;
+          break;
         }
         osDelay(100);
       }
@@ -615,15 +651,15 @@ void Main_Cycle(void *argument)
     }
 
     // 6. Отключить АЦП (датчик)
-    //osThreadSuspend(ADC_readHandle);
+    // osThreadSuspend(ADC_readHandle);
     suspend = 0xFF;
     osDelay(350);
-    
+
     HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
     osThreadSuspend(ADC_readHandle);
     HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);
     HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);
-    HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 0);
+    HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);
     HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);
 
     osThreadResume(UART_PARSER_taskHandle); // Вклюбчаем GSM
@@ -742,23 +778,23 @@ void Main_Cycle(void *argument)
     {
       send_status = 0; // Отметить как не отправленную
     }
-      // ! перенести в отдельную задачу
-      flash_append_record(save_data, send_status);
-      osDelay(200);
+    // ! перенести в отдельную задачу
+    flash_append_record(save_data, send_status);
+    osDelay(200);
 
-      HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, 1);
-      HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ADC_Pin, 1);
-      HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
-      HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0); // Не включаем RS по умолчанию
-      HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 0);
-      HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 0);
-      HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
-      HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 0);
-      HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);
-      osDelay(10);
-      Enter_StandbyMode(EEPROM.time_sleep_h, EEPROM.time_sleep_m);
-      osDelay(10000);
-    }
+    HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, 1);
+    HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ADC_Pin, 1);
+    HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
+    HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0); // Не включаем RS по умолчанию
+    HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 0);
+    HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 0);
+    HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
+    HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 0);
+    HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);
+    osDelay(10);
+    Enter_StandbyMode(EEPROM.time_sleep_h, EEPROM.time_sleep_m);
+    osDelay(10000);
+  }
 }
 
 /* USER CODE BEGIN Header_ADC_read */

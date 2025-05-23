@@ -3,14 +3,14 @@
 #include "usb_device.h"
 #include "usbd_cdc_if.h"
 #include "RTC_data.h"
-// РћРїСЂРµРґРµР»СЏРµРј РєРѕРґС‹ СЃР±СЂРѕСЃР°
-#define RESET_CODE_BOR      0x01  // РЎР±СЂРѕСЃ РёР·-Р·Р° РїРѕРЅРёР¶РµРЅРёСЏ РЅР°РїСЂСЏР¶РµРЅРёСЏ (Brown-Out Reset)
-#define RESET_CODE_PINRST   0x02  // Р’РЅРµС€РЅРёР№ СЃР±СЂРѕСЃ (СЃР±СЂРѕСЃ РїРѕ РїРёРЅСѓ NRST)
-#define RESET_CODE_SFTRST   0x03  // РџСЂРѕРіСЂР°РјРјРЅС‹Р№ СЃР±СЂРѕСЃ (Software Reset)
-#define RESET_CODE_IWDG     0x04  // РЎР±СЂРѕСЃ РѕС‚ РЅРµР·Р°РІРёСЃРёРјРѕРіРѕ СЃС‚РѕСЂРѕР¶РµРІРѕРіРѕ С‚Р°Р№РјРµСЂР° (IWDG Reset)
-#define RESET_CODE_WWDG     0x05  // РЎР±СЂРѕСЃ РѕС‚ РѕРєРѕРЅРЅРѕРіРѕ СЃС‚РѕСЂРѕР¶РµРІРѕРіРѕ С‚Р°Р№РјРµСЂР° (WWDG Reset)
-#define RESET_CODE_LPWR     0x06  // РЎР±СЂРѕСЃ РёР·-Р·Р° СѓСЃР»РѕРІРёР№ РЅРёР·РєРѕРіРѕ РЅР°РїСЂСЏР¶РµРЅРёСЏ (Low-Power Reset)
-#define RESET_CODE_UNKNOWN  0xFF  // РќРµРёР·РІРµСЃС‚РЅР°СЏ РїСЂРёС‡РёРЅР° СЃР±СЂРѕСЃР°
+// Определяем коды сброса
+#define RESET_CODE_BOR      0x01  // Сброс из-за понижения напряжения (Brown-Out Reset)
+#define RESET_CODE_PINRST   0x02  // Внешний сброс (сброс по пину NRST)
+#define RESET_CODE_SFTRST   0x03  // Программный сброс (Software Reset)
+#define RESET_CODE_IWDG     0x04  // Сброс от независимого сторожевого таймера (IWDG Reset)
+#define RESET_CODE_WWDG     0x05  // Сброс от оконного сторожевого таймера (WWDG Reset)
+#define RESET_CODE_LPWR     0x06  // Сброс из-за условий низкого напряжения (Low-Power Reset)
+#define RESET_CODE_UNKNOWN  0xFF  // Неизвестная причина сброса
 
 
 uint8_t GetResetCode(void);

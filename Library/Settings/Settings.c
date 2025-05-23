@@ -25,8 +25,7 @@ EEPROM_Settings_item EEPROM = {
         .time_work_char = DEFAULT_TIME_WORK_CHAR, // Время работы в виде строки
     },
     .last_error_code = DEFAULT_LAST_ERROR_CODE, // Последний код ошибки
-    .time_work_h = DEFAULT_TIME_WORK_H,         // Время работы устройства (часы)
-    .time_work_m = DEFAULT_TIME_WORK_M,         // Время работы устройства (минуты)
+    .time_work = DEFAULT_TIME_WORK_H,         // Время работы устройства (часы)
 
     // Вводимые данные:
     .time_sleep_h = DEFAULT_TIME_SLEEP_H,        // Время сна устройства (часы)

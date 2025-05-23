@@ -332,13 +332,7 @@ void Enter_StandbyMode_NoWakeup(void)
 
     // Очистка флагов пробуждения
     PWR->SCR |= (PWR_SCR_CWUF1 | PWR_SCR_CWUF2 | PWR_SCR_CWUF3 | PWR_SCR_CWUF4 | PWR_SCR_CWUF5);
-
-    // RTC будильник не настраивается – устройство не пробудится самостоятельно
-
-    // Переход в режим Standby
     HAL_PWR_EnterSTANDBYMode();
-
-    // Код после HAL_PWR_EnterSTANDBYMode() не выполняется
 }
 
 // Для отладки FreeRTOS

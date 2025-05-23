@@ -49,6 +49,6 @@
 			"usb_host.h": "c",
 			"usb_fatfs_save.h": "c"
 		},
-		"cortex-debug.variableUseNaturalFormat": false
+		"cortex-debug.variableUseNaturalFormat": true
 	}
 }

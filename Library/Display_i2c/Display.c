@@ -506,7 +506,8 @@ MAKE_MENU(Menu_2, "Настройки", "Settings", 0, UPTADE_OFF, NO_SIGNED, Menu_3, Men
 		MAKE_MENU(Menu_2_15_12, "Тест FLASH", "FLASH test", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_13, Menu_2_15_11, Menu_2_15, CHILD_MENU, flash_test, SELECT_BAR, DATA_IN, DATA_OUT);
 		MAKE_MENU(Menu_2_15_13, "Тест EEPROM", "EEPROM test", 0, 0, NO_SIGNED, Menu_2_15_14, Menu_2_15_12, Menu_2_15, CHILD_MENU, EEPROM_test, SELECT_BAR, DATA_IN, DATA_OUT);
 		MAKE_MENU(Menu_2_15_14, "Режим", "Mode", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_15, Menu_2_15_13, Menu_2_15, CHILD_MENU, SELECT_BAR, Block, DATA_IN, DATA_OUT);
-		MAKE_MENU(Menu_2_15_15, "Полный Сброс", "FULL RESET", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_15_14, Menu_2_15, CHILD_MENU, ALL_Reset_settings, SELECT_BAR, DATA_IN, DATA_OUT);
+		MAKE_MENU(Menu_2_15_15, "Полный Сброс", "FULL RESET", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_16, Menu_2_15_14, Menu_2_15, CHILD_MENU, ALL_Reset_settings, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_15_16, "Сброс наработки", "RESET CT", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_15_15, Menu_2_15, CHILD_MENU, Reset_time_work, SELECT_BAR, DATA_IN, DATA_OUT);
     MAKE_MENU(Menu_2_16, "Обновление ПО", "Update", 0, UPTADE_OFF, NO_SIGNED, Menu_2_17, Menu_2_15, Menu_2, CHILD_MENU, Update_programm, SELECT_BAR, DATA_IN, DATA_OUT); 
     MAKE_MENU(Menu_2_17, "Формат. Flash", "SD formatting", 0, UPTADE_OFF, NO_SIGNED, Menu_2_18, Menu_2_16, Menu_2, CHILD_MENU, Flash_Format, SELECT_BAR, DATA_IN, DATA_OUT); 
 	MAKE_MENU(Menu_2_18, "Сброс настроек", "Factory reset", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_17, Menu_2, CHILD_MENU, Reset_settings, SELECT_BAR, DATA_IN, DATA_OUT);
@@ -927,11 +928,41 @@ void Reset_settings(){
     OLED_UpdateScreen();
     osDelay(200);
 }
+
+void Reset_time_work(){
+    OLED_Clear(0);
+    FontSet(font);
+    Display_TopBar(selectedMenuItem);
+    if (YES_OR_NO(RESET_ST) == 0)
+    {
+        mode_redact = 0;
+        return;
+    }
+    EEPROM.time_work = 0;
+    EEPROM_SaveSettings(&EEPROM);
+    Uptime_FullReset();
+
+
+    mode_redact = 2;
+    OLED_Clear(0);
+    FontSet(font);
+    Display_TopBar(selectedMenuItem);
+    #define Y 33
+    if (EEPROM_CheckDataValidity() != HAL_OK){
+        ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
+        OLED_DrawCenteredString(ERROR, Y);
+    }
+    else OLED_DrawCenteredString(READY, Y);
+    OLED_UpdateScreen();
+    osDelay(200);
+}
 void ALL_Reset_settings(){
     OLED_Clear(0);
     FontSet(font);
     Display_TopBar(selectedMenuItem);
     if (YES_OR_NO(ALL_RESET) == 0){ mode_redact = 0; return;}
+    
+    uint64_t time_work = LoadAccumulated();
     EEPROM_Settings_item EEPROM_RESET = {
         .version = {
             // Текущая версия устройства
@@ -940,8 +971,7 @@ void ALL_Reset_settings(){
             .time_work_char = DEFAULT_TIME_WORK_CHAR, // Время работы в виде строки
         },
         .last_error_code = DEFAULT_LAST_ERROR_CODE, // Последний код ошибки
-        .time_work_h = DEFAULT_TIME_WORK_H,         // Время работы устройства (часы)
-        .time_work_m = DEFAULT_TIME_WORK_M,         // Время работы устройства (минуты)
+        .time_work = time_work,         // Время работы устройства (часы)
 
         // Вводимые данные:
         .time_sleep_h = DEFAULT_TIME_SLEEP_H, // Время сна устройства (часы)
@@ -1479,14 +1509,17 @@ void Save_general_format(){
 }
 
 void Save_date_format(){
+
     for (int i = 0; i<selectedMenuItem->data_in->Number_of_cells; i++){
         int32_t result = strtol(selectedMenuItem->data_in->data_temp[i], NULL, 10);
         if (result < selectedMenuItem->data_in->DOWN_data[i]) return;
         if (result > selectedMenuItem->data_in->UP_data[i]) return;
         *((uint8_t *)selectedMenuItem->data_in->data[i]) = (uint8_t)result;
     }
+    Uptime_AccumulateFromCheckpoint(); // Обновляем время наработки
     RTC_set_date();
     RTC_read();
+    Uptime_ResetCheckpointOnTimeChange(); // Обновляем точку отсчета времени наработки
 }
 
 void Save_time_format(){
@@ -1496,8 +1529,10 @@ void Save_time_format(){
         if (result > selectedMenuItem->data_in->UP_data[i]) return;
         *((uint8_t *)selectedMenuItem->data_in->data[i]) = (uint8_t)result;
     }
+    Uptime_AccumulateFromCheckpoint(); // Обновляем время наработки
     RTC_set_time();
     RTC_read();
+    Uptime_ResetCheckpointOnTimeChange(); // Обновляем точку отсчета времени наработки
 }
 void Save_time_sleep_format(){
     // Проверка на неверное значение

@@ -3,8 +3,8 @@
 
 
 #define Debug_mode 1                                // Включен или выключен режим отладки
-#define DEFAULT_VERSION_PROGRAMM       "Ver0.62"    // Версия программы
-#define EEPROM_FORMAT_VERSION           0x00000004U // Версия формата данных EEPROM
+#define DEFAULT_VERSION_PROGRAMM       "Ver0.64"    // Версия программы
+#define EEPROM_FORMAT_VERSION           0x00000005U // Версия формата данных EEPROM
 
 #define DEFAULT_VERSION_PCB            "3.75-A000{" // Версия печатной платы
 #define DEFAULT_PASSWORD               "Defau"
@@ -12,7 +12,6 @@
 
 #define DEFAULT_LAST_ERROR_CODE        {0x00, 0x00, 0x00, 0x00}
 #define DEFAULT_TIME_WORK_H            0
-#define DEFAULT_TIME_WORK_M            0
 
 #define DEFAULT_TIME_SLEEP_H           1  // Время сна (часы)
 #define DEFAULT_TIME_SLEEP_M           0  // Время сна (минуты)

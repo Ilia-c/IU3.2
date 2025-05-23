@@ -34,7 +34,7 @@ typedef struct __attribute__((packed)) {
  * @param src Указатель на структуру с настройками.
  * @return true, если запись прошла успешно, иначе false.
  */
-HAL_StatusTypeDef EEPROM_SaveSettings(const EEPROM_Settings_item *src);
+HAL_StatusTypeDef EEPROM_SaveSettings(EEPROM_Settings_item *src);
 
 /**
  * @brief Загружает настройки из EEPROM.

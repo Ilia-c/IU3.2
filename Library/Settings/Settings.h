@@ -30,12 +30,18 @@ extern "C"
   ////////////////////////////////////////////////////////////////////////////////
   extern char save_data[CMD_BUFFER_SIZE];
 
-
-
-
+  #define BKP_REG_INIT_FLAG   RTC_BKP_DR0 // Регистр для проверки инициализации RTC
   #define BKP_REG_INDEX_ERROR_CODE_1  RTC_BKP_DR2
   #define BKP_REG_INDEX_ERROR_CODE_2  RTC_BKP_DR3
   #define BKP_UPDATE_REG  RTC_BKP_DR5
+
+#define BKP_REG_INIT_FLAG    RTC_BKP_DR6
+#define BKP_REG_SEC_LOW      RTC_BKP_DR7
+#define BKP_REG_SEC_HIGH     RTC_BKP_DR8
+#define BKP_REG_CP_DAYS      RTC_BKP_DR9
+#define BKP_REG_CP_SEC       RTC_BKP_DR10
+#define BKP_MAGIC            0xA5A5
+
   #define BKP_UPDATE_FLAG 0xEAFC
   // Коды для разных Fault'ов:
   #define FAULT_CODE_NMI            1U
@@ -48,7 +54,7 @@ extern "C"
   {
     char VERSION_PCB[11];
     char password[10];
-    char time_work_char[10];
+    char time_work_char[15];
   } Prgramm_version_item;
 
   // Структура сохраняемая в EEPROM
@@ -56,8 +62,7 @@ extern "C"
   {
     Prgramm_version_item version; // Текущая версия устройства
     char last_error_code[4];      // Последний код ошибки
-    uint32_t time_work_h;         // Время работы устройства часы
-    uint32_t time_work_m;         // Время работы устройства минуты
+    uint64_t time_work;         // Время работы устройства в секундах
 
     /*-----------------*/
     // Вводимые данные //

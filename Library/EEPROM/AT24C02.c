@@ -189,6 +189,7 @@ HAL_StatusTypeDef EEPROM_LoadSettings(EEPROM_Settings_item *dst) {
     if (!dst) {
         return HAL_ERROR;
     }
+    
 
     EepromRecord record;
     if (ReadSlot(&record) != HAL_OK) {
@@ -201,7 +202,7 @@ HAL_StatusTypeDef EEPROM_LoadSettings(EEPROM_Settings_item *dst) {
 
 //=============================================================================
 // Функция сохранения настроек в EEPROM
-HAL_StatusTypeDef EEPROM_SaveSettings(const EEPROM_Settings_item *src) {
+HAL_StatusTypeDef EEPROM_SaveSettings(EEPROM_Settings_item *src) {
     if (ERRCODE.STATUS & STATUS_EEPROM_INIT_ERROR) return HAL_ERROR;
     if (!src) {
         return HAL_ERROR;
@@ -215,6 +216,8 @@ HAL_StatusTypeDef EEPROM_SaveSettings(const EEPROM_Settings_item *src) {
         }
     }
 
+    Uptime_AccumulateFromCheckpoint();
+    src->time_work = LoadAccumulated();
     EepromRecord newRecord;
     memset(&newRecord, 0, sizeof(newRecord));
 

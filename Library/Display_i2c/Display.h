@@ -132,6 +132,7 @@ void SAVE_USB();
 void GSM_HTTP_SYNC();
 void colibrate_24v();
 void Update_programm();
+void Reset_time_work();
 
 
 #ifdef __cplusplus
