@@ -253,8 +253,7 @@ int waitForGreaterThanResponse(uint32_t timeout)
 
 int waitForHTTPResponse(uint32_t timeout)
 {
-    TickType_t startTick = xTaskGetTickCount();
-    TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
+    uint32_t time = 0;
     int32_t m, s, d;
     ERRCODE.STATUS &= ~STATUS_HTTP_WRONG_PASSWORD_ERROR;
     // Пытаемся разобрать строку. Если в ответе присутствует лишний символ, например,
@@ -265,7 +264,7 @@ int waitForHTTPResponse(uint32_t timeout)
             return 1;
         return 0; // Успешно получен и разобран ответ
     }
-    while ((xTaskGetTickCount() - startTick) < timeoutTicks)
+    while (time < timeout)
     {
         if (xSemaphoreTake(UART_PARSER_semaphore, pdMS_TO_TICKS(5000)) == pdTRUE)
         {
@@ -280,6 +279,7 @@ int waitForHTTPResponse(uint32_t timeout)
                 break;
             }
         }
+        time += 5000; // Увеличиваем время ожидания на 5 секунд
     }
     CDC_Transmit_FS(parseBuffer, sizeof(parseBuffer));
     return -1; // Таймаут: ответ не получен или не соответствует формату

@@ -268,7 +268,7 @@ void Enter_StandbyMode(uint8_t hours, uint8_t minutes)
     
 
     HAL_ADC_DeInit(&hadc1);
-    HAL_ADC_DeInit(&hadc3); 
+    HAL_ADC_DeInit(&hadc3);
     __HAL_RCC_DMA2_CLK_DISABLE();
     HAL_PCD_DeInit(&hpcd_USB_OTG_FS);
     HAL_HCD_DeInit(&hhcd_USB_OTG_FS);
@@ -290,6 +290,20 @@ void Enter_StandbyMode(uint8_t hours, uint8_t minutes)
 
     PWR->SCR |= (PWR_SCR_CWUF1 | PWR_SCR_CWUF2 | PWR_SCR_CWUF3 | PWR_SCR_CWUF4 | PWR_SCR_CWUF5);
     __HAL_RTC_ALARM_CLEAR_FLAG(&hrtc, RTC_FLAG_ALRAF);
+    __HAL_RTC_ALARM_CLEAR_FLAG(&hrtc, RTC_FLAG_ALRAF);
+
+    // 2) ƒеактивируем аппаратные Ђwake-upї пины, если они раньше не используютс€
+    HAL_PWR_DisableWakeUpPin(PWR_WAKEUP_PIN1);
+    HAL_PWR_DisableWakeUpPin(PWR_WAKEUP_PIN2);
+    HAL_PWR_DisableWakeUpPin(PWR_WAKEUP_PIN3);
+
+    // 3) —брасываем EXTI-линии, св€занные с RTC
+    __HAL_RTC_ALARM_EXTI_CLEAR_FLAG();
+    __HAL_RTC_WAKEUPTIMER_EXTI_CLEAR_FLAG();
+
+    // 4) —брасываем все флаги пробуждени€ PWR
+    __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+    // (или эквивалент PWR->SCR |= Е)
 
     RTC_SetAlarm_HoursMinutes(hours, minutes);
     HAL_PWR_EnterSTANDBYMode();
@@ -327,6 +341,21 @@ void Enter_StandbyMode_NoWakeup(void)
     HAL_SuspendTick();
     GPIO_AnalogConfig();
 
+    __HAL_RCC_PWR_CLK_ENABLE();
+    // Ч Hardware WakeUp pins
+    HAL_PWR_DisableWakeUpPin(PWR_WAKEUP_PIN1);
+    HAL_PWR_DisableWakeUpPin(PWR_WAKEUP_PIN2);
+    HAL_PWR_DisableWakeUpPin(PWR_WAKEUP_PIN3);
+    // Ч RTC Alarm A/B
+    HAL_RTC_DeactivateAlarm(&hrtc, RTC_ALARM_A);
+    HAL_RTC_DeactivateAlarm(&hrtc, RTC_ALARM_B);
+    // Ч RTC WakeUp timer (если использовалс€)
+    HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
+    // Ч сброс EXTI-флагов дл€ RTC
+    __HAL_RTC_ALARM_EXTI_CLEAR_FLAG();
+    __HAL_RTC_WAKEUPTIMER_EXTI_CLEAR_FLAG();
+
+    __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
     __HAL_RCC_PWR_CLK_ENABLE();
     HAL_PWR_EnableBkUpAccess();
 

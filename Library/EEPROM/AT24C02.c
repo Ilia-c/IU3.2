@@ -218,12 +218,12 @@ HAL_StatusTypeDef EEPROM_SaveSettings(EEPROM_Settings_item *src) {
 
     Uptime_AccumulateFromCheckpoint();
     src->time_work = LoadAccumulated();
+
     EepromRecord newRecord;
     memset(&newRecord, 0, sizeof(newRecord));
-
     newRecord.signature     = EEPROM_SIGNATURE;
     newRecord.formatVersion = EEPROM_FORMAT_VERSION;
-    newRecord.version       = 1;  // Можно использовать как счётчик версий
+    newRecord.version       = 1; //! добавить подсчет ресурса
     memcpy(&newRecord.data, src, sizeof(EEPROM_Settings_item));
     // Поле crc заполняется внутри WriteSlot
 

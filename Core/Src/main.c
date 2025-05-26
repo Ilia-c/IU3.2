@@ -287,10 +287,9 @@ int main(void)
     HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_RESET_PROG, 0x00); // сбрасывавем флаг
   }
   else{
-    EEPROM.Mode = 0;
     if (__HAL_PWR_GET_FLAG(PWR_FLAG_SB) == RESET){
       // Если сброс не из перехода в цикл и не из за wakeup
-      //EEPROM.Mode = 0;
+      EEPROM.Mode = 0;
       if (ERRCODE.STATUS & STATUS_EEPROM_INIT_ERROR)
       {
         if (EEPROM_CheckDataValidity() != HAL_OK)
@@ -540,103 +539,21 @@ void Main_Cycle(void *argument)
   vSemaphoreCreateBinary(USB_COM_semaphore);
   vSemaphoreCreateBinary(UART_PARSER_semaphore);
   vSemaphoreCreateBinary(Main_semaphore);
-  // 1. Включено -  АЦП, flash, EEPROM
-  // 2. Уже конфигурация EEPROM прочитана
   for (;;)
   {
     osDelay(10);
-    // 3. Выключить EEPROM
-    // HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0); // Выключение Памяти на плате
-
-    /*
-    uint8_t status = 0;
-    // 4. Запрос настроек с сайта для текущей конфигурации, запуск задачи параллельно, если фатальная ошибка - отключить GSM
-    if (EEPROM.Communication != 0)
-    {
-      // 60 секунд на попытки зарагистрироваться
-      for (int i = 0; i < 120; i++)
-      {
-        if ((GSM_data.Status & NETWORK_REGISTERED) && (GSM_data.Status & SIGNAL_PRESENT))
-        {
-          status = 1;
-          break;
-        }
-        // Если прошло больше 22.5 секунд и сим карта не вставлена - перпезапускаем модуль
-        if ((i==45) && (!(GSM_data.Status & SIM_PRESENT))){
-          osThreadSuspend(UART_PARSER_taskHandle);
-          HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
-          osDelay(1000);
-          HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 1);
-          HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 1);
-          osDelay(600);
-          HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 0);
-          osThreadResume(UART_PARSER_taskHandle);
-          GSM_data.Status = 0;
-        }
-        osDelay(500);
-      }
-      if ((status == 0) && ((GSM_data.Status & SIM_PRESENT))){
-        // Если регистрация не прошла, но сим карта есть - перезагружаем модем
-        HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
-        osDelay(1000);
-        HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 1);
-        HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 1);
-        osDelay(600);
-        HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 0);
-        GSM_data.Status = 0;
-        for (int i = 0; i < 120; i++)
-        {
-          if ((GSM_data.Status & NETWORK_REGISTERED) && (GSM_data.Status & SIGNAL_PRESENT))
-          {
-            status = 1;
-            break;
-          }
-          osDelay(500);
-        }
-      }
-      if (status == 0)
-      {
-        // Связи нет и не предвидится - отключаем GSM модуль
-        HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
-        osThreadSuspend(UART_PARSER_taskHandle);
-      }
-      EEPROM_CHECK();
-      if (status == 1)
-      {
-        // Если зарегеистрировались - запрашиваем настройки
-        GSM_data.Status |= HTTP_READ;
-        for (int i = 0; i < 120; i++)
-        {
-          if (GSM_data.Status & HTTP_READ_Successfully)
-          {
-            break;
-          }
-          if (ERRCODE.STATUS & STATUS_HTTP_SERVER_COMM_ERROR)
-          {
-            break;
-          }
-          osDelay(500);
-        }
-      }
-    }
-
-    osDelay(500);
-    */
-
-    // Читаем текущее напряжение питания
-    ADC_Voltage_Calculate();
+    ADC_Voltage_Calculate(); // Читаем текущее напряжение питания
     if (ERRCODE.STATUS & STATUS_VOLTAGE_TOO_LOW) Enter_StandbyMode_NoWakeup();
     osDelay(1000);
 
-    // 5. Получения показаний АЦП
-    //  Запускаем преобразования
+    // Получаем показания датчиков
     uint8_t status_ADC = 0;
     if (!(ERRCODE.STATUS & STATUS_ADC_EXTERNAL_INIT_ERROR))
     {
       osThreadResume(ADC_readHandle);
-      osDelay(500);
+      osDelay(1000);
       status_ADC = 0;
-      for (uint8_t i = 0; i < 50; i++)
+      for (uint8_t i = 0; i < 30; i++)
       {
         if ((ADC_data.ADC_SI_value_char[0] != 'N') && (ADC_data.ADC_MS5193T_temp_char[0] != 'N'))
         {
@@ -651,19 +568,18 @@ void Main_Cycle(void *argument)
       }
     }
 
-    // 6. Отключить АЦП (датчик)
-    // osThreadSuspend(ADC_readHandle);
-    suspend = 0xFF;
-    osDelay(350);
-
-    HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
+    //suspend = 0xFF;
     osThreadSuspend(ADC_readHandle);
-    HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);
+    HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
+    HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);
     HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);
     HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);
     HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);
-
+    HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 1);
+    
+    osDelay(50);
     osThreadResume(UART_PARSER_taskHandle); // Вклюбчаем GSM
+    
     // Вызов функции отправки и полчучения настроек
     uint8_t status = HAL_ERROR;
     if (EEPROM.Communication != 0)
@@ -771,7 +687,6 @@ void Main_Cycle(void *argument)
     HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);
     osDelay(50);
 
-    // 8.  Сохранение данных
 
     Collect_DATA();
     uint8_t send_status = 1;
@@ -1019,6 +934,7 @@ void UART_PARSER_task(void *argument)
     if (EEPROM.Communication == 0)
     {
       HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
+      delay_AT_OK = 0;
       continue;
     }
     osDelay(5000);
@@ -1074,8 +990,9 @@ void UART_PARSER_task(void *argument)
         ERRCODE.STATUS |= STATUS_UART_NO_RESPONSE;
       }
     }
+    // ! перепроверить
     if (GSM_data.Status & NETWORK_REGISTERED_SET_HTTP){
-      GSM_data.Status&=~NETWORK_REGISTERED_SET_HTTP;
+      GSM_data.Status &=~ NETWORK_REGISTERED_SET_HTTP;
       SendCommandAndParse("AT+CGDCONT=1,\"IP\",\"internet.mts.ru\"\r", waitForOKResponse, 1000); 
       SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 60000);
       SendCommandAndParse("AT+CDNSCFG=\"8.8.8.8\",\"77.88.8.8\"\r", waitForOKResponse, 1000);
