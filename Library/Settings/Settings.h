@@ -35,20 +35,41 @@ extern "C"
   #define BKP_REG_INDEX_ERROR_CODE_2  RTC_BKP_DR3
   #define BKP_UPDATE_REG  RTC_BKP_DR5
 
-#define BKP_REG_INIT_FLAG    RTC_BKP_DR6
 #define BKP_REG_SEC_LOW      RTC_BKP_DR7
 #define BKP_REG_SEC_HIGH     RTC_BKP_DR8
-#define BKP_REG_CP_DAYS      RTC_BKP_DR9
-#define BKP_REG_CP_SEC       RTC_BKP_DR10
+#define BKP_REG_CNT_POWERUP  RTC_BKP_DR9  // Количество включений устройства
 #define BKP_MAGIC            0xA5A5
 
-  #define BKP_UPDATE_FLAG 0xEAFC
-  // Коды для разных Fault'ов:
-  #define FAULT_CODE_NMI            1U
-  #define FAULT_CODE_HARDFAULT      2U
-  #define FAULT_CODE_MEMMANAGE      3U
-  #define FAULT_CODE_BUSFAULT       4U
-  #define FAULT_CODE_USAGEFAULT     5U
+#define BKP_UPDATE_FLAG 0xEAFC
+// Коды для разных Fault'ов:
+#define FAULT_CODE_NMI 1U
+#define FAULT_CODE_HARDFAULT 2U
+#define FAULT_CODE_MEMMANAGE 3U
+#define FAULT_CODE_BUSFAULT 4U
+#define FAULT_CODE_USAGEFAULT 5U
+
+// Коды режимов USB
+#define USB_FLASH 0
+#define USB_Sniffing 1
+#define USB_DEBUG 2
+#define USB_AT 3
+#define USB_OFF 4
+
+// Коды режима отладки
+#define DEBUG_LEVL_1 0
+#define DEBUG_LEVL_2 1
+#define DEBUG_LEVL_3 2
+#define DEBUG_LEVL_4 3
+
+// Включение отладки по модулям
+#define DEBUG_GSM (1<<0)
+#define DEBUG_WATCHDOG (1<<1)
+#define DEBUG_RS485 (1<<2)
+#define DEBUG_ADC (1<<3)
+#define DEBUG_ADC_IN (1<<4)
+#define DEBUG_FLASH (1<<5)
+#define DEBUG_EEPROM (1<<6)
+#define DEBUG_OTHER (1<<7)
 
   typedef struct Prgramm_version
   {
@@ -62,7 +83,9 @@ extern "C"
   {
     Prgramm_version_item version; // Текущая версия устройства
     char last_error_code[4];      // Последний код ошибки
-    uint64_t time_work;         // Время работы устройства в секундах
+    uint32_t time_work;         // Время работы устройства в секундах
+    uint8_t DEBUG_CATEG;        // Категории для отладки
+    uint8_t DEBUG_LEVL;         // Активный уровень отладки
 
     /*-----------------*/
     // Вводимые данные //

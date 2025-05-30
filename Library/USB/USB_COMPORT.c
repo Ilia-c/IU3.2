@@ -9,7 +9,7 @@ extern EEPROM_Settings_item EEPROM;
 
 void TrimCommand(char *command)
 {
-    // РЈРґР°Р»СЏРµРј С‚РѕР»СЊРєРѕ Р·Р°РІРµСЂС€Р°СЋС‰РёР№ '\n' (РµСЃР»Рё РµСЃС‚СЊ)
+    // Удаляем только завершающий '\n' (если есть)
     int len = strlen(command);
     if (len > 0 && command[len - 1] == '\n')
     {
@@ -25,7 +25,7 @@ void USB_COM(void)
     char *command = (char *)g_myRxBuffer;
     TrimCommand(command);
 
-    // 2) РџСЂРѕРІРµСЂСЏРµРј В«STM+В»
+    // 2) Проверяем «STM+»
     if (strncmp(command, "STM+", 4) == 0)
     {
         command_un = 1;
@@ -60,12 +60,12 @@ void USB_COM(void)
     if (strncmp(command, "AT", 2) == 0)
     {
         char response[512];
-                // РћС‚РїСЂР°РІР»СЏРµРј РѕС‚РІРµС‚
+                // Отправляем ответ
         snprintf(response, sizeof(response),"Command L651: %s", command);
         CDC_Transmit_FS((uint8_t *)response, strlen(response));
 
         command_un = 1;
-        // РџРµСЂРµРґР°РµРј РІСЃСЋ РєРѕРјР°РЅРґСѓ РїРѕ UART4
+        // Передаем всю команду по UART4
         SendSomeCommandAndSetFlag();
         HAL_UART_Transmit(&huart4, (uint8_t *)command, strlen(command), HAL_MAX_DELAY);
     }
@@ -77,11 +77,11 @@ void USB_COM(void)
         SendSomeCommandAndSetFlag();
         HAL_UART_Transmit(&huart4, (uint8_t *)command, strlen(command), HAL_MAX_DELAY);
 
-        // Р¤РѕСЂРјРёСЂСѓРµРј РѕС‚РІРµС‚ РґР»СЏ USB
+        // Формируем ответ для USB
         char response[512];
         snprintf(response, sizeof(response),"Command L651: %s", command);
 
-        // РћС‚РїСЂР°РІР»СЏРµРј РѕС‚РІРµС‚
+        // Отправляем ответ
         CDC_Transmit_FS((uint8_t *)response, strlen(response));
     }
 

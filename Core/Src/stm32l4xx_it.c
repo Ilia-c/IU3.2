@@ -270,7 +270,7 @@ void OTG_FS_IRQHandler(void)
 {
   // ! При несовпадении - полная деинициализация USB
   if (last_USB_state == 255) last_USB_state = EEPROM.USB_mode;
-  if (last_USB_state == 1 || last_USB_state == 2){
+  if (last_USB_state == 1 || last_USB_state == 2 || last_USB_state == 3){
     HAL_PCD_IRQHandler(&hpcd_USB_OTG_FS);
   }
   if (last_USB_state == 0){

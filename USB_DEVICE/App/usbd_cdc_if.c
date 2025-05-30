@@ -229,8 +229,8 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
     break;
 
     case CDC_SET_CONTROL_LINE_STATE:
-      uint8_t dtr = pbuf[0] & 0x01;     // РЎРѕСЃС‚РѕСЏРЅРёРµ DTR
-      if (dtr != is_terminal_connected) // РџСЂРѕРІРµСЂСЏРµРј РёР·РјРµРЅРµРЅРёРµ СЃРѕСЃС‚РѕСЏРЅРёСЏ
+      uint8_t dtr = pbuf[0] & 0x01;     // Состояние DTR
+      if (dtr != is_terminal_connected) // Проверяем изменение состояния
       {
         is_terminal_connected = dtr;
 
@@ -240,7 +240,7 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
         }
         else
         {
-          // РћРїС†РёРѕРЅР°Р»СЊРЅРѕ: РѕР±СЂР°Р±РѕС‚РєР° РѕС‚РєР»СЋС‡РµРЅРёСЏ С‚РµСЂРјРёРЅР°Р»Р°
+          // Опционально: обработка отключения терминала
           CDC_Transmit_FS((uint8_t *)"Terminal disconnected\r\n", 24);
         }
       }
@@ -274,7 +274,7 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
   * @retval Result of the operation: USBD_OK if all operations are OK else USBD_FAIL
   */
 
-#define MY_USB_RX_BUFFER_SIZE  512   // РњР°РєСЃРёРјСѓРј, С‡С‚Рѕ С…РѕС‚РёРј СЃРѕР±СЂР°С‚СЊ
+#define MY_USB_RX_BUFFER_SIZE  512   // Максимум, что хотим собрать
 #define MY_END_CHAR            '\r' 
 extern uint8_t g_myRxBuffer[];
 static uint16_t g_myRxCount = 0;
@@ -284,17 +284,17 @@ extern xSemaphoreHandle USB_COM_semaphore;
 
 static int8_t CDC_Receive_FS(uint8_t *Buf, uint32_t *Len)
 {
-    // 1) РџСЂРѕРІРµСЂСЏРµРј, РЅРµ РІС‹С…РѕРґРёРј Р»Рё РјС‹ Р·Р° РіСЂР°РЅРёС†С‹ СЃРІРѕРµРіРѕ Р±СѓС„РµСЂР°
+    // 1) Проверяем, не выходим ли мы за границы своего буфера
     if ((g_myRxCount + *Len) <= MY_USB_RX_BUFFER_SIZE)
     {
-        // 2) РљРѕРїРёСЂСѓРµРј РїСЂРёС€РµРґС€РёРµ *Len Р±Р°Р№С‚ РёР· Buf РІ СЃРІРѕР№ Р±СѓС„РµСЂ
+        // 2) Копируем пришедшие *Len байт из Buf в свой буфер
         memcpy(&g_myRxBuffer[g_myRxCount], Buf, *Len);
         g_myRxCount += *Len;
         if (g_myRxBuffer[g_myRxCount - 1] == MY_END_CHAR || g_myRxCount >= MY_USB_RX_BUFFER_SIZE)
         {
             g_messageReady = 1;
             g_myRxCount = 0;
-            // Р’С‹РґР°С‘Рј СЃРµРјР°С„РѕСЂ, С‡С‚РѕР±С‹ Р·Р°РґР°С‡Р° РјРѕРіР»Р° РѕР±СЂР°Р±РѕС‚Р°С‚СЊ РґР°РЅРЅС‹Рµ
+            // Выдаём семафор, чтобы задача могла обработать данные
             BaseType_t xTaskWoken = pdFALSE;
             xSemaphoreGiveFromISR(USB_COM_semaphore, &xTaskWoken);
             portYIELD_FROM_ISR(xTaskWoken);
@@ -302,8 +302,8 @@ static int8_t CDC_Receive_FS(uint8_t *Buf, uint32_t *Len)
     }
     else
     {
-        // Р•СЃР»Рё РІРґСЂСѓРі РїСЂРёС€Р»Рѕ Р±РѕР»СЊС€Рµ, С‡РµРј РјРѕР¶РµРј РІРјРµСЃС‚РёС‚СЊ вЂ” РѕР±СЂР°Р±Р°С‚С‹РІР°Р№С‚Рµ РѕС€РёР±РєСѓ
-        // РЅР°РїСЂРёРјРµСЂ, СЃР±СЂРѕСЃРёС‚СЊ СЃС‡С‘С‚С‡РёРє, С„Р»Р°Рі Рё С‚.Рґ.
+        // Если вдруг пришло больше, чем можем вместить — обрабатывайте ошибку
+        // например, сбросить счётчик, флаг и т.д.
         g_myRxCount = 0;
     }
 

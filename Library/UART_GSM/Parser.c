@@ -8,8 +8,9 @@ char tempBuf[256]__attribute__((section(".ram2"))) = {0};
 int SendCommandAndParse(const char *command_in, int (*parser)(), uint32_t timeout)
 {
     memset(tempBuf, 0, sizeof(tempBuf));
-    snprintf(tempBuf, sizeof(tempBuf), "SEND: %s", command_in);
-    CDC_Transmit_FS((uint8_t *)tempBuf, strlen(tempBuf));
+    snprintf(tempBuf, sizeof(tempBuf), "[DEBUG AT] SEND: %s", command_in);
+    //CDC_Transmit_FS((uint8_t *)tempBuf, strlen(tempBuf));
+    USB_DEBUG_MESSAGE(tempBuf, DEBUG_GSM, DEBUG_LEVL_4);
 
     // Сброс текущего буфера перед отправкой
     SendSomeCommandAndSetFlag();  
@@ -281,7 +282,8 @@ int waitForHTTPResponse(uint32_t timeout)
         }
         time += 5000; // Увеличиваем время ожидания на 5 секунд
     }
-    CDC_Transmit_FS(parseBuffer, sizeof(parseBuffer));
+    //USB_DEBUG_MESSAGE(parseBuffer, DEBUG_GSM, DEBUG_LEVL_4);
+    //CDC_Transmit_FS(parseBuffer, sizeof(parseBuffer));
     return -1; // Таймаут: ответ не получен или не соответствует формату
 }
 
@@ -363,7 +365,7 @@ int sendHTTP(void) {
         strcat(send, "\"\r");
     }
     else{
-        return -1;
+        return HAL_ERROR;
     }
 
     for (attempt = 0; attempt < MAX_HTTP_ATTEMPTS; attempt++) {

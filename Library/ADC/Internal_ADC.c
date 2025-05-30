@@ -25,8 +25,6 @@ float TruncatedMeanVoltage()
     // 1) Скопировать буфер
     uint16_t tmp[ADC_BUFFER_LEN];
     memcpy(tmp, adc_buffer, ADC_BUFFER_LEN * sizeof(uint16_t));
-
-    // 2) Отсортировать копию с помощью собственного компаратора
     qsort(tmp, ADC_BUFFER_LEN, sizeof(uint16_t), cmp_uint16);
 
     // 3) Вычислить индексы отброса
@@ -83,8 +81,14 @@ void ADC_Voltage_Calculate(void)
 
 int Read_ADC_Colibrate_24V(void)
 {
+    IntADC.ADC_AKB_volts = TruncatedMeanVoltage();
     *IntADC.Colibrate_koeff = 24.0f / IntADC.ADC_AKB_volts;
+    IntADC.ADC_AKB_volts *= *IntADC.Colibrate_koeff;
+    IntADC.ADC_AKB_Proc = (uint8_t)voltageToSOC(IntADC.ADC_AKB_volts);
     sprintf(IntADC.ADC_AKB_volts_char, "%.2f", IntADC.ADC_AKB_volts);
+    sprintf(IntADC.ADC_AKB_Proc_char, "%d", IntADC.ADC_AKB_Proc);
+    uint16_t tmp[ADC_BUFFER_LEN] = {0};
+    memcpy(adc_buffer, tmp, ADC_BUFFER_LEN * sizeof(uint16_t));
     EEPROM_SaveSettings(&EEPROM);
     if (EEPROM_CheckDataValidity() != HAL_OK){
         ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;

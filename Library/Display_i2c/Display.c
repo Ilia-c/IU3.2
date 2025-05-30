@@ -167,8 +167,9 @@ menuSelect_item USB_MODE_STRUCT = {
     {
         {"FLASH", "FLASH"},
         {"Sniffing", "Sniffing"},
-        {"LPWAN", "LPWAN"},
-        {"выкл.", "OFF"}
+        {"DEBUG", "DEBUG"},
+        {"AT", "AT"},
+        {"выкл.", "Off"}
     }
 };
 
@@ -497,9 +498,9 @@ MAKE_MENU(Menu_2, "Настройки", "Settings", 0, UPTADE_OFF, NO_SIGNED, Menu_3, Men
 		MAKE_MENU(Menu_2_15_3, "Пароль", "Password", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_4, Menu_2_15_2, Menu_2_15, CHILD_MENU, ACTION_MENU, SELECT_BAR, Password, DATA_OUT);
 		MAKE_MENU(Menu_2_15_4, "Режим USB", "USB mode", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_5, Menu_2_15_3, Menu_2_15, CHILD_MENU, ACTION_MENU, USB_MODE_STRUCT, DATA_IN, DATA_OUT);
 		MAKE_MENU(Menu_2_15_5, "Обновление ПО", "Update of software", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_6, Menu_2_15_4, Menu_2_15, CHILD_MENU, Programm_Update_USB, SELECT_BAR, DATA_IN, DATA_OUT);
-		MAKE_MENU(Menu_2_15_6, "Калибровка 24в", "Calibration 24V", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_7, Menu_2_15_5, Menu_2_15, CHILD_MENU, colibrate_24v, SELECT_BAR, DATA_IN, DATA_OUT);
-		MAKE_MENU(Menu_2_15_7, "Калибровка 20мА", "Calibration(up)", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_8, Menu_2_15_6, Menu_2_15, CHILD_MENU, colibrate_20ma, SELECT_BAR, DATA_IN, DATA_OUT);
-		MAKE_MENU(Menu_2_15_8, "Калибровка 4мА", "Calibration(low)", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_9, Menu_2_15_7, Menu_2_15, CHILD_MENU, colibrate_4ma, SELECT_BAR, DATA_IN, DATA_OUT);
+		MAKE_MENU(Menu_2_15_6, "Калибровка 24в", "Calibration 24V", 0, UPTADE_ON, NO_SIGNED, Menu_2_15_7, Menu_2_15_5, Menu_2_15, CHILD_MENU, colibrate_24v, SELECT_BAR, DATA_IN, IntADC.ADC_AKB_volts_char);
+		MAKE_MENU(Menu_2_15_7, "Калибровка 20мА", "Calibration(up)", 0, UPTADE_ON, NO_SIGNED, Menu_2_15_8, Menu_2_15_6, Menu_2_15, CHILD_MENU, colibrate_20ma, SELECT_BAR, DATA_IN, ADC_data.ADC_Current_char);
+		MAKE_MENU(Menu_2_15_8, "Калибровка 4мА", "Calibration(low)", 0, UPTADE_ON, NO_SIGNED, Menu_2_15_9, Menu_2_15_7, Menu_2_15, CHILD_MENU, colibrate_4ma, SELECT_BAR, DATA_IN, ADC_data.ADC_Current_char);
 		MAKE_MENU(Menu_2_15_9, "Темп. корр.", "Offset temperature", 0, UPTADE_OFF, Unit_degree, Menu_2_15_10, Menu_2_15_8, Menu_2_15, CHILD_MENU, ACTION_MENU, SELECT_BAR, Temp_correct, DATA_OUT);
 		MAKE_MENU(Menu_2_15_10, "Темп. анал.", "Analog temp.", 0, UPTADE_ON, Unit_degree, Menu_2_15_11, Menu_2_15_9, Menu_2_15, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_MS5193T_temp_char);
 		MAKE_MENU(Menu_2_15_11, "Темп. МК", "MK temp.", 0, UPTADE_ON, Unit_degree, Menu_2_15_12, Menu_2_15_10, Menu_2_15, CHILD_MENU, SELECT_BAR, SELECT_BAR, DATA_IN, MK_temp_char); // ! обновить статус
@@ -514,7 +515,7 @@ MAKE_MENU(Menu_2, "Настройки", "Settings", 0, UPTADE_OFF, NO_SIGNED, Menu_3, Men
 MAKE_MENU(Menu_3, "Сведения", "Info", 0, UPTADE_OFF, NO_SIGNED, Menu_4, Menu_2, PARENT_MENU, Menu_3_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
 	MAKE_MENU(Menu_3_1, "Сер. ном.", "Ser. Number", 0, UPTADE_OFF, NO_SIGNED, Menu_3_2, PREVISION_MENU, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, EEPROM.version.VERSION_PCB);
 	MAKE_MENU(Menu_3_2, "Вер. ПО", "Software version", 0, UPTADE_OFF, NO_SIGNED, Menu_3_3, Menu_3_1, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, VERSION_PROGRAMM);
-	MAKE_MENU(Menu_3_3, "Время работы", "Elapsed time", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_3_2, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, EEPROM.version.time_work_char);
+	MAKE_MENU(Menu_3_3, "Включений", "Elapsed time", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_3_2, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, EEPROM.version.time_work_char);
 MAKE_MENU(Menu_4, "Инструкция", "Instruction", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_3, PARENT_MENU, CHILD_MENU, Instruction, SELECT_BAR, DATA_IN, DATA_OUT);
 
 
@@ -940,7 +941,8 @@ void Reset_time_work(){
     }
     EEPROM.time_work = 0;
     EEPROM_SaveSettings(&EEPROM);
-    Uptime_FullReset();
+    sprintf( EEPROM.version.time_work_char, "%ld", EEPROM.time_work);
+    // ! сброс количества включений
 
 
     mode_redact = 2;
@@ -962,7 +964,6 @@ void ALL_Reset_settings(){
     Display_TopBar(selectedMenuItem);
     if (YES_OR_NO(ALL_RESET) == 0){ mode_redact = 0; return;}
     
-    uint64_t time_work = LoadAccumulated();
     EEPROM_Settings_item EEPROM_RESET = {
         .version = {
             // Текущая версия устройства
@@ -971,7 +972,7 @@ void ALL_Reset_settings(){
             .time_work_char = DEFAULT_TIME_WORK_CHAR, // Время работы в виде строки
         },
         .last_error_code = DEFAULT_LAST_ERROR_CODE, // Последний код ошибки
-        .time_work = time_work,         // Время работы устройства (часы)
+        .time_work = EEPROM.time_work,         // Время работы устройства (часы)
 
         // Вводимые данные:
         .time_sleep_h = DEFAULT_TIME_SLEEP_H, // Время сна устройства (часы)
@@ -1067,7 +1068,8 @@ void colibrate_24v(){
     }
     OLED_DrawCenteredString(READY, Y_col);
     OLED_UpdateScreen();
-    osDelay(200);
+    osDelay(500);
+    mode_redact = 0;
 }
 
 
@@ -1516,10 +1518,8 @@ void Save_date_format(){
         if (result > selectedMenuItem->data_in->UP_data[i]) return;
         *((uint8_t *)selectedMenuItem->data_in->data[i]) = (uint8_t)result;
     }
-    Uptime_AccumulateFromCheckpoint(); // Обновляем время наработки
     RTC_set_date();
     RTC_read();
-    Uptime_ResetCheckpointOnTimeChange(); // Обновляем точку отсчета времени наработки
 }
 
 void Save_time_format(){
@@ -1529,10 +1529,8 @@ void Save_time_format(){
         if (result > selectedMenuItem->data_in->UP_data[i]) return;
         *((uint8_t *)selectedMenuItem->data_in->data[i]) = (uint8_t)result;
     }
-    Uptime_AccumulateFromCheckpoint(); // Обновляем время наработки
     RTC_set_time();
     RTC_read();
-    Uptime_ResetCheckpointOnTimeChange(); // Обновляем точку отсчета времени наработки
 }
 void Save_time_sleep_format(){
     // Проверка на неверное значение

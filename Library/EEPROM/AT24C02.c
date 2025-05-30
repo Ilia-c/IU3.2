@@ -216,8 +216,6 @@ HAL_StatusTypeDef EEPROM_SaveSettings(EEPROM_Settings_item *src) {
         }
     }
 
-    Uptime_AccumulateFromCheckpoint();
-    src->time_work = LoadAccumulated();
 
     EepromRecord newRecord;
     memset(&newRecord, 0, sizeof(newRecord));
