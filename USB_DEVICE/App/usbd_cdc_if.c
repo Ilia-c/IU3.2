@@ -277,24 +277,21 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 #define MY_USB_RX_BUFFER_SIZE  512   // Максимум, что хотим собрать
 #define MY_END_CHAR            '\r' 
 extern uint8_t g_myRxBuffer[];
-static uint16_t g_myRxCount = 0;
+uint16_t g_myRxCount = 0;
 static volatile uint8_t g_messageReady = 0;
 extern xSemaphoreHandle USB_COM_semaphore;
 
 
 static int8_t CDC_Receive_FS(uint8_t *Buf, uint32_t *Len)
 {
-    // 1) Проверяем, не выходим ли мы за границы своего буфера
     if ((g_myRxCount + *Len) <= MY_USB_RX_BUFFER_SIZE)
     {
-        // 2) Копируем пришедшие *Len байт из Buf в свой буфер
         memcpy(&g_myRxBuffer[g_myRxCount], Buf, *Len);
         g_myRxCount += *Len;
         if (g_myRxBuffer[g_myRxCount - 1] == MY_END_CHAR || g_myRxCount >= MY_USB_RX_BUFFER_SIZE)
         {
             g_messageReady = 1;
             g_myRxCount = 0;
-            // Выдаём семафор, чтобы задача могла обработать данные
             BaseType_t xTaskWoken = pdFALSE;
             xSemaphoreGiveFromISR(USB_COM_semaphore, &xTaskWoken);
             portYIELD_FROM_ISR(xTaskWoken);
@@ -302,14 +299,11 @@ static int8_t CDC_Receive_FS(uint8_t *Buf, uint32_t *Len)
     }
     else
     {
-        // Если вдруг пришло больше, чем можем вместить — обрабатывайте ошибку
-        // например, сбросить счётчик, флаг и т.д.
         g_myRxCount = 0;
     }
 
     USBD_CDC_SetRxBuffer(&hUsbDeviceFS, Buf);
     USBD_CDC_ReceivePacket(&hUsbDeviceFS);
-
     return (USBD_OK);
 }
 

@@ -273,11 +273,11 @@ void OTG_FS_IRQHandler(void)
   if (last_USB_state == 1 || last_USB_state == 2 || last_USB_state == 3){
     HAL_PCD_IRQHandler(&hpcd_USB_OTG_FS);
   }
-  if (last_USB_state == 0){
+  if (last_USB_state == 0)
+  {
     HAL_HCD_IRQHandler(&hhcd_USB_OTG_FS);
   }
 }
-
 
 void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
 {

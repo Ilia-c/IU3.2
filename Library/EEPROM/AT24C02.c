@@ -27,6 +27,7 @@ static uint32_t CalculateCRC(const uint8_t *data, size_t length) {
 static HAL_StatusTypeDef EEPROM_WriteData(uint16_t memAddr, const uint8_t *pData, uint16_t size) {
     uint16_t bytesWritten = 0;
     HAL_StatusTypeDef status;
+    USB_DEBUG_MESSAGE("[DEBUG EEPROM] Начало записи в EEPROM", DEBUG_EEPROM, DEBUG_LEVL_3);
 
     while (bytesWritten < size) {
         uint16_t currentAddr = memAddr + bytesWritten;
@@ -39,6 +40,7 @@ static HAL_StatusTypeDef EEPROM_WriteData(uint16_t memAddr, const uint8_t *pData
 
         if (HAL_I2C_IsDeviceReady(&hi2c1, EEPROM_I2C_ADDRESS, 3, 100) != HAL_OK)
         {
+            USB_DEBUG_MESSAGE("[ERROR EEPROM] EEPROM занята", DEBUG_EEPROM, DEBUG_LEVL_3);
             ERRCODE.STATUS |= STATUS_EEPROM_READY_ERROR;
             return HAL_ERROR;
         }
@@ -52,6 +54,7 @@ static HAL_StatusTypeDef EEPROM_WriteData(uint16_t memAddr, const uint8_t *pData
                                    1000);
         if (status == HAL_TIMEOUT)
         {
+            USB_DEBUG_MESSAGE("[ERROR EEPROM] Таймаут записи", DEBUG_EEPROM, DEBUG_LEVL_3);
             ERRCODE.STATUS |= STATUS_EEPROM_TIMEOUT_I2C_ERROR;
             return HAL_ERROR;
         }
@@ -59,22 +62,23 @@ static HAL_StatusTypeDef EEPROM_WriteData(uint16_t memAddr, const uint8_t *pData
 
         if (status == HAL_BUSY)
         {
+            USB_DEBUG_MESSAGE("[ERROR EEPROM] HAL занят", DEBUG_EEPROM, DEBUG_LEVL_3);
             ERRCODE.STATUS |= STATUS_EEPROM_READY_ERROR;
             return HAL_ERROR;
         }
         ERRCODE.STATUS &= ~STATUS_EEPROM_READY_ERROR;
         if (status == HAL_ERROR)
         {
+            USB_DEBUG_MESSAGE("[ERROR EEPROM] Ошибка записи", DEBUG_EEPROM, DEBUG_LEVL_3);
             ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
             return HAL_ERROR;
         }
         ERRCODE.STATUS &= ~STATUS_EEPROM_WRITE_ERROR;
-
-        // Задержка для завершения внутренней записи EEPROM (обычно 5 мс)
         HAL_Delay(5);
 
         bytesWritten += bytesToWrite;
     }
+    USB_DEBUG_MESSAGE("[DEBUG EEPROM] Запись успешна", DEBUG_EEPROM, DEBUG_LEVL_3);
     return HAL_OK;
 }
 
@@ -82,9 +86,11 @@ static HAL_StatusTypeDef EEPROM_WriteData(uint16_t memAddr, const uint8_t *pData
 // Функция чтения данных из EEPROM
 static HAL_StatusTypeDef EEPROM_ReadData(uint16_t memAddr, uint8_t *pData, uint16_t size)
 {
+    USB_DEBUG_MESSAGE("[DEBUG EEPROM] Начато чтение EEPROM", DEBUG_EEPROM, DEBUG_LEVL_3);
     // Проверяем, готово ли устройство (EEPROM) к работе
     if (HAL_I2C_IsDeviceReady(&hi2c1, EEPROM_I2C_ADDRESS, 3, 10) != HAL_OK)
     {
+        USB_DEBUG_MESSAGE("[ERROR EEPROM] EEPROM не готова", DEBUG_EEPROM, DEBUG_LEVL_3);
         ERRCODE.STATUS |= STATUS_EEPROM_READY_ERROR;
         return HAL_ERROR;
     }
@@ -99,20 +105,24 @@ static HAL_StatusTypeDef EEPROM_ReadData(uint16_t memAddr, uint8_t *pData, uint1
                                                 1000);
     if (status == HAL_TIMEOUT) {
         ERRCODE.STATUS |= STATUS_EEPROM_TIMEOUT_I2C_ERROR;
+        USB_DEBUG_MESSAGE("[ERROR EEPROM] Таймаут чтения", DEBUG_EEPROM, DEBUG_LEVL_3);
         return HAL_ERROR;
     }
     ERRCODE.STATUS &= ~STATUS_EEPROM_TIMEOUT_I2C_ERROR;
 
     if (status == HAL_BUSY) {
         ERRCODE.STATUS |= STATUS_EEPROM_READY_ERROR;
+        USB_DEBUG_MESSAGE("[ERROR EEPROM] HAL занят", DEBUG_EEPROM, DEBUG_LEVL_3);
         return HAL_ERROR;
     }
     ERRCODE.STATUS &= ~STATUS_EEPROM_READY_ERROR;
     if (status == HAL_ERROR) {
         ERRCODE.STATUS |= STATUS_EEPROM_READ_ERROR;
+        USB_DEBUG_MESSAGE("[ERROR EEPROM] Ошибка чтения", DEBUG_EEPROM, DEBUG_LEVL_3);
         return HAL_ERROR;
     }
     ERRCODE.STATUS  &= ~STATUS_EEPROM_READ_ERROR;
+    USB_DEBUG_MESSAGE("[DEBUG EEPROM] Чтение успешно", DEBUG_EEPROM, DEBUG_LEVL_3);
     return HAL_OK;
 }
 
@@ -153,10 +163,12 @@ static HAL_StatusTypeDef ReadSlot(EepromRecord *record) {
     memcpy(record, buffer, sizeof(EepromRecord));
 
     if (record->signature != EEPROM_SIGNATURE) {
+         USB_DEBUG_MESSAGE("[ERROR EEPROM] Сигнатура данных не совпала", DEBUG_EEPROM, DEBUG_LEVL_2);
         return HAL_ERROR;
     }
 
     if (record->formatVersion != EEPROM_FORMAT_VERSION) {
+        USB_DEBUG_MESSAGE("[ERROR EEPROM] Версия формата данных не совпала", DEBUG_EEPROM, DEBUG_LEVL_2);
         return HAL_ERROR;
     }
 
@@ -167,9 +179,11 @@ static HAL_StatusTypeDef ReadSlot(EepromRecord *record) {
 
     if (calcCrc != savedCrc) {
         // Если контрольная сумма не совпадает, данные некорректны
+        USB_DEBUG_MESSAGE("[ERROR EEPROM] Контрольная сумма данных не совпала", DEBUG_EEPROM, DEBUG_LEVL_2);
         ERRCODE.STATUS |= STATUS_EEPROM_CRC_ERROR;
         return HAL_ERROR;
     }
+    USB_DEBUG_MESSAGE("[DEBUG EEPROM] Данные успешно считаны из EEPROM", DEBUG_EEPROM, DEBUG_LEVL_3);
     ERRCODE.STATUS &= ~STATUS_EEPROM_CRC_ERROR; 
     return HAL_OK;
 }
@@ -193,6 +207,7 @@ HAL_StatusTypeDef EEPROM_LoadSettings(EEPROM_Settings_item *dst) {
 
     EepromRecord record;
     if (ReadSlot(&record) != HAL_OK) {
+        USB_DEBUG_MESSAGE("[ERROR EEPROM] Ошибка чтения данных из EEPROM", DEBUG_EEPROM, DEBUG_LEVL_2);
         return HAL_ERROR;
     }
 

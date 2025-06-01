@@ -5,6 +5,7 @@ extern UART_HandleTypeDef huart4;
 extern xSemaphoreHandle UART_PARSER_semaphore;
 extern xSemaphoreHandle USB_COM_SEND_semaphore;
 extern EEPROM_Settings_item EEPROM;
+extern USBD_HandleTypeDef hUsbDeviceFS; 
 
 /* Однобайтовый приём */
 uint8_t gsmRxChar;
@@ -50,16 +51,20 @@ static void GSM_TimerCallback(TimerHandle_t xTimer)
         activeBuffer = parseBuffer;
         parseBuffer = temp;
 
-        if (EEPROM.USB_mode >= USB_Sniffing || EEPROM.USB_mode <= USB_AT)
+        
+        if (EEPROM.USB_mode == USB_Sniffing || EEPROM.USB_mode == USB_AT)
         {
+            if (hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED) return;
+
             if (EEPROM.USB_mode == USB_DEBUG)
             {
-                if ((EEPROM.DEBUG_CATEG & DEBUG_GSM) && (EEPROM.DEBUG_LEVL >= DEBUG_LEVL_4))
+                if (EEPROM.DEBUG_CATEG & AT_COMMANDS)
                 while (CDC_Transmit_FS((uint8_t *)parseBuffer, activeIndex) == USBD_BUSY){}
             }
             else
                 while (CDC_Transmit_FS((uint8_t *)parseBuffer, activeIndex) == USBD_BUSY){}
         }
+                
         /* Сигнализируем задаче парсера о готовности данных */
         BaseType_t xHigherPriorityTaskWoken = pdFALSE;
         xSemaphoreGiveFromISR(UART_PARSER_semaphore, &xHigherPriorityTaskWoken);
@@ -117,7 +122,7 @@ void Update_Data(void)
 {
     if (!(GSM_data.Status & GSM_RDY))
     {
-        USB_DEBUG_MESSAGE("[Warning AT] Сброс состояния модуля", DEBUG_GSM, DEBUG_LEVL_2);
+        USB_DEBUG_MESSAGE("[WARNING AT] Сброс состояния модуля", DEBUG_GSM, DEBUG_LEVL_2);
         /* Модуль неактивен: сбрасываем все состояния */
         GSM_data.Status &= (1 << DATA_READ);
         GSM_data.GSM_Signal_Level = 99;
@@ -134,13 +139,12 @@ void Update_Data(void)
         InitMenus();
         return;
     }
-    USB_DEBUG_MESSAGE("[DEBUG AT] Модуль связи активен", DEBUG_GSM, DEBUG_LEVL_2);
 
     GSM_data.GSM_status_ready_char = (char *)GSM_READY_STATUS[0];   // "RDY"
     GSM_data.GSM_status_char = (char *)STATUS_CHAR[0];              // "OK"
     if (!(GSM_data.Status & SIM_PRESENT))
     {
-        USB_DEBUG_MESSAGE("[Warning AT] Сим не найдена!", DEBUG_GSM, DEBUG_LEVL_2);
+        USB_DEBUG_MESSAGE("[WARNING AT] Сим не найдена!", DEBUG_GSM, DEBUG_LEVL_2);
         /* SIM-карта не обнаружена: сброс состояний */
         GSM_data.Status = GSM_RDY;
         GSM_data.GSM_Signal_Level = 99;
@@ -156,8 +160,7 @@ void Update_Data(void)
         return;
     }
 
-    USB_DEBUG_MESSAGE("[DEBUG AT] Сим карта установлена\r\n", DEBUG_GSM, DEBUG_LEVL_2);
-
+    USB_DEBUG_MESSAGE("[DEBUG AT] Сим карта установлена", DEBUG_GSM, DEBUG_LEVL_3);
     GSM_data.GSM_SIMCARD_char = (char *)SIM_STATUS[0]; // "PRESENT"
     if ((GSM_data.GSM_Signal_Level < 0) || (GSM_data.GSM_Signal_Level >= 99))
     {
@@ -175,7 +178,7 @@ void Update_Data(void)
         InitMenus();
         return;
     }
-    USB_DEBUG_MESSAGE("[DEBUG AT] Уровень сигнала приемлемый", DEBUG_GSM, DEBUG_LEVL_2);
+    USB_DEBUG_MESSAGE("[DEBUG AT] Уровень сигнала приемлемый", DEBUG_GSM, DEBUG_LEVL_3);
     GSM_data.Status |= SIGNAL_PRESENT;
     sprintf(GSM_data.GSM_signal_lvl_char, "%02d", GSM_data.GSM_Signal_Level);
     sprintf(GSM_data.GSM_err_lvl_char, "%02d", GSM_data.GSM_Signal_Errors);
@@ -192,7 +195,7 @@ void Update_Data(void)
         InitMenus();
         return;
     }
-    USB_DEBUG_MESSAGE("[DEBUG AT] Моудль связи зарегистрирован", DEBUG_GSM, DEBUG_LEVL_2);
+    USB_DEBUG_MESSAGE("[DEBUG AT] Моудль связи зарегистрирован", DEBUG_GSM, DEBUG_LEVL_3);
     GSM_data.GSM_status_reg_char = (char *)GSM_REG_STATUS[0];
     if (!(GSM_data.Status & NETWORK_REGISTERED)) GSM_data.Status |= NETWORK_REGISTERED_SET_HTTP;
     GSM_data.Status |= NETWORK_REGISTERED;

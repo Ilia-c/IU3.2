@@ -13,10 +13,12 @@ void OLED_Diagnostics()
     // OLED
     if (HAL_I2C_IsDeviceReady(hi2c, OLED_ADDRESS, 10, 100) != HAL_OK)
 	{
-		ERRCODE.STATUS |= STATUS_SPI_DISPLAY_NO_RESPONSE; // Р­РєСЂР°РЅ РЅРµ РѕС‚РІРµС‡Р°РµС‚
+		USB_DEBUG_MESSAGE("[ERROR OLED] OLED не отвечает", DEBUG_OTHER, DEBUG_LEVL_1);
+		ERRCODE.STATUS |= STATUS_SPI_DISPLAY_NO_RESPONSE; // Экран не отвечает
 		return 0;
 	}
-	ERRCODE.STATUS &= ~STATUS_SPI_DISPLAY_NO_RESPONSE; // Р­РєСЂР°РЅ РѕС‚РІРµС‡Р°РµС‚
+	USB_DEBUG_MESSAGE("[DEBUG OLED] OLED отвечает", DEBUG_OTHER, DEBUG_LEVL_3);
+	ERRCODE.STATUS &= ~STATUS_SPI_DISPLAY_NO_RESPONSE; // Экран отвечает
 }
 
 
@@ -50,10 +52,10 @@ uint8_t OLED_Init(I2C_HandleTypeDef* i2c_handleTypeDef)
 	
 	if (HAL_I2C_IsDeviceReady(hi2c, OLED_ADDRESS, 10, 100) != HAL_OK)
 	{
-		ERRCODE.STATUS |= STATUS_SPI_DISPLAY_NO_RESPONSE; // Р­РєСЂР°РЅ РЅРµ РѕС‚РІРµС‡Р°РµС‚
+		ERRCODE.STATUS |= STATUS_SPI_DISPLAY_NO_RESPONSE; // Экран не отвечает
 		return 0;
 	}
-	ERRCODE.STATUS &= ~STATUS_SPI_DISPLAY_NO_RESPONSE; // Р­РєСЂР°РЅ РѕС‚РІРµС‡Р°РµС‚
+	ERRCODE.STATUS &= ~STATUS_SPI_DISPLAY_NO_RESPONSE; // Экран отвечает
 
 	OLED_SendCommand(OLED_DISPLAY_OFF);
 	OLED_SendCommand(OLED_SET_DISPLAY_CLOCK_DIV_RATIO);
@@ -78,7 +80,7 @@ uint8_t OLED_Init(I2C_HandleTypeDef* i2c_handleTypeDef)
 	OLED_SendCommand(OLED_SET_VCOM_DESELECT);
 	OLED_SendCommand(0x40);
 	OLED_SendCommand(OLED_DISPLAY_ALL_ON_RESUME);
-	OLED_SendCommand(OLED_NORMAL_DISPLAY); // РёР»Рё РґР»СЏ РёРЅРІРµСЂС‚РёСЂРѕРІР°РЅРёСЏ OLED_SendCommand(0xA7);
+	OLED_SendCommand(OLED_NORMAL_DISPLAY); // или для инвертирования OLED_SendCommand(0xA7);
 	OLED_Clear(0);
 	OLED_UpdateScreen();
 	HAL_Delay(10);
@@ -419,12 +421,12 @@ void OLED_DrawNum(int16_t num, uint8_t x, uint8_t y, uint8_t mode)
 
 void OLED_DrawChar(char c, uint8_t ix, uint8_t iy, uint8_t mode)
 {
-    // РџСЂРѕРІРµСЂСЏРµРј, С‡С‚Рѕ СЃРёРјРІРѕР» РЅР°С…РѕРґРёС‚СЃСЏ РІ РґРѕРїСѓСЃС‚РёРјРѕРј РґРёР°РїР°Р·РѕРЅРµ
+    // Проверяем, что символ находится в допустимом диапазоне
     if ((unsigned char)c < 32 || (unsigned char)c > 255)
-        return; // РџСЂРѕРїСѓСЃРєР°РµРј СЃРёРјРІРѕР»С‹ РІРЅРµ РґРёР°РїР°Р·РѕРЅР°
+        return; // Пропускаем символы вне диапазона
 	
 	
-    // РџРѕР»СѓС‡Р°РµРј СЃРёРјРІРѕР» РёР· С‚Р°Р±Р»РёС†С‹ С€СЂРёС„С‚РѕРІ
+    // Получаем символ из таблицы шрифтов
     const uint8_t* symbol = &fontbyte(Font.numchars * (c - 32) + 4);
 
     for (uint8_t x = 0; x < symbol[0]; x++)

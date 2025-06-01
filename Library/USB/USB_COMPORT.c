@@ -18,52 +18,116 @@ void TrimCommand(char *command)
 }
 extern uint8_t g_myRxBuffer[MY_USB_RX_BUFFER_SIZE]; 
 extern uint8_t UserRxBufferFS[MY_USB_RX_BUFFER_SIZE];
+extern uint16_t g_myRxCount;
 uint8_t command_un = 0;
 void USB_COM(void)
+{
+    if (EEPROM.USB_mode == USB_DEBUG){
+        DEBUG_USB();
+    }
+
+    if (EEPROM.USB_mode == USB_AT){
+        AT_SEND();
+    }
+}
+typedef struct {
+    const char *cmd;
+    uint32_t     flag;
+    const char *msg_on;
+    const char *msg_off;
+} DebugCmd_t;
+
+static const DebugCmd_t debugCmds[] = {
+    { "DEBUG_GSM",          DEBUG_GSM,          "DEBUG_GSM включен",          "DEBUG_GSM выключен"          },
+    { "AT_COMMANDS",        AT_COMMANDS,        "AT_COMMANDS включен",        "AT_COMMANDS выключен" },
+    { "DEBUG_RS485",        DEBUG_RS485,        "DEBUG_RS485 включен",        "DEBUG_RS485 выключен"        },
+    { "DEBUG_ADC",          DEBUG_ADC,          "DEBUG_ADC включен",          "DEBUG_ADC выключен"          },
+    { "DEBUG_ADC_IN",       DEBUG_ADC_IN,       "DEBUG_ADC_IN включен",       "DEBUG_ADC_IN выключен"       },
+    { "DEBUG_FLASH",        DEBUG_FLASH,        "DEBUG_FLASH включен",        "DEBUG_FLASH выключен"        },
+    { "DEBUG_EEPROM",       DEBUG_EEPROM,       "DEBUG_EEPROM включен",       "DEBUG_EEPROM выключен"       },
+    { "DEBUG_OTHER",        DEBUG_OTHER,        "DEBUG_OTHER включен",        "DEBUG_OTHER выключен"        },
+};
+#define DEBUG_CMD_COUNT  (sizeof(debugCmds) / sizeof(debugCmds[0]))
+
+void DEBUG_USB(void)
+{
+    g_myRxCount = 0;
+    char *command = (char *)g_myRxBuffer;
+    TrimCommand(command);
+
+    // Обработка DEBUG_* команд
+    for (size_t i = 0; i < DEBUG_CMD_COUNT; ++i)
+    {
+        const DebugCmd_t *d = &debugCmds[i];
+        size_t cmdLen = strlen(d->cmd);
+        if (strncmp(command, d->cmd, cmdLen) == 0)
+        {
+            // очистить только ту часть, которую заняла команда
+            memset(command, 0, cmdLen + 1);
+
+            // проверка и переключение бита
+            uint8_t is_set = (EEPROM.DEBUG_CATEG & d->flag) ? 1 : 0;
+            if (is_set)
+                EEPROM.DEBUG_CATEG &= ~d->flag;
+            else
+                EEPROM.DEBUG_CATEG |= d->flag;
+
+            // отправка ответа
+            char resp[64];
+            int len = snprintf(resp, sizeof(resp),
+                               "------------ %s ------------\r\n",
+                               is_set ? d->msg_off : d->msg_on);
+            CDC_Transmit_FS((uint8_t *)resp, len);
+            return;
+        }
+    }
+
+    // Установка уровня отладки: цифра 1–5
+    if (strlen(command) <= 2 && command[0] >= '1' && command[0] <= '5')
+    {
+        uint8_t lvl = command[0] - '0';
+        EEPROM.DEBUG_LEVL = lvl - 1;
+
+        char resp[64];
+        int len = snprintf(resp, sizeof(resp),
+                           "------------ Новый уровень отладки: %u ------------\r\n",
+                           lvl);
+        CDC_Transmit_FS((uint8_t *)resp, len);
+
+        command[0] = '\0';  // очистили команду
+        return;
+    }
+
+    // Сохранение настроек
+    if (strncmp(command, "SAVE", 4) == 0)
+    {
+        // очистить "SAVE"
+        memset(command, 0, 5);
+
+        EEPROM_SaveSettings(&EEPROM);
+        if (EEPROM_CheckDataValidity() != HAL_OK)
+        {
+            ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
+        }
+
+        const char resp[] = "------------ СОХРАНЕНО ------------\r\n";
+        CDC_Transmit_FS((uint8_t *)resp, strlen(resp));
+        return;
+    }
+    
+}
+
+void AT_SEND()
 {
     command_un = 0;
     char *command = (char *)g_myRxBuffer;
     TrimCommand(command);
-
-    // 2) Проверяем «STM+»
-    if (strncmp(command, "STM+", 4) == 0)
-    {
-        command_un = 1;
-        const char *cmd = &command[4];
-
-        if (strstr(cmd, "STATUS") != NULL)
-        {
-            USB_Send_Status_Report();
-        }
-        else if (strstr(cmd, "HELLO") != NULL)
-        {
-            CDC_Transmit_FS((uint8_t *)"Hello from STM32!\r\n", 32);
-        }
-        else if (strstr(cmd, "RSTGSM") != NULL)
-        {
-            CDC_Transmit_FS((uint8_t *)"START RESET L651\r\n", 32);
-            HAL_GPIO_WritePin(ON_N25_GPIO_Port, ON_N25_Pin, 0);
-            HAL_Delay(100);
-            HAL_GPIO_WritePin(ON_N25_GPIO_Port, ON_N25_Pin, 1);
-            HAL_Delay(100);
-            HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 1);
-            HAL_Delay(600);
-            HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 0);
-            CDC_Transmit_FS((uint8_t *)"FINISH RESET L651\r\n", 32);
-        }
-        else
-        {
-            CDC_Transmit_FS((uint8_t *)"Unknown command\r\n", 17);
-        }
-    }
-
     if (strncmp(command, "AT", 2) == 0)
     {
         char response[512];
-                // Отправляем ответ
-        snprintf(response, sizeof(response),"Command L651: %s", command);
+        // Отправляем ответ
+        snprintf(response, sizeof(response), "Command L651: %s", command);
         CDC_Transmit_FS((uint8_t *)response, strlen(response));
-
         command_un = 1;
         // Передаем всю команду по UART4
         SendSomeCommandAndSetFlag();
@@ -79,19 +143,14 @@ void USB_COM(void)
 
         // Формируем ответ для USB
         char response[512];
-        snprintf(response, sizeof(response),"Command L651: %s", command);
+        snprintf(response, sizeof(response), "Command L651: %s", command);
 
         // Отправляем ответ
         CDC_Transmit_FS((uint8_t *)response, strlen(response));
     }
 
-    if (command_un == 0) CDC_Transmit_FS((uint8_t *)"Invalid command prefix\r\n", 25);
+    if (command_un == 0)
+        CDC_Transmit_FS((uint8_t *)"Invalid command prefix\r\n", 25);
     memset(UserRxBufferFS, 0, RX_BUFFER_SIZE);
     memset(g_myRxBuffer, 0, RX_BUFFER_SIZE);
-    
-}
-
-void USB_Send_Status_Report(void)
-{
-    
 }

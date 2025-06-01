@@ -5,10 +5,10 @@
 static char command[1024] __attribute__((section(".ram2"))) =  {0};
 char tempBuf[256]__attribute__((section(".ram2"))) = {0}; 
 
-int SendCommandAndParse(const char *command_in, int (*parser)(), uint32_t timeout)
+HAL_StatusTypeDef SendCommandAndParse(const char *command_in, int (*parser)(), uint32_t timeout)
 {
     memset(tempBuf, 0, sizeof(tempBuf));
-    snprintf(tempBuf, sizeof(tempBuf), "[DEBUG AT] SEND: %s", command_in);
+    snprintf(tempBuf, sizeof(tempBuf), "[DEBUG AT] Отправленная команда: %s", command_in);
     //CDC_Transmit_FS((uint8_t *)tempBuf, strlen(tempBuf));
     USB_DEBUG_MESSAGE(tempBuf, DEBUG_GSM, DEBUG_LEVL_4);
 
@@ -18,18 +18,13 @@ int SendCommandAndParse(const char *command_in, int (*parser)(), uint32_t timeou
     GSM_data.Status |= DATA_READ;
     osDelay(10);
     HAL_UART_Transmit(&huart4, (uint8_t *)command_in, strlen(command_in), 1000);
-    
-    // Здесь parseBuffer уже содержит принятые данные (полностью или частично)
-    int result = parser(timeout);  // ваш parse_ERROR_OK или любой другой
-
-    // После разбора можно отключить приём
+    HAL_StatusTypeDef result = parser(timeout);
     GSM_data.Status &= ~DATA_READ;
-    
     return result;
 }
 
 
-int waitForCPINResponse(uint32_t timeout)
+HAL_StatusTypeDef waitForCPINResponse(uint32_t timeout)
 {
     TickType_t startTick = xTaskGetTickCount();
     TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
@@ -42,24 +37,24 @@ int waitForCPINResponse(uint32_t timeout)
             {
                 GSM_data.Status |= SIM_PRESENT;
                 ERRCODE.STATUS &= ~STATUS_GSM_NO_SIM;
-                return 1; 
+                return HAL_OK;  // SIM карта присутствует и готова
             }
             if (strstr(parseBuffer, "ERROR") != NULL ||
                 strstr(parseBuffer, "+CME ERROR") != NULL)
             {
                 GSM_data.Status &= ~SIM_PRESENT;
                 ERRCODE.STATUS |= STATUS_GSM_NO_SIM;
-                return 0;
+                return HAL_ERROR;
             }
         }
     }
     GSM_data.Status &= ~SIM_PRESENT;
     ERRCODE.STATUS |= STATUS_GSM_NO_SIM;
-    return -1;  // Таймаут
+    return HAL_TIMEOUT;  // Таймаут
 }
 
 
-int waitForCSQResponse(uint32_t timeout)
+HAL_StatusTypeDef waitForCSQResponse(uint32_t timeout)
 {
     TickType_t startTick = xTaskGetTickCount();
     TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
@@ -90,21 +85,21 @@ int waitForCSQResponse(uint32_t timeout)
                         ERRCODE.STATUS &= ~STATUS_GSM_SIGNEL_ERROR;
                     }
 
-                    return 1;
+                    return HAL_OK; // Успешно получили уровень сигнала
                 }
             }
             if (strstr(parseBuffer, "ERROR") != NULL ||
                 strstr(parseBuffer, "+CME ERROR") != NULL)
             {
-                return 0;
+                return HAL_ERROR;
             }
         }
     }
-    return -1;
+    return HAL_TIMEOUT;
 }
 
 
-int waitForCEREGResponse(uint32_t timeout)
+HAL_StatusTypeDef waitForCEREGResponse(uint32_t timeout)
 {
     TickType_t startTick = xTaskGetTickCount();
     TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
@@ -136,30 +131,30 @@ int waitForCEREGResponse(uint32_t timeout)
                     if (stat == 1 && act == 0)
                     {
                         GSM_data.Modem_mode = MODEM_STATUS[0];
-                        return 1; 
+                        return HAL_OK; 
                     }
                     if (stat == 1 && act == 9)
                     {
                         GSM_data.Modem_mode = MODEM_STATUS[1];
-                        return 1; 
+                        return HAL_OK; 
                     }
                     GSM_data.Modem_mode = MODEM_STATUS[2];
-                    return 0;
+                    return HAL_BUSY;
                 }
             }
             if (strstr(parseBuffer, "ERROR") != NULL ||
                 strstr(parseBuffer, "+CME ERROR") != NULL)
             {
-                return 0;
+                return HAL_ERROR;
             }
         }
     }
-    return -1;
+    return HAL_TIMEOUT;
 }
 
 
 
-int waitForCOPSResponse(uint32_t timeout)
+HAL_StatusTypeDef waitForCOPSResponse(uint32_t timeout)
 {
     TickType_t startTick = xTaskGetTickCount();
     TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
@@ -180,7 +175,7 @@ int waitForCOPSResponse(uint32_t timeout)
                 if (sscanf(p, " %d , %d , \"%31[^\"]\" , %d", &mode, &format, oper, &act) == 4)
                 {
                     GSM_data.Operator_code = atoi(oper);
-                    return 1; 
+                    return HAL_OK; 
                 }
             }
             
@@ -189,15 +184,15 @@ int waitForCOPSResponse(uint32_t timeout)
                 strstr(parseBuffer, "+CME ERROR") != NULL)
             {
                 // Возвращаем 0 или иной код в случае ошибки
-                return 0;
+                return HAL_ERROR;
             }
         }
     }
-    return -1;
+    return HAL_TIMEOUT;
 }
 
 
-int waitForOKResponse(uint32_t timeout)
+HAL_StatusTypeDef waitForOKResponse(uint32_t timeout)
 {
     TickType_t startTick = xTaskGetTickCount();
     TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
@@ -208,30 +203,33 @@ int waitForOKResponse(uint32_t timeout)
         {
             if (strstr(parseBuffer, "OK") != NULL)
             {
-                return 1; // Получен ответ OK
+                USB_DEBUG_MESSAGE("[DEBUG AT] Ответ OK", DEBUG_GSM, DEBUG_LEVL_4);
+                return HAL_OK; // Получен ответ OK
             }
             if (strstr(parseBuffer, "ERROR") != NULL)
             {
-                return 0; // Получен ответ ERROR
+                USB_DEBUG_MESSAGE("[ERROR AT] Ответ ERROR", DEBUG_GSM, DEBUG_LEVL_4);
+                return HAL_ERROR; // Получен ответ ERROR
             }
         }
     }
-    return -1; // Таймаут: ни OK, ни ERROR не обнаружены
+    USB_DEBUG_MESSAGE("[DEBUG AT] Таймаут ожидания ОК", DEBUG_GSM, DEBUG_LEVL_4);
+    return HAL_TIMEOUT; // Таймаут: ни OK, ни ERROR не обнаружены
 }
 
-int waitForGreaterThanResponse(uint32_t timeout)
+HAL_StatusTypeDef waitForGreaterThanResponse(uint32_t timeout)
 {
     TickType_t startTick = xTaskGetTickCount();
     TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
     // Если в буфере обнаружен символ '>', считаем, что приглашение получено
     if (strstr(parseBuffer, ">") != NULL)
     {
-        return 1; // Получен символ '>'
+        return HAL_OK; // Получен символ '>'
     }
     // Если обнаружен ERROR, возвращаем ошибку
     if (strstr(parseBuffer, "ERROR") != NULL)
     {
-        return 0; // Получен ответ ERROR
+        return HAL_ERROR; // Получен ответ ERROR
     }
     while ((xTaskGetTickCount() - startTick) < timeoutTicks)
     {
@@ -240,21 +238,49 @@ int waitForGreaterThanResponse(uint32_t timeout)
             // Если в буфере обнаружен символ '>', считаем, что приглашение получено
             if (strstr(parseBuffer, ">") != NULL)
             {
-                return 1; // Получен символ '>'
+                return HAL_OK; // Получен символ '>'
             }
             // Если обнаружен ERROR, возвращаем ошибку
             if (strstr(parseBuffer, "ERROR") != NULL)
             {
-                return 0; // Получен ответ ERROR
+                return HAL_ERROR; // Получен ответ ERROR
             }
         }
     }
-    return -1; // Таймаут: символ '>' не обнаружен
+
+    return HAL_TIMEOUT; // Таймаут: символ '>' не обнаружен
 }
 
-int waitForHTTPResponse(uint32_t timeout)
+HAL_StatusTypeDef waitForSMSResponse(uint32_t timeout)
 {
-    uint32_t time = 0;
+    SendSomeCommandAndSetFlag();  
+    GSM_data.Status |= DATA_READ;
+    TickType_t startTick = xTaskGetTickCount();
+    TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
+
+    while ((xTaskGetTickCount() - startTick) < timeoutTicks)
+    {
+        if (xSemaphoreTake(UART_PARSER_semaphore, pdMS_TO_TICKS(100)) == pdTRUE)
+        {
+            if (strstr(parseBuffer, "+CMGS:") != NULL)
+            {
+                return HAL_OK;  
+            }
+            if (strstr(parseBuffer, "ERROR") != NULL ||
+                strstr(parseBuffer, "+CME ERROR") != NULL)
+            {
+                return HAL_ERROR;
+            }
+        }
+    }
+    return HAL_TIMEOUT;  // Таймаут
+}
+
+
+HAL_StatusTypeDef waitForHTTPResponse(uint32_t timeout)
+{
+    TickType_t startTick = xTaskGetTickCount();
+    TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
     int32_t m, s, d;
     ERRCODE.STATUS &= ~STATUS_HTTP_WRONG_PASSWORD_ERROR;
     // Пытаемся разобрать строку. Если в ответе присутствует лишний символ, например,
@@ -262,35 +288,37 @@ int waitForHTTPResponse(uint32_t timeout)
     if (sscanf(parseBuffer, "%ld %ld %ld", &m, &s, &d) == 3)
     {
         if (s == 200)
-            return 1;
-        return 0; // Успешно получен и разобран ответ
+            return HAL_OK;
+        return HAL_BUSY; // Успешно получен и разобран ответ
     }
-    while (time < timeout)
+    while ((xTaskGetTickCount() - startTick) < timeoutTicks)
     {
         if (xSemaphoreTake(UART_PARSER_semaphore, pdMS_TO_TICKS(5000)) == pdTRUE)
         {
             if (sscanf(parseBuffer, "%ld %ld %ld", &m, &s, &d) == 3)
             {
-                if (s == 200)
-                    return 1;
-                return 0; // Успешно получен и разобран ответ
+                if (s == 200){
+                     USB_DEBUG_MESSAGE("[DEBUG AT] Ответ 200", DEBUG_GSM, DEBUG_LEVL_4);
+                    return HAL_OK;
+                }
+                USB_DEBUG_MESSAGE("[ERROR AT] Ответ не 200", DEBUG_GSM, DEBUG_LEVL_4);
+                return HAL_BUSY; // Успешно получен и разобран ответ
             }
             if (strstr(parseBuffer, "error") != NULL)
             {
                 break;
             }
         }
-        time += 5000; // Увеличиваем время ожидания на 5 секунд
     }
     //USB_DEBUG_MESSAGE(parseBuffer, DEBUG_GSM, DEBUG_LEVL_4);
     //CDC_Transmit_FS(parseBuffer, sizeof(parseBuffer));
-    return -1; // Таймаут: ответ не получен или не соответствует формату
+    return HAL_TIMEOUT; // Таймаут: ответ не получен или не соответствует формату
 }
 
 
-#define MAX_SMS_ATTEMPTS 3
+#define MAX_SMS_ATTEMPTS 1
 
-int sendSMS(void)
+HAL_StatusTypeDef sendSMS(void)
 {
     int attempt;
     uint8_t smsSent = 0; // Флаг успешной отправки SMS
@@ -299,63 +327,53 @@ int sendSMS(void)
         strcat(save_data, "\x1A\r");
     }
     else{
-        return -1;
+        return HAL_ERROR;
     }
-    /*
-    if (SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000) != 1)
-    {
-    };
-    if (SendCommandAndParse("AT+CGACT=0\r", waitForOKResponse, 60000) != 1)
-    {
-    };
-    if (SendCommandAndParse("AT+CGDCONT=1\r", waitForOKResponse, 1000) != 1)
-    {
-    };*/
+    
+    if (SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000) != 1){}
+    if (SendCommandAndParse("AT+CGACT=0\r", waitForOKResponse, 60000) != 1){}
+    if (SendCommandAndParse("AT+CGDCONT=1\r", waitForOKResponse, 1000) != 1){}
 
-    for (attempt = 0; attempt < MAX_SMS_ATTEMPTS; attempt++)
+    // Команда для выбора текстового режима
+    if (SendCommandAndParse("AT+CMGF=1\r", waitForOKResponse, 1000) != HAL_OK)
     {
-        // Команда для выбора текстового режима
-        if (SendCommandAndParse("AT+CMGF=1\r", waitForOKResponse, 1000) != 1)
-        {
-            osDelay(1000); // Задержка 5 секунд перед повторной попыткой
-            continue;      // Переходим к следующей попытке
-        }
-
-        // Команда для выбора кодировки символов
-        if (SendCommandAndParse("AT+CSCS=\"GSM\"\r", waitForOKResponse, 1000) != 1)
-        {
-            osDelay(1000);
-            continue;
-        }
-
-        // Команда для начала отправки SMS
-        // "AT+CMGS=\"+79150305966\"\r"
-        memset(command, 0, sizeof(command));
-        sprintf(command, "AT+CMGS=\"%s\"\r", EEPROM.Phone);
-        //strcat(command, save_data);
-        if (SendCommandAndParse(command, waitForGreaterThanResponse, 2000) != 1)
-        {
-            osDelay(1000);
-            continue;
-        }
-        HAL_UART_Transmit(&huart4, save_data, strlen(save_data), 1000);
-        osDelay(90000);
-        // Если все команды выполнены успешно, считаем, что SMS отправлена
-        smsSent = 1;
-        break;
+        return HAL_ERROR; // Ошибка при установке текстового режима
     }
 
-    // Если ни одна из попыток не увенчалась успехом, выставляем флаг ошибки
-    if (!smsSent) {
+    // Команда для выбора кодировки символов
+    if (SendCommandAndParse("AT+CSCS=\"GSM\"\r", waitForOKResponse, 1000) != HAL_OK)
+    {
+        osDelay(1000);
+        return HAL_ERROR; 
+    }
+
+    // Команда для начала отправки SMS
+    // "AT+CMGS=\"+79150305966\"\r"
+    memset(command, 0, sizeof(command));
+    sprintf(command, "AT+CMGS=\"%s\"\r", EEPROM.Phone);
+    // strcat(command, save_data);
+    if (SendCommandAndParse(command, waitForGreaterThanResponse, 4000) != HAL_OK)
+    {
+        osDelay(1000);
+        return HAL_ERROR; 
+    }
+    USB_DEBUG_MESSAGE("[DEBUG AT] Отправлено сообщение по UART:", DEBUG_GSM, DEBUG_LEVL_3);
+    USB_DEBUG_MESSAGE(save_data, DEBUG_GSM, DEBUG_LEVL_4);
+    HAL_UART_Transmit(&huart4, save_data, strlen(save_data), 1000);
+    
+    if (waitForSMSResponse(90000) == HAL_OK){
+        USB_DEBUG_MESSAGE("[DEBUG AT] SMS отправлено успешно", DEBUG_GSM, DEBUG_LEVL_4);
+    } else {
+        USB_DEBUG_MESSAGE("[ERROR AT] Ошибка при отправке SMS", DEBUG_GSM, DEBUG_LEVL_4);
         ERRCODE.STATUS |= STATUS_GSM_SMS_SEND_ERROR;
-        return -1;
-    }
-    return 0;
+        return HAL_ERROR; // Ошибка при ожидании ответа на SMS
+    } 
+    return HAL_OK; 
 }
 
 #define MAX_HTTP_ATTEMPTS 3
 
-int sendHTTP(void) {
+HAL_StatusTypeDef sendHTTP(void) {
     int attempt;
     uint8_t httpSent = 0; // Флаг успешной отправки HTTP
     char send[512] = "AT+HTTPPARA=\"URL\",\"http://geosp-data.ru/api/save-data?data=";
@@ -369,15 +387,15 @@ int sendHTTP(void) {
     }
 
     for (attempt = 0; attempt < MAX_HTTP_ATTEMPTS; attempt++) {
-        if (SendCommandAndParse("AT+HTTPINIT\r", waitForOKResponse, 1000) != 1) {
+        if (SendCommandAndParse("AT+HTTPINIT\r", waitForOKResponse, 1000) != HAL_OK) {
             goto http_error_1;
         }
         osDelay(100);
-        if (SendCommandAndParse("AT+HTTPPARA=\"CID\",\"1\"\r", waitForOKResponse, 2000) != 1) {
+        if (SendCommandAndParse("AT+HTTPPARA=\"CID\",\"1\"\r", waitForOKResponse, 2000) != HAL_OK) {
             goto http_error_1;
         }
         // Отправка HTTP запроса (send - строка с корректно сформированным URL)
-        if (SendCommandAndParse(send, waitForOKResponse, 20000) != 1) {
+        if (SendCommandAndParse(send, waitForOKResponse, 20000) != HAL_OK) {
             goto http_error_1;
         }
         osDelay(100);
@@ -388,7 +406,7 @@ int sendHTTP(void) {
             SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 2000);
             break;
         }
-        if (res == 0){
+        if (res != HAL_OK) {
             goto http_error_1;
         }
 
@@ -397,7 +415,7 @@ int sendHTTP(void) {
 
         if (ERRCODE.STATUS & STATUS_HTTP_NO_BINDING_ERROR) break;
         // Если данные так и не получены, считаем попытку неуспешной
-        if (readResult != 1){
+        if (readResult != HAL_OK){
             ERRCODE.STATUS |= STATUS_HTTP_SERVER_COMM_ERROR;
             goto http_error_1;
         }
@@ -423,12 +441,12 @@ http_error_1:
     // Если ни одна из попыток не увенчалась успехом, выставляем флаг ошибки
     if (!httpSent) {
         ERRCODE.STATUS |= STATUS_HTTP_SERVER_COMM_ERROR;
-        return -1;
+        return HAL_ERROR;
     }
-    return 0;
+    return HAL_OK;
 }
 
-int READ_Settings_sendHTTP(void) {
+HAL_StatusTypeDef READ_Settings_sendHTTP(void) {
     int attempt;
     uint8_t httpSent = 0; // Флаг успешной отправки HTTP
     char send[512] = "AT+HTTPPARA=\"URL\",\"http://geosp-data.ru/api/save-data?request=";
@@ -440,34 +458,32 @@ int READ_Settings_sendHTTP(void) {
         strcat(send, "\"\r");
     }
     else{
-        return -1;
+        return HAL_ERROR;
     }
     
 
 
     for (attempt = 0; attempt < MAX_HTTP_ATTEMPTS; attempt++) {
-        if (SendCommandAndParse("AT+HTTPINIT\r", waitForOKResponse, 2000) != 1) {
+        if (SendCommandAndParse("AT+HTTPINIT\r", waitForOKResponse, 2000) != HAL_OK) {
             goto http_error_2;
         }
+        USB_DEBUG_MESSAGE("[DEBUG AT] HTTP READ инициализирован", DEBUG_GSM, DEBUG_LEVL_4);
         osDelay(100);
         
         if (SendCommandAndParse("AT+HTTPPARA=\"CID\",\"1\"\r", waitForOKResponse, 2000) != 1) {
             goto http_error_2;
         }
+        USB_DEBUG_MESSAGE("[DEBUG AT] HTTP READ профиль сессии установлен успешно", DEBUG_GSM, DEBUG_LEVL_4);
         osDelay(100);
         // Отправка HTTP запроса (send - строка с корректно сформированным URL)
         if (SendCommandAndParse(send, waitForOKResponse, 20000) != 1) {
             goto http_error_2;
         }
+        USB_DEBUG_MESSAGE("[DEBUG AT] HTTP READ отправлен", DEBUG_GSM, DEBUG_LEVL_4);
         osDelay(100);
         // Выполнение HTTPACTION, проверка ответа
         int res = SendCommandAndParse("AT+HTTPACTION=0\r", waitForHTTPResponse, 60000);
-        if (ERRCODE.STATUS & STATUS_HTTP_WRONG_PASSWORD_ERROR) {
-            // Неверный пароль код 403
-            SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 2000);
-            break;
-        }
-        if (res == 0){
+        if (res != HAL_OK) {
             goto http_error_2;
         }
         osDelay(1000);
@@ -479,7 +495,7 @@ int READ_Settings_sendHTTP(void) {
             break;
         }
         // Если данные так и не получены, считаем попытку неуспешной
-        if (readResult != 1) {
+        if (readResult != HAL_OK) {
             ERRCODE.STATUS |= STATUS_HTTP_SERVER_COMM_ERROR;
         }
         
@@ -488,55 +504,43 @@ int READ_Settings_sendHTTP(void) {
         break;
 
 http_error_2:
+        USB_DEBUG_MESSAGE("[ERROR AT] Ошибка READ запроса", DEBUG_GSM, DEBUG_LEVL_3);
         // В случае ошибки выполняем «очистку» состояния:
         SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 2000);
-        osDelay(500);
         SendCommandAndParse("AT+CGACT=0\r", waitForOKResponse, 60000);
-        osDelay(500);
         SendCommandAndParse("AT+CGDCONT=1\r", waitForOKResponse, 1000);
-        osDelay(500);
         SendCommandAndParse("AT+CGDCONT=1,\"IP\",\"internet.mts.ru\"\r", waitForOKResponse, 1000); 
-        osDelay(500);
         SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 60000);
-        osDelay(500);
         SendCommandAndParse("AT+CDNSCFG=\"8.8.8.8\",\"77.88.8.8\"\r", waitForOKResponse, 1000);
-        osDelay(5000);  // Задержка 5 секунд перед следующей попыткой
+        osDelay(2000);  // Задержка2 секунды перед следующей попыткой
     }
 
     // Если ни одна из попыток не увенчалась успехом, выставляем флаг ошибки
     if (!httpSent) {
+        USB_DEBUG_MESSAGE("[ERROR AT] Выставлена - Ошибка связи с сервером", DEBUG_GSM, DEBUG_LEVL_3);
         ERRCODE.STATUS |= STATUS_HTTP_SERVER_COMM_ERROR;
-        return -1;
+        return HAL_ERROR;
     }
-    return 0;
-}
-
-int Send_data(){
-    Collect_DATA();
-    if (sendHTTP() == 0) return 0;
-    ERRCODE.STATUS |= STATUS_HTTP_SERVER_COMM_ERROR;
-    if (sendSMS() == 0) return 0;
-    ERRCODE.STATUS |= STATUS_GSM_SMS_SEND_ERROR;
-    return -1;
+    return HAL_OK; // Успешно отправлен HTTP запрос и получен ответ
 }
 
 
 
-
-
-int parse_site_response(void) {
+HAL_StatusTypeDef parse_site_response(void) {
 
     // Ищем открывающую и закрывающую квадратные скобки
     char *start = strchr(parseBuffer, '[');
     char *end = strrchr(parseBuffer, ']');
     if (start == NULL || end == NULL || start > end) {
-        return -1;
+        USB_DEBUG_MESSAGE("[ERROR AT] Неверный формат ответа с сайта", DEBUG_GSM, DEBUG_LEVL_4);
+        return HAL_ERROR;
     }
-    
+    USB_DEBUG_MESSAGE("[DEBUG AT] Структура настроек с сайта верная", DEBUG_GSM, DEBUG_LEVL_4);
     // Извлекаем содержимое между скобками
     size_t len = end - start - 1;
     if (len == 0 || len >= 128) {  // 128 – размер временного буфера, можно настроить
-        return -1;
+        USB_DEBUG_MESSAGE("[ERROR AT] ТПревышен размер буфера для настроек с сайта", DEBUG_GSM, DEBUG_LEVL_4);
+        return HAL_ERROR;
     }
     char dataStr[128] = {0};
     memcpy(dataStr, start + 1, len);
@@ -605,7 +609,8 @@ int parse_site_response(void) {
     if (tokenCount != 7)
     {
         // Если число токенов отличается от 7, данные считаются неверными
-        return -1;
+        USB_DEBUG_MESSAGE("[ERROR AT] Число токенов больше 7 - недопустимо", DEBUG_GSM, DEBUG_LEVL_4);
+        return HAL_ERROR;
     }
 
     // Проверяем, совпадает ли полученный номер устройства с ожидаемым
@@ -615,7 +620,8 @@ int parse_site_response(void) {
     remove_braces_inplace(Version);
 
     if (strcmp(devNum, Version) != 0) {
-        return -1;
+        USB_DEBUG_MESSAGE("[ERROR AT] Не совпадает номер усройства и номер на сайте", DEBUG_GSM, DEBUG_LEVL_4);
+        return HAL_ERROR;
     }
     
     // Сохраняем разобранные данные в EEPROM
@@ -639,11 +645,11 @@ int parse_site_response(void) {
     {
         ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
     }
-
-    return 1;
+    USB_DEBUG_MESSAGE("[DEBUG AT] Настройки с сайта успешно применены", DEBUG_GSM, DEBUG_LEVL_4);
+    return HAL_OK;
 }
 
-int waitAndParseSiteResponse(uint32_t timeout)
+HAL_StatusTypeDef waitAndParseSiteResponse(uint32_t timeout)
 {
     TickType_t startTick = xTaskGetTickCount();
     TickType_t timeoutTicks = pdMS_TO_TICKS(timeout);
@@ -659,12 +665,14 @@ int waitAndParseSiteResponse(uint32_t timeout)
         {
             // При каждом получении новых данных проверяем:
             if (strstr(parseBuffer, "NO_BINDING") != NULL) {
+                USB_DEBUG_MESSAGE("[WARNING AT] Устройство не привязано", DEBUG_GSM, DEBUG_LEVL_4);
                 ERRCODE.STATUS |= STATUS_HTTP_NO_BINDING_ERROR;
-                return 0;
+                return HAL_ERROR;
             }
             if (strstr(parseBuffer, "INCORRECT_PASSWORD") != NULL) {
+                USB_DEBUG_MESSAGE("[WARNING AT] Неверный пароль", DEBUG_GSM, DEBUG_LEVL_4);
                 ERRCODE.STATUS |= STATUS_HTTP_WRONG_PASSWORD_ERROR;
-                return 0;
+                return HAL_ERROR;
             }
             start = strchr(parseBuffer, '[');
             if (start != NULL && strchr(start, ']') != NULL)
@@ -674,10 +682,12 @@ int waitAndParseSiteResponse(uint32_t timeout)
             }
             if (strstr(parseBuffer, "Error") != NULL)
             {
+                USB_DEBUG_MESSAGE("[ERROR AT] Неизвестная ошибка", DEBUG_GSM, DEBUG_LEVL_4);
                 break;
             }
         }
     }
+    USB_DEBUG_MESSAGE("[ERROR AT] Таймаут чтения настроек с сайта", DEBUG_GSM, DEBUG_LEVL_4);
     // Если за время ожидания нужный пакет так и не обнаружен, возвращаем -1
-    return -1;
+    return HAL_TIMEOUT;
 }

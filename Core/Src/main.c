@@ -63,6 +63,7 @@ extern const uint16_t Timer_key_press_fast;
 extern uint8_t gsmRxChar;
 extern EEPROM_Settings_item EEPROM;
 extern ERRCODE_item ERRCODE;
+extern USBD_HandleTypeDef hUsbDeviceFS; 
 
 I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c2;
@@ -278,8 +279,6 @@ int main(void)
     }
   }
   PowerUP_counter();
-  EEPROM.DEBUG_LEVL = DEBUG_LEVL_3;
-  EEPROM.DEBUG_CATEG = 0xFF; // Включаем все категории отладки
 
   uint32_t value = HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_INDEX_RESET_PROG);
   if (value == DATA_RESET_PROG){  
@@ -409,9 +408,14 @@ int main(void)
 
 void USB_DEBUG_MESSAGE(const char message[], uint8_t category, uint8_t debugLVL)
 {
-    if ((EEPROM.DEBUG_CATEG & category) && (EEPROM.DEBUG_LEVL >= debugLVL) && (EEPROM.USB_mode == USB_DEBUG))
+  if (EEPROM.USB_mode != USB_DEBUG) return;
+  if (hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED) return;
+    if ((EEPROM.DEBUG_CATEG & category) && (EEPROM.DEBUG_LEVL >= debugLVL))
     {
-        while (CDC_Transmit_FS((uint8_t *)message, 100) == USBD_BUSY){}
+        size_t len = strlen(message);
+        while (CDC_Transmit_FS((uint8_t*)"---", 3) == USBD_BUSY){}
+        while (CDC_Transmit_FS((uint8_t *)message, len) == USBD_BUSY){}
+        while (CDC_Transmit_FS((uint8_t*)"\r\n", 2) == USBD_BUSY){}
     }
 }
 /* Считать 64-битное значение секунд из Backup-регистров */
@@ -556,6 +560,7 @@ void Main_Cycle(void *argument)
     osDelay(1000);
 
     // Получаем показания датчиков
+    // !!! Переписать этот ужас
     uint8_t status_ADC = 0;
     if (!(ERRCODE.STATUS & STATUS_ADC_EXTERNAL_INIT_ERROR))
     {
@@ -584,13 +589,12 @@ void Main_Cycle(void *argument)
     HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);
     HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);
     HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);
-    HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 1);
-    
-    osDelay(50);
+    //HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 1);
+
     osThreadResume(UART_PARSER_taskHandle); // Вклюбчаем GSM
     
     // Вызов функции отправки и полчучения настроек
-    uint8_t status = HAL_ERROR;
+    HAL_StatusTypeDef status = HAL_ERROR;
     if (EEPROM.Communication != 0)
     {
       // 60 секунд на попытки зарагистрироваться
@@ -616,6 +620,7 @@ void Main_Cycle(void *argument)
         }
         osDelay(500);
       }
+
       if ((status == HAL_ERROR) && ((GSM_data.Status & SIM_PRESENT)))
       {
         // Если регистрация не прошла, но сим карта есть - перезагружаем модем
@@ -664,17 +669,21 @@ void Main_Cycle(void *argument)
         if (((ERRCODE.STATUS & STATUS_HTTP_SERVER_COMM_ERROR) || (status == HAL_ERROR)) && !(ERRCODE.STATUS & STATUS_HTTP_NO_BINDING_ERROR))
         {
           GSM_data.Status &= ~HTTP_SEND;
+          GSM_data.Status &= ~SMS_SEND_Successfully;
+          GSM_data.Status &= ~STATUS_GSM_SMS_SEND_ERROR;
           GSM_data.Status |= SMS_SEND;
           for (int i = 0; i < 120; i++)
           {
             if (GSM_data.Status & SMS_SEND_Successfully)
             {
-              status = 1;
+              USB_DEBUG_MESSAGE("[DEBUG AT] СМС отправлена", DEBUG_GSM, DEBUG_LEVL_3);
+              status = HAL_OK;
               break;
             }
             if (ERRCODE.STATUS & STATUS_GSM_SMS_SEND_ERROR)
             {
-              status = 0;
+              USB_DEBUG_MESSAGE("[DEBUG AT] Ошибка отправки смс", DEBUG_GSM, DEBUG_LEVL_3);
+              status = HAL_ERROR;
               break;
             }
             osDelay(500);
@@ -686,14 +695,13 @@ void Main_Cycle(void *argument)
         ERRCODE.STATUS |= STATUS_GSM_REG_ERROR;
       }
     }
-
+    USB_DEBUG_MESSAGE("[INFO] Окончание цикла, сохранение", DEBUG_GSM, DEBUG_LEVL_3);
     osThreadSuspend(ADC_readHandle);
     osThreadSuspend(RS485_dataHandle);
     osThreadSuspend(UART_PARSER_taskHandle);
     HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
     HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);
     HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);
-    HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);
     osDelay(50);
 
 
@@ -899,7 +907,6 @@ void Erroe_indicate(void *argument)
       BlinkLED(GPIOC, GPIO_PIN_13, 2, 500, 500, 0);
       goto skip;
     }
-    
     // Ошибка инициализации Flash
     ErrorMask = STATUS_FLASH_INIT_ERROR
     | STATUS_FLASH_READY_ERROR
@@ -912,8 +919,6 @@ void Erroe_indicate(void *argument)
       BlinkLED(GPIOC, GPIO_PIN_13, 3, 500, 500, 0);
       goto skip;
     }
-    
-    
     skip:
       osDelay(1000);
   }
@@ -926,8 +931,15 @@ void UART_PARSER_task(void *argument)
   GSM_Init();
   for (;;)
   {
+    // Если GSM должен быть выключен
+    if (EEPROM.Communication == 0)
+    {
+      HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
+      delay_AT_OK = 0;
+      continue;
+    }
     // Если GSM должен быть включен
-    if ((EEPROM.Communication == 1))
+    if (EEPROM.Communication == 1)
     {
       // Если GSM был выключен
       if (HAL_GPIO_ReadPin(EN_3P8V_GPIO_Port, EN_3P8V_Pin) == 0)
@@ -937,15 +949,8 @@ void UART_PARSER_task(void *argument)
         HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 1);
         osDelay(600);
         HAL_GPIO_WritePin(UART4_WU_GPIO_Port, UART4_WU_Pin, 0);
+        osDelay(1000);
       }
-    }
-    // Если GSM должен быть выключен
-    if (EEPROM.Communication == 0)
-    {
-     
-      HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
-      delay_AT_OK = 0;
-      continue;
     }
     osDelay(5000);
     if (EEPROM.Mode == 0)
@@ -963,33 +968,48 @@ void UART_PARSER_task(void *argument)
         strcpy(GSM_data.GSM_site_status, "");
       }
     }
-
-    // if (EEPROM.Mode != 0) osThreadSuspend(SIM800_dataHandle); // Остановить, если циклический режим (для однократного выполнения)
-
+    // Если модуль связи не готов
     if ((!(GSM_data.Status & GSM_RDY)) && (EEPROM.USB_mode != USB_AT))
     {
-      int result = SendCommandAndParse("AT\r", waitForOKResponse, 2000);
       delay_AT_OK++;
-      if (result == 1)
+      if (SendCommandAndParse("AT\r", waitForOKResponse, 2000) == HAL_OK)
       {
-        USB_DEBUG_MESSAGE("[DEBUG AT] Модуль связи обнаружен", DEBUG_GSM, DEBUG_LEVL_1);
-        USB_DEBUG_MESSAGE("[DEBUG AT] Начата установка настроек модуля связи", DEBUG_GSM, DEBUG_LEVL_2);
         delay_AT_OK = 0;
-        if (SendCommandAndParse("AT+CFUN=0\r", waitForOKResponse, 2000) != 1)
-        if (SendCommandAndParse("AT+CFGDUALMODE=1,0\r", waitForOKResponse, 2000) != 1)
-        if (SendCommandAndParse("AT+CFGRATPRIO=2\r", waitForOKResponse, 2000) != 1)
-        if (SendCommandAndParse("AT+CFUN=1\r", waitForOKResponse, 2000) != 1)
-        if (SendCommandAndParse("AT+CSCON=0\r", waitForOKResponse, 2000) != 1)
-        if (SendCommandAndParse("AT&W\r", waitForOKResponse, 2000) != 1){}
-        
-        GSM_data.Status |= GSM_RDY;
-        USB_DEBUG_MESSAGE("[DEBUG AT] Модуль связи настроен", DEBUG_GSM, DEBUG_LEVL_1);
+        USB_DEBUG_MESSAGE("[DEBUG AT] Модуль связи обнаружен, начата установка настроек модуля связи", DEBUG_GSM, DEBUG_LEVL_1);
+        if (SendCommandAndParse("AT+CFUN=0\r", waitForOKResponse, 2000) == HAL_OK)
+        {
+          if (SendCommandAndParse("AT+CFGDUALMODE=1,0\r", waitForOKResponse, 2000) == HAL_OK)
+          {
+            if (SendCommandAndParse("AT+CFGRATPRIO=2\r", waitForOKResponse, 2000) == HAL_OK)
+            {
+              if (SendCommandAndParse("AT+CFUN=1\r", waitForOKResponse, 2000) == HAL_OK)
+              {
+                if (SendCommandAndParse("AT+CSCON=0\r", waitForOKResponse, 2000) == HAL_OK)
+                {
+                  if (SendCommandAndParse("AT&W\r", waitForOKResponse, 2000) == HAL_OK)
+                  {
+                    GSM_data.Status |= GSM_RDY;
+                    USB_DEBUG_MESSAGE("[DEBUG AT] Модуль связи настроен", DEBUG_GSM, DEBUG_LEVL_1);
+                  }
+                }
+              }
+            }
+          }
+        }
       }
-      if (delay_AT_OK > 20){
-        USB_DEBUG_MESSAGE("[ERROR AT] Модуль связи не найден", DEBUG_GSM, DEBUG_LEVL_1);
+      else
+      {
+        USB_DEBUG_MESSAGE("[ERROR AT] Модуль связи не отвечает, сброс готовности миодуля", DEBUG_GSM, DEBUG_LEVL_1);
         ERRCODE.STATUS |= STATUS_UART_NO_RESPONSE;
       }
+      if (delay_AT_OK > 15){
+        USB_DEBUG_MESSAGE("[ERROR AT] Таймаут 30с превышен, модуль связи не найден", DEBUG_GSM, DEBUG_LEVL_1);
+        ERRCODE.STATUS |= STATUS_UART_NO_RESPONSE;
+      }
+      continue;
     }
+
+    // Если модуль связи готов
     // ! перепроверить
     if (GSM_data.Status & NETWORK_REGISTERED_SET_HTTP){
       GSM_data.Status &=~ NETWORK_REGISTERED_SET_HTTP;
@@ -998,32 +1018,33 @@ void UART_PARSER_task(void *argument)
       SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 60000);
       SendCommandAndParse("AT+CDNSCFG=\"8.8.8.8\",\"77.88.8.8\"\r", waitForOKResponse, 1000);
     }
-
-    if ((GSM_data.Status & GSM_RDY) && (EEPROM.USB_mode != USB_AT))
+    if (EEPROM.USB_mode != USB_AT)
     {
-      USB_DEBUG_MESSAGE("[DEBUG AT] Начато обновление статуса GSM", DEBUG_GSM, DEBUG_LEVL_3);
+      USB_DEBUG_MESSAGE("[DEBUG AT] Начато обновление статуса GSM", DEBUG_GSM, DEBUG_LEVL_2);
       SendCommandAndParse("AT+CPIN?\r", waitForCPINResponse, 1000);
       SendCommandAndParse("AT+CSQ\r", waitForCSQResponse, 1000);
       SendCommandAndParse("AT+CEREG?\r", waitForCEREGResponse, 1000);
       SendCommandAndParse("AT+COPS?\r", waitForCOPSResponse, 1000);
       GSM_data.update_value();
-      if (EEPROM.Mode == 0)
       if (EEPROM.Mode == 0) xSemaphoreGive(Display_semaphore);
     }
 
     if (GSM_data.Status & SMS_SEND)
     {
+      USB_DEBUG_MESSAGE("[DEBUG AT] Начата отправка СМС", DEBUG_GSM, DEBUG_LEVL_2);
       // флаг того что нужно отправить смс
       GSM_data.Status &= ~SMS_SEND;
       Collect_DATA();
       if (sendSMS() == HAL_OK)
       {
+        USB_DEBUG_MESSAGE("[DEBUG AT] СМС отправлена", DEBUG_GSM, DEBUG_LEVL_2);
         if (EEPROM.Mode == 0) strcpy(GSM_data.GSM_sms_status, "OK");
         if (EEPROM.Mode == 0) xSemaphoreGive(Display_semaphore);
         GSM_data.Status |= SMS_SEND_Successfully;
       }
       else
       {
+        USB_DEBUG_MESSAGE("[ERROR AT] СМС не отправлена", DEBUG_GSM, DEBUG_LEVL_1);
         if (EEPROM.Mode == 0) strcpy(GSM_data.GSM_sms_status, "ERR");
         if (EEPROM.Mode == 0) xSemaphoreGive(Display_semaphore);
         ERRCODE.STATUS |= STATUS_GSM_SMS_SEND_ERROR;
@@ -1034,10 +1055,10 @@ void UART_PARSER_task(void *argument)
     {
       GSM_data.Status &= ~HTTP_SEND;
       Collect_DATA();
-      USB_DEBUG_MESSAGE("[DEBUG AT] Начало HTTP GET", DEBUG_GSM, DEBUG_LEVL_3);
+      USB_DEBUG_MESSAGE("[DEBUG AT] Начало HTTP GET", DEBUG_GSM, DEBUG_LEVL_2);
       if (sendHTTP() == HAL_OK)
       {
-        USB_DEBUG_MESSAGE("[DEBUG AT] Успешно HTTP GET", DEBUG_GSM, DEBUG_LEVL_1);
+        USB_DEBUG_MESSAGE("[DEBUG AT] Успешно HTTP GET", DEBUG_GSM, DEBUG_LEVL_2);
         GSM_data.Status |= HTTP_SEND_Successfully;
         if (EEPROM.Mode == 0)
           strcpy(GSM_data.GSM_site_status, "OK");

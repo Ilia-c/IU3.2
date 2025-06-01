@@ -63,7 +63,7 @@ extern "C"
 
 // Включение отладки по модулям
 #define DEBUG_GSM (1<<0)
-#define DEBUG_WATCHDOG (1<<1)
+#define AT_COMMANDS (1<<1)
 #define DEBUG_RS485 (1<<2)
 #define DEBUG_ADC (1<<3)
 #define DEBUG_ADC_IN (1<<4)

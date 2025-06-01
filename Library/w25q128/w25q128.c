@@ -66,19 +66,24 @@ static int SPI2_Recv(uint8_t *dt, uint16_t cnt)
 // Инициализация флеша: сброс, проверка ID
 void w25_init(void)
 {
+    USB_DEBUG_MESSAGE("[DEBUG FLASH] Инициализация FLASH", DEBUG_FLASH, DEBUG_LEVL_1);
     if (W25_Reset() != 0) {
+        USB_DEBUG_MESSAGE("[ERROR FLASH] ОШИБКА СБРОСА", DEBUG_FLASH, DEBUG_LEVL_1);
         return;
     }
     HAL_Delay(100);
 
     uint32_t id = 0;
+    USB_DEBUG_MESSAGE("[DEBUG FLASH] Чтение ID", DEBUG_FLASH, DEBUG_LEVL_3);
     W25_Read_ID(&id);
     if (id != 0xef4018)
     {
+        USB_DEBUG_MESSAGE("[ERROR FLASH] Неверный ID", DEBUG_FLASH, DEBUG_LEVL_1);
         ERRCODE.STATUS |= STATUS_FLASH_INIT_ERROR;
     }
     else
     {
+        USB_DEBUG_MESSAGE("[DEBUG FLASH] FLASH инициализирован", DEBUG_FLASH, DEBUG_LEVL_1);
         ERRCODE.STATUS &= ~STATUS_FLASH_INIT_ERROR;
     }
 }
@@ -232,6 +237,7 @@ int W25_Write_Data(uint32_t addr, uint8_t *data, uint32_t sz)
 // Стирание сектора (4 КБ)
 int W25_Erase_Sector(uint32_t addr)
 {
+    USB_DEBUG_MESSAGE("[DEBUG FLASH] Начато стирание сектора FLASH", DEBUG_FLASH, DEBUG_LEVL_3);
     uint8_t cmd[4];
     cmd[0] = W25_SECTOR_ERASE;
     cmd[1] = (addr >> 16) & 0xFF;
@@ -239,21 +245,24 @@ int W25_Erase_Sector(uint32_t addr)
     cmd[3] = addr & 0xFF;
 
     if (W25_Write_Enable() != 0) {
+        USB_DEBUG_MESSAGE("[ERROR FLASH] Ошибка разрешения записи перед стиранием", DEBUG_FLASH, DEBUG_LEVL_2);
         return -1;
     }
 
     cs_set();
     if (SPI2_Send(cmd, 4) != 0) {
         cs_reset();
+        USB_DEBUG_MESSAGE("[ERROR FLASH] Ошибка отправки команды стирания", DEBUG_FLASH, DEBUG_LEVL_2);
         return -1;
     }
     cs_reset();
 
     // Ждём ~400 мс, пока сотрётся
     if (W25_WaitForReady(400) != 0) {
+        USB_DEBUG_MESSAGE("[ERROR FLASH] Ошибка ожидания готовности после стирания", DEBUG_FLASH, DEBUG_LEVL_2);
         return -1;
     }
-
+    USB_DEBUG_MESSAGE("[DEBUG FLASH] Стирание FLASH завершено", DEBUG_FLASH, DEBUG_LEVL_3);
     return 0;
 }
 
@@ -261,12 +270,17 @@ int W25_Erase_Sector(uint32_t addr)
 // Полное стирание флеша
 int W25_Chip_Erase(void)
 {
+    USB_DEBUG_MESSAGE("[DEBUG FLASH] Начато полное стирание FLASH", DEBUG_FLASH, DEBUG_LEVL_3);
     uint8_t cmd = W25_CHIP_ERASE;
-    if (W25_Write_Enable() != 0) return -1;
+    if (W25_Write_Enable() != 0){
+        USB_DEBUG_MESSAGE("[ERROR FLASH] Ошибка разрешения записи перед полным стиранием", DEBUG_FLASH, DEBUG_LEVL_2);
+        return -1;
+    } 
 
     cs_set();
     if (SPI2_Send(&cmd, 1) != 0) {
         cs_reset();
+        USB_DEBUG_MESSAGE("[ERROR FLASH] Ошибка отправки команды полного стирания", DEBUG_FLASH, DEBUG_LEVL_2);
         return -1;
     }
     cs_reset();
@@ -276,18 +290,26 @@ int W25_Chip_Erase(void)
     while ((status = W25_Read_Status()) & 0x01) {
         // Проверяем таймаут
         if (((xTaskGetTickCount() - start_time) * portTICK_PERIOD_MS) >= TIMEOUT_CHIP_ERASE_MS) {
+            USB_DEBUG_MESSAGE("[ERROR FLASH] Таймаут при ожидании полного стирания", DEBUG_FLASH, DEBUG_LEVL_2);
             break;
         }
         vTaskDelay(pdMS_TO_TICKS(100));
     }
     g_total_records_count = 0;
-    return ((status & 0x01) ? -1 : 0);
+    if (status & 0x01) {
+        USB_DEBUG_MESSAGE("[ERROR FLASH] Ошибка при полном стирании FLASH", DEBUG_FLASH, DEBUG_LEVL_2);
+        return -1;
+    }
+    USB_DEBUG_MESSAGE("[DEBUG FLASH] Полное стирание FLASH завершено", DEBUG_FLASH, DEBUG_LEVL_3);
+    return 0;
+    //return ((status & 0x01) ? -1 : 0);
 }
 
 //------------------------------------------------------------------------------
 // Возвращает адрес свободного блока в "пустом" секторе или стирает сектор №0, если всё заполнено.
 int32_t search_sector_empty(void)
 {
+    USB_DEBUG_MESSAGE("[DEBUG FLASH] Поиск свободного блока в секторах", DEBUG_FLASH, DEBUG_LEVL_3);
     uint8_t sector_header;  // первый байт сектора
     for (uint16_t sec = 0; sec < TOTAL_SECTORS; sec++) {
         uint32_t sector_addr = sec * SECTOR_SIZE;
@@ -312,6 +334,7 @@ int32_t search_sector_empty(void)
                 if (frag_status == EMPTY) {
                     // нашли свободный блок
                     g_total_records_count = sec * RECORDS_PER_SECTOR + i;
+                    USB_DEBUG_MESSAGE("[DEBUG FLASH] Найден свободный блок", DEBUG_FLASH, DEBUG_LEVL_3);
                     return (int32_t)(addr - BLOCK_MARK_WRITE_START);
                 }
             }
@@ -326,10 +349,12 @@ int32_t search_sector_empty(void)
     // Если всё заполнено, стираем сектор №0 (кольцо), возвращаем адрес начала
     if (W25_Erase_Sector(0) != 0) {
         // Ошибка стирания - возвращаем -1
+        USB_DEBUG_MESSAGE("[ERROR FLASH] Ошибка стирания сектора №0", DEBUG_FLASH, DEBUG_LEVL_2);
         return -1;
     }
 
     // Теперь сектор №0 пуст, можно вернуть 0 (адрес начала)
+    USB_DEBUG_MESSAGE("[DEBUG FLASH] Сектор №0 успешно стёрт", DEBUG_FLASH, DEBUG_LEVL_3);
     return 0;
 }
 
@@ -337,16 +362,23 @@ int32_t search_sector_empty(void)
 // Запись данных во флеш 
 int flash_append_record(const char *record_data, uint8_t sector_mark_send_flag)
 {
+    USB_DEBUG_MESSAGE("[DEBUG FLASH] Запись данных во флеш", DEBUG_FLASH, DEBUG_LEVL_3);
     int32_t addr = search_sector_empty();
-    if (addr < 0 || addr >= FLASH_TOTAL_SIZE) return -1;
-    if (!record_data) return -1;
+    if (addr < 0 || addr >= FLASH_TOTAL_SIZE){
+        USB_DEBUG_MESSAGE("[ERROR FLASH] Ошибка поиска свободного блока", DEBUG_FLASH, DEBUG_LEVL_2);
+        return -1;
+    }
+    if (!record_data){
+        USB_DEBUG_MESSAGE("[ERROR FLASH] Данные для записи не указаны", DEBUG_FLASH, DEBUG_LEVL_2);
+        return -1;
+    }
 
     // Проверим длину данных, максимум (RECORD_SIZE - 6)
     size_t len = strlen(record_data);
     if (len > (RECORD_SIZE - 6)) {
         len = RECORD_SIZE - 6;
     }
-
+    
     // Сформируем структуру
     record_t new_rec;
     // По вашей логике:
@@ -362,6 +394,7 @@ int flash_append_record(const char *record_data, uint8_t sector_mark_send_flag)
 
     // Запишем 128 байт в блок
     if (W25_Write_Data(addr, (uint8_t *)&new_rec, sizeof(record_t)) != 0) {
+        USB_DEBUG_MESSAGE("[ERROR FLASH] Ошибка записи данных во флеш", DEBUG_FLASH, DEBUG_LEVL_2);
         return -1;
     }
 
@@ -370,6 +403,7 @@ int flash_append_record(const char *record_data, uint8_t sector_mark_send_flag)
         uint8_t complete_flag = SET; // 0x00
         uint32_t status_addr = addr + offsetof(record_t, rec_status_end);
         if (W25_Write_Data(status_addr, &complete_flag, 1) != 0) {
+            USB_DEBUG_MESSAGE("[ERROR FLASH] Ошибка записи статуса завершения записи", DEBUG_FLASH, DEBUG_LEVL_2);
             return -1;
         }
     }
@@ -398,11 +432,12 @@ int flash_append_record(const char *record_data, uint8_t sector_mark_send_flag)
             // если != 0xFF, значит сектор не пустой => стираем
             if (next_sector_mark != EMPTY)
             {
+                USB_DEBUG_MESSAGE("[DEBUG FLASH] Стираем следующий сектор, т.к. он не пустой", DEBUG_FLASH, DEBUG_LEVL_3);
                 W25_Erase_Sector(next_sector_addr);
             }
         }
     }
-
+    USB_DEBUG_MESSAGE("[DEBUG FLASH] Запись данных во флеш завершена", DEBUG_FLASH, DEBUG_LEVL_3);
     return 0;
 }
 
@@ -410,12 +445,15 @@ int flash_append_record(const char *record_data, uint8_t sector_mark_send_flag)
 // Пометка указанного блока как "отправленного" + проверка, отправлен ли весь сектор
 int mark_block_sent(int32_t addr_block)
 {
+    USB_DEBUG_MESSAGE("[DEBUG FLASH] Пометка блока как отправленного", DEBUG_FLASH, DEBUG_LEVL_4);
     // Проверка границ
     if (addr_block < 0 || addr_block > (int32_t)(FLASH_TOTAL_SIZE - RECORD_SIZE)) {
+        USB_DEBUG_MESSAGE("[ERROR FLASH] Адрес блока вне допустимого диапазона", DEBUG_FLASH, DEBUG_LEVL_2);
         return -1;
     }
     // Проверка, что попадает в начало блока
     if ((addr_block % RECORD_SIZE) != 0) {
+        USB_DEBUG_MESSAGE("[ERROR FLASH] Адрес блока должен быть кратен размеру записи", DEBUG_FLASH, DEBUG_LEVL_2);
         return -1;
     }
 
