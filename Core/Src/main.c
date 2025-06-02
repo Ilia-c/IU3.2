@@ -653,7 +653,7 @@ void Main_Cycle(void *argument)
       {
         status = HAL_ERROR;
         GSM_data.Status |= HTTP_SEND;
-        for (int i = 0; i < 120; i++)
+        for (int i = 0; i < 240; i++)
         {
           if (GSM_data.Status & HTTP_SEND_Successfully)
           {
@@ -672,7 +672,7 @@ void Main_Cycle(void *argument)
           GSM_data.Status &= ~SMS_SEND_Successfully;
           GSM_data.Status &= ~STATUS_GSM_SMS_SEND_ERROR;
           GSM_data.Status |= SMS_SEND;
-          for (int i = 0; i < 120; i++)
+          for (int timeout_sms = 0; timeout_sms < 120; timeout_sms++)
           {
             if (GSM_data.Status & SMS_SEND_Successfully)
             {
@@ -686,7 +686,10 @@ void Main_Cycle(void *argument)
               status = HAL_ERROR;
               break;
             }
-            osDelay(500);
+            osDelay(1000);
+            char send[20] = "\0";
+            sprintf(send, "[INFO] %d", timeout_sms);
+            USB_DEBUG_MESSAGE(send, DEBUG_GSM, DEBUG_LEVL_3);
           }
         }
       }
@@ -695,7 +698,6 @@ void Main_Cycle(void *argument)
         ERRCODE.STATUS |= STATUS_GSM_REG_ERROR;
       }
     }
-    USB_DEBUG_MESSAGE("[INFO] Окончание цикла, сохранение", DEBUG_GSM, DEBUG_LEVL_3);
     osThreadSuspend(ADC_readHandle);
     osThreadSuspend(RS485_dataHandle);
     osThreadSuspend(UART_PARSER_taskHandle);
