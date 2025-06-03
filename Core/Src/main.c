@@ -595,7 +595,7 @@ void Main_Cycle(void *argument)
     
     // Вызов функции отправки и полчучения настроек
     HAL_StatusTypeDef status = HAL_ERROR;
-    if (EEPROM.Communication != 0)
+    if (EEPROM.Communication != M2M_DISABLE)
     {
       // 60 секунд на попытки зарагистрироваться
       for (int i = 0; i < 120; i++)
@@ -934,14 +934,14 @@ void UART_PARSER_task(void *argument)
   for (;;)
   {
     // Если GSM должен быть выключен
-    if (EEPROM.Communication == 0)
+    if (EEPROM.Communication == M2M_DISABLE)
     {
       HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
       delay_AT_OK = 0;
       continue;
     }
     // Если GSM должен быть включен
-    if (EEPROM.Communication == 1)
+    if (EEPROM.Communication != M2M_DISABLE)
     {
       // Если GSM был выключен
       if (HAL_GPIO_ReadPin(EN_3P8V_GPIO_Port, EN_3P8V_Pin) == 0)

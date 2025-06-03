@@ -61,6 +61,15 @@ extern "C"
 #define DEBUG_LEVL_3 2
 #define DEBUG_LEVL_4 3
 
+
+typedef enum {
+    M2M_DISABLE = 0x00,
+    GSM_MODE    = 0x01,
+    NB_IOT_MODE = 0x02,
+    LORA_MODE   = 0x03
+} HAL_Communication_M2M_TypeDef;
+
+
 // Включение отладки по модулям
 #define DEBUG_GSM (1<<0)
 #define AT_COMMANDS (1<<1)

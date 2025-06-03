@@ -431,9 +431,10 @@ void OLED_DrawChar(char c, uint8_t ix, uint8_t iy, uint8_t mode)
 
     for (uint8_t x = 0; x < symbol[0]; x++)
     {
+		uint8_t column_byte = symbol[1 + x];
         for (uint8_t y = 0; y < Font.height; y++)
         {
-            if (symbol[1 + y / 8 + x * (Font.numchars - 1) / Font.width] & (0x01 << (y % 8)))
+            if (column_byte & (1 << y))
                 OLED_DrawPixelStatus(ix + x, iy + y, (mode) ? 1 : 0);
             else
                 OLED_DrawPixelStatus(ix + x, iy + y, (mode) ? 0 : 1);
