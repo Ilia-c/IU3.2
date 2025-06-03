@@ -35,8 +35,8 @@ extern "C"
   #define BKP_REG_INDEX_ERROR_CODE_2  RTC_BKP_DR3
   #define BKP_UPDATE_REG  RTC_BKP_DR5
 
-#define BKP_REG_SEC_LOW      RTC_BKP_DR7
-#define BKP_REG_SEC_HIGH     RTC_BKP_DR8
+#define BKP_REG_TIME      RTC_BKP_DR7
+#define BKP_REG_TIME_INIT    RTC_BKP_DR8
 #define BKP_REG_CNT_POWERUP  RTC_BKP_DR9  // Количество включений устройства
 #define BKP_MAGIC            0xA5A5
 
@@ -84,7 +84,6 @@ typedef enum {
   {
     char VERSION_PCB[11];
     char password[10];
-    char time_work_char[15];
   } Prgramm_version_item;
 
   // Структура сохраняемая в EEPROM
@@ -92,7 +91,6 @@ typedef enum {
   {
     Prgramm_version_item version; // Текущая версия устройства
     char last_error_code[4];      // Последний код ошибки
-    uint32_t time_work;         // Время работы устройства в секундах
     uint8_t DEBUG_CATEG;        // Категории для отладки
     uint8_t DEBUG_LEVL;         // Активный уровень отладки
 
@@ -130,7 +128,6 @@ typedef enum {
     uint8_t mode_ADC;          // Режим работы АЦП, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
     uint8_t block;            // Блокировка устройства
   } EEPROM_Settings_item;
-
 
   ////////////////////////////////////////////////////////////////////////////////
   //               Описание структуры ERRCODE

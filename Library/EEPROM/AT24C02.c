@@ -1,7 +1,4 @@
 #include "AT24C02.h"
-#include "stm32l4xx_hal.h"
-#include <string.h>
-#include <stddef.h> 
 
 extern I2C_HandleTypeDef hi2c1;
 _Static_assert(sizeof(EepromRecord) <= EEPROM_TOTAL_SIZE, "EepromRecord exceeds EEPROM size");
@@ -24,7 +21,7 @@ static uint32_t CalculateCRC(const uint8_t *data, size_t length) {
 
 //=============================================================================
 // Функция записи данных во EEPROM с учётом постраничной записи (AT24C02)
-static HAL_StatusTypeDef EEPROM_WriteData(uint16_t memAddr, const uint8_t *pData, uint16_t size) {
+HAL_StatusTypeDef EEPROM_WriteData(uint16_t memAddr, const uint8_t *pData, uint16_t size) {
     uint16_t bytesWritten = 0;
     HAL_StatusTypeDef status;
     USB_DEBUG_MESSAGE("[DEBUG EEPROM] Начало записи в EEPROM", DEBUG_EEPROM, DEBUG_LEVL_3);
@@ -84,7 +81,7 @@ static HAL_StatusTypeDef EEPROM_WriteData(uint16_t memAddr, const uint8_t *pData
 
 //=============================================================================
 // Функция чтения данных из EEPROM
-static HAL_StatusTypeDef EEPROM_ReadData(uint16_t memAddr, uint8_t *pData, uint16_t size)
+HAL_StatusTypeDef EEPROM_ReadData(uint16_t memAddr, uint8_t *pData, uint16_t size)
 {
     USB_DEBUG_MESSAGE("[DEBUG EEPROM] Начато чтение EEPROM", DEBUG_EEPROM, DEBUG_LEVL_3);
     // Проверяем, готово ли устройство (EEPROM) к работе

@@ -278,7 +278,6 @@ int main(void)
       }
     }
   }
-  PowerUP_counter();
 
   uint32_t value = HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_INDEX_RESET_PROG);
   if (value == DATA_RESET_PROG){  
@@ -288,7 +287,9 @@ int main(void)
   }
   else{ 
     if (__HAL_PWR_GET_FLAG(PWR_FLAG_SB) == RESET){
-      // Если сброс не из перехода в цикл и не из за wakeup
+      // Если сброс не из перехода в цикл и не из за wakeup (Питание дернули)
+      EEPROM_clear_time_init(); 
+
       EEPROM.Mode = 0;
       if (ERRCODE.STATUS & STATUS_EEPROM_INIT_ERROR)
       {
@@ -299,6 +300,8 @@ int main(void)
       }
     }
   }
+  EEPROM_LoadLastTimeWork(); // Загружаем последнее время работы
+  PowerUP_counter();
   __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB); // Сброс флага пробуждения из сна, для корректной работы сна
 
   HAL_PWR_EnableBkUpAccess();
@@ -418,35 +421,8 @@ void USB_DEBUG_MESSAGE(const char message[], uint8_t category, uint8_t debugLVL)
         while (CDC_Transmit_FS((uint8_t*)"\r\n", 2) == USBD_BUSY){}
     }
 }
-/* Считать 64-битное значение секунд из Backup-регистров */
-static uint64_t LoadSavedSeconds(void)
-{
-    uint32_t low  = HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_SEC_LOW);
-    uint32_t high = HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_SEC_HIGH);
-    return ((uint64_t)high << 32) | low;
-}
 
-/* Записать 64-битное значение секунд в Backup-регистры */
-static void StoreSavedSeconds(uint64_t total_seconds)
-{
-    uint32_t low  = (uint32_t)(total_seconds & 0xFFFFFFFF);
-    uint32_t high = (uint32_t)(total_seconds >> 32);
-    HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_SEC_LOW,  low);
-    HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_SEC_HIGH, high);
-}
 
-/* Получить текущее время RTC в секундах с начала суток */
-static uint32_t GetRTCSecondsSinceMidnight(void)
-{
-    RTC_TimeTypeDef sTime;
-    RTC_DateTypeDef sDate;
-    HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-    HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);  // обязательно вызывать после GetTime
-
-    return (uint32_t)sTime.Hours * 3600U
-         + (uint32_t)sTime.Minutes * 60U
-         + (uint32_t)sTime.Seconds;
-}
 
 
 
@@ -797,8 +773,14 @@ void Keyboard_task(void *argument)
 void Watch_dog_task(void *argument)
 {
   UNUSED(argument);
+  TickType_t startTick = xTaskGetTickCount();
+  TickType_t timeoutTicks = pdMS_TO_TICKS(5*60*60); // 5 минут в тиках (60000 мс)
   for (;;)
   {
+    if ((xTaskGetTickCount() - startTick) < timeoutTicks){
+      startTick = xTaskGetTickCount(); // Сброс таймера
+      PowerUP_counter();
+    }
     HAL_IWDG_Refresh(&hiwdg);
     osDelay(1000);
     if (xSemaphoreTake(SLEEP_semaphore, 10) == pdTRUE)
@@ -938,6 +920,7 @@ void UART_PARSER_task(void *argument)
     {
       HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
       delay_AT_OK = 0;
+      osDelay(5000);
       continue;
     }
     // Если GSM должен быть включен

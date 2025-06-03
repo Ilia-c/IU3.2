@@ -60,7 +60,6 @@ void ret_keyboard(void)
 
 void Keyboard(void)
 {
-    __HAL_TIM_SET_COUNTER(&htim8, 0);
     Keyboard_press_code = ScanKeypad();
     if ((mode_redact == 0) && ((Keyboard_press_code == 'L') || (Keyboard_press_code == 'R')) && ((Keyboard_press_code != 0xFF))){
         HAL_TIM_Base_Stop_IT(&htim6);
@@ -169,6 +168,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
         (GPIO_Pin == STR_B3_Pin) ||
         (GPIO_Pin == STR_B4_Pin))
     {
+        __HAL_TIM_SET_COUNTER(&htim8, 0);
         static portBASE_TYPE xTaskWoken;
         xSemaphoreGiveFromISR(Keyboard_semapfore, &xTaskWoken);
     }

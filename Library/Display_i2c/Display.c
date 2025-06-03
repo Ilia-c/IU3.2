@@ -48,11 +48,12 @@ char trans_str[11];
 extern char Keyboard_press_code;
 extern int ADC_AKB_Proc;
 extern const char VERSION_PROGRAMM[20];
+extern char time_work_char[15]; // Время работы в виде строки в часах
+extern uint32_t time_work;         // Время работы устройства в секундах
 
 const int max_munu_in_page = 4; // максимальное количество пунктов меню на странице видимое (+1)
 int select_menu_in_page = 0;    // метущий пункт менюc
 uint8_t Intermediate = 0;           // Промежуточная переменная, куда сохраняется настройка до сохранения при прокрутке (номер пункта)
-
 
 
 #define height_up_menu 14                                            // выста верхнего пункта меню
@@ -89,7 +90,8 @@ void NULL_F(){}
     menuItem Id = {Name_rus, Name_en, 0, data_uptade, (menuSelect_item *)&_add_signat, (void *)&Next, (void *)&Previous, (void *)&Parent, (void *)&Child, (void *)&action, (menuSelect_item *)&select_bar, (menuSelect_item_char *)&data_in, (char *)&Data_out}
 
 // Вывод на экран при действии
-const char Clear[2][40] = {"Отчистка FLASH",  "FLASH clearing"};
+const char Clear[2][40] = {"Отчистка памяти",  "Memory clear"};
+const char Divece[2][40] = {"устройства",  "device"};
 const char POWER_NOT[2][40] = {"НЕ ОТКЛЮЧАЙТЕ ПИТАНИЕ",  "DO NOT POWER OFF"};
 const char READY[2][40] = {"Готово",  "Ready"};
 const char PASSWORD_IN[2][40] = {"Введите пароль",  "Enter password"};
@@ -106,7 +108,7 @@ const char SEND_ONE_REQ[2][40] = {"Отправка на сайт...",  "Uploading"};
 const char CALIBRATE_24V_CORRECT[2][40] = {"Калиб. 24В успешна",  "24V сalib. compl."};
 const char YES[2][40] = {"Да",  "YES"};
 const char NO[2][40] = {"Нет",  "NO"};
-const char FORMAT[2][40] = {"Форматировать Flash?",  "Format Flash?"};
+const char FORMAT[2][40] = {"Форматировать память?",  "Format memory?"};
 const char CYCLE[2][40] = {"Перейти в режим Цикл?",  "Format Flash?"};
 const char ALL_RESET[2][40] = {"Полный сброс?",  "All reset?"};
 const char RESET_ST[2][40] = {"Сбросить?",  "Reset?"};
@@ -510,12 +512,12 @@ MAKE_MENU(Menu_2, "Настройки", "Settings", 0, UPTADE_OFF, NO_SIGNED, Menu_3, Men
 		MAKE_MENU(Menu_2_15_14, "Режим", "Mode", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_15, Menu_2_15_13, Menu_2_15, CHILD_MENU, SELECT_BAR, Block, DATA_IN, DATA_OUT);
 		MAKE_MENU(Menu_2_15_15, "Полный Сброс", "FULL RESET", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_15_14, Menu_2_15, CHILD_MENU, ALL_Reset_settings, SELECT_BAR, DATA_IN, DATA_OUT);
     MAKE_MENU(Menu_2_16, "Обновление ПО", "Update", 0, UPTADE_OFF, NO_SIGNED, Menu_2_17, Menu_2_15, Menu_2, CHILD_MENU, Update_programm, SELECT_BAR, DATA_IN, DATA_OUT); 
-    MAKE_MENU(Menu_2_17, "Формат. Flash", "SD formatting", 0, UPTADE_OFF, NO_SIGNED, Menu_2_18, Menu_2_16, Menu_2, CHILD_MENU, Flash_Format, SELECT_BAR, DATA_IN, DATA_OUT); 
+    MAKE_MENU(Menu_2_17, "Формат. память", "Format device ", 0, UPTADE_OFF, NO_SIGNED, Menu_2_18, Menu_2_16, Menu_2, CHILD_MENU, Flash_Format, SELECT_BAR, DATA_IN, DATA_OUT); 
 	MAKE_MENU(Menu_2_18, "Сброс настроек", "Factory reset", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_17, Menu_2, CHILD_MENU, Reset_settings, SELECT_BAR, DATA_IN, DATA_OUT);
 MAKE_MENU(Menu_3, "Сведения", "Info", 0, UPTADE_OFF, NO_SIGNED, Menu_4, Menu_2, PARENT_MENU, Menu_3_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
 	MAKE_MENU(Menu_3_1, "Сер. ном.", "Ser. Number", 0, UPTADE_OFF, NO_SIGNED, Menu_3_2, PREVISION_MENU, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, EEPROM.version.VERSION_PCB);
 	MAKE_MENU(Menu_3_2, "Вер. ПО", "Software version", 0, UPTADE_OFF, NO_SIGNED, Menu_3_3, Menu_3_1, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, VERSION_PROGRAMM);
-	MAKE_MENU(Menu_3_3, "Наработка", "Operating time", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_3_2, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, EEPROM.version.time_work_char);
+	MAKE_MENU(Menu_3_3, "Наработка", "Operating time", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_3_2, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, time_work_char);
 MAKE_MENU(Menu_4, "Инструкция", "Instruction", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_3, PARENT_MENU, CHILD_MENU, Instruction, SELECT_BAR, DATA_IN, DATA_OUT);
 
 
@@ -629,8 +631,6 @@ void full_test(){}
 
 void USB_FLASH_SAVE(){}
 // Тест отправки смс
-
-
 void flash_test(){}
 void EEPROM_test(){}
 
@@ -787,7 +787,7 @@ void PASSWORD(){
     OLED_Clear(0);
     FontSet(font);
     Display_TopBar(selectedMenuItem);
-    OLED_DrawCenteredString(PASSWORD_IN, 35);
+    OLED_DrawCenteredString(PASSWORD_IN, 25);
     OLED_UpdateScreen();
     osDelay(200);
 }
@@ -841,7 +841,8 @@ void Flash_Format(){
     if (YES_OR_NO(FORMAT) == 0){ mode_redact = 0; return;}
 
     OLED_DrawCenteredString(Clear, Y);
-    OLED_DrawCenteredString(POWER_NOT, Y+10);
+    OLED_DrawCenteredString(Divece, Y+10);
+    OLED_DrawCenteredString(POWER_NOT, Y+20);
     OLED_UpdateScreen();
 
     W25_Chip_Erase();
@@ -943,10 +944,8 @@ void ALL_Reset_settings(){
             // Текущая версия устройства
             .VERSION_PCB = DEFAULT_VERSION_PCB, // Версия печатной платы
             .password = DEFAULT_PASSWORD,
-            .time_work_char = DEFAULT_TIME_WORK_CHAR, // Время работы в виде строки
         },
         .last_error_code = DEFAULT_LAST_ERROR_CODE, // Последний код ошибки
-        .time_work = 0,         // Время работы устройства (секунды)
 
         // Вводимые данные:
         .time_sleep_h = DEFAULT_TIME_SLEEP_H, // Время сна устройства (часы)
@@ -980,9 +979,11 @@ void ALL_Reset_settings(){
         .block = DEFAULT_BLOCK                          // Блокировка устройства: 1 - заблокировано, 0 - разблокировано
 
     };
-    EEPROM_SaveSettings(&EEPROM_RESET);
-
-
+    HAL_StatusTypeDef status_1 = EEPROM_SaveSettings(&EEPROM_RESET);
+    HAL_StatusTypeDef status_2 = EEPROM_ClearBuffer();
+    if (status_1 != HAL_OK || status_2 != HAL_OK) {
+        ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
+    }
     mode_redact = 2;
     OLED_Clear(0);
     FontSet(font);
@@ -1905,9 +1906,13 @@ void Keyboard_processing()
         if (mode_redact == 3){ 
             if (Keyboard_press_code == 'L') mode_redact = 0;
             pass[index_pass] = Keyboard_press_code;
+            uint8_t len = OLED_GetWidthStr("* ");
+            uint16_t x = (winth_display - len*5) / 2;
+            OLED_DrawStr("* ", x + index_pass * len, 40, 1);
+            OLED_UpdateScreen();
             index_pass++;
             if (index_pass>4) index_pass--;
-            if ((strcmp(pass, password) == 0) && (index_pass == 4)){
+            if ((strcmp(pass, password) == 0) && (index_pass == strlen(password))){
                 selectedMenuItem->Num_menu = select_menu_in_page;
                 select_menu_in_page = 0;
                 menuChange(selectedMenuItem->Child);

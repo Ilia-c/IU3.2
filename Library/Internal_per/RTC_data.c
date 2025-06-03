@@ -7,6 +7,8 @@ extern int mode_redact;
 RTC_HandleTypeDef hrtc;
 extern RTC_TimeTypeDef Time;
 extern RTC_DateTypeDef Date;
+extern char time_work_char[15]; // Время работы в виде строки в часах
+extern uint32_t time_work;         // Время работы устройства в секундах
 
 #define LSI_TIMEOUT 1000  // Таймаут в миллисекундах для ожидания готовности LSI
 
@@ -136,19 +138,182 @@ void RTC_get_date()
 	HAL_RTC_GetDate(&hrtc, &Date, RTC_FORMAT_BIN);
 }
 
-void PowerUP_counter()
+
+
+
+static uint32_t get_time_seconds(void)
 {
-    if (HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_INIT_FLAG) != BKP_MAGIC)
-    {
-        EEPROM.time_work++;
-        HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INIT_FLAG, BKP_MAGIC);
-        HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_CNT_POWERUP, EEPROM.time_work);
+	RTC_TimeTypeDef sTime;
+	RTC_DateTypeDef sDate;
+	HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+	HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+
+	/* Переводим дату в «число дней» от 2000-01-01 */
+	uint16_t year = 2000U + (sDate.Year); // RTC хранит год как offset от 2000
+	uint8_t month = sDate.Month;		  // 1..12
+	uint8_t day = sDate.Date;			  // 1..31
+
+	/* Подсчёт дней от 2000-01-01 до year-month-day (не включая текущий день). */
+	uint32_t days = 0;
+	/* Сначала прибавим дни по полным годам */
+	for (uint16_t y = 2000; y < year; y++)
+	{
+		/* високосный год, если (делится на 4 и не на 100) или на 400 */
+		if (((y % 4 == 0) && (y % 100 != 0)) || (y % 400 == 0))
+		{
+			days += 366;
+		}
+		else
+		{
+			days += 365;
+		}
+	}
+	/* Массив дней в месяцах для невисокосного года */
+	static const uint8_t mdays_norm[12] = {
+		31, 28, 31, 30, 31, 30,
+		31, 31, 30, 31, 30, 31};
+	/* Массив дней в месяцах для високосного года */
+	static const uint8_t mdays_leap[12] = {
+		31, 29, 31, 30, 31, 30,
+		31, 31, 30, 31, 30, 31};
+	/* Определим, является ли текущий год високосным */
+	uint8_t is_leap = (((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0)) ? 1 : 0;
+	/* Прибавим дни в предыдущих месяцах текущего года */
+	for (uint8_t m = 1; m < month; m++)
+	{
+		days += (is_leap ? mdays_leap[m - 1] : mdays_norm[m - 1]);
+	}
+	/* Прибавляем дни текущего месяца (не включая текущий день) */
+	days += (day - 1);
+
+	/* Теперь переводим в секунды: */
+	uint32_t secs = days * 86400U;
+	secs += (uint32_t)sTime.Hours * 3600U;
+	secs += (uint32_t)sTime.Minutes * 60U;
+	secs += (uint32_t)sTime.Seconds;
+
+	return secs;
+}
+
+
+int32_t write_idx = 0;
+HAL_StatusTypeDef EEPROM_LoadLastTimeWork(void)
+{
+    HAL_StatusTypeDef status;
+    uint32_t buffer_vals[BUFFER_ENTRIES];
+    uint32_t max_val = 0;
+    int64_t  max_idx = -1;
+
+    /* 1) Считаем все uint32_t-значения из буфера EEPROM в локальный массив */
+    for (uint32_t i = 0; i < BUFFER_ENTRIES; i++) {
+        uint16_t addr = (uint16_t)(BUFFER_START_ADDR + i * BUFFER_ENTRY_SIZE);
+        status = EEPROM_ReadData(addr,
+                                 (uint8_t *)&buffer_vals[i],
+                                 (uint16_t)BUFFER_ENTRY_SIZE);
+        if (status != HAL_OK) {
+			snprintf(time_work_char, sizeof(time_work_char), "ERR", (unsigned long)time_work/3600);
+            return status;
+        }
+        /* Предполагаем, что «пустые» ячейки инициализированы нулями */
+        if (buffer_vals[i] != 0U) {
+            if ((max_idx < 0) || (buffer_vals[i] > max_val)) {
+                max_val = buffer_vals[i];
+                max_idx = (int64_t)i;
+            }
+        }
     }
-    else
-    {
-        EEPROM.time_work = HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_CNT_POWERUP);
-        EEPROM.time_work++;
-        HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_CNT_POWERUP, EEPROM.time_work);
-    }
-    sprintf(EEPROM.version.time_work_char, "%ld", EEPROM.time_work);
+
+    /* 2) Если max_idx < 0, означает: все ячейки пусты (нулевые). */
+    if (max_idx < 0) {
+        time_work = 0;
+		snprintf(time_work_char, sizeof(time_work_char), "%luч", (unsigned long)time_work/3600);
+		return HAL_OK;
+	}
+	time_work = max_val;
+	int32_t write_idx = (max_idx + 1) % (int32_t)BUFFER_ENTRIES;
+	int32_t last_idx = (write_idx == 0)
+						   ? (int32_t)(BUFFER_ENTRIES - 1)
+						   : (write_idx - 1);
+	snprintf(time_work_char, sizeof(time_work_char), "%luч", (unsigned long)time_work/3600);
+	return HAL_OK;
+}
+
+/*
+ * PowerUP_counter:
+ * 1) Инициализируем Backup-регистр BKP_REG_TIME_INIT значением BKP_MAGIC, если он не инициализирован.
+ * 2) Считываем текущее абсолютное время (в секундах) через RTC.
+ * 3) Считываем предыдущее время из BKP_REG_TIME.
+ * 4) Вычисляем delta = now_secs – prev_secs.
+ * 5) Записываем delta (uint32_t) в «циклический буфер» EEPROM:
+ *    – читаем все BUFFER_ENTRIES значений (uint32_t) из EEPROM по адресам
+ *      BUFFER_START_ADDR + i*4;
+ *    – находим индекс ячейки с наибольшим значением (максимальный uint32_t);
+ *    – в следующую ячейку ( (max_index + 1) % BUFFER_ENTRIES ) записываем delta.
+ * 6) Обновляем BKP_REG_TIME = now_secs.
+ */
+HAL_StatusTypeDef PowerUP_counter(void)
+{
+	HAL_StatusTypeDef status;
+	uint32_t now_secs, prev_secs, delta;
+	uint32_t buffer_val;
+	uint32_t max_val = 0;
+	int32_t max_idx = -1;
+
+	now_secs = get_time_seconds();
+	/* 1) Проверяем, инициализирован ли RTC */
+	if (HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_TIME_INIT) != BKP_MAGIC)
+	{
+		HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_TIME, now_secs);
+		HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_TIME_INIT, BKP_MAGIC);
+		sprintf(EEPROM.last_error_code, "ERR");
+		return HAL_ERROR; // RTC не инициализирован, выходим с ошибкой
+	}
+	prev_secs = HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_TIME);
+	HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_TIME, now_secs);
+
+	/* 4) Вычисляем дельту */
+	delta = now_secs - prev_secs;
+
+	if (EEPROM_LoadLastTimeWork() != HAL_OK)
+	{
+		snprintf(time_work_char, sizeof(time_work_char), "ERR", (unsigned long)time_work/3600);
+		return HAL_ERROR; // Ошибка при загрузке последнего времени работы
+	}
+	delta += time_work;
+	time_work = delta; 
+	
+	snprintf(time_work_char, sizeof(time_work_char), "%luч", (unsigned long)time_work/3600);
+	/* Адрес ячейки, в которую запишем delta */
+	uint16_t write_addr = (uint16_t)(BUFFER_START_ADDR + write_idx * BUFFER_ENTRY_SIZE);
+	/* Записываем новый 32-битный «прирост» (delta) */
+	status = EEPROM_WriteData(write_addr,
+							  (uint8_t *)&delta,
+							  (uint16_t)BUFFER_ENTRY_SIZE);
+	if (status != HAL_OK)
+	{
+		return HAL_ERROR;
+	}
+	return HAL_OK;
+}
+
+// Начальная инициализация буфера EEPROM
+HAL_StatusTypeDef EEPROM_ClearBuffer(void)
+{
+    HAL_StatusTypeDef status;
+    /* Массив нулей длиной BUFFER_SIZE_BYTES */
+    uint8_t zeros[BUFFER_SIZE_BYTES] = {0};
+    status = EEPROM_WriteData(
+        BUFFER_START_ADDR,
+        zeros,
+        (uint16_t)BUFFER_SIZE_BYTES
+    );
+
+    return status;
+}
+
+HAL_StatusTypeDef EEPROM_clear_time_init(void)
+{
+	HAL_PWR_EnableBkUpAccess();
+	HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_TIME_INIT, 0);
+	HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_TIME, 0);
 }
