@@ -118,7 +118,7 @@ const char UPDATE[2][40] = {"Обновление..",  "Update.."};
 menuSelect_item Communication_DATA = {
     .data = (uint8_t *)&EEPROM.Communication,
     .Name = {
-        {"Выкл", "Off"},
+        {"Выкл.", "Off"},
         {"GSM", "GSM"},
         {"NB-IoT", "NB-IoT"}
     },
@@ -1335,26 +1335,28 @@ void Display_TopBar(menuItem *CurrentMenu)
     OLED_DrawXBM(right_ot, top_akb_status, akb);
     right_ot -= width_GSM_status;
 
-
-
-    if (GSM_data.GSM_Signal_Level_3 == -2)
+    if (EEPROM.Communication != M2M_DISABLE)
     {
-        right_ot -= 7;
-        OLED_DrawStr("SIM?\0", right_ot, top_GSM_status, 1);
-        right_ot-=8;
-    }
-    if (GSM_data.GSM_Signal_Level_3 == -1)
-    {
-        right_ot += 3;
-        OLED_DrawXBM(right_ot, top_GSM_status, no_signal);
-        right_ot-=4;
-    }
-    
-    const uint8_t* signal_icons[] = {signal_0, signal_1, signal_2, signal_3};
-    //GSM_data.GSM_Signal_Level = 3;
-    if (GSM_data.GSM_Signal_Level_3 >= 0 && GSM_data.GSM_Signal_Level_3 <= 3) {
-        OLED_DrawXBM(right_ot, top_GSM_status, signal_icons[GSM_data.GSM_Signal_Level_3]);
-        right_ot-=8;
+        if (GSM_data.GSM_Signal_Level_3 == -2)
+        {
+            right_ot -= 7;
+            OLED_DrawStr("SIM?\0", right_ot, top_GSM_status, 1);
+            right_ot -= 8;
+        }
+        if (GSM_data.GSM_Signal_Level_3 == -1)
+        {
+            right_ot += 3;
+            OLED_DrawXBM(right_ot, top_GSM_status, no_signal);
+            right_ot -= 4;
+        }
+
+        const uint8_t *signal_icons[] = {signal_0, signal_1, signal_2, signal_3};
+        // GSM_data.GSM_Signal_Level = 3;
+        if (GSM_data.GSM_Signal_Level_3 >= 0 && GSM_data.GSM_Signal_Level_3 <= 3)
+        {
+            OLED_DrawXBM(right_ot, top_GSM_status, signal_icons[GSM_data.GSM_Signal_Level_3]);
+            right_ot -= 8;
+        }
     }
 
     if (Appli_state == APPLICATION_READY){

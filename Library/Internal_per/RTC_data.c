@@ -203,6 +203,8 @@ HAL_StatusTypeDef EEPROM_LoadLastTimeWork(void)
     uint32_t buffer_vals[BUFFER_ENTRIES];
     uint32_t max_val = 0;
     int64_t  max_idx = -1;
+	write_idx = 0; 
+	time_work = 0; 
 
     /* 1) Считаем все uint32_t-значения из буфера EEPROM в локальный массив */
     for (uint32_t i = 0; i < BUFFER_ENTRIES; i++) {
@@ -225,12 +227,11 @@ HAL_StatusTypeDef EEPROM_LoadLastTimeWork(void)
 
     /* 2) Если max_idx < 0, означает: все ячейки пусты (нулевые). */
     if (max_idx < 0) {
-        time_work = 0;
 		snprintf(time_work_char, sizeof(time_work_char), "%luч", (unsigned long)time_work/3600);
 		return HAL_OK;
 	}
 	time_work = max_val;
-	int32_t write_idx = (max_idx + 1) % (int32_t)BUFFER_ENTRIES;
+	write_idx = (max_idx + 1) % (int32_t)BUFFER_ENTRIES;
 	int32_t last_idx = (write_idx == 0)
 						   ? (int32_t)(BUFFER_ENTRIES - 1)
 						   : (write_idx - 1);

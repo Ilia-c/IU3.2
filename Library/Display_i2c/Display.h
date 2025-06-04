@@ -91,7 +91,6 @@ typedef struct MAKE_MENU
 void InitMenus(void);
 void Display_all_menu();
 void Display_punkt_menu(menuItem *menu, int pos_y);
-void Display_TopBar();
 void menuChange(menuItem *NewMenu);
 void Keyboard_processing();
 void convert_string_to_ascii(const char *input, char *output);

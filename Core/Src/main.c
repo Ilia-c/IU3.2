@@ -773,12 +773,12 @@ void Keyboard_task(void *argument)
 void Watch_dog_task(void *argument)
 {
   UNUSED(argument);
-  TickType_t startTick = xTaskGetTickCount();
-  TickType_t timeoutTicks = pdMS_TO_TICKS(5*60*60); // 5 минут в тиках (60000 мс)
+  TickType_t startTick_counter = xTaskGetTickCount();
+  TickType_t timeoutTicks = pdMS_TO_TICKS(5*60*1000); // 5 минут в тиках (60000 мс)
   for (;;)
   {
-    if ((xTaskGetTickCount() - startTick) < timeoutTicks){
-      startTick = xTaskGetTickCount(); // —брос таймера
+    if ((xTaskGetTickCount() - startTick_counter) > timeoutTicks){
+      startTick_counter = xTaskGetTickCount(); // —брос таймера
       PowerUP_counter();
     }
     HAL_IWDG_Refresh(&hiwdg);
@@ -920,6 +920,7 @@ void UART_PARSER_task(void *argument)
     {
       HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
       delay_AT_OK = 0;
+      GSM_data.Status = 0;
       osDelay(5000);
       continue;
     }
