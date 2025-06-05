@@ -283,7 +283,6 @@ int main(void)
   if (value == DATA_RESET_PROG){  
     // Если сброс из перехода в цикл
     EEPROM.Mode = 1;
-    HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_RESET_PROG, 0x00); // сбрасывавем флаг
   }
   else{ 
     if (__HAL_PWR_GET_FLAG(PWR_FLAG_SB) == RESET){
@@ -774,7 +773,7 @@ void Watch_dog_task(void *argument)
 {
   UNUSED(argument);
   TickType_t startTick_counter = xTaskGetTickCount();
-  TickType_t timeoutTicks = pdMS_TO_TICKS(5*60*1000); // 5 минут в тиках (60000 мс)
+  TickType_t timeoutTicks = pdMS_TO_TICKS(5*60*1000+10); // 5 минут в тиках (60000 мс)
   for (;;)
   {
     if ((xTaskGetTickCount() - startTick_counter) > timeoutTicks){

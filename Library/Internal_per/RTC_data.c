@@ -149,9 +149,9 @@ static uint32_t get_time_seconds(void)
 	HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 
 	/* Переводим дату в «число дней» от 2000-01-01 */
-	uint16_t year = 2000U + (sDate.Year); // RTC хранит год как offset от 2000
-	uint8_t month = sDate.Month;		  // 1..12
-	uint8_t day = sDate.Date;			  // 1..31
+	uint32_t year = 2000U + (sDate.Year); // RTC хранит год как offset от 2000
+	uint32_t month = sDate.Month;		  // 1..12
+	uint32_t day = sDate.Date;			  // 1..31
 
 	/* Подсчёт дней от 2000-01-01 до year-month-day (не включая текущий день). */
 	uint32_t days = 0;
@@ -213,7 +213,7 @@ HAL_StatusTypeDef EEPROM_LoadLastTimeWork(void)
                                  (uint8_t *)&buffer_vals[i],
                                  (uint16_t)BUFFER_ENTRY_SIZE);
         if (status != HAL_OK) {
-			snprintf(time_work_char, sizeof(time_work_char), "ERR", (unsigned long)time_work/3600);
+			snprintf(time_work_char, sizeof(time_work_char), "ERR");
             return status;
         }
         /* Предполагаем, что «пустые» ячейки инициализированы нулями */
@@ -227,7 +227,7 @@ HAL_StatusTypeDef EEPROM_LoadLastTimeWork(void)
 
     /* 2) Если max_idx < 0, означает: все ячейки пусты (нулевые). */
     if (max_idx < 0) {
-		snprintf(time_work_char, sizeof(time_work_char), "%luч", (unsigned long)time_work/3600);
+		snprintf(time_work_char, sizeof(time_work_char), "0ч");
 		return HAL_OK;
 	}
 	time_work = max_val;
@@ -256,10 +256,6 @@ HAL_StatusTypeDef PowerUP_counter(void)
 {
 	HAL_StatusTypeDef status;
 	uint32_t now_secs, prev_secs, delta;
-	uint32_t buffer_val;
-	uint32_t max_val = 0;
-	int32_t max_idx = -1;
-
 	now_secs = get_time_seconds();
 	/* 1) Проверяем, инициализирован ли RTC */
 	if (HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_TIME_INIT) != BKP_MAGIC)
@@ -270,14 +266,16 @@ HAL_StatusTypeDef PowerUP_counter(void)
 		return HAL_ERROR; // RTC не инициализирован, выходим с ошибкой
 	}
 	prev_secs = HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_TIME);
-	HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_TIME, now_secs);
 
 	/* 4) Вычисляем дельту */
+	//time_work = 0;
 	delta = now_secs - prev_secs;
+	if (delta < 300) return HAL_TIMEOUT;	// Если дельта меньше 5 минут, то рано сохранять
 
+	HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_TIME, now_secs);
 	if (EEPROM_LoadLastTimeWork() != HAL_OK)
 	{
-		snprintf(time_work_char, sizeof(time_work_char), "ERR", (unsigned long)time_work/3600);
+		snprintf(time_work_char, sizeof(time_work_char), "ERR");
 		return HAL_ERROR; // Ошибка при загрузке последнего времени работы
 	}
 	delta += time_work;
@@ -318,3 +316,5 @@ HAL_StatusTypeDef EEPROM_clear_time_init(void)
 	HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_TIME_INIT, 0);
 	HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_TIME, 0);
 }
+
+
