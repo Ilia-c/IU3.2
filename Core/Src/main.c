@@ -364,7 +364,7 @@ int main(void)
     HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
   }
 
-  if (EEPROM.USB_mode >= USB_Sniffing || EEPROM.USB_mode <= USB_AT){
+  if (EEPROM.USB_mode >= USB_Sniffing && EEPROM.USB_mode <= USB_AT){
     MX_USB_DEVICE_Init_COMPORT(); // Режим работы в VirtualComPort
     HAL_NVIC_SetPriority(OTG_FS_IRQn, 6, 0); // Приоритет прерывания
     HAL_NVIC_EnableIRQ(OTG_FS_IRQn);         // Включение прерывания
@@ -380,10 +380,13 @@ int main(void)
   HAL_IWDG_Refresh(&hiwdg);
   osKernelInitialize();
 
-  ADC_readHandle = osThreadNew(ADC_read, NULL, &ADC_read_attributes);
-  RS485_dataHandle = osThreadNew(RS485_data, NULL, &RS485_data_attributes);
-  UART_PARSER_taskHandle = osThreadNew(UART_PARSER_task, NULL, &UART_PARSER_task_attributes);
-  
+  if (EEPROM.block != 2)
+  {
+    ADC_readHandle = osThreadNew(ADC_read, NULL, &ADC_read_attributes);
+    RS485_dataHandle = osThreadNew(RS485_data, NULL, &RS485_data_attributes);
+    UART_PARSER_taskHandle = osThreadNew(UART_PARSER_task, NULL, &UART_PARSER_task_attributes);
+  }
+
   if (EEPROM.Mode == 0){
     USB_COM_taskHandle = osThreadNew(USB_COM_task, NULL, &USB_COM_task_attributes);
     MainHandle = osThreadNew(Main, NULL, &Main_attributes); // Задача для настроечного режима
@@ -533,6 +536,7 @@ void Main_Cycle(void *argument)
     ADC_Voltage_Calculate(); // Читаем текущее напряжение питания
     if (ERRCODE.STATUS & STATUS_VOLTAGE_TOO_LOW) Enter_StandbyMode_NoWakeup();
     osDelay(1000);
+    if (EEPROM.block == 2) Enter_StandbyMode_NoWakeup();
 
     // Получаем показания датчиков
     // !!! Переписать этот ужас
@@ -719,7 +723,6 @@ void ADC_read(void *argument)
   UNUSED(argument);
   for (;;)
   {
-    // MX_USB_HOST_Process();
 
     ADC_data.update_value();
     if (EEPROM.Mode == 0)
@@ -786,7 +789,11 @@ void Watch_dog_task(void *argument)
     {
       __HAL_TIM_SET_COUNTER(&htim8, 0);
       if (ERRCODE.STATUS & STATUS_VOLTAGE_TOO_LOW) Enter_StandbyMode_NoWakeup();
-      if (EEPROM.block == 2) return;
+      if (EEPROM.block == 2){
+        osThreadSuspend(ADC_readHandle);
+        osThreadSuspend(RS485_dataHandle);
+        osThreadSuspend(UART_PARSER_taskHandle);
+      }
       if (EEPROM.block == 1)
       {
         Screen_saver();

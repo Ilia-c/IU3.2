@@ -630,8 +630,36 @@ void OLED_DrawCenteredString(const char strArray[][40], uint16_t Y_pos) {
 void full_test(){}
 
 void USB_FLASH_SAVE(){}
-// Тест отправки смс
-void flash_test(){}
+
+void flash_test(){
+    mode_redact = 2;
+    OLED_Clear(0);
+    FontSet(font);
+    Display_TopBar(selectedMenuItem);
+    if (YES_OR_NO("Тестировать FLASH?") == 0)
+    {
+        mode_redact = 0;
+        return;
+    }
+
+    OLED_DrawCenteredString(Clear, Y);
+    OLED_DrawCenteredString(Divece, Y + 10);
+    OLED_DrawCenteredString(POWER_NOT, Y + 20);
+    OLED_UpdateScreen();
+
+    W25_Chip_Erase();
+
+    OLED_DrawCenteredString("Тестирование FLASH", Y);
+    OLED_DrawCenteredString(POWER_NOT, Y + 20);
+    OLED_UpdateScreen();
+
+    W25_Chip_test();
+
+    OLED_DrawRectangleFill(0, 15, winth_display, 60, 0);
+    OLED_DrawCenteredString(READY, Y);
+    OLED_UpdateScreen();
+    osDelay(200);
+}
 void EEPROM_test(){}
 
 
