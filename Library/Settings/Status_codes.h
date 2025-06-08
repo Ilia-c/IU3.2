@@ -94,9 +94,9 @@
 
 #define ERROR_RTC (1ULL << 58)             // Ошибка RTC, запуск от внутреннего генератора +
 #define STATUS_ADC_TEMP_ERROR (1ULL << 59) // Отсутствует аналоговый датчик температуры 
+#define STATUS_VBAT_LOW (1ULL << 60) // Низкое напряжение на батарее RTC (CR2032) +
 
 /* ---------- 15. РЕЗЕРВ (биты 60..63) ---------- */
-#define STATUS_RESERVED_1 (1ULL << 60) // Резервная ошибка
 #define STATUS_RESERVED_2 (1ULL << 61) // Резервная ошибка
 #define STATUS_RESERVED_3 (1ULL << 62) // Резервная ошибка
 #define STATUS_RESERVED_4 (1ULL << 63) // Резервная ошибка

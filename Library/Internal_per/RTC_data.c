@@ -257,18 +257,16 @@ HAL_StatusTypeDef PowerUP_counter(void)
 	HAL_StatusTypeDef status;
 	uint32_t now_secs, prev_secs, delta;
 	now_secs = get_time_seconds();
-	/* 1) Проверяем, инициализирован ли RTC */
+	HAL_PWR_EnableBkUpAccess();
 	if (HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_TIME_INIT) != BKP_MAGIC)
 	{
 		HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_TIME, now_secs);
 		HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_TIME_INIT, BKP_MAGIC);
 		sprintf(EEPROM.last_error_code, "ERR");
+		HAL_PWR_DisableBkUpAccess();
 		return HAL_ERROR; // RTC не инициализирован, выходим с ошибкой
 	}
 	prev_secs = HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_TIME);
-
-	/* 4) Вычисляем дельту */
-	//time_work = 0;
 	delta = now_secs - prev_secs;
 	if (delta < 300) return HAL_TIMEOUT;	// Если дельта меньше 5 минут, то рано сохранять
 
@@ -276,22 +274,21 @@ HAL_StatusTypeDef PowerUP_counter(void)
 	if (EEPROM_LoadLastTimeWork() != HAL_OK)
 	{
 		snprintf(time_work_char, sizeof(time_work_char), "ERR");
+		HAL_PWR_DisableBkUpAccess();
 		return HAL_ERROR; // Ошибка при загрузке последнего времени работы
 	}
 	delta += time_work;
 	time_work = delta; 
 	
 	snprintf(time_work_char, sizeof(time_work_char), "%luч", (unsigned long)time_work/3600);
-	/* Адрес ячейки, в которую запишем delta */
 	uint16_t write_addr = (uint16_t)(BUFFER_START_ADDR + write_idx * BUFFER_ENTRY_SIZE);
-	/* Записываем новый 32-битный «прирост» (delta) */
-	status = EEPROM_WriteData(write_addr,
-							  (uint8_t *)&delta,
-							  (uint16_t)BUFFER_ENTRY_SIZE);
+	status = EEPROM_WriteData(write_addr, (uint8_t *)&delta, (uint16_t)BUFFER_ENTRY_SIZE);
 	if (status != HAL_OK)
 	{
+		HAL_PWR_DisableBkUpAccess();
 		return HAL_ERROR;
 	}
+	HAL_PWR_DisableBkUpAccess();
 	return HAL_OK;
 }
 
@@ -315,6 +312,7 @@ HAL_StatusTypeDef EEPROM_clear_time_init(void)
 	HAL_PWR_EnableBkUpAccess();
 	HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_TIME_INIT, 0);
 	HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_TIME, 0);
+	HAL_PWR_DisableBkUpAccess();
 }
 
 

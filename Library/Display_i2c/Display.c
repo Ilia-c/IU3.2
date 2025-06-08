@@ -25,7 +25,7 @@
 /// Редактирование данных
 int mode_redact = 0;  // 1 - режим редактирования данных, 0 - режим переключения страниц, 2 - режим отображения (всплывающее окно) 3 - то же что и 2, но для ввода пароля, 4 - заставка экрана, люое действие пробуждение, 5 -Выбор да или нет
 int pos_redact = 0;   // позиция для редактирования
-char pass[5] = "";
+char pass[MAX_PASSWPRD_LEN] = "";
 uint8_t index_pass = 0;
 
 int led_cursor = 1;
@@ -500,13 +500,13 @@ MAKE_MENU(Menu_2, "Настройки", "Settings", 0, UPTADE_OFF, NO_SIGNED, Menu_3, Men
 		MAKE_MENU(Menu_2_15_2, "Режим USB", "USB mode", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_3, Menu_2_15_1, Menu_2_15, CHILD_MENU, ACTION_MENU, USB_MODE_STRUCT, DATA_IN, DATA_OUT);
         MAKE_MENU(Menu_2_15_3, "Сер. ном.", "Ser. Number", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_4, Menu_2_15_2, Menu_2_15, CHILD_MENU, ACTION_MENU, SELECT_BAR, Serial_number, DATA_OUT);
 		MAKE_MENU(Menu_2_15_4, "Пароль", "Password", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_5, Menu_2_15_3, Menu_2_15, CHILD_MENU, ACTION_MENU, SELECT_BAR, Password, DATA_OUT);
-		MAKE_MENU(Menu_2_15_5, "Заглушка", "Plug", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_6, Menu_2_15_4, Menu_2_15, CHILD_MENU, Programm_Update_USB, SELECT_BAR, DATA_IN, DATA_OUT);
+		MAKE_MENU(Menu_2_15_5, "Напр. CR", "Plug", 0, UPTADE_ON, NO_SIGNED, Menu_2_15_6, Menu_2_15_4, Menu_2_15, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, IntADC.MK_vbat_char);
 		MAKE_MENU(Menu_2_15_6, "Калибровка 24в", "Calibration 24V", 0, UPTADE_ON, NO_SIGNED, Menu_2_15_7, Menu_2_15_5, Menu_2_15, CHILD_MENU, colibrate_24v, SELECT_BAR, DATA_IN, IntADC.ADC_AKB_volts_char);
 		MAKE_MENU(Menu_2_15_7, "Калибровка 20мА", "Calibration(up)", 0, UPTADE_ON, NO_SIGNED, Menu_2_15_8, Menu_2_15_6, Menu_2_15, CHILD_MENU, colibrate_20ma, SELECT_BAR, DATA_IN, ADC_data.ADC_Current_char);
 		MAKE_MENU(Menu_2_15_8, "Калибровка 4мА", "Calibration(low)", 0, UPTADE_ON, NO_SIGNED, Menu_2_15_9, Menu_2_15_7, Menu_2_15, CHILD_MENU, colibrate_4ma, SELECT_BAR, DATA_IN, ADC_data.ADC_Current_char);
 		MAKE_MENU(Menu_2_15_9, "Темп. корр.", "Offset temperature", 0, UPTADE_OFF, Unit_degree, Menu_2_15_10, Menu_2_15_8, Menu_2_15, CHILD_MENU, ACTION_MENU, SELECT_BAR, Temp_correct, DATA_OUT);
 		MAKE_MENU(Menu_2_15_10, "Темп. анал.", "Analog temp.", 0, UPTADE_ON, Unit_degree, Menu_2_15_11, Menu_2_15_9, Menu_2_15, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_MS5193T_temp_char);
-		MAKE_MENU(Menu_2_15_11, "Темп. циф.", "Digital temp.", 0, UPTADE_ON, Unit_degree, Menu_2_15_12, Menu_2_15_10, Menu_2_15, CHILD_MENU, SELECT_BAR, SELECT_BAR, DATA_IN, MK_temp_char); // ! обновить статус
+		MAKE_MENU(Menu_2_15_11, "Темп. циф.", "Digital temp.", 0, UPTADE_ON, Unit_degree, Menu_2_15_12, Menu_2_15_10, Menu_2_15, CHILD_MENU, SELECT_BAR, SELECT_BAR, DATA_IN, IntADC.MK_temp_char);
 		MAKE_MENU(Menu_2_15_12, "Тест FLASH", "FLASH test", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_13, Menu_2_15_11, Menu_2_15, CHILD_MENU, flash_test, SELECT_BAR, DATA_IN, DATA_OUT);
 		MAKE_MENU(Menu_2_15_13, "Тест EEPROM", "EEPROM test", 0, 0, NO_SIGNED, Menu_2_15_14, Menu_2_15_12, Menu_2_15, CHILD_MENU, EEPROM_test, SELECT_BAR, DATA_IN, DATA_OUT);
 		MAKE_MENU(Menu_2_15_14, "Режим", "Mode", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_15, Menu_2_15_13, Menu_2_15, CHILD_MENU, SELECT_BAR, Block, DATA_IN, DATA_OUT);
@@ -519,7 +519,6 @@ MAKE_MENU(Menu_3, "Сведения", "Info", 0, UPTADE_OFF, NO_SIGNED, Menu_4, Menu_2, 
 	MAKE_MENU(Menu_3_2, "Вер. ПО", "Software version", 0, UPTADE_OFF, NO_SIGNED, Menu_3_3, Menu_3_1, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, VERSION_PROGRAMM);
 	MAKE_MENU(Menu_3_3, "Наработка", "Operating time", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_3_2, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, time_work_char);
 MAKE_MENU(Menu_4, "Инструкция", "Instruction", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_3, PARENT_MENU, CHILD_MENU, Instruction, SELECT_BAR, DATA_IN, DATA_OUT);
-
 
 void Add_units(void)
 {
@@ -635,6 +634,19 @@ void flash_test(){
     mode_redact = 2;
     OLED_Clear(0);
     FontSet(font);
+    osThreadSuspend(ADC_readHandle);
+    osThreadSuspend(ERROR_INDICATE_taskHandle);
+    osDelay(200);
+
+    __HAL_SPI_DISABLE(&hspi2);  // выключить периферию
+    hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+    
+    if (HAL_SPI_Init(&hspi2) != HAL_OK)
+    {
+        Error_Handler();  // или своя обработка ошибки
+    }
+    __HAL_SPI_ENABLE(&hspi2);   // включить обратно
+
     Display_TopBar(selectedMenuItem);
     if (YES_OR_NO("Тестировать FLASH?") == 0)
     {
@@ -642,25 +654,88 @@ void flash_test(){
         return;
     }
 
-    OLED_DrawCenteredString(Clear, Y);
-    OLED_DrawCenteredString(Divece, Y + 10);
+    OLED_Clear(0);
+    OLED_DrawCenteredString(Clear, 10);
+    OLED_DrawCenteredString(Divece, 20);
     OLED_DrawCenteredString(POWER_NOT, Y + 20);
     OLED_UpdateScreen();
 
     W25_Chip_Erase();
 
-    OLED_DrawCenteredString("Тестирование FLASH", Y);
-    OLED_DrawCenteredString(POWER_NOT, Y + 20);
+    OLED_Clear(0);
+    OLED_DrawCenteredString("Тестирование FLASH", 10);
+    OLED_DrawCenteredString(POWER_NOT, Y);
+    PROGRESS_BAR(0);
     OLED_UpdateScreen();
 
-    W25_Chip_test();
+    uint32_t errors = W25_Chip_test();
+    if (errors == 0xFFFFFFFF){
+        OLED_Clear(0);
+        OLED_DrawCenteredString("Ошибка при проверке", Y+10);
+        OLED_UpdateScreen();
+    }
+    if (errors == 0)
+    {
+        OLED_Clear(0);
+        OLED_DrawCenteredString("Память исправна", Y+10);
+        OLED_UpdateScreen();
+    }
+    if ((errors != 0) && (errors != 0xFFFFFFFF))
+    {
+        OLED_Clear(0);
+        char error_str[30] = {0};
+        snprintf(error_str, sizeof(error_str), "Ошибок: %lu", errors);
+        OLED_DrawCenteredString(error_str, Y);
+        OLED_UpdateScreen();
+    }
+    __HAL_SPI_DISABLE(&hspi2);  // выключить периферию
+    hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
+    if (HAL_SPI_Init(&hspi2) != HAL_OK)
+    {
+        Error_Handler();  // или своя обработка ошибки
+    }
+    __HAL_SPI_ENABLE(&hspi2);   // включить обратно
 
-    OLED_DrawRectangleFill(0, 15, winth_display, 60, 0);
-    OLED_DrawCenteredString(READY, Y);
-    OLED_UpdateScreen();
+    osThreadResume(ADC_readHandle);
+    osThreadResume(ERROR_INDICATE_taskHandle);
     osDelay(200);
 }
-void EEPROM_test(){}
+void EEPROM_test(){
+    mode_redact = 2;
+    OLED_Clear(0);
+    FontSet(font);
+
+    Display_TopBar(selectedMenuItem);
+    if (YES_OR_NO("Тестировать EEPROM?") == 0)
+    {
+        mode_redact = 0;
+        return;
+    }
+    OLED_Clear(0);
+    OLED_DrawCenteredString("Идет тестирование", 10);
+    OLED_UpdateScreen();
+    uint32_t errors = EEPROM_Test();
+    if (errors == 0xFFFFFFFF){
+        OLED_Clear(0);
+        OLED_DrawCenteredString("Ошибка при проверке", Y+10);
+        OLED_UpdateScreen();
+    }
+    if (errors == 0)
+    {
+        OLED_Clear(0);
+        OLED_DrawCenteredString("Память исправна", Y+10);
+        OLED_UpdateScreen();
+    }
+    if ((errors != 0) && (errors != 0xFFFFFFFF))
+    {
+        OLED_Clear(0);
+        char error_str[30] = {0};
+        snprintf(error_str, sizeof(error_str), "Ошибок: %lu", errors);
+        OLED_DrawCenteredString(error_str, Y);
+        OLED_UpdateScreen();
+    }
+    osDelay(200);
+}
 
 
 void Update_programm(){
@@ -884,16 +959,19 @@ void Flash_Format(){
 
 // Тест 
 void GSM_internet_test(){
+    if (EEPROM.Communication == M2M_DISABLE) return;
     strcpy(GSM_data.GSM_site_status, ". . .");
     OLED_UpdateScreen();
     GSM_data.Status |= HTTP_SEND;
 }
 void GSM_sms_test(){
+    if (EEPROM.Communication == M2M_DISABLE) return;
     strcpy(GSM_data.GSM_sms_status, ". . .");
     OLED_UpdateScreen();
     GSM_data.Status |= SMS_SEND;
 }
 void GSM_HTTP_SYNC(){
+    if (EEPROM.Communication == M2M_DISABLE) return;
     strcpy(GSM_data.GSM_site_read_status, ". . .");
     OLED_UpdateScreen();
     GSM_data.Status |= HTTP_READ;
@@ -1114,6 +1192,7 @@ void Instruction(){
     FontSet(font);
     Display_TopBar(menu_s);
     OLED_DrawXBM(10, 23, QR);
+
     #define X 50
     #define Y 28
     OLED_DrawStr("Инструкция", X, Y, 1);
@@ -1320,19 +1399,30 @@ void menuChange(menuItem *NewMenu)
     selectedMenuItem = (menuItem *)(NewMenu);
 }
 
-void Display_TopBar(menuItem *CurrentMenu)
+static void DrawBack(uint8_t px, menuItem *m)
 {
-    OLED_DrawHLine(line_indentation, line_ind_top, end_line, 1);
-    if ((void *)CurrentMenu->Parent != (void *)&NULL_ENTRY)
+    if ((mode_redact == 2) || (mode_redact == 3))
     {
-        OLED_DrawTriangleFill(back_pic_pos_x, back_pic_pos_y, back_pic_pos_x + size_back_pic_x, back_pic_pos_y + size_back_pic_y, back_pic_pos_x + size_back_pic_x, back_pic_pos_y - size_back_pic_y);
-        OLED_DrawPixel(back_pic_pos_x + 1, back_pic_pos_y);
-        if (EEPROM.len == 0) OLED_DrawStr(((menuItem *)CurrentMenu->Parent)->Name_rus, left_pic_last_munu, top_pic_last_munu, 1);
-        if (EEPROM.len == 1) OLED_DrawStr(((menuItem *)CurrentMenu->Parent)->Name_en, left_pic_last_munu, top_pic_last_munu, 1);
+        OLED_DrawTriangleFill(px, back_pic_pos_y, px + size_back_pic_x, back_pic_pos_y + size_back_pic_y, px + size_back_pic_x, back_pic_pos_y - size_back_pic_y);
+        OLED_DrawPixel(px + 1, back_pic_pos_y);
+        if (EEPROM.len == 0) OLED_DrawStr(m->Name_rus, left_pic_last_munu, top_pic_last_munu, 1);
+        if (EEPROM.len == 1) OLED_DrawStr(m->Name_en, left_pic_last_munu, top_pic_last_munu, 1);
+        return;
     }
+    if (m->Parent != (void *)&NULL_ENTRY)
+    {
+        OLED_DrawTriangleFill(px, back_pic_pos_y, px + size_back_pic_x, back_pic_pos_y + size_back_pic_y, px + size_back_pic_x, back_pic_pos_y - size_back_pic_y);
+        OLED_DrawPixel(px + 1, back_pic_pos_y);
+        if (EEPROM.len == 0) OLED_DrawStr(((menuItem *)m->Parent)->Name_rus, left_pic_last_munu, top_pic_last_munu, 1);
+        if (EEPROM.len == 1) OLED_DrawStr(((menuItem *)m->Parent)->Name_en, left_pic_last_munu, top_pic_last_munu, 1);
+    }
+}
 
+static void DrawBattery(uint8_t *px, menuItem *m)
+{
     sprintf(str, "%d", IntADC.ADC_AKB_Proc);
-    if (IntADC.ADC_AKB_Proc < 10){
+    if (IntADC.ADC_AKB_Proc < 10)
+    {
         str[1] = '%';
         str[2] = '\0';
     }
@@ -1340,59 +1430,85 @@ void Display_TopBar(menuItem *CurrentMenu)
     {
         str[2] = '%';
         str[3] = '\0';
-        right_ot -= 6;
+        *px -= 6;
     }
     else
     {
         str[3] = '%';
         str[4] = '\0';
-        right_ot -= 12;
+        *px -= 12;
     }
 
-    OLED_DrawStr(str, right_ot, top_akb_status + 1, 1);
-    right_ot -= width_akb_status;
-
+    OLED_DrawStr(str, *px, top_akb_status + 1, 1);
+    *px -= width_akb_status;
+    
     int c = IntADC.ADC_AKB_Proc * 5 / 100 + 1;
     if (IntADC.ADC_AKB_Proc == 0)
         c = 0;
-    // OLED_DrawRectangle(right_ot+2, top_akb_status+7-c, right_ot+3, top_akb_status+2+c);
     for (; c > 0; c--)
     {
-        OLED_DrawHLine(right_ot + 2, top_akb_status + 8 - c, 2, 1);
+        OLED_DrawHLine(*px + 2, top_akb_status + 8 - c, 2, 1);
     }
-    OLED_DrawXBM(right_ot, top_akb_status, akb);
-    right_ot -= width_GSM_status;
-
+    OLED_DrawXBM(*px, top_akb_status, akb);
+}
+static void DrawGSM(uint8_t *px, menuItem *m)
+{
     if (EEPROM.Communication != M2M_DISABLE)
     {
         if (GSM_data.GSM_Signal_Level_3 == -2)
         {
-            right_ot -= 7;
-            OLED_DrawStr("SIM?\0", right_ot, top_GSM_status, 1);
-            right_ot -= 8;
+            *px -= 7;
+            OLED_DrawStr("SIM?\0", *px, top_GSM_status, 1);
+            *px -= 8;
         }
         if (GSM_data.GSM_Signal_Level_3 == -1)
         {
-            right_ot += 3;
-            OLED_DrawXBM(right_ot, top_GSM_status, no_signal);
-            right_ot -= 4;
+            *px += 3;
+            OLED_DrawXBM(*px, top_GSM_status, no_signal);
+            *px -= 4;
         }
 
         const uint8_t *signal_icons[] = {signal_0, signal_1, signal_2, signal_3};
         // GSM_data.GSM_Signal_Level = 3;
         if (GSM_data.GSM_Signal_Level_3 >= 0 && GSM_data.GSM_Signal_Level_3 <= 3)
         {
-            OLED_DrawXBM(right_ot, top_GSM_status, signal_icons[GSM_data.GSM_Signal_Level_3]);
-            right_ot -= 8;
+            OLED_DrawXBM(*px, top_GSM_status, signal_icons[GSM_data.GSM_Signal_Level_3]);
+            *px -= 8;
         }
     }
+}
 
-    if (Appli_state == APPLICATION_READY){
-        OLED_DrawXBM(right_ot, top_akb_status, USB_XMB);
+static void DrawUSB(uint8_t *px, menuItem *m)
+{
+    if (Appli_state == APPLICATION_READY)
+    {
+        OLED_DrawXBM(*px - 8, top_akb_status, USB_XMB);
+        *px -= 8;
     }
+    
+}
+static void DrawCR(uint8_t *px, menuItem *m)
+{
+    if (EEPROM.Communication != M2M_DISABLE)
+    {
+        if ( ERRCODE.STATUS & STATUS_VBAT_LOW)
+        {
+            OLED_DrawXBM(*px, top_GSM_status, CR_XMB);
+            *px -= 8;
+        }
+    }
+}
 
-    right_ot = winth_display - 12 - 2; // Ширина экрана минус 2 символа - процент заряда (0-9%) и - 2 отступ справа
-    //Вариант оптимизации
+void Display_TopBar(menuItem *CurrentMenu)
+{
+    right_ot = winth_display - 12 - 2;
+    OLED_DrawHLine(line_indentation, line_ind_top, end_line, 1);
+    DrawBack(back_pic_pos_x, CurrentMenu);
+    DrawBattery(&right_ot, CurrentMenu);
+    right_ot -= width_GSM_status;
+    DrawGSM(&right_ot, CurrentMenu);
+    DrawUSB(&right_ot, CurrentMenu);
+    DrawCR(&right_ot, CurrentMenu); 
 }
 
 uint8_t speed_update = 0; // Есть ли на страницы пункты меню требующие быстрого обновления? (100мс)
@@ -1934,11 +2050,17 @@ void Keyboard_processing()
             return;
         }
         if (mode_redact == 3){ 
-            if (Keyboard_press_code == 'L') mode_redact = 0;
+            if (Keyboard_press_code == 'L'){
+                mode_redact = 0;
+                return;
+            }
             pass[index_pass] = Keyboard_press_code;
-            uint8_t len = OLED_GetWidthStr("* ");
-            uint16_t x = (winth_display - len*5) / 2;
-            OLED_DrawStr("* ", x + index_pass * len, 40, 1);
+            uint8_t len = OLED_GetWidthStr("*");
+            uint16_t x = (winth_display - len*(index_pass+1))/2; // Центрирование звездочек
+            for (uint8_t i = 0; i < (index_pass+1); i++) 
+            {
+                OLED_DrawStr("*", x + (len * i), 40, 1); // Отрисовка звездочек
+            }
             OLED_UpdateScreen();
             index_pass++;
             if (index_pass>4) index_pass--;

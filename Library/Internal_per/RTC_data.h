@@ -11,5 +11,6 @@ void RTC_set_time();
 void RTC_set_date();
 void RTC_get_date();
 HAL_StatusTypeDef PowerUP_counter(void);
+HAL_StatusTypeDef EEPROM_LoadLastTimeWork(void);
 HAL_StatusTypeDef EEPROM_ClearBuffer(void);
 

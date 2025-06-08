@@ -1,5 +1,5 @@
 #include "Diagnostics.h"
-
+extern uint32_t time_work;
 
 HAL_StatusTypeDef EEPROM_CHECK(){
     
@@ -58,3 +58,65 @@ void Diagnostics()
     strcpy(FLASH_status_char,    (ERRCODE.STATUS & STATUS_FLASH_ERRORS) ? "ERROR" : "OK");
     USB_DEBUG_MESSAGE("[INFO] Диагностика завершена", DEBUG_OTHER, DEBUG_LEVL_3);
 }       
+
+
+
+uint32_t EEPROM_Test(void) {
+    uint32_t error_count = 0;
+
+    EepromRecord record;
+    if (ReadSlot(&record) != HAL_OK) {
+        USB_DEBUG_MESSAGE("[ERROR EEPROM] Ошибка чтения данных из EEPROM при тесте", DEBUG_EEPROM, DEBUG_LEVL_2);
+        return HAL_ERROR;
+    }
+    EEPROM_LoadLastTimeWork();
+    
+
+
+    HAL_StatusTypeDef status;
+    uint8_t buffer = 0xFF;
+    for (uint32_t i = 0; i < EEPROM_TOTAL_SIZE; ++i)
+    {
+        buffer = 0xFF;
+        status = EEPROM_WriteData(i, &buffer, 1);
+        if (status != HAL_OK) {
+            USB_DEBUG_MESSAGE("[ERROR EEPROM] Ошибка записи едениц в EEPROM", DEBUG_EEPROM, DEBUG_LEVL_2);
+            error_count++;
+            continue;
+        }
+        status = EEPROM_ReadData(i, &buffer, 1);
+        if (status != HAL_OK) {
+            USB_DEBUG_MESSAGE("[ERROR EEPROM] Ошибка чтения едениц в EEPROM", DEBUG_EEPROM, DEBUG_LEVL_2);
+            error_count++;
+            continue;
+        }
+        if (buffer != 0xFF) {
+            error_count++;
+        }
+        buffer = 0x00;
+        status = EEPROM_WriteData(i, &buffer, 1);
+        if (status != HAL_OK) {
+            USB_DEBUG_MESSAGE("[ERROR EEPROM] Ошибка записи едениц в EEPROM", DEBUG_EEPROM, DEBUG_LEVL_2);
+            error_count++;
+            continue;
+        }
+        status = EEPROM_ReadData(i, &buffer, 1);
+        if (status != HAL_OK) {
+            USB_DEBUG_MESSAGE("[ERROR EEPROM] Ошибка чтения едениц в EEPROM", DEBUG_EEPROM, DEBUG_LEVL_2);
+            error_count++;
+            continue;
+        }
+        if (buffer != 0x00) {
+            error_count++;
+        }
+
+    }
+    status = EEPROM_WriteData(BUFFER_START_ADDR, (uint8_t *)&time_work, (uint16_t)BUFFER_ENTRY_SIZE);
+	if (status != HAL_OK)
+	{
+		HAL_PWR_DisableBkUpAccess();
+		return HAL_ERROR;
+	}
+    WriteSlot(&record);
+    return error_count;
+}

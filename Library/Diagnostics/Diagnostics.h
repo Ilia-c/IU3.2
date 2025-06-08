@@ -12,3 +12,4 @@ extern SPI_HandleTypeDef hspi2;
 
 void Diagnostics();
 HAL_StatusTypeDef EEPROM_CHECK();
+uint32_t EEPROM_Test(void);

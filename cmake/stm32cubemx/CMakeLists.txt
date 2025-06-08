@@ -49,6 +49,7 @@ target_include_directories(stm32cubemx INTERFACE
     ../../Library/EEPROM
     ../../Library/Diagnostics
     ../../Library/USB_FATFS_SAVE
+    
 )
 
 target_sources(stm32cubemx INTERFACE
@@ -62,6 +63,8 @@ target_sources(stm32cubemx INTERFACE
     ../../FATFS/Target/fatfs_platform.c
     ../../FATFS/Target/usbh_diskio.c
     ../../FATFS/App/fatfs.c
+    ../../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_crc.c
+    ../../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_crc_ex.c
     ../../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pcd.c
     ../../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pcd_ex.c
     ../../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_usb.c

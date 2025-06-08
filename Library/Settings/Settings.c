@@ -33,29 +33,29 @@ EEPROM_Settings_item EEPROM = {
     .Phone = DEFAULT_PHONE,
     
     // Параметры АЦП:
-    .ADC_ION = DEFAULT_ADC_ION,                  // Напряжение ИОН АЦП
-    .ADC_RESISTOR = DEFAULT_ADC_RESISTOR,        // Сопротивление резистора
-    .GVL_correct = DEFAULT_GVL_CORRECT,          // Коррекция нулевой точки (смещение ± от текущего значения) УГВ
-    .k_koeff = DEFAULT_K_KOEFF,                  // Коэффициэнт наклона линейной зависимости (по 2 точкам, 20мА и 4мА)
-    .MAX_LVL = DEFAULT_MAX_LVL,                  // Максимальный уровень (например, 15 метров) ВПИ
-    .ZERO_LVL = DEFAULT_ZERO_LVL,                // Нулевое значение (например, 0 метров) НПИ
-    .GVL_correct_4m = DEFAULT_GVL_CORRECT_4M,     // Реальные 4мА
-    .GVL_correct_20m = DEFAULT_GVL_CORRECT_20M,   // Реальные 20мА
+    .ADC_ION = DEFAULT_ADC_ION,                     // Напряжение ИОН АЦП
+    .ADC_RESISTOR = DEFAULT_ADC_RESISTOR,           // Сопротивление резистора
+    .GVL_correct = DEFAULT_GVL_CORRECT,             // Коррекция нулевой точки (смещение ± от текущего значения) УГВ
+    .k_koeff = DEFAULT_K_KOEFF,                     // Коэффициэнт наклона линейной зависимости (по 2 точкам, 20мА и 4мА)
+    .MAX_LVL = DEFAULT_MAX_LVL,                     // Максимальный уровень (например, 15 метров) ВПИ
+    .ZERO_LVL = DEFAULT_ZERO_LVL,                   // Нулевое значение (например, 0 метров) НПИ
+    .GVL_correct_4m = DEFAULT_GVL_CORRECT_4M,       // Реальные 4мА
+    .GVL_correct_20m = DEFAULT_GVL_CORRECT_20M,     // Реальные 20мА
     // Коррекция температуры (смещение):
-    .Crorrect_TEMP_A = DEFAULT_CRORRECT_TEMP_A,  // Смещение датчика аналоговой температуры
-    .Colibrate_koeff = DEFAULT_COLIBRATE_KOEFF,    // Коэффициэнт калибровки 24 вольт
+    .Crorrect_TEMP_A = DEFAULT_CRORRECT_TEMP_A,     // Смещение датчика аналоговой температуры
+    .Colibrate_koeff = DEFAULT_COLIBRATE_KOEFF,     // Коэффициэнт калибровки 24 вольт
 
     // Параметры select_bar:
-    .Mode = DEFAULT_MODE,                        // Текущий режим работы (0 - режим текущие показания, 1 - циклический режим, 2 - режим выставки)
-    .Communication = DEFAULT_COMMUNICATION,      // Включен GSM или нет
-    .RS485_prot = DEFAULT_RS485_PROT,              // Протокол RS-485
-    .units_mes = DEFAULT_UNITS_MES,                // Единицы измерения (по умолчанию метры)
+    .Mode = DEFAULT_MODE,                           // Текущий режим работы (0 - режим текущие показания, 1 - циклический режим, 2 - режим выставки)
+    .Communication = DEFAULT_COMMUNICATION,         // Включен GSM или нет
+    .RS485_prot = DEFAULT_RS485_PROT,               // Протокол RS-485
+    .units_mes = DEFAULT_UNITS_MES,                 // Единицы измерения (по умолчанию метры)
     .screen_sever_mode = DEFAULT_SCREEN_SEVER_MODE, // Включить или нет заставку при включении
-    .USB_mode = DEFAULT_USB_MODE,                  // Режим работы USB
-    .Save_in = DEFAULT_SAVE_IN,                    // Куда сохранять данные: 0 - FLASH, 1 - SD, 2 - USB, 3 - Сайт
-    .len = DEFAULT_LEN,                            // Язык меню
-    .mode_ADC = DEFAULT_MODE_ADC,                  // Режим работы АЦП, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
-    .block = DEFAULT_BLOCK                         // Блокировка устройства: 1 - заблокировано, 0 - разблокировано
+    .USB_mode = DEFAULT_USB_MODE,                   // Режим работы USB
+    .Save_in = DEFAULT_SAVE_IN,                     // Куда сохранять данные: 0 - FLASH, 1 - SD, 2 - USB, 3 - Сайт
+    .len = DEFAULT_LEN,                             // Язык меню
+    .mode_ADC = DEFAULT_MODE_ADC,                   // Режим работы АЦП, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
+    .block = DEFAULT_BLOCK                          // Блокировка устройства: 1 - заблокировано, 0 - разблокировано
 };
 ////////////////////////////////////////////////////////////////////////////////
 // Описание структуры ERRCODE
@@ -110,7 +110,10 @@ Internal_ADC_item IntADC =
   .ADC_AKB_volts = 0, // Напряжение на АКБ
   .ADC_AKB_Proc = 0,    // Процент заряда на акб
   .Colibrate_koeff = &EEPROM.Colibrate_koeff, // Колибровочный коэффициэнт
-  .VBAT = 0,          // Напряжение на CR2032
+  .MK_VBAT = 0,          // Напряжение на CR2032
+  .MK_temp= 0,             // Температура, измеренная МК
+  .MK_temp_char = "ND",  // Температура МК в виде строки
+  .MK_vbat_char = "ND",  // VBAT МК в виде строки
   .ADC_AKB_volts_char = "ND", // Напряжение на АКБ строка
   .ADC_AKB_Proc_char = "ND"  // Процент заряда на акб строка
 };
@@ -152,8 +155,6 @@ uint16_t time_update_display = 20000; // Время обновления экрана (для обновления
 // Глобальные переменные для функционирования
 ////////////////////////////////////////////////////////////////////////////////
 char Keyboard_press_code = 0x00;     // Код нажатой клавиши на клавиатуре
-double MK_temp= 0;             // Температура, измеренная МК
-char MK_temp_char[5] = {'\0'};  // Температура МК в виде строки
 
 char EEPROM_status_char[10] = "ND"; // Статус доступности EEPROM
 char FLASH_status_char[10] = "ND";  // Статус доступности FLASH
@@ -173,7 +174,8 @@ RTC_DateTypeDef Date_start  = {0}; // Время старта МК
 ////////////////////////////////////////////////////////////////////////////////
 const uint16_t Timer_key_press = 400;                      // Время ожидания до быстрого проматывания
 const uint16_t Timer_key_press_fast = 180;                 // Время быстрого нажатия клавиши
-char password[5] = "UO";
+// #define MAX_PASSWPRD_LEN 10
+char password[MAX_PASSWPRD_LEN] = "UO";
 
 
 // Буфер для приёма данных по USB

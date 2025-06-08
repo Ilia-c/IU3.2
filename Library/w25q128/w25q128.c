@@ -10,6 +10,7 @@ extern FIL MyFile;        /* Объект файла */
 extern char USBHPath[4];  /* Логический путь USB диска */
 extern EEPROM_Settings_item EEPROM;
 extern RTC_HandleTypeDef hrtc;
+extern CRC_HandleTypeDef hcrc;
 
 // Управление CS (Chip Select)
 #define cs_set()   HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, GPIO_PIN_RESET)
@@ -173,7 +174,6 @@ int W25_WaitForReady(uint32_t timeout_ms)
         if ((status & 0x01) == 0) {
             return 0;
         }
-        vTaskDelay(pdMS_TO_TICKS(10));
     }
     return -1;
 }
@@ -201,7 +201,8 @@ uint8_t W25_Read_Status(void)
 // Запись данных во флеш (Page Program)
 int W25_Write_Data(uint32_t addr, uint8_t *data, uint32_t sz)
 {
-    if (!data) return -1;
+    if (!data) 
+    return -1;
 
     // Предполагаем, что sz <= 256 и не пересекает границу страницы
     // (т.к. вы пишете ровно 128 байт за раз).
@@ -227,7 +228,7 @@ int W25_Write_Data(uint32_t addr, uint8_t *data, uint32_t sz)
     }
     cs_reset();
 
-    if (W25_WaitForReady(100) != 0) {
+    if (W25_WaitForReady(500) != 0) {
         return -1;
     }
     return 0;
@@ -275,7 +276,7 @@ int W25_Chip_Erase(void)
     if (W25_Write_Enable() != 0){
         USB_DEBUG_MESSAGE("[ERROR FLASH] Ошибка разрешения записи перед полным стиранием", DEBUG_FLASH, DEBUG_LEVL_2);
         return -1;
-    } 
+    }
 
     cs_set();
     if (SPI2_Send(&cmd, 1) != 0) {
@@ -307,9 +308,97 @@ int W25_Chip_Erase(void)
 
 uint32_t W25_Chip_test()
 {
-    
+    // Подразумевается, что W25_Chip_Erase уже выполнен
 
+    uint32_t id = 0;
+    uint8_t step = 0;
+    uint8_t Counter_addr_error = 0;
+    if (W25_Read_ID(&id) != 0)
+    {
+        USB_DEBUG_MESSAGE("[ERROR FLASH] Ошибка чтения ID", DEBUG_FLASH, DEBUG_LEVL_2);
+        return 0xFFFFFFFF; // Ошибка
+    }
+    // Проверим, что все сектора пустые
+    uint8_t sector[RECORD_SIZE] = {0};
+    PROGRESS_BAR(0);
+    OLED_UpdateScreen();
+    for (uint16_t sec = 0; sec < FLASH_SIZE/SECTOR_SIZE; sec++)
+    {
+        uint32_t sector_addr = sec * SECTOR_SIZE;
+        for (uint32_t addr = sector_addr; addr < sector_addr + SECTOR_SIZE; addr += RECORD_SIZE)
+        {
+            if (W25_Read_Data(addr, sector, RECORD_SIZE) != 0)
+            {
+                USB_DEBUG_MESSAGE("[ERROR FLASH] Ошибка чтения сектора", DEBUG_FLASH, DEBUG_LEVL_2);
+                return 0xFFFFFFFF; // Ошибка
+            }
+            // Проверяем, что сектор пустой
+            for (uint32_t i = 0; i < RECORD_SIZE; i++)
+            {
+                if (sector[i] != EMPTY)
+                {
+                    Counter_addr_error++;
+                }
+            }
+        }
+        uint8_t p = (uint8_t)(sec * 50 / (FLASH_SIZE / SECTOR_SIZE));
+        if (p >= step + 5)
+        {
+            step = p - (p % 5);
+            PROGRESS_BAR(step);
+            OLED_UpdateScreen();
+        }
+    }
+    if (Counter_addr_error != 0)
+    {
+        OLED_Clear(0);
+        OLED_DrawCenteredString("Не все сектора пустые", 25);
+        OLED_UpdateScreen();
+        osDelay(10000);
+        USB_DEBUG_MESSAGE("[ERROR FLASH] Ошибка: не все сектора пустые", DEBUG_FLASH, DEBUG_LEVL_2);
+        return Counter_addr_error; // Ошибка
+    }
+    step = 0;
+    for (uint16_t sec = 0; sec < FLASH_SIZE/SECTOR_SIZE; sec++)
+    {
+        uint32_t sector_addr = sec * SECTOR_SIZE;
+        for (uint32_t addr = sector_addr; addr < sector_addr + SECTOR_SIZE; addr += RECORD_SIZE)
+        {
+            for (uint8_t i = 0; i < RECORD_SIZE; i++)
+            {
+                sector[i] = SET; // Заполняем сектор данными 0x00
+            }
 
+            if (W25_Write_Data(addr, &sector, RECORD_SIZE) != 0)
+            {
+                return 0xFFFFFFFF; // Ошибка
+            }
+
+            if (W25_Read_Data(addr, sector, RECORD_SIZE) != 0)
+            {
+                USB_DEBUG_MESSAGE("[ERROR FLASH] Ошибка чтения сектора", DEBUG_FLASH, DEBUG_LEVL_2);
+                return 0xFFFFFFFF; // Ошибка
+            }
+            // Проверяем, что сектор пустой
+            for (uint32_t i = 0; i < RECORD_SIZE; i++)
+            {
+                if (sector[i] != SET)
+                {
+                    Counter_addr_error++;
+                }
+            }
+        }
+        uint8_t p = (uint8_t)(sec * 50 / (FLASH_SIZE / SECTOR_SIZE));
+        if (p >= step + 5)
+        {
+            step = p - (p % 5);
+            PROGRESS_BAR(50+step);
+            OLED_UpdateScreen();
+        }
+    }
+    PROGRESS_BAR(100);
+    osDelay(300);
+    return Counter_addr_error;
 }
 
 //------------------------------------------------------------------------------
@@ -396,8 +485,14 @@ int flash_append_record(const char *record_data, uint8_t sector_mark_send_flag)
     if (sector_mark_send_flag) new_rec.Sector_mark_send = SET; // 0x00
     else  new_rec.block_mark_send   = EMPTY; // [4] => 0xFF
     new_rec.length            = (uint8_t)len; // [5]
+    new_rec.CRC32_calc        = 0; // [6-10] Инициализируем CRC
     memset(new_rec.data, 0xFF, sizeof(new_rec.data));
     memcpy(new_rec.data, record_data, len);
+
+    uint32_t word_count = (len + 3) / 4;
+    uint32_t *p = (uint32_t *)new_rec.data;
+    new_rec.CRC32_calc = HAL_CRC_Calculate(&hcrc, p, word_count);
+    if (len == 0) new_rec.CRC32_calc = 0xFFFFFFFF;
 
     // Запишем 128 байт в блок
     if (W25_Write_Data(addr, (uint8_t *)&new_rec, sizeof(record_t)) != 0) {
@@ -600,7 +695,7 @@ int Save_one_to_USB(void)
 
 
 //------------------------------------------------------------------------------
-// Функция резервного копирования данных во внешнее хранилище (USB)
+// Функция копирования данных во внешнее хранилище (USB)
 int backup_records_to_external(void)
 {
     // Пример вашего кода с минимальными правками
@@ -675,42 +770,47 @@ int backup_records_to_external(void)
             // Читаем весь блок
             // сместимся назад на 2 байта
             block_addr -= BLOCK_MARK_WRITE_START;
-            if (W25_Read_Data(block_addr, (uint8_t *)&rec, sizeof(rec)) != 0) {
+            if (W25_Read_Data(block_addr, (uint8_t *)&rec, sizeof(rec)) != 0)
+            {
                 ERRCODE.STATUS |= STATUS_USB_FLASH_READ_ERROR;
                 continue;
             }
             size_t realLen = rec.length;
-            if (realLen > 110){
+            if (realLen > 110)
+            {
                 rec.data[110] = '\n'; // обрезаем
-                rec.data[111] = '\0'; // обрезаем  
-            } 
-            else{
-                rec.data[realLen-1] = '\n'; // обрезаем
-                rec.data[realLen] = '\0'; // обрезаем  
+                rec.data[111] = '\0'; // обрезаем
+            }
+            else
+            {
+                rec.data[realLen - 1] = '\n'; // обрезаем
+                rec.data[realLen] = '\0';     // обрезаем
             }
             // Если данные не записыны - повреждение data+";data_error\n"
-            if (rec.rec_status_end == EMPTY){
-                rec.data[realLen-1] = ';';
-                rec.data[realLen] = 'E';
-                rec.data[realLen+1] = 'R';
-                rec.data[realLen+2] = 'R';
-                rec.data[realLen+3] = 'O';
-                rec.data[realLen+4] = 'R';
-                rec.data[realLen+5] = '\n';
-                rec.data[realLen+6] = '\0';
+            if (rec.rec_status_end == EMPTY)
+            {
+                strcpy(&rec.data[realLen - 1], ";ERROR\n");
             }
+            else
+            {
 
-            if (rec.block_mark_send == EMPTY){
-                rec.data[realLen-1] = ';';
-                rec.data[realLen] = 'N';
-                rec.data[realLen+1] = 'O';
-                rec.data[realLen+2] = '_';
-                rec.data[realLen+3] = 'S';
-                rec.data[realLen+4] = 'E';
-                rec.data[realLen+5] = 'N';
-                rec.data[realLen+6] = 'D';
-                rec.data[realLen+7] = '\n';
-                rec.data[realLen+8] = '\0';
+                if (rec.block_mark_send == EMPTY)
+                {
+                    strcpy(&rec.data[realLen - 1], ";NO_SEND\n");
+                }
+                else
+                {
+                    // Проверка CRC32
+                    uint32_t word_count = (rec.length + 3) / 4;
+                    uint32_t *p = (uint32_t *)rec.data;
+                    uint32_t CRC32_clac = HAL_CRC_Calculate(&hcrc, p, word_count);
+                    if (rec.length == 0)
+                        CRC32_clac = 0xFFFFFFFF;
+                    if (CRC32_clac != rec.CRC32_calc)
+                    {
+                        strcpy(&rec.data[realLen - 1], ";CRC_ERR\n");
+                    }
+                }
             }
 
             // Записываем в файл
@@ -931,6 +1031,7 @@ void Update_PO(void)
         f_close(&MyFile); 
         return -1; 
     }
+
 
     // Записываем в W25Q128 все 12 байт заголовка
     if (W25_Write_Data(EXTERNAL_FW_START,        size_hdr, 8) != 0) { 

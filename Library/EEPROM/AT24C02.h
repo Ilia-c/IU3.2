@@ -77,6 +77,8 @@ HAL_StatusTypeDef EEPROM_IsDataExists(void);
 HAL_StatusTypeDef EEPROM_CheckDataValidity(void);
 HAL_StatusTypeDef EEPROM_ReadData(uint16_t memAddr, uint8_t *pData, uint16_t size);
 HAL_StatusTypeDef EEPROM_WriteData(uint16_t memAddr, const uint8_t *pData, uint16_t size);
+HAL_StatusTypeDef WriteSlot(const EepromRecord *record);
+HAL_StatusTypeDef ReadSlot(EepromRecord *record);
 
 #ifdef __cplusplus
 }

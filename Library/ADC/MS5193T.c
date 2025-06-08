@@ -1,6 +1,7 @@
 #include "MS5193T.h"
 
 extern SPI_HandleTypeDef hspi2;
+extern xSemaphoreHandle ADC_conv_end_semaphore;
 
 // Функции для управления CS
 #define SPI_CS_Enable()  HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ROM_Pin, GPIO_PIN_RESET)
@@ -150,6 +151,8 @@ uint32_t Read_MS5193T_Data(void)
         SPI2_Write_buf(0x10, ConfigRegisterMsg, 2);
     }
     taskEXIT_CRITICAL();
+
+    
     return adValue;
 }
 
@@ -163,13 +166,6 @@ void calculate_ADC_data_temp(int32_t adValue) {
     snprintf(ADC_data.ADC_MS5193T_temp_char, sizeof(ADC_data.ADC_MS5193T_temp_char), "%4.1f", ADC_data.ADC_MS5193T_temp);
     if ((ADC_data.ADC_MS5193T_temp<-40) || (ADC_data.ADC_MS5193T_temp>150)) ERRCODE.STATUS |= STATUS_ADC_TEMP_ERROR;
     else ERRCODE.STATUS &= ~STATUS_ADC_TEMP_ERROR;
-    //uint8_t ModeRegisterMsg[2] = {0b00000000, 0b00000111};  
-    //uint8_t ConfigRegisterMsg[2] = {0b00010000, 0b10000000}; // канал на АЦП
-    // Настройка регистра режима
-    //SPI2_Write_buf(0x08, ModeRegisterMsg, 2);
-    //osDelay(1);
-    // Настройка регистра конфигурации
-    //SPI2_Write_buf(0x10, ConfigRegisterMsg, 2);
 }
 
 
@@ -182,12 +178,10 @@ extern EEPROM_Settings_item EEPROM;
 void calculate_ADC_data_heigh(int32_t adValue) {
     snprintf(ADC_data.ADC_value_char, sizeof(ADC_data.ADC_value_char), "%" PRId32, adValue);
     const long double koeff = 0.00000006973743438720703125;
-    // Вычисляем напряжение ADC с использованием long double
+    // Вычисляем напряжение ADC
     long double ADC_Volts_ld = adValue * koeff;
-    // Вычисляем первичный ток (А) по закону Ома
+    // Вычисляем ток по закону Ома
     long double ADC_Current_ld = ADC_Volts_ld / (*ADC_data.ADC_RESISTOR);
-
-    // Сохраняем результаты в структуре как double
     ADC_data.ADC_Volts = (double)ADC_Volts_ld;
     ADC_data.ADC_Current = (double)ADC_Current_ld;
 

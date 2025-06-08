@@ -17,6 +17,7 @@ extern "C"
 #define REDACT_MODE 0          // режим редактирования
 #define CYCLE_MODE 1           // режим цикла
 #define FIRMWARE_UPDATE_MODE 2 // режим обновления прошивки
+#define MAX_PASSWPRD_LEN 10
 
 #define MY_USB_RX_BUFFER_SIZE 512 // Максимум, что хотим собрать в USB (байт)
 
@@ -186,9 +187,10 @@ typedef enum {
     float ADC_AKB_volts; // Напряжение на АКБ
     uint8_t ADC_AKB_Proc;    // Процент заряда на акб
     double *Colibrate_koeff; // Колибровочный коэффициэнт
-    uint16_t R1;
-    uint16_t R2;
-    float VBAT;          // Напряжение на CR2032
+    float MK_VBAT;          // Напряжение на CR2032
+    float MK_temp;             // Температура, измеренная МК
+    char MK_temp_char[6];  // Температура МК в виде строки
+    char MK_vbat_char[6];  // Температура МК в виде строки
     char ADC_AKB_volts_char[6]; // Напряжение на АКБ строка
     char ADC_AKB_Proc_char[6];  // Процент заряда на акб строка
   } Internal_ADC_item;
@@ -272,7 +274,7 @@ extern uint8_t screen_sever_mode;
 extern uint8_t USB_mode;
 
 
-extern char password[5];
+extern char password[MAX_PASSWPRD_LEN];
 ////////////////////////////////////////////////////////////////////////////////
 // Глобальные переменные КОНФИГУРАЦИИ
 ////////////////////////////////////////////////////////////////////////////////
@@ -283,8 +285,6 @@ extern uint16_t time_update_display; // Время обновления экрана (для обновления 
 ////////////////////////////////////////////////////////////////////////////////
 extern char Keyboard_press_code;   // Код нажатой клавиши на клавиатуре
 extern char error_code[4];         // Код глобальной ошибки
-extern double MK_temp;        // Температура МК
-extern char MK_temp_char[5];  // Температура МК в виде строки
 
 extern char EEPROM_status_char[10]; // Статус доступности EEPROM
 extern char FLASH_status_char[10];  // Статус доступности FLASH

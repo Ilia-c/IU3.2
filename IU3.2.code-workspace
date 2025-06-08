@@ -68,8 +68,12 @@
 			"initializer_list": "c",
 			"new": "c",
 			"cinttypes": "c",
-			"cstdbool": "c"
+			"cstdbool": "c",
+			"stm32l4xx_hal_crc.h": "c",
+			"parser.h": "c",
+			"xutility": "c",
+			"internal_adc.h": "c"
 		},
-		"cortex-debug.variableUseNaturalFormat": false
+		"cortex-debug.variableUseNaturalFormat": true
 	}
 }

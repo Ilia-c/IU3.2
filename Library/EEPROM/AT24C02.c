@@ -125,7 +125,7 @@ HAL_StatusTypeDef EEPROM_ReadData(uint16_t memAddr, uint8_t *pData, uint16_t siz
 
 //=============================================================================
 // Внутренняя функция записи EepromRecord в EEPROM (начиная с EEPROM_START_ADDR)
-static HAL_StatusTypeDef WriteSlot(const EepromRecord *record) {
+HAL_StatusTypeDef WriteSlot(const EepromRecord *record) {
     uint8_t buffer[sizeof(EepromRecord)];
     // Копируем всю структуру в буфер
     memcpy(buffer, record, sizeof(EepromRecord));
@@ -150,7 +150,7 @@ static HAL_StatusTypeDef WriteSlot(const EepromRecord *record) {
 //=============================================================================
 // Внутренняя функция чтения EepromRecord из EEPROM (начиная с EEPROM_START_ADDR)
 // Функция также проверяет сигнатуру, версию формата и CRC.
-static HAL_StatusTypeDef ReadSlot(EepromRecord *record) {
+HAL_StatusTypeDef ReadSlot(EepromRecord *record) {
     uint8_t buffer[sizeof(EepromRecord)];
 
     if (EEPROM_ReadData(EEPROM_START_ADDR, buffer, sizeof(EepromRecord)) != HAL_OK) {

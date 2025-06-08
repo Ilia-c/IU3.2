@@ -11,6 +11,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "Data_collect.h"
+#include "stm32l4xx_hal_crc.h"
 
 extern uint32_t g_total_records_count;
 // Команды флеш-памяти
@@ -25,7 +26,7 @@ extern uint32_t g_total_records_count;
 #define W25_PAGE_PROGRAM    0x02
 
 // Таймаут на полное стирание
-#define TIMEOUT_CHIP_ERASE_MS 40000
+#define TIMEOUT_CHIP_ERASE_MS 120000
 
 // ------------------ Параметры организации памяти ------------------
 #define SECTOR_SIZE         4096
@@ -33,7 +34,8 @@ extern uint32_t g_total_records_count;
 #define RECORDS_PER_SECTOR  (SECTOR_SIZE / RECORD_SIZE)
 
 // Полный размер флеш
-#define FLASH_TOTAL_SIZE    ((15 * 1024 * 1024) + 512*1024)
+#define FLASH_SIZE         (16 * 1024 * 1024) // 16 МБ
+#define FLASH_TOTAL_SIZE    ((15 * 1024 * 1024) + 512*1024) // 15 МБ + 512 КБ с учетом на USB
 #define TOTAL_SECTORS       (FLASH_TOTAL_SIZE / SECTOR_SIZE)
 #define TOTAL_RECORDS       (TOTAL_SECTORS * RECORDS_PER_SECTOR)
 #define TARGET_FLASH_SIZE   (512 * 1024)
@@ -61,7 +63,8 @@ typedef struct {
     uint8_t rec_status_end;      // [3]  : Конец записи
     uint8_t block_mark_send;     // [4]  : Данные отправлены?
     uint8_t length;              // [5]  : Длина полезных данных
-    char    data[RECORD_SIZE - 6]; // [6..127]
+    uint32_t CRC32_calc;              // [6-10]  : CRC32 для данных в поле data
+    char data[RECORD_SIZE - 10]; // [10..127]
 } record_t;
 
 // Экспортируемые переменные (если нужны)

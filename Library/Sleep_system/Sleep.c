@@ -247,8 +247,8 @@ void GPIO_AnalogConfig(void)
 
 
 
+extern ADC_HandleTypeDef hadc2;
 extern ADC_HandleTypeDef hadc1;
-extern ADC_HandleTypeDef hadc3;
 
 // Если USB может работать как в режиме Device, так и в режиме Host,
 // объявите оба дескриптора (если они используются):
@@ -267,8 +267,8 @@ void Enter_StandbyMode(uint8_t hours, uint8_t minutes)
     HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_2, errcode_high);
     
 
+    HAL_ADC_DeInit(&hadc2);
     HAL_ADC_DeInit(&hadc1);
-    HAL_ADC_DeInit(&hadc3);
     __HAL_RCC_DMA2_CLK_DISABLE();
     HAL_PCD_DeInit(&hpcd_USB_OTG_FS);
     HAL_HCD_DeInit(&hhcd_USB_OTG_FS);
@@ -319,8 +319,8 @@ void Enter_StandbyMode_NoWakeup(void)
     HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_1, errcode_low);
     HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_2, errcode_high);
     // Деинициализация периферии: ADC, USB и т.д.
+    HAL_ADC_DeInit(&hadc2);
     HAL_ADC_DeInit(&hadc1);
-    HAL_ADC_DeInit(&hadc3);
     __HAL_RCC_DMA2_CLK_DISABLE();
     HAL_PCD_DeInit(&hpcd_USB_OTG_FS);
     HAL_HCD_DeInit(&hhcd_USB_OTG_FS);

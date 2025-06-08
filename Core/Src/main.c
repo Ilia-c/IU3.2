@@ -41,6 +41,9 @@
 #include "Parser.h"
 #include "Diagnostics.h"
 #include "USB_FATFS_SAVE.h"
+#include "stm32l4xx_hal_crc.h"
+
+
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -56,6 +59,7 @@ xSemaphoreHandle Main_semaphore;
 xSemaphoreHandle UART_PARSER_semaphore;
 xSemaphoreHandle ADC_READY; // Окончания преобразования при работе в циклическом режиме
 xSemaphoreHandle SLEEP_semaphore;
+xSemaphoreHandle ADC_conv_end_semaphore;
 
 extern const uint16_t Timer_key_one_press;
 extern const uint16_t Timer_key_press_fast;
@@ -71,7 +75,6 @@ SPI_HandleTypeDef hspi2;
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart4;
 
-ADC_HandleTypeDef hadc3;
 
 TIM_HandleTypeDef htim5;
 TIM_HandleTypeDef htim6;
@@ -79,12 +82,15 @@ TIM_HandleTypeDef htim7;
 TIM_HandleTypeDef htim8;
 
 IWDG_HandleTypeDef hiwdg;
+extern ADC_HandleTypeDef    hadc2;
 extern ADC_HandleTypeDef    hadc1;
+extern DMA_HandleTypeDef    hdma_adc2;
 extern DMA_HandleTypeDef    hdma_adc1;
+extern int mode_redact;
 
 void MX_GPIO_Init(void);  
+void MX_ADC2_Init(void);        // 
 void MX_ADC1_Init(void);        // 
-void MX_ADC3_Init(void);        // 
 void MX_I2C1_Init(void);        // 
 void MX_I2C2_Init(void);        // 
 void MX_SPI2_Init(void);        // АЦП+FLASH
@@ -221,7 +227,8 @@ int main(void)
 
   MX_DMA_Init();
   MX_ADC1_Init();
-  //MX_ADC3_Init();
+  MX_ADC2_Init();
+
   MX_I2C1_Init();
   MX_I2C2_Init();
   MX_SPI2_Init();
@@ -230,7 +237,7 @@ int main(void)
   MX_TIM6_Init();
   MX_TIM7_Init();
   MX_TIM8_Init();
-  
+
 
   InitMenus();
   // Начальные состояния переферии - ВСЕ ОТКЛЮЧЕНО
@@ -279,7 +286,9 @@ int main(void)
     }
   }
 
+  HAL_PWR_EnableBkUpAccess();
   uint32_t value = HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_INDEX_RESET_PROG);
+  HAL_PWR_DisableBkUpAccess();
   if (value == DATA_RESET_PROG){  
     // Если сброс из перехода в цикл
     EEPROM.Mode = 1;
@@ -288,7 +297,6 @@ int main(void)
     if (__HAL_PWR_GET_FLAG(PWR_FLAG_SB) == RESET){
       // Если сброс не из перехода в цикл и не из за wakeup (Питание дернули)
       EEPROM_clear_time_init(); 
-
       EEPROM.Mode = 0;
       if (ERRCODE.STATUS & STATUS_EEPROM_INIT_ERROR)
       {
@@ -299,10 +307,11 @@ int main(void)
       }
     }
   }
+  HAL_PWR_EnableBkUpAccess();
   EEPROM_LoadLastTimeWork(); // Загружаем последнее время работы
+  HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_RESET_PROG, 0);
   PowerUP_counter();
   __HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB); // Сброс флага пробуждения из сна, для корректной работы сна
-
   HAL_PWR_EnableBkUpAccess();
   uint32_t errcode_low = HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_INDEX_ERROR_CODE_1);
   uint32_t errcode_high = HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_INDEX_ERROR_CODE_2);
@@ -334,6 +343,7 @@ int main(void)
   HAL_NVIC_EnableIRQ(UART4_IRQn);
 
   ADC_Start();
+  CRC_Init();
   
   // Запуск в режиме настройки (экран вкл)
   if (EEPROM.Mode == 0){
@@ -375,7 +385,6 @@ int main(void)
 
   HAL_IWDG_Refresh(&hiwdg);
   MS5193T_Init();
-  HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
 
   HAL_IWDG_Refresh(&hiwdg);
   osKernelInitialize();
@@ -529,6 +538,7 @@ void Main_Cycle(void *argument)
   vSemaphoreCreateBinary(USB_COM_semaphore);
   vSemaphoreCreateBinary(UART_PARSER_semaphore);
   vSemaphoreCreateBinary(Main_semaphore);
+  vSemaphoreCreateBinary(ADC_conv_end_semaphore);
 
   for (;;)
   {
@@ -546,17 +556,18 @@ void Main_Cycle(void *argument)
       osThreadResume(ADC_readHandle);
       osDelay(1000);
       status_ADC = 0;
-      for (uint8_t i = 0; i < 30; i++)
+      if (xSemaphoreTake(ADC_conv_end_semaphore, pdMS_TO_TICKS(10000)) != pdFALSE)
       {
         if ((ADC_data.ADC_SI_value_char[0] != 'N') && (ADC_data.ADC_MS5193T_temp_char[0] != 'N'))
         {
           status_ADC = 1;
           break;
         }
-        osDelay(100);
+        else{
+          ERRCODE.STATUS |= STATUS_ADC_TIMEOUT_CYCLE_ERROR;
+        }
       }
-      if (status_ADC == 0)
-      {
+      else{
         ERRCODE.STATUS |= STATUS_ADC_TIMEOUT_CYCLE_ERROR;
       }
     }
@@ -692,6 +703,17 @@ void Main_Cycle(void *argument)
     {
       send_status = 0; // Отметить как не отправленную
     }
+
+    // Ускорение SPI2
+    __HAL_SPI_DISABLE(&hspi2);  // выключить периферию
+    hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+    if (HAL_SPI_Init(&hspi2) != HAL_OK)
+    {
+        Error_Handler();  // или своя обработка ошибки
+    }
+    __HAL_SPI_ENABLE(&hspi2);   // включить обратно
+
+
     // ! перенести в отдельную задачу
     flash_append_record(save_data, send_status);
     osDelay(200);
@@ -711,20 +733,22 @@ void Main_Cycle(void *argument)
   }
 }
 
-/* USER CODE BEGIN Header_ADC_read */
-/**
- * @brief Function implementing the ADC_read thread.
- * @param argument: Not used
- * @retval None
- */
-/* USER CODE END Header_ADC_read */
+
+
 void ADC_read(void *argument)
 {
+  uint8_t update_counter = 0;
   UNUSED(argument);
   for (;;)
   {
 
     ADC_data.update_value();
+    update_counter++;
+    if (update_counter >= 3)
+    {
+      update_counter = 0;
+      if (EEPROM.Mode == 1) xSemaphoreGive(ADC_conv_end_semaphore);
+    }
     if (EEPROM.Mode == 0)
       osDelay(300);
     else
@@ -794,11 +818,12 @@ void Watch_dog_task(void *argument)
         osThreadSuspend(RS485_dataHandle);
         osThreadSuspend(UART_PARSER_taskHandle);
       }
-      if (EEPROM.block == 1)
+      if (EEPROM.block == 1) 
       {
-        Screen_saver();
+        if (mode_redact == 0) Screen_saver();
         continue;
       }
+      
 
       // Если бездействие больше 5 минут
       ERRCODE.STATUS |= STATUS_IDLE_LOOP_MODE;

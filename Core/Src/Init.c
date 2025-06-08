@@ -1,13 +1,14 @@
 #include "main.h"
 
+
 extern I2C_HandleTypeDef hi2c1;
 extern I2C_HandleTypeDef hi2c2;
 extern SPI_HandleTypeDef hspi2;
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart4;
 
+extern ADC_HandleTypeDef hadc2;
 extern ADC_HandleTypeDef hadc1;
-extern ADC_HandleTypeDef hadc3;
 
 extern TIM_HandleTypeDef htim5;
 extern TIM_HandleTypeDef htim6;
@@ -97,59 +98,90 @@ void PeriphCommonClock_Config(void)
 void MX_DMA_Init(void)
 {
   __HAL_RCC_DMA1_CLK_ENABLE();
-  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 8, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+  //HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 8, 0);
+  //HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
 }
 
-void MX_ADC1_Init(void)
+void MX_ADC2_Init(void)
 {
 
-  /* USER CODE BEGIN ADC1_Init 0 */
-
-  /* USER CODE END ADC1_Init 0 */
-
-  ADC_MultiModeTypeDef multimode = {0};
   ADC_ChannelConfTypeDef sConfig = {0};
-
-  /* USER CODE BEGIN ADC1_Init 1 */
-
-  /* USER CODE END ADC1_Init 1 */
-
-  /** Common config
-  */
-  hadc1.Instance = ADC1;
-  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV6;
-  hadc1.Init.Resolution = ADC_RESOLUTION_10B;
-  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
-  hadc1.Init.EOCSelection = ADC_EOC_SEQ_CONV;
-  hadc1.Init.LowPowerAutoWait = DISABLE;
-  hadc1.Init.ContinuousConvMode = ENABLE;
-  hadc1.Init.NbrOfConversion = 1;
-  hadc1.Init.DiscontinuousConvMode = DISABLE;
-  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
-  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-  hadc1.Init.DMAContinuousRequests = ENABLE;
-  hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
-  hadc1.Init.OversamplingMode = DISABLE;
-  if (HAL_ADC_Init(&hadc1) != HAL_OK)
+  hadc2.Instance = ADC2;
+  hadc2.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV6;
+  hadc2.Init.Resolution = ADC_RESOLUTION_10B;
+  hadc2.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc2.Init.ScanConvMode = ADC_SCAN_DISABLE;
+  hadc2.Init.EOCSelection = ADC_EOC_SEQ_CONV;
+  hadc2.Init.LowPowerAutoWait = DISABLE;
+  hadc2.Init.ContinuousConvMode = ENABLE;
+  hadc2.Init.NbrOfConversion = 1;
+  hadc2.Init.DiscontinuousConvMode = DISABLE;
+  hadc2.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc2.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc2.Init.DMAContinuousRequests = ENABLE;
+  hadc2.Init.Overrun = ADC_OVR_DATA_PRESERVED;
+  hadc2.Init.OversamplingMode = DISABLE;
+  if (HAL_ADC_Init(&hadc2) != HAL_OK)
   {
     Error_Handler();
   }
 
   /** Configure the ADC multi-mode
   */
+ /*
   multimode.Mode = ADC_MODE_INDEPENDENT;
-  if (HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK)
+  if (HAL_ADCEx_MultiModeConfigChannel(&hadc2, &multimode) != HAL_OK)
+  {
+    Error_Handler();
+  }
+    * */
+  sConfig.Channel = ADC_CHANNEL_1;
+  sConfig.Rank = ADC_REGULAR_RANK_1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_247CYCLES_5;
+  sConfig.SingleDiff = ADC_SINGLE_ENDED;
+  sConfig.OffsetNumber = ADC_OFFSET_NONE;
+  sConfig.Offset = 0;
+  if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+void MX_ADC1_Init(void)
+{
+  ADC_ChannelConfTypeDef sConfig = {0};
+  ADC_MultiModeTypeDef multimode = {0};
+
+  hadc1.Instance = ADC1;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1; // Делитель тактирования
+  hadc1.Init.Resolution = ADC_RESOLUTION_12B;       // 12 бит
+  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE; // Один канал
+  hadc1.Init.EOCSelection = ADC_EOC_SEQ_CONV;
+  hadc1.Init.LowPowerAutoWait = DISABLE;
+  hadc1.Init.ContinuousConvMode = ENABLE;
+  hadc1.Init.NbrOfConversion = 3;
+  hadc1.Init.DiscontinuousConvMode = DISABLE;
+  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc1.Init.DMAContinuousRequests = ENABLE;
+  hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
+  hadc1.Init.OversamplingMode = DISABLE;
+
+
+  if (HAL_ADC_Init(&hadc1) != HAL_OK)
   {
     Error_Handler();
   }
 
-  /** Configure Regular Channel
-  */
-  sConfig.Channel = ADC_CHANNEL_1;
+  if (HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  // Настройка каналов ADC1
+  sConfig.Channel = ADC_CHANNEL_TEMPSENSOR;
   sConfig.Rank = ADC_REGULAR_RANK_1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_247CYCLES_5;
+  sConfig.SamplingTime = ADC_SAMPLETIME_640CYCLES_5; 
   sConfig.SingleDiff = ADC_SINGLE_ENDED;
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset = 0;
@@ -157,13 +189,24 @@ void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN ADC1_Init 2 */
 
-  /* USER CODE END ADC1_Init 2 */
+  sConfig.Channel = ADC_CHANNEL_VBAT;
+  sConfig.Rank = ADC_REGULAR_RANK_2;
+  sConfig.SamplingTime = ADC_SAMPLETIME_640CYCLES_5;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
 
+  sConfig.Channel = ADC_CHANNEL_VREFINT;
+  sConfig.Rank = ADC_REGULAR_RANK_3;
+  sConfig.SamplingTime = ADC_SAMPLETIME_640CYCLES_5;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
 }
 
- 
  void MX_IWDG_Init(void)
  {
  
@@ -270,6 +313,13 @@ void MX_ADC1_Init(void)
  
  }
 
+CRC_HandleTypeDef hcrc;
+void CRC_Init(void) {
+    hcrc.Instance = CRC;
+    if (HAL_CRC_Init(&hcrc) != HAL_OK) {
+        Error_Handler();
+    }
+}
  void MX_TIM8_Init(void)
  {
    TIM_ClockConfigTypeDef sClockSourceConfig = {0};
@@ -301,52 +351,7 @@ void MX_ADC1_Init(void)
  }
 
 
- 
- void MX_ADC3_Init(void)
- {
-   ADC_ChannelConfTypeDef sConfig = {0};
- 
-   hadc3.Instance                      = ADC3;
-   hadc3.Init.ClockPrescaler          = ADC_CLOCK_ASYNC_DIV1;     // Делитель тактирования
-   hadc3.Init.Resolution              = ADC_RESOLUTION_12B;       // 12 бит
-   hadc3.Init.DataAlign               = ADC_DATAALIGN_RIGHT;
-   hadc3.Init.ScanConvMode            = ADC_SCAN_DISABLE;         // Один канал
-   hadc3.Init.EOCSelection            = ADC_EOC_SEQ_CONV;
-   hadc3.Init.LowPowerAutoWait        = DISABLE;
-   hadc3.Init.ContinuousConvMode      = ENABLE;                  // Одиночное преобразование
-   hadc3.Init.NbrOfConversion         = 1;
-   hadc3.Init.DiscontinuousConvMode   = DISABLE;
-   hadc3.Init.ExternalTrigConv        = ADC_SOFTWARE_START;
-   hadc3.Init.ExternalTrigConvEdge    = ADC_EXTERNALTRIGCONVEDGE_NONE;
-   hadc3.Init.DMAContinuousRequests   = DISABLE;
-   hadc3.Init.Overrun                 = ADC_OVR_DATA_PRESERVED;
-   hadc3.Init.OversamplingMode        = DISABLE;
- 
-   if (HAL_ADC_Init(&hadc3) != HAL_OK)
-   {
-     Error_Handler();
-   }
- 
-   // Настраиваем регулярный канал — PC0 = Channel 1 (ADC123_IN1)
-   sConfig.Channel      = ADC_CHANNEL_1;
-   sConfig.Rank         = ADC_REGULAR_RANK_1;
-   sConfig.SamplingTime = ADC_SAMPLETIME_24CYCLES_5; // При необходимости выбрать больше (например, 47.5 или 92.5)
-   sConfig.SingleDiff   = ADC_SINGLE_ENDED;
-   sConfig.OffsetNumber = ADC_OFFSET_NONE;
-   sConfig.Offset       = 0;
- 
-   if (HAL_ADC_ConfigChannel(&hadc3, &sConfig) != HAL_OK)
-   {
-     Error_Handler();
-   }
- }
- 
- 
- /**
-  * @brief I2C1 Initialization Function
-  * @param None
-  * @retval None
-  */
+
  void MX_I2C1_Init(void)
  {
  

@@ -28,6 +28,7 @@ extern osThreadId_t  ADC_readHandle;
 extern osThreadId_t  ERROR_INDICATE_taskHandle;
 extern SPI_HandleTypeDef hspi2;
 
+
 typedef struct Menu_item
 {
     uint8_t *data;              // привязанное значение
@@ -132,7 +133,12 @@ void GSM_HTTP_SYNC();
 void colibrate_24v();
 void Update_programm();
 void Reset_time_work();
+static void DrawBack(uint8_t px, menuItem *m);
 
+typedef void (*TopBarDrawFunc)(int *px, menuItem *m);
+typedef struct {
+    TopBarDrawFunc  draw;
+} TopBarElement;
 
 #ifdef __cplusplus
 }

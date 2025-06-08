@@ -3,10 +3,14 @@
 const float alpha = 0.7f;
 static uint8_t initialized = 0;
 
+ADC_HandleTypeDef    hadc2;
 ADC_HandleTypeDef    hadc1;
+DMA_HandleTypeDef    hdma_adc2;
 DMA_HandleTypeDef    hdma_adc1;
+
 #define ADC_BUFFER_LEN  256 // Размер буфера для DMA
 uint16_t adc_buffer[ADC_BUFFER_LEN];
+uint16_t adc1_buffer[ADC_3_BUF_LEN];  // [0]=TS, [1]=VBAT
 
 static int cmp_uint16(const void *p1, const void *p2)
 {
@@ -45,27 +49,31 @@ float TruncatedMeanVoltage()
 
 void ADC_Start(void)
 {
+    if (HAL_ADCEx_Calibration_Start(&hadc2, ADC_SINGLE_ENDED) != HAL_OK)
+        Error_Handler();
     if (HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED) != HAL_OK)
         Error_Handler();
-    if (HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_buffer, ADC_BUFFER_LEN) != HAL_OK)
+
+    if (HAL_ADC_Start_DMA(&hadc2, (uint32_t *)adc_buffer, ADC_BUFFER_LEN) != HAL_OK)
+        Error_Handler();
+    if (HAL_ADC_Start_DMA(&hadc1, adc1_buffer, ADC_3_BUF_LEN) != HAL_OK)
         Error_Handler();
 }
 
-void DMA1_Channel1_IRQHandler(void)
-{
-    HAL_DMA_IRQHandler(&hdma_adc1);
-}
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
     if (hadc->Instance == ADC1) { 
-        //if (HAL_GPIO_ReadPin(ON_OWEN_GPIO_Port, ON_OWEN_Pin) == 0) HAL_ADC_Stop_DMA(&hadc1);
     }
 }
 
 void ADC_Voltage_Calculate(void)
 {
-    
+    IntADC.MK_temp = Convert_Temperature(adc1_buffer[0]);
+    IntADC.MK_VBAT = Convert_Voltage(adc1_buffer[1]);
+    if (IntADC.MK_VBAT<2.5f) ERRCODE.STATUS |= STATUS_VBAT_LOW;
+    else ERRCODE.STATUS &= ~STATUS_VBAT_LOW;
+
     IntADC.ADC_AKB_volts = TruncatedMeanVoltage();
     IntADC.ADC_AKB_volts *= *IntADC.Colibrate_koeff;
     
@@ -75,6 +83,8 @@ void ADC_Voltage_Calculate(void)
     else ERRCODE.STATUS &= ~STATUS_VOLTAGE_TOO_HIGH;
 
     IntADC.ADC_AKB_Proc = (uint8_t)voltageToSOC(IntADC.ADC_AKB_volts);
+    sprintf(IntADC.MK_vbat_char, "%.2f", IntADC.MK_VBAT);
+    sprintf(IntADC.MK_temp_char, "%.2f", IntADC.MK_temp);
     sprintf(IntADC.ADC_AKB_volts_char, "%.2f", IntADC.ADC_AKB_volts);
     sprintf(IntADC.ADC_AKB_Proc_char, "%d", IntADC.ADC_AKB_Proc);
 }
@@ -120,4 +130,38 @@ float voltageToSOC(float voltage) {
     }
 
     return soc;
+}
+
+/* Адреса калибровочных значений в системной памяти STM32L476 */
+#define TS_CAL1_ADDR    ((uint16_t*)0x1FFF75A8)  // значение при +30 °C
+#define TS_CAL2_ADDR    ((uint16_t*)0x1FFF75CA)  // значение при +110 °C
+ #define VREFINT_CAL_ADDR ((uint16_t *)0x1FFF75AAU)
+#define TEMP_CAL1_DEG   30.0f
+#define TEMP_CAL2_DEG   110.0f
+
+// Преобразование показаний температурного датчика в градусы Цельсия
+float Convert_Temperature(uint16_t raw_ts)
+{
+    uint16_t VREF = adc1_buffer[2];
+    uint16_t vrefint_cal = *VREFINT_CAL_ADDR;
+    float vdda = 3000.0f * ((float)vrefint_cal / (float)VREF);
+    float raw_ts_corr = raw_ts * (vdda / 3000.0f);
+    uint16_t cal1 = *TS_CAL1_ADDR; // raw при 30 °C
+    uint16_t cal2 = *TS_CAL2_ADDR; // raw при 110 °C
+    float temperature = ((raw_ts_corr - cal1) * (110.0f - 30.0f) / (cal2 - cal1)) + 30.0f;
+    //float temperature2 = __HAL_ADC_CALC_TEMPERATURE((uint32_t)vdda, (uint32_t)raw_ts, ADC_RESOLUTION_12B); // через макросы HAL - целая часть
+    return temperature;
+}
+
+// Преобразование показаний температурного датчика в градусы Цельсия
+float Convert_Voltage(uint16_t raw_vbat)
+{
+    uint16_t raw_vref    = adc1_buffer[2];              
+    uint16_t vrefint_cal = *VREFINT_CAL_ADDR;  
+    float vdda = 3.0f * ((float)vrefint_cal / (float)raw_vref);
+    float vbat_div3 = ((float)raw_vbat) * (vdda / 4095.0f);
+    float battery_voltage = vbat_div3 * 3.0f;
+    if (battery_voltage < 1.0f)  
+        battery_voltage = 0.0f;
+    return battery_voltage;
 }

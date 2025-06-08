@@ -61,6 +61,7 @@ extern TIM_HandleTypeDef htim5;
 extern TIM_HandleTypeDef htim6;
 extern TIM_HandleTypeDef htim8;
 extern UART_HandleTypeDef huart4;
+extern ADC_HandleTypeDef hadc1;
 
 extern xSemaphoreHandle SLEEP_semaphore;
 
