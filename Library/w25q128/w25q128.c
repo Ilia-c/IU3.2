@@ -486,7 +486,7 @@ int flash_append_record(const char *record_data, uint8_t sector_mark_send_flag)
     else  new_rec.block_mark_send   = EMPTY; // [4] => 0xFF
     new_rec.length            = (uint8_t)len; // [5]
     new_rec.CRC32_calc        = 0; // [6-10] Инициализируем CRC
-    memset(new_rec.data, 0xFF, sizeof(new_rec.data));
+    memset(new_rec.data, 0x00, sizeof(new_rec.data));
     memcpy(new_rec.data, record_data, len);
 
     uint32_t word_count = (len + 3) / 4;
@@ -843,13 +843,16 @@ int backup_records_to_external(void)
 void createFilename(char *dest, size_t destSize)
 {
     // Предполагаем, что EEPROM.version.VERSION_PCB существует
-    const char *version = EEPROM.version.VERSION_PCB; // напр. "3.75-A000D"
+    char Version[20] = {0};
+    strncpy(Version, EEPROM.version.VERSION_PCB, sizeof(Version)-1);
+    remove_braces_inplace(Version);
+
     char tmp[32];
     int j = 0;
 
-    for (int i = 0; version[i] != '\0' && j < 8; i++) {
-        if (version[i] != '.' && version[i] != '-') {
-            tmp[j++] = version[i];
+    for (int i = 0; Version[i] != '\0' && j < 8; i++) {
+        if (Version[i] != '.' && Version[i] != '-') {
+            tmp[j++] = Version[i];
         }
     }
     tmp[j] = '\0';

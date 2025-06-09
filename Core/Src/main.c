@@ -426,6 +426,7 @@ void USB_DEBUG_MESSAGE(const char message[], uint8_t category, uint8_t debugLVL)
   if (hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED) return;
     if ((EEPROM.DEBUG_CATEG & category) && (EEPROM.DEBUG_LEVL >= debugLVL))
     {
+        while (GSM_data.Status & DATA_READ){osDelay(50);} // ∆дЄм освобождени€ данных;
         size_t len = strlen(message);
         while (CDC_Transmit_FS((uint8_t*)"---", 3) == USBD_BUSY){}
         while (CDC_Transmit_FS((uint8_t *)message, len) == USBD_BUSY){}
@@ -856,6 +857,7 @@ void Watch_dog_task(void *argument)
 void USB_COM_task(void *argument)
 {
   UNUSED(argument);
+  EEPROM.DEBUG_CATEG = 0;
   for (;;)
   {
     // ќжидаем семафор (данные готовы к обработке)

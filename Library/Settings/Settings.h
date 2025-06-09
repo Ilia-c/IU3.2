@@ -80,6 +80,8 @@ typedef enum {
 #define DEBUG_FLASH (1<<5)
 #define DEBUG_EEPROM (1<<6)
 #define DEBUG_OTHER (1<<7)
+#define DEBUG_ALL (DEBUG_GSM | AT_COMMANDS | DEBUG_RS485 | DEBUG_ADC | DEBUG_ADC_IN | DEBUG_FLASH | DEBUG_EEPROM | DEBUG_OTHER)
+#define DEBUG_NONE 0
 
   typedef struct Prgramm_version
   {

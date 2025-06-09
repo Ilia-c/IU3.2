@@ -4,8 +4,8 @@
 #define winth_display 128
 #define height_display 64
 
-#define line_indentation 0                            //  отступы верхней линии слева и справа
-#define end_line 125                                  //  отступы верхней линии слева и справа
+#define line_indentation 0                            // отступы верхней линии слева и справа
+#define end_line 125                                  // отступы верхней линии слева и справа
 #define line_ind_top 11                               // оттуп линии сверху
 #define back_pic_pos_x 0                              // начало иконки предыдущий пункт меню x
 #define back_pic_pos_y 4                              // начало иконки предыдущий пункт меню y
@@ -14,9 +14,9 @@
 #define top_pic_last_munu 1                           // отступ сверху до названия предыдущего пункта меню
 #define left_pic_last_munu 7                          // отступ слева до названия предыдущего пункта меню
 #define top_GSM_status 2                              // отступ сверху до статуса связи
-#define width_GSM_status 15                           //  ширина одного значка статуса связи
+#define width_GSM_status 15                           // ширина одного значка статуса связи
 #define top_akb_status 1                              // отступ сверху до уровня заряда
-#define width_akb_status 7                            //  ширина одного уровня заряда
+#define width_akb_status 7                            // ширина одного уровня заряда
 
 #define time_led_cursor 500      // Время обновления индикации курсоора при вводе данных
 #define time_updateDisplay 20000 // Время обновления экрана вне ввода данных
@@ -1012,6 +1012,12 @@ void Reset_settings(){
         mode_redact = 0;
         return;
     }
+    ERRCODE.STATUS = 0;
+    HAL_PWR_EnableBkUpAccess();
+    HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_1, 0);
+    HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_2, 0);
+    HAL_PWR_DisableBkUpAccess();
+
     EEPROM.time_sleep_h = DEFAULT_TIME_SLEEP_H;           // Время сна устройства (часы)
     EEPROM.time_sleep_m = DEFAULT_TIME_SLEEP_M;           // Время сна устройства (минуты)
     EEPROM.MAX_LVL = DEFAULT_MAX_LVL;                     // Максимальный уровень (например, 15 метров) ВПИ
@@ -1020,7 +1026,6 @@ void Reset_settings(){
     EEPROM.Communication = GSM_MODE;         // Включен GSM или нет
     EEPROM.RS485_prot = DEFAULT_RS485_PROT;               // Протокол RS-485
     EEPROM.units_mes = DEFAULT_UNITS_MES;                 // Единицы измерения (по умолчанию метры)
-    EEPROM.screen_sever_mode = DEFAULT_SCREEN_SEVER_MODE; // Включить или нет заставку при включении
     EEPROM.USB_mode = DEFAULT_USB_MODE;                   // Режим работы USB
     EEPROM.len = DEFAULT_LEN;                             // Язык меню
     EEPROM.mode_ADC = DEFAULT_MODE_ADC;                   // Режим работы АЦП, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
@@ -1405,16 +1410,22 @@ static void DrawBack(uint8_t px, menuItem *m)
     {
         OLED_DrawTriangleFill(px, back_pic_pos_y, px + size_back_pic_x, back_pic_pos_y + size_back_pic_y, px + size_back_pic_x, back_pic_pos_y - size_back_pic_y);
         OLED_DrawPixel(px + 1, back_pic_pos_y);
-        if (EEPROM.len == 0) OLED_DrawStr(m->Name_rus, left_pic_last_munu, top_pic_last_munu, 1);
-        if (EEPROM.len == 1) OLED_DrawStr(m->Name_en, left_pic_last_munu, top_pic_last_munu, 1);
+        char string[20];
+        if (EEPROM.len == 0) strcpy(string, m->Name_rus);
+        if (EEPROM.len == 1) strcpy(string, m->Name_en);
+        string[12] = '\0';
+        OLED_DrawStr(string, left_pic_last_munu, top_pic_last_munu, 1);
         return;
     }
     if (m->Parent != (void *)&NULL_ENTRY)
     {
         OLED_DrawTriangleFill(px, back_pic_pos_y, px + size_back_pic_x, back_pic_pos_y + size_back_pic_y, px + size_back_pic_x, back_pic_pos_y - size_back_pic_y);
         OLED_DrawPixel(px + 1, back_pic_pos_y);
-        if (EEPROM.len == 0) OLED_DrawStr(((menuItem *)m->Parent)->Name_rus, left_pic_last_munu, top_pic_last_munu, 1);
-        if (EEPROM.len == 1) OLED_DrawStr(((menuItem *)m->Parent)->Name_en, left_pic_last_munu, top_pic_last_munu, 1);
+        char string[20];
+        if (EEPROM.len == 0) strcpy(string, ((menuItem *)m->Parent)->Name_rus);
+        if (EEPROM.len == 1) strcpy(string, ((menuItem *)m->Parent)->Name_en);
+        string[12] = '\0';
+        OLED_DrawStr(string, left_pic_last_munu, top_pic_last_munu, 1);
     }
 }
 
@@ -1482,7 +1493,7 @@ static void DrawUSB(uint8_t *px, menuItem *m)
 {
     if (Appli_state == APPLICATION_READY)
     {
-        OLED_DrawXBM(*px - 8, top_akb_status, USB_XMB);
+        OLED_DrawXBM(*px, top_akb_status, USB_XMB);
         *px -= 8;
     }
     

@@ -52,7 +52,7 @@ static void GSM_TimerCallback(TimerHandle_t xTimer)
         parseBuffer = temp;
 
         
-        if (EEPROM.USB_mode == USB_Sniffing || EEPROM.USB_mode == USB_AT)
+        if (EEPROM.USB_mode >= USB_Sniffing || EEPROM.USB_mode <= USB_AT)
         {
             if (hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED) return;
 

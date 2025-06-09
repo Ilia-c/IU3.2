@@ -64,7 +64,7 @@ typedef struct {
     uint8_t block_mark_send;     // [4]  : Данные отправлены?
     uint8_t length;              // [5]  : Длина полезных данных
     uint32_t CRC32_calc;              // [6-10]  : CRC32 для данных в поле data
-    char data[RECORD_SIZE - 10]; // [10..127]
+    char data[RECORD_SIZE - 13]; // [10..127]
 } record_t;
 
 // Экспортируемые переменные (если нужны)

@@ -45,7 +45,7 @@ static const DebugCmd_t debugCmds[] = {
     { "DEBUG_ADC_IN",       DEBUG_ADC_IN,       "DEBUG_ADC_IN включен",       "DEBUG_ADC_IN выключен"       },
     { "DEBUG_FLASH",        DEBUG_FLASH,        "DEBUG_FLASH включен",        "DEBUG_FLASH выключен"        },
     { "DEBUG_EEPROM",       DEBUG_EEPROM,       "DEBUG_EEPROM включен",       "DEBUG_EEPROM выключен"       },
-    { "DEBUG_OTHER",        DEBUG_OTHER,        "DEBUG_OTHER включен",        "DEBUG_OTHER выключен"        },
+    { "DEBUG_OTHER",        DEBUG_OTHER,        "DEBUG_OTHER включен",        "DEBUG_OTHER выключен"        }
 };
 #define DEBUG_CMD_COUNT  (sizeof(debugCmds) / sizeof(debugCmds[0]))
 
@@ -77,7 +77,7 @@ void DEBUG_USB(void)
             int len = snprintf(resp, sizeof(resp),
                                "------------ %s ------------\r\n",
                                is_set ? d->msg_off : d->msg_on);
-            CDC_Transmit_FS((uint8_t *)resp, len);
+            while (CDC_Transmit_FS((uint8_t *)resp, len) == USBD_BUSY){}
             return;
         }
     }
@@ -87,13 +87,9 @@ void DEBUG_USB(void)
     {
         uint8_t lvl = command[0] - '0';
         EEPROM.DEBUG_LEVL = lvl - 1;
-
         char resp[64];
-        int len = snprintf(resp, sizeof(resp),
-                           "------------ Новый уровень отладки: %u ------------\r\n",
-                           lvl);
-        CDC_Transmit_FS((uint8_t *)resp, len);
-
+        int len = snprintf(resp, sizeof(resp), "------------ Новый уровень отладки: %u ------------\r\n", lvl);
+        while (CDC_Transmit_FS((uint8_t *)resp, strlen(resp)) == USBD_BUSY){}
         command[0] = '\0';  // очистили команду
         return;
     }
@@ -102,7 +98,7 @@ void DEBUG_USB(void)
     if (strncmp(command, "SAVE", 4) == 0)
     {
         // очистить "SAVE"
-        memset(command, 0, 5);
+        memset(command, 0, strlen(command));
 
         EEPROM_SaveSettings(&EEPROM);
         if (EEPROM_CheckDataValidity() != HAL_OK)
@@ -111,10 +107,61 @@ void DEBUG_USB(void)
         }
 
         const char resp[] = "------------ СОХРАНЕНО ------------\r\n";
-        CDC_Transmit_FS((uint8_t *)resp, strlen(resp));
+        while (CDC_Transmit_FS((uint8_t *)resp, strlen(resp)) == USBD_BUSY){}
         return;
     }
-    
+
+    if (strncmp(command, "ALL_ON", 6) == 0)
+    {
+        // очистить "SAVE"
+        memset(command, 0, strlen(command));
+        EEPROM.DEBUG_CATEG = 0xFF; // Включаем все категории отладки
+
+        const char resp[] = "------------ Все включено ------------\r\n";
+       while (CDC_Transmit_FS((uint8_t *)resp, strlen(resp)) == USBD_BUSY){}
+        return;
+    }
+    if (strncmp(command, "ALL_OFF", 7) == 0)
+    {
+        // очистить "SAVE"
+        memset(command, 0, strlen(command));
+
+        EEPROM.DEBUG_CATEG = 0x00; // Выключаем все категории отладки
+        const char resp[] = "------------ Все выключено ------------\r\n";
+        while (CDC_Transmit_FS((uint8_t *)resp, strlen(resp)) == USBD_BUSY){}
+        return;
+    }
+    if (strncmp(command, "Help", 4) == 0)
+    {
+        // очистить "SAVE"
+        memset(command, 0, strlen(command));
+
+        EEPROM_SaveSettings(&EEPROM);
+        if (EEPROM_CheckDataValidity() != HAL_OK)
+        {
+            ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
+        }
+
+        const char resp[] = "------------ HELP ------------\r\n";
+        const char help[] =
+            "1. DEBUG_GSM\n"
+            "2. AT_COMMANDS - отладка AT-команд\n"
+            "3. DEBUG_RS485 - отладка RS-485\n"
+            "4. DEBUG_ADC - отладка АЦП\n"
+            "5. DEBUG_ADC_IN - отладка АЦП мк\n"
+            "6. DEBUG_FLASH - отладка FLASH\n"
+            "7. DEBUG_EEPROM - отладка EEPROM\n"
+            "8. DEBUG_OTHER - отладка других модулей\n"
+            "9. SAVE - сохранить настройки\n"
+            "10. ALL_ON - включить все отладочные категории\n"
+            "11. ALL_OFF - выключить все отладочные категории\n"
+            "12. Help - показать это сообщение\r\n";
+        while (CDC_Transmit_FS((uint8_t *)resp, strlen(resp)) == USBD_BUSY){}
+        while (CDC_Transmit_FS((uint8_t *)help, strlen(help)) == USBD_BUSY){}
+        while (CDC_Transmit_FS((uint8_t *)resp, strlen(resp)) == USBD_BUSY){}
+        return;
+    }
+    //memset(command, 0, 512);
 }
 
 void AT_SEND()
