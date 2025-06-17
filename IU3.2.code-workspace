@@ -74,6 +74,6 @@
 			"xutility": "c",
 			"internal_adc.h": "c"
 		},
-		"cortex-debug.variableUseNaturalFormat": true
+		"cortex-debug.variableUseNaturalFormat": false
 	}
 }

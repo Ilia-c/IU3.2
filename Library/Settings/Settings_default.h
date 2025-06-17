@@ -1,10 +1,16 @@
 #ifndef SETTINGS_DEFAULT_H
 #define SETTINGS_DEFAULT_H
 
-
+// Компиляция
 #define Debug_mode 1                                // Включен или выключен режим отладки
-#define DEFAULT_VERSION_PROGRAMM       "Ver0.76"    // Версия программы
-#define EEPROM_FORMAT_VERSION           0x00000006U //? Версия формата данных EEPROM
+
+#define Version3_75 1                            // Версия 3.75
+#define Version3_79 2                            // Версия 3.79
+#define BOARD_VERSION Version3_75                // Под какую версию собирать проект
+
+// Значения по умолчанию для EEPROM
+#define DEFAULT_VERSION_PROGRAMM       "Ver0.78"    // Версия программы
+#define EEPROM_FORMAT_VERSION           0x00000010U //? Версия формата данных EEPROM
 
 #define DEFAULT_VERSION_PCB            "3.75-A000{" // Версия печатной платы
 #define DEFAULT_PASSWORD               "Defau"

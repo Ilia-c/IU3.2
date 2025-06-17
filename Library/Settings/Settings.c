@@ -25,6 +25,10 @@ EEPROM_Settings_item EEPROM = {
         .password = DEFAULT_PASSWORD,
     },
     .last_error_code = DEFAULT_LAST_ERROR_CODE, // Последний код ошибки
+    .DEBUG_CATEG = DEBUG_NONE,
+    .DEBUG_LEVL = DEBUG_LEVL_1,
+    .DEBUG_Mode = USB_SNIFFING,
+
 
     // Вводимые данные:
     .time_sleep_h = DEFAULT_TIME_SLEEP_H,        // Время сна устройства (часы)
@@ -173,7 +177,7 @@ RTC_DateTypeDef Date_start  = {0}; // Время старта МК
 // Глобальные константы
 ////////////////////////////////////////////////////////////////////////////////
 const uint16_t Timer_key_press = 400;                      // Время ожидания до быстрого проматывания
-const uint16_t Timer_key_press_fast = 180;                 // Время быстрого нажатия клавиши
+const uint16_t Timer_key_press_fast = 120;                 // Время быстрого нажатия клавиши
 // #define MAX_PASSWPRD_LEN 10
 char password[MAX_PASSWPRD_LEN] = "UO";
 

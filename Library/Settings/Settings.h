@@ -49,12 +49,10 @@ extern "C"
 #define FAULT_CODE_BUSFAULT 4U
 #define FAULT_CODE_USAGEFAULT 5U
 
-// Коды режимов USB
+// Коды режимов USB USB_mode
 #define USB_FLASH 0
-#define USB_Sniffing 1
-#define USB_DEBUG 2
-#define USB_AT 3
-#define USB_OFF 4
+#define USB_DEBUG 1
+#define USB_OFF 2
 
 // Коды режима отладки
 #define DEBUG_LEVL_1 0
@@ -71,7 +69,7 @@ typedef enum {
 } HAL_Communication_M2M_TypeDef;
 
 
-// Включение отладки по модулям
+// Включение отладки по модулям DEBUG_CATEG
 #define DEBUG_GSM (1<<0)
 #define AT_COMMANDS (1<<1)
 #define DEBUG_RS485 (1<<2)
@@ -82,6 +80,12 @@ typedef enum {
 #define DEBUG_OTHER (1<<7)
 #define DEBUG_ALL (DEBUG_GSM | AT_COMMANDS | DEBUG_RS485 | DEBUG_ADC | DEBUG_ADC_IN | DEBUG_FLASH | DEBUG_EEPROM | DEBUG_OTHER)
 #define DEBUG_NONE 0
+
+
+// DEBUG_Mode
+#define USB_SNIFFING 0
+#define USB_AT_DEBUG 1
+
 
   typedef struct Prgramm_version
   {
@@ -96,6 +100,7 @@ typedef enum {
     char last_error_code[4];      // Последний код ошибки
     uint8_t DEBUG_CATEG;        // Категории для отладки
     uint8_t DEBUG_LEVL;         // Активный уровень отладки
+    uint8_t DEBUG_Mode;         // Режим отладки - работа с GSM или прослушивание
 
     /*-----------------*/
     // Вводимые данные //
@@ -103,7 +108,7 @@ typedef enum {
     uint16_t time_sleep_h; // Время сна устройства часы
     uint16_t time_sleep_m; // Время сна устройства минуты
 
-    char Phone[20];      // Последний код ошибки
+    char Phone[20];      // Номер телефона для отправки смс
     //  АЦП  //
     double ADC_ION;     // Напряжение ИОН АЦП
     float ADC_RESISTOR; // Сопротивление резистора

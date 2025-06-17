@@ -264,15 +264,18 @@ HAL_StatusTypeDef waitForSMSResponse(uint32_t timeout)
         {
             if (strstr(parseBuffer, "+CMGS:") != NULL)
             {
+                GSM_data.Status &= ~DATA_READ;
                 return HAL_OK;  
             }
             if (strstr(parseBuffer, "ERROR") != NULL ||
                 strstr(parseBuffer, "+CME ERROR") != NULL)
             {
+                GSM_data.Status &= ~DATA_READ;
                 return HAL_ERROR;
             }
         }
     }
+    GSM_data.Status &= ~DATA_READ;
     return HAL_TIMEOUT;  // Таймаут
 }
 

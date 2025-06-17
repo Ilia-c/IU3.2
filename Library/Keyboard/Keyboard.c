@@ -3,6 +3,7 @@
 // ----- Внешние объекты -----
 extern xSemaphoreHandle Keyboard_semapfore;
 extern xSemaphoreHandle Display_semaphore;
+extern xSemaphoreHandle SLEEP_semaphore;
 extern char Keyboard_press_code;  // Итоговый код, который использует Display
 char Prot_Keyboard_press_code;    // Сырые данные при сканировании
 

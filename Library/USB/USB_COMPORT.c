@@ -19,14 +19,14 @@ void TrimCommand(char *command)
 extern uint8_t g_myRxBuffer[MY_USB_RX_BUFFER_SIZE]; 
 extern uint8_t UserRxBufferFS[MY_USB_RX_BUFFER_SIZE];
 extern uint16_t g_myRxCount;
-uint8_t command_un = 0;
 void USB_COM(void)
 {
-    if (EEPROM.USB_mode == USB_DEBUG){
+    if (EEPROM.USB_mode != USB_DEBUG) return;
+    if (EEPROM.DEBUG_Mode == USB_SNIFFING){
         DEBUG_USB();
     }
 
-    if (EEPROM.USB_mode == USB_AT){
+    if (EEPROM.DEBUG_Mode == USB_AT_DEBUG){
         AT_SEND();
     }
 }
@@ -38,14 +38,14 @@ typedef struct {
 } DebugCmd_t;
 
 static const DebugCmd_t debugCmds[] = {
-    { "DEBUG_GSM",          DEBUG_GSM,          "DEBUG_GSM включен",          "DEBUG_GSM выключен"          },
-    { "AT_COMMANDS",        AT_COMMANDS,        "AT_COMMANDS включен",        "AT_COMMANDS выключен" },
-    { "DEBUG_RS485",        DEBUG_RS485,        "DEBUG_RS485 включен",        "DEBUG_RS485 выключен"        },
-    { "DEBUG_ADC",          DEBUG_ADC,          "DEBUG_ADC включен",          "DEBUG_ADC выключен"          },
-    { "DEBUG_ADC_IN",       DEBUG_ADC_IN,       "DEBUG_ADC_IN включен",       "DEBUG_ADC_IN выключен"       },
-    { "DEBUG_FLASH",        DEBUG_FLASH,        "DEBUG_FLASH включен",        "DEBUG_FLASH выключен"        },
-    { "DEBUG_EEPROM",       DEBUG_EEPROM,       "DEBUG_EEPROM включен",       "DEBUG_EEPROM выключен"       },
-    { "DEBUG_OTHER",        DEBUG_OTHER,        "DEBUG_OTHER включен",        "DEBUG_OTHER выключен"        }
+    { "DEBUG_GSM",          DEBUG_GSM,          "DEBUG_GSM ON",          "DEBUG_GSM OFF"          },
+    { "AT_COMMANDS",        AT_COMMANDS,        "AT_COMMANDS ON",        "AT_COMMANDS OFF"        },
+    { "DEBUG_RS485",        DEBUG_RS485,        "DEBUG_RS485 ON",        "DEBUG_RS485 OFF"        },
+    { "DEBUG_ADC",          DEBUG_ADC,          "DEBUG_ADC ON",          "DEBUG_ADC OFF"          },
+    { "DEBUG_ADC_IN",       DEBUG_ADC_IN,       "DEBUG_ADC_IN ON",       "DEBUG_ADC_IN OFF"       },
+    { "DEBUG_FLASH",        DEBUG_FLASH,        "DEBUG_FLASH ON",        "DEBUG_FLASH OFF"        },
+    { "DEBUG_EEPROM",       DEBUG_EEPROM,       "DEBUG_EEPROM ON",       "DEBUG_EEPROM OFF"       },
+    { "DEBUG_OTHER",        DEBUG_OTHER,        "DEBUG_OTHER ON",        "DEBUG_OTHER OFF"        }
 };
 #define DEBUG_CMD_COUNT  (sizeof(debugCmds) / sizeof(debugCmds[0]))
 
@@ -117,7 +117,7 @@ void DEBUG_USB(void)
         memset(command, 0, strlen(command));
         EEPROM.DEBUG_CATEG = 0xFF; // Включаем все категории отладки
 
-        const char resp[] = "------------ Все включено ------------\r\n";
+        const char resp[] = "------------ Все ON ------------\r\n";
        while (CDC_Transmit_FS((uint8_t *)resp, strlen(resp)) == USBD_BUSY){}
         return;
     }
@@ -127,7 +127,7 @@ void DEBUG_USB(void)
         memset(command, 0, strlen(command));
 
         EEPROM.DEBUG_CATEG = 0x00; // Выключаем все категории отладки
-        const char resp[] = "------------ Все выключено ------------\r\n";
+        const char resp[] = "------------ Все OFF ------------\r\n";
         while (CDC_Transmit_FS((uint8_t *)resp, strlen(resp)) == USBD_BUSY){}
         return;
     }
@@ -155,49 +155,49 @@ void DEBUG_USB(void)
             "9. SAVE - сохранить настройки\n"
             "10. ALL_ON - включить все отладочные категории\n"
             "11. ALL_OFF - выключить все отладочные категории\n"
-            "12. Help - показать это сообщение\r\n";
+            "12. AT_MANUAL_ON - работа напрямую с модулем связи включить\n"
+            "13. AT_MANUAL_OFF - работа напрямую с модулем связи выключить\n"
+            "14. Help - показать это сообщение\r\n";
         while (CDC_Transmit_FS((uint8_t *)resp, strlen(resp)) == USBD_BUSY){}
         while (CDC_Transmit_FS((uint8_t *)help, strlen(help)) == USBD_BUSY){}
         while (CDC_Transmit_FS((uint8_t *)resp, strlen(resp)) == USBD_BUSY){}
         return;
     }
-    //memset(command, 0, 512);
+    if (strncmp(command, "AT_MANUAL_ON", 12) == 0)
+    {
+        // очистить "SAVE"
+        memset(command, 0, strlen(command));
+        EEPROM.DEBUG_Mode = USB_AT_DEBUG;
+        
+        const char resp[] = "------------ Режим AT Manual ON ------------\r\n";
+        while (CDC_Transmit_FS((uint8_t *)resp, strlen(resp)) == USBD_BUSY){}
+        return;
+    }
+    memset(command, 0, 512);
 }
 
 void AT_SEND()
 {
-    command_un = 0;
     char *command = (char *)g_myRxBuffer;
     TrimCommand(command);
-    if (strncmp(command, "AT", 2) == 0)
+    if (strncmp(command, "AT_MANUAL_OFF", 13) == 0)
     {
-        char response[512];
-        // Отправляем ответ
-        snprintf(response, sizeof(response), "Command L651: %s", command);
-        CDC_Transmit_FS((uint8_t *)response, strlen(response));
-        command_un = 1;
-        // Передаем всю команду по UART4
-        SendSomeCommandAndSetFlag();
-        HAL_UART_Transmit(&huart4, (uint8_t *)command, strlen(command), HAL_MAX_DELAY);
+        // очистить "SAVE"
+        memset(command, 0, strlen(command));
+        EEPROM.DEBUG_Mode = USB_SNIFFING;
+        
+        const char resp[] = "------------ Режим AT Manual OFF ------------\r\n";
+        while (CDC_Transmit_FS((uint8_t *)resp, strlen(resp)) == USBD_BUSY){}
+        return;
     }
-
-    if (strncmp(command, "GSM+", 4) == 0)
-    {
-        command_un = 1;
-        memmove(command, command + 4, strlen(command + 4) + 1);
-        SendSomeCommandAndSetFlag();
-        HAL_UART_Transmit(&huart4, (uint8_t *)command, strlen(command), HAL_MAX_DELAY);
-
-        // Формируем ответ для USB
-        char response[512];
-        snprintf(response, sizeof(response), "Command L651: %s", command);
-
-        // Отправляем ответ
-        CDC_Transmit_FS((uint8_t *)response, strlen(response));
-    }
-
-    if (command_un == 0)
-        CDC_Transmit_FS((uint8_t *)"Invalid command prefix\r\n", 25);
+    char response[512];
+    // Отправляем ответ
+    snprintf(response, sizeof(response), "Command L651: %s", command);
+    CDC_Transmit_FS((uint8_t *)response, strlen(response));
+    // Передаем всю команду по UART4
+    SendSomeCommandAndSetFlag();
+    HAL_UART_Transmit(&huart4, (uint8_t *)command, strlen(command), HAL_MAX_DELAY);
+    
     memset(UserRxBufferFS, 0, RX_BUFFER_SIZE);
     memset(g_myRxBuffer, 0, RX_BUFFER_SIZE);
 }

@@ -169,9 +169,7 @@ menuSelect_item USB_MODE_STRUCT = {
     (uint8_t *)&EEPROM.USB_mode,
     {
         {"FLASH", "FLASH"},
-        {"Sniffing", "Sniffing"},
         {"DEBUG", "DEBUG"},
-        {"AT", "AT"},
         {"выкл.", "Off"}
     }
 };
@@ -457,7 +455,7 @@ menuSelect_item NO_SIGNED = {
 MAKE_MENU(Menu_1, "Режимы", "Modes", 0, UPTADE_OFF, NO_SIGNED, Menu_2, PREVISION_MENU, PARENT_MENU, Menu_1_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
 	MAKE_MENU(Menu_1_1, "Цикл", "Cycle", 0, UPTADE_OFF, NO_SIGNED, Menu_1_2, PREVISION_MENU, Menu_1, CHILD_MENU, sleep, SELECT_BAR, DATA_IN, DATA_OUT);
 	MAKE_MENU(Menu_1_2, "Диагностика", "Test check", 0, UPTADE_OFF, NO_SIGNED, Menu_1_3, Menu_1_1, Menu_1, Menu_1_2_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-		MAKE_MENU(Menu_1_2_1, "Ошибка", "Error", 0, UPTADE_OFF, NO_SIGNED, Menu_1_2_2, PREVISION_MENU, Menu_1_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ERRCODE.STATUSCHAR);
+		MAKE_MENU(Menu_1_2_1, "Статус", "Status", 0, UPTADE_OFF, NO_SIGNED, Menu_1_2_2, PREVISION_MENU, Menu_1_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ERRCODE.STATUSCHAR);
 		MAKE_MENU(Menu_1_2_2, "АКБ", "BAT", 0, UPTADE_OFF, Unit_voltage, Menu_1_2_3, Menu_1_2_1, Menu_1_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, IntADC.ADC_AKB_volts_char);
 		MAKE_MENU(Menu_1_2_3, "Связь", "Mobile network", 0, UPTADE_OFF, NO_SIGNED, Menu_1_2_4, Menu_1_2_2, Menu_1_2, Menu_1_2_3_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
 			MAKE_MENU(Menu_1_2_3_1, "Тест СМС", "SMS test", 0, UPTADE_OFF, NO_SIGNED, Menu_1_2_3_2, PREVISION_MENU, Menu_1_2_3, CHILD_MENU, GSM_sms_test, SELECT_BAR, DATA_IN, GSM_data.GSM_sms_status);
@@ -512,7 +510,7 @@ MAKE_MENU(Menu_2, "Настройки", "Settings", 0, UPTADE_OFF, NO_SIGNED, Menu_3, Men
 		MAKE_MENU(Menu_2_15_14, "Режим", "Mode", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_15, Menu_2_15_13, Menu_2_15, CHILD_MENU, SELECT_BAR, Block, DATA_IN, DATA_OUT);
 		MAKE_MENU(Menu_2_15_15, "Полный Сброс", "FULL RESET", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_15_14, Menu_2_15, CHILD_MENU, ALL_Reset_settings, SELECT_BAR, DATA_IN, DATA_OUT);
     MAKE_MENU(Menu_2_16, "Обновление ПО", "Update", 0, UPTADE_OFF, NO_SIGNED, Menu_2_17, Menu_2_15, Menu_2, CHILD_MENU, Update_programm, SELECT_BAR, DATA_IN, DATA_OUT); 
-    MAKE_MENU(Menu_2_17, "Формат. память", "Format device ", 0, UPTADE_OFF, NO_SIGNED, Menu_2_18, Menu_2_16, Menu_2, CHILD_MENU, Flash_Format, SELECT_BAR, DATA_IN, DATA_OUT); 
+    MAKE_MENU(Menu_2_17, "Формат. память", "Format device", 0, UPTADE_OFF, NO_SIGNED, Menu_2_18, Menu_2_16, Menu_2, CHILD_MENU, Flash_Format, SELECT_BAR, DATA_IN, DATA_OUT); 
 	MAKE_MENU(Menu_2_18, "Сброс настроек", "Factory reset", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_17, Menu_2, CHILD_MENU, Reset_settings, SELECT_BAR, DATA_IN, DATA_OUT);
 MAKE_MENU(Menu_3, "Сведения", "Info", 0, UPTADE_OFF, NO_SIGNED, Menu_4, Menu_2, PARENT_MENU, Menu_3_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
 	MAKE_MENU(Menu_3_1, "Сер. ном.", "Ser. Number", 0, UPTADE_OFF, NO_SIGNED, Menu_3_2, PREVISION_MENU, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, EEPROM.version.VERSION_PCB);
@@ -898,6 +896,7 @@ void PASSWORD(){
 
 // Выводит на экран вопрос Да или Нет. 1 -да 0 - нет
 int YES_OR_NO(const char strArray[][40]){
+    Keyboard_press_code = 0xFF;
     mode_redact = 5;
     int YES_NO = 0; // Нет
     uint8_t update = 1;
@@ -1061,7 +1060,9 @@ void ALL_Reset_settings(){
         // Вводимые данные:
         .time_sleep_h = DEFAULT_TIME_SLEEP_H, // Время сна устройства (часы)
         .time_sleep_m = DEFAULT_TIME_SLEEP_M, // Время сна устройства (минуты)
-
+        .DEBUG_CATEG = DEBUG_NONE,
+        .DEBUG_LEVL = DEBUG_LEVL_1,
+        .DEBUG_Mode = USB_SNIFFING,
         .Phone = DEFAULT_PHONE,
 
         // Параметры АЦП:
@@ -1107,6 +1108,8 @@ void ALL_Reset_settings(){
     else OLED_DrawCenteredString(READY, Y);
     OLED_UpdateScreen();
     osDelay(2000);
+    EEPROM_clear_time_init();
+    
     NVIC_SystemReset();
 
 }
@@ -1651,7 +1654,8 @@ void Save_date_format(){
         *((uint8_t *)selectedMenuItem->data_in->data[i]) = (uint8_t)result;
     }
     RTC_set_date();
-    RTC_read();
+    EEPROM_clear_time_init();
+    PowerUP_counter();
 }
 
 void Save_time_format(){
@@ -1662,7 +1666,8 @@ void Save_time_format(){
         *((uint8_t *)selectedMenuItem->data_in->data[i]) = (uint8_t)result;
     }
     RTC_set_time();
-    RTC_read();
+    EEPROM_clear_time_init();
+    PowerUP_counter();
 }
 void Save_time_sleep_format(){
     // Проверка на неверное значение
@@ -1678,7 +1683,6 @@ void Save_time_sleep_format(){
         int32_t result = strtol(selectedMenuItem->data_in->data_temp[i], NULL, 10); 
         if (selectedMenuItem->data_in->data_type[i] == 1) *((uint16_t *)selectedMenuItem->data_in->data[i]) = (uint16_t)result;
     }
-
 }
 
 void Programm_GVL_CORRECT(){}
