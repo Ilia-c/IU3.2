@@ -472,14 +472,13 @@ HAL_StatusTypeDef READ_Settings_sendHTTP(void) {
         }
         USB_DEBUG_MESSAGE("[DEBUG AT] HTTP READ инициализирован", DEBUG_GSM, DEBUG_LEVL_4);
         osDelay(100);
-        
-        if (SendCommandAndParse("AT+HTTPPARA=\"CID\",\"1\"\r", waitForOKResponse, 2000) != 1) {
+        if (SendCommandAndParse("AT+HTTPPARA=\"CID\",\"1\"\r", waitForOKResponse, 2000) != HAL_OK) {
             goto http_error_2;
         }
         USB_DEBUG_MESSAGE("[DEBUG AT] HTTP READ профиль сессии установлен успешно", DEBUG_GSM, DEBUG_LEVL_4);
         osDelay(100);
         // Отправка HTTP запроса (send - строка с корректно сформированным URL)
-        if (SendCommandAndParse(send, waitForOKResponse, 20000) != 1) {
+        if (SendCommandAndParse(send, waitForOKResponse, 20000) != HAL_OK) {
             goto http_error_2;
         }
         USB_DEBUG_MESSAGE("[DEBUG AT] HTTP READ отправлен", DEBUG_GSM, DEBUG_LEVL_4);

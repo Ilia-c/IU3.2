@@ -1,20 +1,3 @@
-/**
- ******************************************************************************
- * @file           : main.c
- * @brief          : Main program body
- ******************************************************************************
- * @attention
- *
- * 
- * 
- * BY PROGRAMMERA
- * VERSION Ver0.45
- * 
- * 
- *
- ******************************************************************************
- */
-
 #include "main.h"
 #include "cmsis_os.h"
 #include "fatfs.h"
@@ -835,8 +818,7 @@ void Watch_dog_task(void *argument)
         if ((mode_redact == 0) || (mode_redact == 4)) Screen_saver();
         continue;
       }
-      
-
+      if (mode_redact != 0) continue;
       // Если бездействие больше 5 минут
       ERRCODE.STATUS |= STATUS_IDLE_LOOP_MODE;
       EEPROM.Mode = 1;

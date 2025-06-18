@@ -90,7 +90,7 @@ void NULL_F(){}
     menuItem Id = {Name_rus, Name_en, 0, data_uptade, (menuSelect_item *)&_add_signat, (void *)&Next, (void *)&Previous, (void *)&Parent, (void *)&Child, (void *)&action, (menuSelect_item *)&select_bar, (menuSelect_item_char *)&data_in, (char *)&Data_out}
 
 // Вывод на экран при действии
-const char Clear[2][40] = {"Отчистка памяти",  "Memory clear"};
+const char Clear[2][40] = {"Очистка памяти",  "Memory clear"};
 const char Divece[2][40] = {"устройства",  "device"};
 const char POWER_NOT[2][40] = {"НЕ ОТКЛЮЧАЙТЕ ПИТАНИЕ",  "DO NOT POWER OFF"};
 const char READY[2][40] = {"Готово",  "Ready"};
