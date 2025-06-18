@@ -333,9 +333,9 @@ HAL_StatusTypeDef sendSMS(void)
         return HAL_ERROR;
     }
     
-    if (SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000) != 1){}
-    if (SendCommandAndParse("AT+CGACT=0\r", waitForOKResponse, 60000) != 1){}
-    if (SendCommandAndParse("AT+CGDCONT=1\r", waitForOKResponse, 1000) != 1){}
+    SendCommandAndParse("AT+HTTPTERM\r", waitForOKResponse, 1000);
+    SendCommandAndParse("AT+CGACT=0\r", waitForOKResponse, 60000);
+    SendCommandAndParse("AT+CGDCONT=1\r", waitForOKResponse, 1000);
 
     // Команда для выбора текстового режима
     if (SendCommandAndParse("AT+CMGF=1\r", waitForOKResponse, 1000) != HAL_OK)
