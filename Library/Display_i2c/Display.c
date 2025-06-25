@@ -454,30 +454,31 @@ menuSelect_item NO_SIGNED = {
 
 MAKE_MENU(Menu_1, "Режимы", "Modes", 0, UPTADE_OFF, NO_SIGNED, Menu_2, PREVISION_MENU, PARENT_MENU, Menu_1_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
 	MAKE_MENU(Menu_1_1, "Цикл", "Cycle", 0, UPTADE_OFF, NO_SIGNED, Menu_1_2, PREVISION_MENU, Menu_1, CHILD_MENU, sleep, SELECT_BAR, DATA_IN, DATA_OUT);
-	MAKE_MENU(Menu_1_2, "Диагностика", "Test check", 0, UPTADE_OFF, NO_SIGNED, Menu_1_3, Menu_1_1, Menu_1, Menu_1_2_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-		MAKE_MENU(Menu_1_2_1, "Статус", "Status", 0, UPTADE_OFF, NO_SIGNED, Menu_1_2_2, PREVISION_MENU, Menu_1_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ERRCODE.STATUSCHAR);
-		MAKE_MENU(Menu_1_2_2, "АКБ", "BAT", 0, UPTADE_OFF, Unit_voltage, Menu_1_2_3, Menu_1_2_1, Menu_1_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, IntADC.ADC_AKB_volts_char);
-		MAKE_MENU(Menu_1_2_3, "Связь", "Mobile network", 0, UPTADE_OFF, NO_SIGNED, Menu_1_2_4, Menu_1_2_2, Menu_1_2, Menu_1_2_3_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-			MAKE_MENU(Menu_1_2_3_1, "Тест СМС", "SMS test", 0, UPTADE_OFF, NO_SIGNED, Menu_1_2_3_2, PREVISION_MENU, Menu_1_2_3, CHILD_MENU, GSM_sms_test, SELECT_BAR, DATA_IN, GSM_data.GSM_sms_status);
-			MAKE_MENU(Menu_1_2_3_2, "Тест САЙТ", "SITE test", 0, UPTADE_OFF, NO_SIGNED, Menu_1_2_3_3, Menu_1_2_3_1, Menu_1_2_3, CHILD_MENU, GSM_internet_test, SELECT_BAR, DATA_IN, GSM_data.GSM_site_status);
-			MAKE_MENU(Menu_1_2_3_3, "SIM-карта", "SIM-card", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_3_4, Menu_1_2_3_2, Menu_1_2_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-			MAKE_MENU(Menu_1_2_3_4, "Режим", "Mode", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_3_5, Menu_1_2_3_3, Menu_1_2_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-			MAKE_MENU(Menu_1_2_3_5, "Регистрация", "Logging", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_3_6, Menu_1_2_3_4, Menu_1_2_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-			MAKE_MENU(Menu_1_2_3_6, "Страна", "Country", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_3_7, Menu_1_2_3_5, Menu_1_2_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-			MAKE_MENU(Menu_1_2_3_7, "Оператор", "Mobile operator", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_3_8, Menu_1_2_3_6, Menu_1_2_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-			MAKE_MENU(Menu_1_2_3_8, "Уровень сигн.", "Signal level", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_3_9, Menu_1_2_3_7, Menu_1_2_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-			MAKE_MENU(Menu_1_2_3_9, "Потери", "Signal err", 0, UPTADE_ON, NO_SIGNED, NEXT_MENU, Menu_1_2_3_8, Menu_1_2_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-		MAKE_MENU(Menu_1_2_4, "АЦП", "ADC", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_5, Menu_1_2_3, Menu_1_2, Menu_1_2_4_1, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_status_char);
-			MAKE_MENU(Menu_1_2_4_1, "АЦП", "ADC", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_4_2, PREVISION_MENU, Menu_1_2_4, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_value_char);
-			MAKE_MENU(Menu_1_2_4_2, "Глубина", "Metering", 0, UPTADE_ON, UNITS_MODE_DATA, Menu_1_2_4_3, Menu_1_2_4_1, Menu_1_2_4, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char);
-			MAKE_MENU(Menu_1_2_4_3, "УГВ", "GWL", 0, UPTADE_ON, UNITS_MODE_DATA, Menu_1_2_4_4, Menu_1_2_4_2, Menu_1_2_4, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_correct_char);
-			MAKE_MENU(Menu_1_2_4_4, "Ток датчика", "Current", 0, UPTADE_ON, Unit_current, NEXT_MENU, Menu_1_2_4_3, Menu_1_2_4, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_Current_char);
-		MAKE_MENU(Menu_1_2_5, "EEPROM", "EEPROM", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_6, Menu_1_2_4, Menu_1_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, EEPROM_status_char); 
-		MAKE_MENU(Menu_1_2_6, "FLASH", "FLASH", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_1_2_5, Menu_1_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, FLASH_status_char); 
-	MAKE_MENU(Menu_1_3, "Показания", "Sensor reading", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_1_2, Menu_1, Menu_1_3_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-		MAKE_MENU(Menu_1_3_1, "Глубина", "Metering", 0, UPTADE_ON, UNITS_MODE_DATA, Menu_1_3_2, PREVISION_MENU, Menu_1_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char);
-		MAKE_MENU(Menu_1_3_2, "УГВ", "GWL", 0, UPTADE_ON, UNITS_MODE_DATA, Menu_1_3_3, Menu_1_3_1, Menu_1_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_correct_char);
-		MAKE_MENU(Menu_1_3_3, "Сохранить", "Save", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_1_3_2, Menu_1_3, CHILD_MENU, SAVE_IZM, SELECT_BAR, DATA_IN, DATA_OUT); 
+	MAKE_MENU(Menu_1_2, "Показания", "Sensor reading", 0, UPTADE_OFF, NO_SIGNED, Menu_1_3, Menu_1_1, Menu_1, Menu_1_2_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+		MAKE_MENU(Menu_1_2_1, "Глубина", "Metering", 0, UPTADE_ON, UNITS_MODE_DATA, Menu_1_2_2, PREVISION_MENU, Menu_1_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char);
+		MAKE_MENU(Menu_1_2_2, "УГВ", "GWL", 0, UPTADE_ON, UNITS_MODE_DATA, Menu_1_2_3, Menu_1_2_1, Menu_1_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_correct_char);
+		MAKE_MENU(Menu_1_2_3, "Сохранить", "Save", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_1_2_2, Menu_1_2, CHILD_MENU, SAVE_IZM, SELECT_BAR, DATA_IN, DATA_OUT); 
+    MAKE_MENU(Menu_1_3, "Диагностика", "Test check", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_1_2, Menu_1, Menu_1_3_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT); //! Добавить статус
+		MAKE_MENU(Menu_1_3_1, "Статус", "Status", 0, UPTADE_OFF, NO_SIGNED, Menu_1_3_2, PREVISION_MENU, Menu_1_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ERRCODE.STATUSCHAR);
+        MAKE_MENU(Menu_1_3_2, "Сост.", "State", 0, UPTADE_OFF, NO_SIGNED, Menu_1_3_3, Menu_1_3_1, Menu_1_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT); //! Добавить статус
+		MAKE_MENU(Menu_1_3_3, "АКБ", "BAT", 0, UPTADE_OFF, Unit_voltage, Menu_1_3_4, Menu_1_3_2, Menu_1_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, IntADC.ADC_AKB_volts_char);
+		MAKE_MENU(Menu_1_3_4, "Связь", "Mobile network", 0, UPTADE_OFF, NO_SIGNED, Menu_1_3_5, Menu_1_3_3, Menu_1_3, Menu_1_3_4_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+			MAKE_MENU(Menu_1_3_4_1, "Тест СМС", "SMS test", 0, UPTADE_OFF, NO_SIGNED, Menu_1_3_4_2, PREVISION_MENU, Menu_1_3_4, CHILD_MENU, GSM_sms_test, SELECT_BAR, DATA_IN, GSM_data.GSM_sms_status);
+			MAKE_MENU(Menu_1_3_4_2, "Тест САЙТ", "SITE test", 0, UPTADE_OFF, NO_SIGNED, Menu_1_3_4_3, Menu_1_3_4_1, Menu_1_3_4, CHILD_MENU, GSM_internet_test, SELECT_BAR, DATA_IN, GSM_data.GSM_site_status);
+			MAKE_MENU(Menu_1_3_4_3, "SIM-карта", "SIM-card", 0, UPTADE_ON, NO_SIGNED, Menu_1_3_4_4, Menu_1_3_4_2, Menu_1_3_4, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+			MAKE_MENU(Menu_1_3_4_4, "Режим", "Mode", 0, UPTADE_ON, NO_SIGNED, Menu_1_3_4_5, Menu_1_3_4_3, Menu_1_3_4, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+			MAKE_MENU(Menu_1_3_4_5, "Регистрация", "Logging", 0, UPTADE_ON, NO_SIGNED, Menu_1_3_4_6, Menu_1_3_4_4, Menu_1_3_4, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+			MAKE_MENU(Menu_1_3_4_6, "Страна", "Country", 0, UPTADE_ON, NO_SIGNED, Menu_1_3_4_7, Menu_1_3_4_5, Menu_1_3_4, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+			MAKE_MENU(Menu_1_3_4_7, "Оператор", "Mobile operator", 0, UPTADE_ON, NO_SIGNED, Menu_1_3_4_8, Menu_1_3_4_6, Menu_1_3_4, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+			MAKE_MENU(Menu_1_3_4_8, "Уровень сигн.", "Signal level", 0, UPTADE_ON, NO_SIGNED, Menu_1_3_4_9, Menu_1_3_4_7, Menu_1_3_4, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+			MAKE_MENU(Menu_1_3_4_9, "Потери", "Signal err", 0, UPTADE_ON, NO_SIGNED, NEXT_MENU, Menu_1_3_4_8, Menu_1_3_4, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
+		MAKE_MENU(Menu_1_3_5, "АЦП", "ADC", 0, UPTADE_ON, NO_SIGNED, Menu_1_3_6, Menu_1_3_4, Menu_1_3, Menu_1_3_5_1, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_status_char);
+			MAKE_MENU(Menu_1_3_5_1, "АЦП", "ADC", 0, UPTADE_ON, NO_SIGNED, Menu_1_3_5_2, PREVISION_MENU, Menu_1_3_5, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_value_char);
+			MAKE_MENU(Menu_1_3_5_2, "Глубина", "Metering", 0, UPTADE_ON, UNITS_MODE_DATA, Menu_1_3_5_3, Menu_1_3_5_1, Menu_1_3_5, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char);
+			MAKE_MENU(Menu_1_3_5_3, "УГВ", "GWL", 0, UPTADE_ON, UNITS_MODE_DATA, Menu_1_3_5_4, Menu_1_3_5_2, Menu_1_3_5, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_correct_char);
+			MAKE_MENU(Menu_1_3_5_4, "Ток датчика", "Current", 0, UPTADE_ON, Unit_current, NEXT_MENU, Menu_1_3_5_3, Menu_1_3_5, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_Current_char);
+		MAKE_MENU(Menu_1_3_6, "EEPROM", "EEPROM", 0, UPTADE_ON, NO_SIGNED, Menu_1_3_7, Menu_1_3_5, Menu_1_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, EEPROM_status_char); 
+		MAKE_MENU(Menu_1_3_7, "FLASH", "FLASH", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_1_3_6, Menu_1_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, FLASH_status_char); 
 MAKE_MENU(Menu_2, "Настройки", "Settings", 0, UPTADE_OFF, NO_SIGNED, Menu_3, Menu_1, PARENT_MENU, Menu_2_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
 	MAKE_MENU(Menu_2_1, "Выгрузка на USB", "USB write", 0, UPTADE_OFF, NO_SIGNED, Menu_2_2, PREVISION_MENU, Menu_2, CHILD_MENU, SAVE_USB, SELECT_BAR, DATA_IN, DATA_OUT); 
     MAKE_MENU(Menu_2_2, "Синхронизация", "Sin", 0, UPTADE_OFF, NO_SIGNED, Menu_2_3, Menu_2_1, Menu_2, CHILD_MENU, GSM_HTTP_SYNC, SELECT_BAR, DATA_IN, GSM_data.GSM_site_read_status);
@@ -521,32 +522,32 @@ MAKE_MENU(Menu_4, "Инструкция", "Instruction", 0, UPTADE_OFF, NO_SIGNED, NEXT_ME
 void Add_units(void)
 {
     // Теперь присваиваем указатели на строки, полученные из GSM_data
-    Menu_1_3_1.add_signat   = &UNITS_MODE_DATA;       // Вкладка связь
-    Menu_1_3_2.add_signat = &UNITS_MODE_DATA;
-    Menu_1_2_4_2.add_signat = &UNITS_MODE_DATA;
-    Menu_1_2_4_3.add_signat = &UNITS_MODE_DATA;
+    Menu_1_2_1.add_signat   = &UNITS_MODE_DATA;       // Вкладка связь
+    Menu_1_2_2.add_signat = &UNITS_MODE_DATA;
+    Menu_1_3_5_2.add_signat = &UNITS_MODE_DATA;
+    Menu_1_3_5_3.add_signat = &UNITS_MODE_DATA;
 }
 
 void Remove_units(void)
 {
     // Теперь присваиваем указатели на строки, полученные из GSM_data
-    Menu_1_3_1.add_signat   = &NO_SIGNED;       // Вкладка связь
-    Menu_1_3_2.add_signat = &NO_SIGNED;
-    Menu_1_2_4_2.add_signat = &NO_SIGNED;
-    Menu_1_2_4_3.add_signat = &NO_SIGNED;
+    Menu_1_2_1.add_signat   = &NO_SIGNED;       // Вкладка связь
+    Menu_1_2_2.add_signat = &NO_SIGNED;
+    Menu_1_3_5_2.add_signat = &NO_SIGNED;
+    Menu_1_3_5_3.add_signat = &NO_SIGNED;
 }
 
 void InitMenus(void)
 {
     // Теперь присваиваем указатели на строки, полученные из GSM_data
-    Menu_1_2_3.data_out   = GSM_data.GSM_status_char;       // Вкладка связь
-    Menu_1_2_3_3.data_out = GSM_data.GSM_SIMCARD_char;
-    Menu_1_2_3_4.data_out = GSM_data.Modem_mode;
-    Menu_1_2_3_5.data_out = GSM_data.GSM_status_reg_char;
-    Menu_1_2_3_6.data_out = GSM_data.GSM_region_char;
-    Menu_1_2_3_7.data_out = GSM_data.GSM_operator_char;
-    Menu_1_2_3_8.data_out = GSM_data.GSM_signal_lvl_char;
-    Menu_1_2_3_9.data_out = GSM_data.GSM_err_lvl_char;
+    Menu_1_3_4.data_out   = GSM_data.GSM_status_char;       // Вкладка связь
+    Menu_1_3_4_3.data_out = GSM_data.GSM_SIMCARD_char;
+    Menu_1_3_4_4.data_out = GSM_data.Modem_mode;
+    Menu_1_3_4_5.data_out = GSM_data.GSM_status_reg_char;
+    Menu_1_3_4_6.data_out = GSM_data.GSM_region_char;
+    Menu_1_3_4_7.data_out = GSM_data.GSM_operator_char;
+    Menu_1_3_4_8.data_out = GSM_data.GSM_signal_lvl_char;
+    Menu_1_3_4_9.data_out = GSM_data.GSM_err_lvl_char;
 }
 
 ////////////////////////////////////////////////////
@@ -657,7 +658,6 @@ void flash_test(){
     OLED_DrawCenteredString(Divece, 20);
     OLED_DrawCenteredString(POWER_NOT, Y + 20);
     OLED_UpdateScreen();
-
     W25_Chip_Erase();
 
     OLED_Clear(0);
@@ -667,6 +667,13 @@ void flash_test(){
     OLED_UpdateScreen();
 
     uint32_t errors = W25_Chip_test();
+    OLED_Clear(0);
+    OLED_DrawCenteredString(Clear, 10);
+    OLED_DrawCenteredString(Divece, 20);
+    OLED_DrawCenteredString(POWER_NOT, Y + 20);
+    OLED_UpdateScreen();
+    W25_Chip_Erase();
+
     if (errors == 0xFFFFFFFF){
         OLED_Clear(0);
         OLED_DrawCenteredString("Ошибка при проверке", Y+10);
@@ -987,7 +994,6 @@ void sleep(){
     if (YES_OR_NO(CYCLE) == 0){ mode_redact = 0; return;}
 
     // Запрос настроек с сайта
-
     EEPROM.Mode = 1;
     EEPROM_SaveSettings(&EEPROM);
     if (EEPROM_CheckDataValidity() != HAL_OK){
@@ -1022,10 +1028,10 @@ void Reset_settings(){
     EEPROM.MAX_LVL = DEFAULT_MAX_LVL;                     // Максимальный уровень (например, 15 метров) ВПИ
     EEPROM.ZERO_LVL = DEFAULT_ZERO_LVL;                   // Нулевое значение (например, 0 метров) НПИ
     EEPROM.Mode = DEFAULT_MODE;                           // Текущий режим работы
-    EEPROM.Communication = GSM_MODE;         // Включен GSM или нет
+    EEPROM.Communication = GSM_MODE;                      // Включен GSM или нет
     EEPROM.RS485_prot = DEFAULT_RS485_PROT;               // Протокол RS-485
     EEPROM.units_mes = DEFAULT_UNITS_MES;                 // Единицы измерения (по умолчанию метры)
-    EEPROM.USB_mode = DEFAULT_USB_MODE;                   // Режим работы USB
+    //EEPROM.USB_mode = DEFAULT_USB_MODE;                   // Режим работы USB
     EEPROM.len = DEFAULT_LEN;                             // Язык меню
     EEPROM.mode_ADC = DEFAULT_MODE_ADC;                   // Режим работы АЦП, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
     EEPROM_SaveSettings(&EEPROM);

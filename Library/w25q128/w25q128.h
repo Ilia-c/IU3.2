@@ -34,7 +34,7 @@ extern uint32_t g_total_records_count;
 #define RECORDS_PER_SECTOR  (SECTOR_SIZE / RECORD_SIZE)
 
 // Полный размер флеш
-#define FLASH_SIZE         (16 * 1024 * 1024) // 16 МБ
+#define FLASH_SIZE_W25         (16 * 1024 * 1024) // 16 МБ
 #define FLASH_TOTAL_SIZE    ((15 * 1024 * 1024) + 512*1024) // 15 МБ + 512 КБ с учетом на USB
 #define TOTAL_SECTORS       (FLASH_TOTAL_SIZE / SECTOR_SIZE)
 #define TOTAL_RECORDS       (TOTAL_SECTORS * RECORDS_PER_SECTOR)
@@ -44,6 +44,10 @@ extern uint32_t g_total_records_count;
 
 // Макросы для "меток"
 #define EMPTY  0xFF  // обозначение "пусто / стёрто"
+
+#define SMS_SEND_MARK  0x0A  // обозначение "пусто / стёрто"
+#define HTTP_SEND_MARK  0x00  // обозначение "пусто / стёрто"
+
 #define WRITE_START 0xF0  //  Запись в сектор начата
 #define SET    0x00  // обозначение "установлено / занято"
 

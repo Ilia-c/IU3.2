@@ -205,25 +205,25 @@ typedef enum {
   ////////////////////////////////////////////////////////////////////////////////
   //     Описание структуры GSM_STATUS
   ////////////////////////////////////////////////////////////////////////////////
-#define GSM_RDY (1UL << 0)              // Модуль включился
-#define SIM_PRESENT (1UL << 1)          // SIM-карта установлена
-#define NETWORK_REGISTERED (1UL << 2)   // Устройство зарегистрировано в сети
-#define SIGNAL_PRESENT (1UL << 3)       // Сигнал сети присутствует
-#define OPERATOR_IDENTIFIED (1UL << 4)  // Оператор сети опознан
-#define SMS_SENT_SUCCESS (1UL << 5)     // Отправка SMS успешна
-#define DATA_REQUEST_SUCCESS (1UL << 6) // Запрос данных выполнен успешно
-#define OPERATION_SEND_COMPLETED (1UL << 7)  // Операция успешно отправлена !!!
-#define RESPONSE_RECEIVED (1UL << 8)    // Получен ответ на команду
-#define GPRS_CONNECTED (1UL << 9)       // GPRS соединение установлено
-#define GPRS_DISCONNECTED (1UL << 10)    // GPRS соединение разорвано
-#define HTTP_SEND (1UL << 11)    // отправить http запрос
-#define HTTP_READ (1UL << 12)    // отправить http запрос (чтение данных)
-#define SMS_SEND (1UL << 13)    // ОТПРАВИТЬ SMS
-#define HTTP_SEND_Successfully  (1UL << 14)    //  http запрос успешен
-#define HTTP_READ_Successfully (1UL << 15)    // http запрос (чтение данных) успешен
-#define SMS_SEND_Successfully (1UL << 16)    //  SMS успешено отправлено
+#define GSM_RDY (1UL << 0)                        // Модуль включился
+#define SIM_PRESENT (1UL << 1)                    // SIM-карта установлена
+#define NETWORK_REGISTERED (1UL << 2)             // Устройство зарегистрировано в сети
+#define SIGNAL_PRESENT (1UL << 3)                 // Сигнал сети присутствует
+#define OPERATOR_IDENTIFIED (1UL << 4)            // Оператор сети опознан
+#define SMS_SENT_SUCCESS (1UL << 5)               // Отправка SMS успешна
+#define DATA_REQUEST_SUCCESS (1UL << 6)           // Запрос данных выполнен успешно
+#define OPERATION_SEND_COMPLETED (1UL << 7)       // Операция успешно отправлена
+#define RESPONSE_RECEIVED (1UL << 8)              // Получен ответ на команду
+#define GPRS_CONNECTED (1UL << 9)                 // GPRS соединение установлено
+#define GPRS_DISCONNECTED (1UL << 10)             // GPRS соединение разорвано
+#define HTTP_SEND (1UL << 11)                     // отправить http запрос
+#define HTTP_READ (1UL << 12)                     // отправить http запрос (чтение данных)
+#define SMS_SEND (1UL << 13)                      // ОТПРАВИТЬ SMS
+#define HTTP_SEND_Successfully  (1UL << 14)       //  http запрос успешен
+#define HTTP_READ_Successfully (1UL << 15)        // http запрос (чтение данных) успешен
+#define SMS_SEND_Successfully (1UL << 16)         //  SMS успешено отправлено
 #define NETWORK_REGISTERED_SET_HTTP (1UL << 17)   // Устройство зарегистрировано в сети для регистрации HTTP при включении
-#define DATA_READ (1UL << 18) // Сброс активного состояния
+#define DATA_READ (1UL << 18)                     // Сброс активного состояния
 
   typedef struct GSM_STATUS_item
   {
@@ -279,7 +279,9 @@ extern uint8_t RS485_prot;
 extern uint8_t units_mes;
 extern uint8_t screen_sever_mode;
 extern uint8_t USB_mode;
-
+extern uint8_t USB_TERMINAL_STATUS;
+#define TERMINAL_DISABLE 0
+#define TERMINAL_CONNECTED 1
 
 extern char password[MAX_PASSWPRD_LEN];
 ////////////////////////////////////////////////////////////////////////////////

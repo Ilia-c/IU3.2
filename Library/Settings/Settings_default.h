@@ -9,7 +9,7 @@
 #define BOARD_VERSION Version3_75                // Под какую версию собирать проект
 
 // Значения по умолчанию для EEPROM
-#define DEFAULT_VERSION_PROGRAMM       "Ver0.78R"    // Версия программы
+#define DEFAULT_VERSION_PROGRAMM       "Ver0.80"    // Версия программы
 #define EEPROM_FORMAT_VERSION           0x00000010U //? Версия формата данных EEPROM
 
 #define DEFAULT_VERSION_PCB            "3.75-A000{" // Версия печатной платы

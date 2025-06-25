@@ -322,7 +322,7 @@ uint32_t W25_Chip_test()
     uint8_t sector[RECORD_SIZE] = {0};
     PROGRESS_BAR(0);
     OLED_UpdateScreen();
-    for (uint16_t sec = 0; sec < FLASH_SIZE/SECTOR_SIZE; sec++)
+    for (uint16_t sec = 0; sec < FLASH_SIZE_W25/SECTOR_SIZE; sec++)
     {
         uint32_t sector_addr = sec * SECTOR_SIZE;
         for (uint32_t addr = sector_addr; addr < sector_addr + SECTOR_SIZE; addr += RECORD_SIZE)
@@ -341,7 +341,7 @@ uint32_t W25_Chip_test()
                 }
             }
         }
-        uint8_t p = (uint8_t)(sec * 50 / (FLASH_SIZE / SECTOR_SIZE));
+        uint8_t p = (uint8_t)(sec * 50 / (FLASH_SIZE_W25 / SECTOR_SIZE));
         if (p >= step + 5)
         {
             step = p - (p % 5);
@@ -359,7 +359,7 @@ uint32_t W25_Chip_test()
         return Counter_addr_error; // Ошибка
     }
     step = 0;
-    for (uint16_t sec = 0; sec < FLASH_SIZE/SECTOR_SIZE; sec++)
+    for (uint16_t sec = 0; sec < FLASH_SIZE_W25/SECTOR_SIZE; sec++)
     {
         uint32_t sector_addr = sec * SECTOR_SIZE;
         for (uint32_t addr = sector_addr; addr < sector_addr + SECTOR_SIZE; addr += RECORD_SIZE)
@@ -388,7 +388,7 @@ uint32_t W25_Chip_test()
                 }
             }
         }
-        uint8_t p = (uint8_t)(sec * 50 / (FLASH_SIZE / SECTOR_SIZE));
+        uint8_t p = (uint8_t)(sec * 50 / (FLASH_SIZE_W25 / SECTOR_SIZE));
         if (p >= step + 5)
         {
             step = p - (p % 5);
@@ -482,8 +482,9 @@ int flash_append_record(const char *record_data, uint8_t sector_mark_send_flag)
     new_rec.Sector_mark_send  = EMPTY; // [1]
     new_rec.rec_status_start  = SET;   // [2] => 0x00
     new_rec.rec_status_end    = EMPTY; // [3] => 0xFF
-    if (sector_mark_send_flag) new_rec.Sector_mark_send = SET; // 0x00
-    else  new_rec.block_mark_send   = EMPTY; // [4] => 0xFF
+    if (GSM_data.Status & HTTP_SEND_Successfully) new_rec.Sector_mark_send = HTTP_SEND_MARK; // HTTP успешен
+    if (GSM_data.Status & SMS_SEND_Successfully)  new_rec.block_mark_send   = SMS_SEND_MARK; // СМС ушла
+    else new_rec.block_mark_send   = EMPTY;
     new_rec.length            = (uint8_t)len; // [5]
     new_rec.CRC32_calc        = 0; // [6-10] Инициализируем CRC
     memset(new_rec.data, 0x00, sizeof(new_rec.data));
@@ -798,18 +799,19 @@ int backup_records_to_external(void)
                 {
                     strcpy(&rec.data[realLen - 1], ";NO_SEND\n");
                 }
-                else
+                if (rec.block_mark_send == SMS_SEND_MARK)
                 {
-                    // Проверка CRC32
-                    uint32_t word_count = (rec.length + 3) / 4;
-                    uint32_t *p = (uint32_t *)rec.data;
-                    uint32_t CRC32_clac = HAL_CRC_Calculate(&hcrc, p, word_count);
-                    if (rec.length == 0)
-                        CRC32_clac = 0xFFFFFFFF;
-                    if (CRC32_clac != rec.CRC32_calc)
-                    {
-                        strcpy(&rec.data[realLen - 1], ";CRC_ERR\n");
-                    }
+                    strcpy(&rec.data[realLen - 1], ";SMS\n");
+                }
+                // Проверка CRC32
+                uint32_t word_count = (rec.length + 3) / 4;
+                uint32_t *p = (uint32_t *)rec.data;
+                uint32_t CRC32_clac = HAL_CRC_Calculate(&hcrc, p, word_count);
+                if (rec.length == 0)
+                    CRC32_clac = 0xFFFFFFFF;
+                if (CRC32_clac != rec.CRC32_calc)
+                {
+                    strcpy(&rec.data[realLen - 1], ";CRC\n");
                 }
             }
 

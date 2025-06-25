@@ -282,16 +282,7 @@ void MX_ADC1_Init(void)
  
  void MX_TIM7_Init(void)
  {
- 
-   /* USER CODE BEGIN TIM7_Init 0 */
- 
-   /* USER CODE END TIM7_Init 0 */
- 
    TIM_MasterConfigTypeDef sMasterConfig = {0};
- 
-   /* USER CODE BEGIN TIM7_Init 1 */
- 
-   /* USER CODE END TIM7_Init 1 */
    htim7.Instance = TIM7;
    htim7.Init.Prescaler = 40-1;
    htim7.Init.CounterMode = TIM_COUNTERMODE_UP;

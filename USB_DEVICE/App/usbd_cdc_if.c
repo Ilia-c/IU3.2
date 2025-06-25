@@ -20,113 +20,21 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_cdc_if.h"
+#define CDC_CTRL_DTR  (1<<0)    // 0x01
+#define CDC_CTRL_RTS  (1<<1)    // 0x02
 
-/* USER CODE BEGIN INCLUDE */
-
-/* USER CODE END INCLUDE */
-
-/* Private typedef -----------------------------------------------------------*/
-/* Private define ------------------------------------------------------------*/
-/* Private macro -------------------------------------------------------------*/
-
-/* USER CODE BEGIN PV */
-/* Private variables ---------------------------------------------------------*/
-
-/* USER CODE END PV */
-
-/** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
-  * @brief Usb device library.
-  * @{
-  */
-
-/** @addtogroup USBD_CDC_IF
-  * @{
-  */
-
-/** @defgroup USBD_CDC_IF_Private_TypesDefinitions USBD_CDC_IF_Private_TypesDefinitions
-  * @brief Private types.
-  * @{
-  */
-
-/* USER CODE BEGIN PRIVATE_TYPES */
-
-/* USER CODE END PRIVATE_TYPES */
-
-/**
-  * @}
-  */
-
-/** @defgroup USBD_CDC_IF_Private_Defines USBD_CDC_IF_Private_Defines
-  * @brief Private defines.
-  * @{
-  */
-
-/* USER CODE BEGIN PRIVATE_DEFINES */
-/* USER CODE END PRIVATE_DEFINES */
-
-/**
-  * @}
-  */
-
-/** @defgroup USBD_CDC_IF_Private_Macros USBD_CDC_IF_Private_Macros
-  * @brief Private macros.
-  * @{
-  */
-
-/* USER CODE BEGIN PRIVATE_MACRO */
-
-/* USER CODE END PRIVATE_MACRO */
-
-/**
-  * @}
-  */
-
-/** @defgroup USBD_CDC_IF_Private_Variables USBD_CDC_IF_Private_Variables
-  * @brief Private variables.
-  * @{
-  */
-/* Create buffer for reception and transmission           */
-/* It's up to user to redefine and/or remove those define */
-/** Received data over USB are stored in this buffer      */
 uint8_t UserRxBufferFS[APP_RX_DATA_SIZE]  __attribute__((section(".ram2")));
-
-/** Data to send over USB CDC are stored in this buffer   */
 uint8_t UserTxBufferFS[APP_TX_DATA_SIZE]  __attribute__((section(".ram2")));
-
-/* USER CODE BEGIN PRIVATE_VARIABLES */
-
-/* USER CODE END PRIVATE_VARIABLES */
-
-/**
-  * @}
-  */
-
-/** @defgroup USBD_CDC_IF_Exported_Variables USBD_CDC_IF_Exported_Variables
-  * @brief Public variables.
-  * @{
-  */
 
 extern USBD_HandleTypeDef hUsbDeviceFS;
 
-/* USER CODE BEGIN EXPORTED_VARIABLES */
-
-/* USER CODE END EXPORTED_VARIABLES */
-
-/**
-  * @}
-  */
-
-/** @defgroup USBD_CDC_IF_Private_FunctionPrototypes USBD_CDC_IF_Private_FunctionPrototypes
-  * @brief Private functions declaration.
-  * @{
-  */
 
 static int8_t CDC_Init_FS(void);
 static int8_t CDC_DeInit_FS(void);
 static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length);
 static int8_t CDC_Receive_FS(uint8_t* pbuf, uint32_t *Len);
 static int8_t CDC_TransmitCplt_FS(uint8_t *pbuf, uint32_t *Len, uint8_t epnum);
-
+volatile uint8_t is_terminal_connected = 0;
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_DECLARATION */
 
 /* USER CODE END PRIVATE_FUNCTIONS_DECLARATION */
@@ -177,7 +85,6 @@ static int8_t CDC_DeInit_FS(void)
   * @param  length: Number of data to be sent (in bytes)
   * @retval Result of the operation: USBD_OK if all operations are OK else USBD_FAIL
   */
-volatile uint8_t is_terminal_connected = 0;
 static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 {
   /* USER CODE BEGIN 5 */
@@ -229,18 +136,20 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
     break;
 
     case CDC_SET_CONTROL_LINE_STATE:
-      uint8_t dtr = pbuf[0] & 0x01;     // Состояние DTR
-      if (dtr != is_terminal_connected) // Проверяем изменение состояния
+      uint8_t mask = pbuf[0] & (CDC_CTRL_DTR | CDC_CTRL_RTS);
+      uint8_t dtr = (mask & CDC_CTRL_DTR) != 0;
+      uint8_t rts = (mask & CDC_CTRL_RTS) != 0;
+      uint8_t new_open = dtr;
+      if (new_open != is_terminal_connected) // Проверяем изменение состояния
       {
-        is_terminal_connected = dtr;
-
-        if (dtr)
+        is_terminal_connected = new_open;
+        if (is_terminal_connected)
         {
+          USB_TERMINAL_STATUS = TERMINAL_CONNECTED; 
           CDC_Transmit_FS((uint8_t *)"Terminal connected\r\n", 21);
         }
         else
         {
-          // Опционально: обработка отключения терминала
           CDC_Transmit_FS((uint8_t *)"Terminal disconnected\r\n", 24);
         }
       }

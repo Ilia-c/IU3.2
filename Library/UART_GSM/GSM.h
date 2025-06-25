@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "Settings.h"
+//#include "USB_COMPORT.h"
 
 
 #define RX_TIMEOUT_MS   300
@@ -19,5 +20,6 @@ void GSM_Init(void);
 void Update_Data(void);
 int determineRegionAndOperator(void);
 void SendSomeCommandAndSetFlag(void);
-static void GSM_TimerCallback(TimerHandle_t xTimer);
+void GSM_TimerCallback(TimerHandle_t xTimer);
 void USB_DEBUG_MESSAGE(const char message[], uint8_t category, uint8_t debugLVL);
+void USB_TransmitWithTimeout(uint8_t *buf, uint16_t len);

@@ -178,6 +178,7 @@ void SetTimerPeriod(uint32_t period_ms);
 void Watch_dog_task(void *argument);
 void MX_DMA_Init(void);
 void USB_DEBUG_MESSAGE(const char message[], uint8_t category, uint8_t debugLVL);
+void CRC_Init(void);
 
 unsigned int id = 0x00;
 extern RTC_HandleTypeDef hrtc;
@@ -405,21 +406,18 @@ int main(void)
 // ВАЖНО! Сбрасывает DATA_READ при DEBUG_GSM
 void USB_DEBUG_MESSAGE(const char message[], uint8_t category, uint8_t debugLVL)
 {
-  if (EEPROM.USB_mode != USB_DEBUG) return;
-  if (hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED) return;
-    if ((EEPROM.DEBUG_CATEG & category) && (EEPROM.DEBUG_LEVL >= debugLVL))
-    {
-        /*while (GSM_data.Status & DATA_READ){
-          if (category == DEBUG_GSM) 
-            break;//GSM_data.Status &= ~DATA_READ;
-          osDelay(200);
-        } // Ждём освобождения данных;*/
-        size_t len = strlen(message);
-        while (CDC_Transmit_FS((uint8_t*)"---", 3) == USBD_BUSY){}
-        while (CDC_Transmit_FS((uint8_t *)message, len) == USBD_BUSY){}
-        while (CDC_Transmit_FS((uint8_t*)"\r\n", 2) == USBD_BUSY){}
-    }
+    if (EEPROM.USB_mode != USB_DEBUG)                return;
+    if (hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED) return;
+    if ((EEPROM.DEBUG_CATEG & category) == 0)        return;
+    if (EEPROM.DEBUG_LEVL   < debugLVL)              return;
+    if (USB_TERMINAL_STATUS == TERMINAL_DISABLE)     return;
+
+    size_t len = strlen(message);
+    while (CDC_Transmit_FS((uint8_t *)"---",  3) == USBD_BUSY);
+    while (CDC_Transmit_FS((uint8_t *)message, len) == USBD_BUSY);
+    while ( CDC_Transmit_FS((uint8_t *)"\r\n", 2) == USBD_BUSY);
 }
+
 
 
 
@@ -582,6 +580,14 @@ void Main_Cycle(void *argument)
           status = HAL_OK;
           break;
         }
+        if (GSM_data.Status & STATUS_UART_NO_RESPONSE)
+        {
+          USB_DEBUG_MESSAGE("[DEBUG AT] Модуля связи нету", DEBUG_GSM, DEBUG_LEVL_2);
+          HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
+          osThreadSuspend(UART_PARSER_taskHandle);
+          status = HAL_ERROR;
+          GSM_data.Status = 0;
+        }
         // Если прошло больше 22.5 секунд и сим карта не вставлена - перпезапускаем модуль
         if ((i == 45) && (!(GSM_data.Status & SIM_PRESENT)))
         {
@@ -626,6 +632,7 @@ void Main_Cycle(void *argument)
         USB_DEBUG_MESSAGE("[DEBUG AT] Все попытки зарегистрироваться неуспешны - выключаем связь", DEBUG_GSM, DEBUG_LEVL_2);
         HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
         osThreadSuspend(UART_PARSER_taskHandle);
+        GSM_data.Status = 0;
       }
 
       // Если регистрация есть
@@ -639,6 +646,7 @@ void Main_Cycle(void *argument)
           if (GSM_data.Status & HTTP_SEND_Successfully)
           {
             status = HAL_OK;
+
             break;
           }
           if (ERRCODE.STATUS & STATUS_HTTP_SERVER_COMM_ERROR)
@@ -894,7 +902,7 @@ void Erroe_indicate(void *argument)
     //flash_append_record(save_data, 0);
     //osDelay(1);
     //continue;
-  
+    
     Diagnostics();
     BlinkLED(GPIOC, GPIO_PIN_13, 1, 2000, 2000, 0);
     // Ошибка инициализации EEPROM
@@ -1011,10 +1019,9 @@ void UART_PARSER_task(void *argument)
       }
       else
       {
-        USB_DEBUG_MESSAGE("[ERROR AT] Модуль связи не отвечает, сброс готовности миодуля", DEBUG_GSM, DEBUG_LEVL_1);
-        ERRCODE.STATUS |= STATUS_UART_NO_RESPONSE;
+        USB_DEBUG_MESSAGE("[ERROR AT] Модуль связи не отвечает, ждем", DEBUG_GSM, DEBUG_LEVL_1);
       }
-      if (delay_AT_OK > 15){
+      if (delay_AT_OK > 2){
         USB_DEBUG_MESSAGE("[ERROR AT] Таймаут 30с превышен, модуль связи не найден", DEBUG_GSM, DEBUG_LEVL_1);
         ERRCODE.STATUS |= STATUS_UART_NO_RESPONSE;
       }

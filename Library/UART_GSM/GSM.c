@@ -39,7 +39,7 @@ void GSM_Init(void)
 }
 
 /* Колбэк таймера: вызывается, если в течение RX_TIMEOUT_MS не получено новых символов */
-static void GSM_TimerCallback(TimerHandle_t xTimer)
+void GSM_TimerCallback(TimerHandle_t xTimer)
 {
     if (activeIndex > 0)
     {
@@ -52,16 +52,16 @@ static void GSM_TimerCallback(TimerHandle_t xTimer)
         parseBuffer = temp;
 
         
-        if (EEPROM.USB_mode == USB_DEBUG)
+        while (EEPROM.USB_mode == USB_DEBUG)
         {
-            if (hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED) return;
+            if (hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED) break;
+            if (USB_TERMINAL_STATUS == TERMINAL_DISABLE) break;
             if (EEPROM.DEBUG_Mode == USB_SNIFFING)
             {
-                if (EEPROM.DEBUG_CATEG & AT_COMMANDS)
-                while (CDC_Transmit_FS((uint8_t *)parseBuffer, activeIndex) == USBD_BUSY){}
+                if (EEPROM.DEBUG_CATEG & AT_COMMANDS) while (CDC_Transmit_FS((uint8_t *)parseBuffer, activeIndex) == USBD_BUSY);
             }
-            if (EEPROM.DEBUG_Mode == USB_AT_DEBUG)
-                while (CDC_Transmit_FS((uint8_t *)parseBuffer, activeIndex) == USBD_BUSY){}
+            if (EEPROM.DEBUG_Mode == USB_AT_DEBUG) while (CDC_Transmit_FS((uint8_t *)parseBuffer, activeIndex) == USBD_BUSY);
+            break;
         }
                 
         /* Сигнализируем задаче парсера о готовности данных */
@@ -74,6 +74,7 @@ static void GSM_TimerCallback(TimerHandle_t xTimer)
     activeIndex = 0;
     memset(activeBuffer, 0, CMD_BUFFER_SIZE);
 }
+
 
 
 /* Колбэк, вызываемый по завершении приёма одного байта по UART4 */
