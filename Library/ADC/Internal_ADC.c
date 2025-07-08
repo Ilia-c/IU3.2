@@ -23,27 +23,22 @@ static int cmp_uint16(const void *p1, const void *p2)
 float TruncatedMeanVoltage()
 {
     float discard_ratio = 0.1f; // Отбросить 10% крайних значений
-    if (discard_ratio < 0.0f || discard_ratio >= 0.5f)
-        return 0.0f;
 
     // 1) Скопировать буфер
     uint16_t tmp[ADC_BUFFER_LEN];
     memcpy(tmp, adc_buffer, ADC_BUFFER_LEN * sizeof(uint16_t));
     qsort(tmp, ADC_BUFFER_LEN, sizeof(uint16_t), cmp_uint16);
 
-    // 3) Вычислить индексы отброса
     size_t d     = (size_t)(discard_ratio * ADC_BUFFER_LEN);
     size_t start = d;
     size_t end   = ADC_BUFFER_LEN - d;
 
-    // 4) Усреднить оставшиеся
     uint32_t sum = 0;
     for (size_t i = start; i < end; ++i) {
         sum += tmp[i];
     }
     float avg_counts = (float)sum / (float)(end - start);
 
-    // 5) Перевести в напряжение
     return (avg_counts * 3.3f) / 1024.0f;
 }
 
@@ -73,7 +68,7 @@ void ADC_Voltage_Calculate(void)
     IntADC.MK_VBAT = Convert_Voltage(adc1_buffer[1]);
     if (IntADC.MK_VBAT<2.5f) ERRCODE.STATUS |= STATUS_VBAT_LOW;
     else ERRCODE.STATUS &= ~STATUS_VBAT_LOW;
-
+    
     IntADC.ADC_AKB_volts = TruncatedMeanVoltage();
     IntADC.ADC_AKB_volts *= *IntADC.Colibrate_koeff;
     

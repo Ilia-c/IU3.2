@@ -52,6 +52,9 @@ void Diagnostics()
     else
         ERRCODE.STATUS &= ~STATUS_ADC_EXTERNAL_INIT_ERROR;
 
+    if (ERRCODE.STATUS & CRITICAL_ERRORS_MASK) strcpy(ERRCODE.Diagnostics_char, "ERROR");
+    else strcpy(ERRCODE.Diagnostics_char, "OK");
+
     base62_encode(ERRCODE.STATUS, ERRCODE.STATUSCHAR, sizeof(ERRCODE.STATUSCHAR));
     strcpy(ADC_data.ADC_status_char, (ERRCODE.STATUS & STATUS_ADC_ERRORS) ? "ERROR" : "OK");
     strcpy(EEPROM_status_char,   (ERRCODE.STATUS & STATUS_EEPROM_ERRORS) ? "ERROR" : "OK");

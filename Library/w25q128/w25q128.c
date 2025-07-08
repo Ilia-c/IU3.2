@@ -475,15 +475,13 @@ int flash_append_record(const char *record_data, uint8_t sector_mark_send_flag)
         len = RECORD_SIZE - 6;
     }
     
-    // Сформируем структуру
     record_t new_rec;
-    // По вашей логике:
     new_rec.Sector_mark       = WRITE_START; // [0] 0xF0 
     new_rec.Sector_mark_send  = EMPTY; // [1]
     new_rec.rec_status_start  = SET;   // [2] => 0x00
     new_rec.rec_status_end    = EMPTY; // [3] => 0xFF
     if (GSM_data.Status & HTTP_SEND_Successfully) new_rec.Sector_mark_send = HTTP_SEND_MARK; // HTTP успешен
-    if (GSM_data.Status & SMS_SEND_Successfully)  new_rec.block_mark_send   = SMS_SEND_MARK; // СМС ушла
+    else if (GSM_data.Status & SMS_SEND_Successfully)  new_rec.block_mark_send   = SMS_SEND_MARK; // СМС ушла
     else new_rec.block_mark_send   = EMPTY;
     new_rec.length            = (uint8_t)len; // [5]
     new_rec.CRC32_calc        = 0; // [6-10] Инициализируем CRC

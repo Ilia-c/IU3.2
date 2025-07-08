@@ -54,9 +54,11 @@ extern USBD_HandleTypeDef hUsbDeviceFS;
 
 I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c2;
+I2C_HandleTypeDef hi2c3;
 SPI_HandleTypeDef hspi2;
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart4;
+UART_HandleTypeDef huart5;
 
 
 TIM_HandleTypeDef htim5;
@@ -76,6 +78,7 @@ void MX_ADC2_Init(void);        //
 void MX_ADC1_Init(void);        // 
 void MX_I2C1_Init(void);        // 
 void MX_I2C2_Init(void);        // 
+void MX_I2C3_Init(void);        // 
 void MX_SPI2_Init(void);        // АЦП+FLASH
 //static void MX_UART1_Init(void);     // RS-485
 void MX_UART4_Init(void);       // GSM
@@ -214,7 +217,11 @@ int main(void)
   MX_ADC2_Init();
 
   MX_I2C1_Init();
-  MX_I2C2_Init();
+  #if BOARD_VERSION == Version3_80
+     MX_I2C3_Init();
+  #elif BOARD_VERSION == Version3_75
+     MX_I2C2_Init();
+  #endif
   MX_SPI2_Init();
   MX_UART4_Init();
   MX_TIM5_Init();
@@ -224,6 +231,7 @@ int main(void)
 
 
   InitMenus();
+  
   // Начальные состояния переферии - ВСЕ ОТКЛЮЧЕНО
   HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, 1);
   HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ADC_Pin, 1);
@@ -233,14 +241,18 @@ int main(void)
   HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 0);
   HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
   HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 0);
+  #if BOARD_VERSION == Version3_75 
   HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);
+  #endif
   
   HAL_Delay(10);
 
   // ЗАПУСКАЕТСЯ ВСЕГДА 
   HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);             // Общее питание 5В
   HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);         // Общее питание 3.3В (АЦП, темп., и т.д.)
+  #if BOARD_VERSION == Version3_75 
   HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);           // Включение Памяти на плате
+  #endif
   HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 1);         // Включение 
 
   HAL_Delay(20);
@@ -291,6 +303,7 @@ int main(void)
       }
     }
   }
+  State_update();
   HAL_PWR_EnableBkUpAccess();
   EEPROM_LoadLastTimeWork(); // Загружаем последнее время работы
   HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_RESET_PROG, 0);
@@ -338,18 +351,16 @@ int main(void)
     HAL_IWDG_Refresh(&hiwdg);
     HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 1); // Включаем экран
     HAL_Delay(300);
-    OLED_Init(&hi2c2);
+    OLED_Init(&i2cDisplay);
     HAL_Delay(150);
 
     if (EEPROM.screen_sever_mode == 1) Start_video();
-
     HAL_GPIO_WritePin(COL_B1_GPIO_Port, COL_B1_Pin, 1);
     HAL_GPIO_WritePin(COL_B2_GPIO_Port, COL_B2_Pin, 1);
     HAL_GPIO_WritePin(COL_B3_GPIO_Port, COL_B3_Pin, 1);
     HAL_GPIO_WritePin(COL_B4_GPIO_Port, COL_B4_Pin, 1);
     
-    // Таймер ухода в сон (либо заставки)
-
+    // Таймер ухода в сон (либо заставки)+
     // Настройка таймера клавиатуры
     HAL_NVIC_SetPriority(TIM6_DAC_IRQn, 8, 0); // Установите приоритет
     HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);        // Включите прерывание
@@ -397,10 +408,7 @@ int main(void)
     osThreadSuspend(UART_PARSER_taskHandle);
   }
   osKernelStart();
-  while (1)
-  {
-  }
-
+  while (1){}
 }
 
 // ВАЖНО! Сбрасывает DATA_READ при DEBUG_GSM
@@ -560,7 +568,9 @@ void Main_Cycle(void *argument)
     //suspend = 0xFF;
     osThreadSuspend(ADC_readHandle);
     HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
+    #if BOARD_VERSION == Version3_75 
     HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);
+    #endif
     HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);
     HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);
     HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);
@@ -692,7 +702,9 @@ void Main_Cycle(void *argument)
     osThreadSuspend(RS485_dataHandle);
     osThreadSuspend(UART_PARSER_taskHandle);
     HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
-    HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);
+    #if BOARD_VERSION == Version3_75 
+    HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1); 
+    #endif
     HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);
     osDelay(50);
 
@@ -726,7 +738,9 @@ void Main_Cycle(void *argument)
     HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 0);
     HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
     HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 0);
+    #if BOARD_VERSION == Version3_75 
     HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);
+    #endif
     osDelay(10);
     USB_DEBUG_MESSAGE("[INFO] Переход в сон", DEBUG_OTHER, DEBUG_LEVL_3);
     Enter_StandbyMode(EEPROM.time_sleep_h, EEPROM.time_sleep_m);

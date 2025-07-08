@@ -458,7 +458,7 @@ MAKE_MENU(Menu_1, "Режимы", "Modes", 0, UPTADE_OFF, NO_SIGNED, Menu_2, PREVISION
 		MAKE_MENU(Menu_1_2_1, "Глубина", "Metering", 0, UPTADE_ON, UNITS_MODE_DATA, Menu_1_2_2, PREVISION_MENU, Menu_1_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char);
 		MAKE_MENU(Menu_1_2_2, "УГВ", "GWL", 0, UPTADE_ON, UNITS_MODE_DATA, Menu_1_2_3, Menu_1_2_1, Menu_1_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_correct_char);
 		MAKE_MENU(Menu_1_2_3, "Сохранить", "Save", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_1_2_2, Menu_1_2, CHILD_MENU, SAVE_IZM, SELECT_BAR, DATA_IN, DATA_OUT); 
-    MAKE_MENU(Menu_1_3, "Диагностика", "Test check", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_1_2, Menu_1, Menu_1_3_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT); //! Добавить статус
+    MAKE_MENU(Menu_1_3, "Диагностика", "Test check", 0, UPTADE_ON, NO_SIGNED, NEXT_MENU, Menu_1_2, Menu_1, Menu_1_3_1, ACTION_MENU, SELECT_BAR, DATA_IN, ERRCODE.Diagnostics_char); //! Добавить статус
 		MAKE_MENU(Menu_1_3_1, "Статус", "Status", 0, UPTADE_OFF, NO_SIGNED, Menu_1_3_2, PREVISION_MENU, Menu_1_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ERRCODE.STATUSCHAR);
         MAKE_MENU(Menu_1_3_2, "Сост.", "State", 0, UPTADE_OFF, NO_SIGNED, Menu_1_3_3, Menu_1_3_1, Menu_1_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT); //! Добавить статус
 		MAKE_MENU(Menu_1_3_3, "АКБ", "BAT", 0, UPTADE_OFF, Unit_voltage, Menu_1_3_4, Menu_1_3_2, Menu_1_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, IntADC.ADC_AKB_volts_char);
@@ -530,7 +530,7 @@ void Add_units(void)
 
 void Remove_units(void)
 {
-    // Теперь присваиваем указатели на строки, полученные из GSM_data
+    // Присваиваем указатели на строки, полученные из GSM_data
     Menu_1_2_1.add_signat   = &NO_SIGNED;       // Вкладка связь
     Menu_1_2_2.add_signat = &NO_SIGNED;
     Menu_1_3_5_2.add_signat = &NO_SIGNED;
@@ -539,7 +539,7 @@ void Remove_units(void)
 
 void InitMenus(void)
 {
-    // Теперь присваиваем указатели на строки, полученные из GSM_data
+    // Обновление данных
     Menu_1_3_4.data_out   = GSM_data.GSM_status_char;       // Вкладка связь
     Menu_1_3_4_3.data_out = GSM_data.GSM_SIMCARD_char;
     Menu_1_3_4_4.data_out = GSM_data.Modem_mode;
@@ -548,6 +548,23 @@ void InitMenus(void)
     Menu_1_3_4_7.data_out = GSM_data.GSM_operator_char;
     Menu_1_3_4_8.data_out = GSM_data.GSM_signal_lvl_char;
     Menu_1_3_4_9.data_out = GSM_data.GSM_err_lvl_char;
+
+}
+
+void State_update(){
+    uint64_t state = 0;
+    state =  (uint64_t)(EEPROM.Mode & 0x0F) << 4*0;
+    state |= (uint64_t)(EEPROM.Communication & 0x0F) << 4*1;
+    state |= (uint64_t)(EEPROM.RS485_prot & 0x0F) << 4*2;
+    state |= (uint64_t)(EEPROM.units_mes & 0x0F) << 4*3;
+    state |= (uint64_t)(EEPROM.screen_sever_mode & 0x0F) << 4*4;
+    state |= (uint64_t)(EEPROM.USB_mode & 0x0F) << 4*5;
+    state |= (uint64_t)(EEPROM.Save_in & 0x0F) << 4*6;
+    state |= (uint64_t)(EEPROM.len & 0x0F) << 4*7;
+    state |= (uint64_t)(EEPROM.mode_ADC & 0x0F) << 4*8;
+    state |= (uint64_t)(EEPROM.block & 0x0F) << 4*9;
+    base62_encode(state, ERRCODE.STATE_CAHAR, sizeof(ERRCODE.STATE_CAHAR));
+    Menu_1_3_2.data_out = ERRCODE.STATE_CAHAR;        // Текущее состояние (режимы и т.д.)
 }
 
 ////////////////////////////////////////////////////
@@ -1719,6 +1736,7 @@ void redact_end()
     TIM6->SR &= ~TIM_SR_UIF;
     mode_redact = 0;
     led_cursor = 1; 
+    State_update();
     EEPROM_SaveSettings(&EEPROM);
     if (EEPROM_CheckDataValidity() != HAL_OK){
         ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;

@@ -7,10 +7,6 @@
 // Функция обновления GSM (пример)
 // Используется для обновления и преобразования значений GSM
 ////////////////////////////////////////////////////////////////////////////////
-void Nuss(void)
-{
-    // Здесь можно добавить код обновления или преобразования значений GSM
-}
 
 
 char save_data[CMD_BUFFER_SIZE] __attribute__((section(".ram2"))); // Переменная в которой собирается набор данных для сохранения и передачи на сайт
@@ -28,7 +24,6 @@ EEPROM_Settings_item EEPROM = {
     .DEBUG_CATEG = DEBUG_NONE,
     .DEBUG_LEVL = DEBUG_LEVL_1,
     .DEBUG_Mode = USB_SNIFFING,
-
 
     // Вводимые данные:
     .time_sleep_h = DEFAULT_TIME_SLEEP_H,        // Время сна устройства (часы)
@@ -66,7 +61,9 @@ EEPROM_Settings_item EEPROM = {
 ////////////////////////////////////////////////////////////////////////////////
 ERRCODE_item ERRCODE = {
     .STATUS = 0x00,    // Глобальный статус (каждый бит - состояние блока)
-    .STATUSCHAR = '\0' // Глобальный статус в виде строки
+    .STATUSCHAR = '\0', // Глобальный статус в виде строки
+    .STATE_CAHAR = '\0',
+    .Diagnostics_char = "ND"
 };
 ////////////////////////////////////////////////////////////////////////////////
 // Глобальная структура для данных АЦП
@@ -178,7 +175,6 @@ const uint16_t Timer_key_press = 400;                      // Время ожидания до 
 const uint16_t Timer_key_press_fast = 120;                 // Время быстрого нажатия клавиши
 // #define MAX_PASSWPRD_LEN 10
 char password[MAX_PASSWPRD_LEN] = "UO";
-
 
 // Буфер для приёма данных по USB
 uint8_t g_myRxBuffer[MY_USB_RX_BUFFER_SIZE]  __attribute__((section(".ram2"))); // Максимальное количество байт для сбора данных по USB

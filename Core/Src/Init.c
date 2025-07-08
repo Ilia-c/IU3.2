@@ -3,9 +3,11 @@
 
 extern I2C_HandleTypeDef hi2c1;
 extern I2C_HandleTypeDef hi2c2;
+extern I2C_HandleTypeDef hi2c3;
 extern SPI_HandleTypeDef hspi2;
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart4;
+extern UART_HandleTypeDef huart5;
 
 extern ADC_HandleTypeDef hadc2;
 extern ADC_HandleTypeDef hadc1;
@@ -125,17 +127,13 @@ void MX_ADC2_Init(void)
   {
     Error_Handler();
   }
+  
+  #if BOARD_VERSION == Version3_80
+    sConfig.Channel = ADC_CHANNEL_9;
+  #elif BOARD_VERSION == Version3_75
+    sConfig.Channel = ADC_CHANNEL_1;
+  #endif
 
-  /** Configure the ADC multi-mode
-  */
- /*
-  multimode.Mode = ADC_MODE_INDEPENDENT;
-  if (HAL_ADCEx_MultiModeConfigChannel(&hadc2, &multimode) != HAL_OK)
-  {
-    Error_Handler();
-  }
-    * */
-  sConfig.Channel = ADC_CHANNEL_1;
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SamplingTime = ADC_SAMPLETIME_247CYCLES_5;
   sConfig.SingleDiff = ADC_SINGLE_ENDED;
@@ -391,6 +389,7 @@ void CRC_Init(void) {
   * @param None
   * @retval None
   */
+ #if BOARD_VERSION == Version3_75 
  void MX_I2C2_Init(void)
  {
    hi2c2.Instance = I2C2;
@@ -415,8 +414,33 @@ void CRC_Init(void) {
      Error_Handler();
    }
  }
- 
- 
+ #endif
+  #if BOARD_VERSION == Version3_80 
+ void MX_I2C3_Init(void)
+ {
+   hi2c3.Instance = I2C3;
+   hi2c3.Init.Timing = 0x4021060F;//0x00F12981;
+   hi2c3.Init.OwnAddress1 = 0;
+   hi2c3.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+   hi2c3.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+   hi2c3.Init.OwnAddress2 = 0;
+   hi2c3.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+   hi2c3.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+   hi2c3.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+   if (HAL_I2C_Init(&hi2c3) != HAL_OK)
+   {
+     Error_Handler();
+   }
+   if (HAL_I2CEx_ConfigAnalogFilter(&hi2c3, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
+   {
+     Error_Handler();
+   }
+   if (HAL_I2CEx_ConfigDigitalFilter(&hi2c3, 2) != HAL_OK)
+   {
+     Error_Handler();
+   }
+ }
+ #endif
  
  /**
    * @brief SPI2 Initialization Function
@@ -457,10 +481,7 @@ void CRC_Init(void) {
    /* USER CODE END SPI2_Init 2 */
  
  }
- 
- 
- 
- 
+
  void MX_UART4_Init(void)
  {
    huart4.Instance = UART4;

@@ -134,6 +134,7 @@ void colibrate_24v();
 void Update_programm();
 void Reset_time_work();
 static void DrawBack(uint8_t px, menuItem *m);
+void State_update();
 
 typedef void (*TopBarDrawFunc)(int *px, menuItem *m);
 typedef struct {

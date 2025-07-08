@@ -2,14 +2,20 @@
 #define SETTINGS_DEFAULT_H
 
 // Компиляция
-#define Debug_mode 1                                // Включен или выключен режим отладки
+#define Debug_mode 0                                // Включен или выключен режим отладки
 
-#define Version3_75 1                            // Версия 3.75
-#define Version3_79 2                            // Версия 3.79
-#define BOARD_VERSION Version3_75                // Под какую версию собирать проект
+#define Version3_75 0xFAEE                       // Версия 3.75
+#define Version3_80 0x0EA3                       // Версия 3.79
+#define BOARD_VERSION Version3_80                // Под какую версию собирать проект
+
+#if BOARD_VERSION == Version3_80 
+    #define i2cDisplay hi2c3
+#elif BOARD_VERSION == Version3_75
+    #define i2cDisplay hi2c2
+#endif
 
 // Значения по умолчанию для EEPROM
-#define DEFAULT_VERSION_PROGRAMM       "Ver0.80"    // Версия программы
+#define DEFAULT_VERSION_PROGRAMM       "Ver0.82"    // Версия программы
 #define EEPROM_FORMAT_VERSION           0x00000010U //? Версия формата данных EEPROM
 
 #define DEFAULT_VERSION_PCB            "3.75-A000{" // Версия печатной платы
