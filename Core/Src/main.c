@@ -203,13 +203,13 @@ int main(void)
   RTC_read();
   MX_GPIO_Init();
 
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(RESERVED_GPIO_Port, RESERVED_Pin, GPIO_PIN_SET);
   HAL_Delay(100);
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(RESERVED_GPIO_Port, RESERVED_Pin, GPIO_PIN_RESET);
   HAL_Delay(100);
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(RESERVED_GPIO_Port, RESERVED_Pin, GPIO_PIN_SET);
   HAL_Delay(100);
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(RESERVED_GPIO_Port, RESERVED_Pin, GPIO_PIN_RESET);
   HAL_Delay(100);
 
   MX_DMA_Init();
@@ -370,7 +370,7 @@ int main(void)
   }
 
   if (EEPROM.USB_mode == USB_DEBUG){
-    MX_USB_DEVICE_Init_COMPORT(); // Режим работы в VirtualComPort
+    MX_USB_DEVICE_Init_COMPORT();            // Режим работы в VirtualComPort
     HAL_NVIC_SetPriority(OTG_FS_IRQn, 6, 0); // Приоритет прерывания
     HAL_NVIC_EnableIRQ(OTG_FS_IRQn);         // Включение прерывания
   }
@@ -425,10 +425,6 @@ void USB_DEBUG_MESSAGE(const char message[], uint8_t category, uint8_t debugLVL)
     while (CDC_Transmit_FS((uint8_t *)message, len) == USBD_BUSY);
     while ( CDC_Transmit_FS((uint8_t *)"\r\n", 2) == USBD_BUSY);
 }
-
-
-
-
 
 
 void SetTimerPeriod(uint32_t period_ms)
@@ -821,8 +817,9 @@ void Watch_dog_task(void *argument)
   {
     if ((xTaskGetTickCount() - startTick_counter) > timeoutTicks){
       startTick_counter = xTaskGetTickCount(); // Сброс таймера
-      PowerUP_counter();
+      PowerUP_counter(); // Учет времени работы
     }
+    
     HAL_IWDG_Refresh(&hiwdg);
     osDelay(1000);
     if (xSemaphoreTake(SLEEP_semaphore, 10) == pdTRUE)

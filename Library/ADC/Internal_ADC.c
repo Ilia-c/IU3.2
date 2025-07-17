@@ -56,11 +56,6 @@ void ADC_Start(void)
 }
 
 
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
-{
-    if (hadc->Instance == ADC1) { 
-    }
-}
 
 void ADC_Voltage_Calculate(void)
 {

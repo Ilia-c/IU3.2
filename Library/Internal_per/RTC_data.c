@@ -240,6 +240,7 @@ HAL_StatusTypeDef EEPROM_LoadLastTimeWork(void)
 }
 
 /*
+ * Учет времени работы
  * PowerUP_counter:
  * 1) Инициализируем Backup-регистр BKP_REG_TIME_INIT значением BKP_MAGIC, если он не инициализирован.
  * 2) Считываем текущее абсолютное время (в секундах) через RTC.

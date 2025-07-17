@@ -42,10 +42,15 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
   {
     __HAL_RCC_ADC_CLK_ENABLE();
     __HAL_RCC_GPIOC_CLK_ENABLE();
-    GPIO_InitStruct.Pin = GPIO_PIN_0;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG_ADC_CONTROL;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+    #if BOARD_VERSION == Version3_80
+      GPIO_InitStruct.Pin = GPIO_PIN_4;
+      HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    #elif BOARD_VERSION == Version3_75
+      GPIO_InitStruct.Pin = GPIO_PIN_0;
+      HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+    #endif
 
     hdma_adc2.Instance = DMA1_Channel2;
     hdma_adc2.Init.Request = DMA_REQUEST_0;

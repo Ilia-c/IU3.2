@@ -1011,7 +1011,7 @@ void sleep(){
     if (YES_OR_NO(CYCLE) == 0){ mode_redact = 0; return;}
 
     // Запрос настроек с сайта
-    EEPROM.Mode = 1;
+    //EEPROM.Mode = 1;
     EEPROM_SaveSettings(&EEPROM);
     if (EEPROM_CheckDataValidity() != HAL_OK){
         ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
