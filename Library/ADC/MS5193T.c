@@ -230,7 +230,7 @@ void calculate_ADC_data_heigh(int32_t adValue) {
         if (EEPROM.Mode == 0) Add_units();
     }
     snprintf(ADC_data.ADC_Volts_char, sizeof(ADC_data.ADC_Volts_char), "%4.2f", ADC_data.ADC_Volts);
-    snprintf(ADC_data.ADC_Current_char, sizeof(ADC_data.ADC_Current_char), "%4.1f", ADC_Current_new);
+    snprintf(ADC_data.ADC_Current_char, sizeof(ADC_data.ADC_Current_char), "%4.3f", ADC_Current_new);
 }
 
 
