@@ -26,11 +26,6 @@
 #include "USB_FATFS_SAVE.h"
 #include "stm32l4xx_hal_crc.h"
 
-
-
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
-
 extern char Keyboard_press_code;
 extern uint16_t time_update_display;
 
@@ -48,7 +43,6 @@ extern const uint16_t Timer_key_one_press;
 extern const uint16_t Timer_key_press_fast;
 
 extern uint8_t gsmRxChar;
-extern EEPROM_Settings_item EEPROM;
 extern ERRCODE_item ERRCODE;
 extern USBD_HandleTypeDef hUsbDeviceFS; 
 
@@ -82,6 +76,7 @@ void MX_I2C3_Init(void);        //
 void MX_SPI2_Init(void);        // АЦП+FLASH
 //static void MX_UART1_Init(void);     // RS-485
 void MX_UART4_Init(void);       // GSM
+void MX_UART5_Init(void);
 void MX_TIM5_Init(void);
 void MX_TIM6_Init(void);
 void MX_IWDG_Init(void);
@@ -107,14 +102,14 @@ const osThreadAttr_t Main_Cycle_task_attributes = {
 osThreadId_t Display_I2CHandle;
 const osThreadAttr_t Display_I2C_attributes = {
     .name = "Display_I2C",
-    .stack_size = 1024 * 5,
+    .stack_size = 1024 * 7,
     .priority = (osPriority_t)osPriorityHigh,
 };
 /* Definitions for ADC_read */
 osThreadId_t ADC_readHandle;
 const osThreadAttr_t ADC_read_attributes = {
     .name = "ADC_read",
-    .stack_size = 1024 * 3,
+    .stack_size = 1024 * 4,
     .priority = (osPriority_t)osPriorityLow3,
 };
 /* Definitions for RS485_data */
@@ -219,6 +214,8 @@ int main(void)
   MX_I2C1_Init();
   #if BOARD_VERSION == Version3_80
      MX_I2C3_Init();
+     MX_UART5_Init();
+     RS485_StartReceive_IT();
   #elif BOARD_VERSION == Version3_75
      MX_I2C2_Init();
   #endif
@@ -235,7 +232,14 @@ int main(void)
   // Начальные состояния переферии - ВСЕ ОТКЛЮЧЕНО
   HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, 1);
   HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ADC_Pin, 1);
-  HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
+  #if BOARD_VERSION == Version3_80
+    HAL_GPIO_WritePin(ON_OWEN_1_GPIO_Port, ON_OWEN_1_Pin, 0);
+    HAL_GPIO_WritePin(ON_OWEN_2_GPIO_Port, ON_OWEN_2_Pin, 0);
+    HAL_GPIO_WritePin(ON_OWEN_3_GPIO_Port, ON_OWEN_3_Pin, 0);
+  #elif BOARD_VERSION == Version3_75
+     HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
+  #endif
+
   HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);     // Не включаем RS по умолчанию
   HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 0);
   HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 0);
@@ -251,9 +255,13 @@ int main(void)
   HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);             // Общее питание 5В
   HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);         // Общее питание 3.3В (АЦП, темп., и т.д.)
   #if BOARD_VERSION == Version3_75 
-  HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);           // Включение Памяти на плате
+    HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);           // Включение Памяти на плате
+    HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 1);
+  #elif BOARD_VERSION == Version3_80
+    HAL_GPIO_WritePin(ON_OWEN_1_GPIO_Port, ON_OWEN_1_Pin, 1);
+    HAL_GPIO_WritePin(ON_OWEN_2_GPIO_Port, ON_OWEN_2_Pin, 1);
+    HAL_GPIO_WritePin(ON_OWEN_3_GPIO_Port, ON_OWEN_3_Pin, 1);
   #endif
-  HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 1);         // Включение 
 
   HAL_Delay(20);
   //EEPROM_SaveSettings(&EEPROM); // Сохраняем настройки EEPROM в первый раз
@@ -540,17 +548,14 @@ void Main_Cycle(void *argument)
 
     // Получаем показания датчиков
     // !!! Переписать этот ужас
-    uint8_t status_ADC = 0;
     if (!(ERRCODE.STATUS & STATUS_ADC_EXTERNAL_INIT_ERROR))
     {
       osThreadResume(ADC_readHandle);
       osDelay(1000);
-      status_ADC = 0;
       if (xSemaphoreTake(ADC_conv_end_semaphore, pdMS_TO_TICKS(10000)) != pdFALSE)
       {
-        if ((ADC_data.ADC_SI_value_char[0] != 'N') && (ADC_data.ADC_MS5193T_temp_char[0] != 'N'))
+        if ((ADC_data.ADC_SI_value_char[0][0] != 'N'))
         {
-          status_ADC = 1;
         }
         else{
           ERRCODE.STATUS |= STATUS_ADC_TIMEOUT_CYCLE_ERROR;
@@ -563,10 +568,16 @@ void Main_Cycle(void *argument)
 
     //suspend = 0xFF;
     osThreadSuspend(ADC_readHandle);
-    HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
+    
     #if BOARD_VERSION == Version3_75 
-    HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);
+      HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
+      HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);
+    #elif BOARD_VERSION == Version3_80
+      HAL_GPIO_WritePin(ON_OWEN_1_GPIO_Port, ON_OWEN_1_Pin, 0);
+      HAL_GPIO_WritePin(ON_OWEN_2_GPIO_Port, ON_OWEN_2_Pin, 0);
+      HAL_GPIO_WritePin(ON_OWEN_3_GPIO_Port, ON_OWEN_3_Pin, 0);
     #endif
+
     HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0);
     HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 1);
     HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 1);
@@ -728,14 +739,18 @@ void Main_Cycle(void *argument)
 
     HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, 1);
     HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ADC_Pin, 1);
-    HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
     HAL_GPIO_WritePin(ON_RS_GPIO_Port, ON_RS_Pin, 0); // Не включаем RS по умолчанию
     HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 0);
     HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 0);
     HAL_GPIO_WritePin(EN_3P8V_GPIO_Port, EN_3P8V_Pin, 0);
     HAL_GPIO_WritePin(ON_DISP_GPIO_Port, ON_DISP_Pin, 0);
     #if BOARD_VERSION == Version3_75 
+    HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
     HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 0);
+    #elif BOARD_VERSION == Version3_80
+    HAL_GPIO_WritePin(ON_OWEN_1_GPIO_Port, ON_OWEN_1_Pin, 0);
+    HAL_GPIO_WritePin(ON_OWEN_2_GPIO_Port, ON_OWEN_2_Pin, 0);
+    HAL_GPIO_WritePin(ON_OWEN_3_GPIO_Port, ON_OWEN_3_Pin, 0);
     #endif
     osDelay(10);
     USB_DEBUG_MESSAGE("[INFO] Переход в сон", DEBUG_OTHER, DEBUG_LEVL_3);
@@ -772,13 +787,21 @@ void ADC_read(void *argument)
 
 void RS485_data(void *argument)
 {
-  UNUSED(argument);
-  for (;;)
-  {
-    osDelay(3000);
-    ADC_Voltage_Calculate(); // Измерение напряжения на АКБ
-    if (EEPROM.Mode == 1) osThreadSuspend(RS485_dataHandle); // Остановить, если циклический режим (для однократного выполнения)
-  }
+    UNUSED(argument);
+    RS485_StartReceive_IT();
+    
+    for (;;)
+    {
+        osDelay(3000);
+        ADC_Voltage_Calculate();
+        
+        uint8_t msg[] = "Hello RS-485";
+        RS485_Transmit_IT(msg, sizeof(msg)-1);
+        
+        if (EEPROM.Mode == 1) {
+            osThreadSuspend(RS485_dataHandle);
+        }
+    }
 }
 
 

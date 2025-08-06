@@ -33,7 +33,7 @@
 #include "Display.h"
 #include "stm32l4xx_ll_usb.h"
 
-extern EEPROM_Settings_item EEPROM;
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 

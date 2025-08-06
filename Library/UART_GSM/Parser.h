@@ -11,7 +11,7 @@
 // Внешние переменные и объекты
 extern UART_HandleTypeDef huart4;
 extern xSemaphoreHandle UART_PARSER_semaphore;
-extern EEPROM_Settings_item EEPROM;
+
 extern char *parseBuffer;
 extern GSM_STATUS_item GSM_data;
 

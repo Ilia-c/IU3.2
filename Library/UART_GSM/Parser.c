@@ -618,7 +618,7 @@ HAL_StatusTypeDef parse_site_response(void) {
     // ѕровер€ем, совпадает ли полученный номер устройства с ожидаемым
 
     char Version[20] = {0};
-    strncpy(Version, EEPROM.version.VERSION_PCB, sizeof(Version)-1);
+    strncpy(Version, Main_data.version.VERSION_PCB, sizeof(Version)-1);
     remove_braces_inplace(Version);
 
     if (strcmp(devNum, Version) != 0) {
@@ -636,8 +636,8 @@ HAL_StatusTypeDef parse_site_response(void) {
         EEPROM.time_sleep_h = (uint16_t)sleepTime;
         EEPROM.time_sleep_m = 0;
     }
-    EEPROM.GVL_correct = correct;
-    EEPROM.MAX_LVL = maxLvl;
+    EEPROM.GVL_correct[0] = correct; 
+    EEPROM.MAX_LVL[0] = maxLvl;
     //  опируем номер телефона, гарантиру€ наличие завершающего нул€
     strncpy(EEPROM.Phone, phone, sizeof(EEPROM.Phone) - 1);
     EEPROM.Phone[sizeof(EEPROM.Phone) - 1] = '\0';

@@ -93,7 +93,7 @@ void MX_GPIO_Init(void)
 
 #elif BOARD_VERSION == Version3_80
 
- void MX_GPIO_Init(void)
+void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 /* USER CODE BEGIN MX_GPIO_Init_1 */
@@ -107,26 +107,27 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, RESERVED_Pin|COL_B4_Pin|SPI2_CS_ADC_Pin|EN_3P8V_Pin
-                          |EN_3P3V_Pin|EN_5V_Pin|ON_RS_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, RESERVED_Pin|COL_B4_Pin|ON_OWEN_1_Pin|ON_OWEN_2_Pin
+                          |ON_OWEN_3_Pin|EN_3P3V_Pin|ON_RS_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, UART4_WU_Pin|ON_OWEN_Pin|ON_DISP_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, UART4_WU_Pin|EN_5V_Pin|ON_DISP_Pin|EN_3P8V_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, COL_B3_Pin|COL_B2_Pin|COL_B1_Pin|SPI2_CS_ROM_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, COL_B3_Pin|COL_B2_Pin|COL_B1_Pin|SPI2_CS_ADC_Pin
+                          |SPI2_CS_ROM_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : RESERVED_Pin COL_B4_Pin SPI2_CS_ADC_Pin EN_3P8V_Pin
-                           EN_3P3V_Pin EN_5V_Pin ON_RS_Pin */
-  GPIO_InitStruct.Pin = RESERVED_Pin|COL_B4_Pin|SPI2_CS_ADC_Pin|EN_3P8V_Pin
-                          |EN_3P3V_Pin|EN_5V_Pin|ON_RS_Pin;
+  /*Configure GPIO pins : RESERVED_Pin COL_B4_Pin ON_OWEN_1_Pin ON_OWEN_2_Pin
+                           ON_OWEN_3_Pin EN_3P3V_Pin ON_RS_Pin */
+  GPIO_InitStruct.Pin = RESERVED_Pin|COL_B4_Pin|ON_OWEN_1_Pin|ON_OWEN_2_Pin
+                          |ON_OWEN_3_Pin|EN_3P3V_Pin|ON_RS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : UART4_WU_Pin ON_OWEN_Pin ON_DISP_Pin */
-  GPIO_InitStruct.Pin = UART4_WU_Pin|ON_OWEN_Pin|ON_DISP_Pin;
+  /*Configure GPIO pins : UART4_WU_Pin EN_5V_Pin ON_DISP_Pin EN_3P8V_Pin */
+  GPIO_InitStruct.Pin = UART4_WU_Pin|EN_5V_Pin|ON_DISP_Pin|EN_3P8V_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -151,15 +152,18 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : UART5_DD_Pin */
-  GPIO_InitStruct.Pin = UART5_DD_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  /*Configure GPIO pin : SPI2_CS_ADC_Pin */
+  GPIO_InitStruct.Pin = SPI2_CS_ADC_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(UART5_DD_GPIO_Port, &GPIO_InitStruct);
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  HAL_GPIO_Init(SPI2_CS_ADC_GPIO_Port, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
 }
+
+
 
 #else
   #error "Неверная BOARD_VERSION"

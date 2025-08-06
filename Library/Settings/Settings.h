@@ -93,15 +93,22 @@ typedef enum {
     char password[10];
   } Prgramm_version_item;
 
+
+  typedef struct Main_data_settings
+  {
+    Prgramm_version_item version; // Текущая версия устройства
+    double k_koeff[3];            // Коэффициэнт наклона линейной зависисимости. (По 2 точкам, 20мА и 4мА)
+    double Colibrate_koeff;       // Колибровочный коэффициэнт АКБ
+    uint32_t crc32;              // CRC32 для проверки целостности
+  } Main_data_settings_item;
+extern Main_data_settings_item Main_data;
+
   // Структура сохраняемая в EEPROM
   typedef struct EEPROM_Settings
   {
-    Prgramm_version_item version; // Текущая версия устройства
-    char last_error_code[4];      // Последний код ошибки
     uint8_t DEBUG_CATEG;        // Категории для отладки
     uint8_t DEBUG_LEVL;         // Активный уровень отладки
     uint8_t DEBUG_Mode;         // Режим отладки - работа с GSM или прослушивание
-
     /*-----------------*/
     // Вводимые данные //
     /*-----------------*/
@@ -109,18 +116,11 @@ typedef enum {
     uint16_t time_sleep_m; // Время сна устройства минуты
 
     char Phone[20];      // Номер телефона для отправки смс
-    //  АЦП  //
-    double ADC_ION;     // Напряжение ИОН АЦП
-    float ADC_RESISTOR; // Сопротивление резистора
-    double GVL_correct; // Коррекция нулевой точки (смещение +- от текущего значения) УГВ
-    double GVL_correct_4m;    // Реальные 4мА
-    double GVL_correct_20m;   // Реальные 20мА
-    double k_koeff;     // Коэффициэнт наклона линейной зависисимости. (По 2 точкам, 20мА и 4мА)
-    double MAX_LVL;     // Максимальный уровень (например 15 метров) ВПИ
-    double ZERO_LVL;    // Нулевое значение     (например 0 метров)  НПИ
+
+    double GVL_correct[3]; // Коррекция нулевой точки (смещение +- от текущего значения) УГВ
+    double MAX_LVL[3];     // Максимальный уровень (например 15 метров) ВПИ
+    double ZERO_LVL[3];    // Нулевое значение     (например 0 метров)  НПИ
     // коррекция температуры (смещение) //
-    double Crorrect_TEMP_A; // Смещение датчика аналогового температуры
-    double Colibrate_koeff;
 
     /*-----------------*/
     // select_bar      //
@@ -131,12 +131,13 @@ typedef enum {
     uint8_t units_mes;         // по умолчанию метры, еденицы измерения
     uint8_t screen_sever_mode; // Включить или нет заставку при включении
     uint8_t USB_mode;          // режим работы USB
-    uint8_t Save_in;          // режим работы USB
+    uint8_t Save_in;           // Куда сохранять
     uint8_t len;               // Язык меню
-    uint8_t mode_ADC;          // Режим работы АЦП, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
-    uint8_t block;            // Блокировка устройства
+    uint8_t mode_ADC[3];       // Режим работы АЦП, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
+    uint8_t mode_name_ADC;     // Подпись режима АЦП (Тепература, Глубина и т.д. для 3х каналов)
+    uint8_t block;             // Блокировка устройства
   } EEPROM_Settings_item;
-
+extern EEPROM_Settings_item EEPROM;
   ////////////////////////////////////////////////////////////////////////////////
   //               Описание структуры ERRCODE
   ////////////////////////////////////////////////////////////////////////////////
@@ -153,19 +154,19 @@ typedef enum {
   ////////////////////////////////////////////////////////////////////////////////
   typedef struct ADC_MS5193T
   {
-    char ADC_status_char[10];       // Статус GSM
-    int32_t ADC_value;           // Значение АЦП
-    double ADC_Volts;            // Напряжение на токовом шунте
-    double ADC_Current;          // Ток на токовом шунте
-    double ADC_SI_value;         // Выходное значение без коррекции по уровню
-    double ADC_SI_value_correct; // Выходное значение с корректировкой по уровню
+    char ADC_status_char[10];    // Статус АЦП
     uint8_t Status;              // Статус работы АЦП - 0 - ERR,  1 - WAR, 2 - OK, 3 - выкл
+    // Канал 1
+    double ADC_Volts[3];            // Напряжение на токовом шунте
+    double ADC_Current[3];          // Ток на токовом шунте
+    double ADC_SI_value[3];         // Выходное значение без коррекции по уровню
+    double ADC_SI_value_correct[3]; // Выходное значение с корректировкой по уровню
 
-    double *Temp_correct_A; // Коррекция температуры (смещение)
-    double *ADC_ION;
-    float *ADC_RESISTOR;
-    int32_t PPM;
-    uint8_t *mode; // Режим работы АЦП, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
+    double ADC_ION;
+    float ADC_RESISTOR[3];
+    int32_t PPM[3];
+    uint8_t *mode; // Режим работы АЦП канал 1, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
+
     // Корректировка УГВ
     double *GVL_correct; // Коррекция нулевой точки (смещение +- от текущего значения)
     double *k_koeff;     // Коэффициэнт наклона линейной зависисимости. (По 2 точкам, 20мА и 4мА)
@@ -177,18 +178,14 @@ typedef enum {
     int32_t MAX_LVL_char[2];            // Установка максиального уровня (1 - до запятой | 2 - после запятой)
     int32_t ZERO_LVL_char[2];           // Установка минимального уровня (1 - 0мА/4мА  | 2 - до запятой | 3 - после запятой)
     int32_t GVL_correct_char[2];        // Коррекция нулевой точки (смещение +- от текущего значения) дробная часть
-    int32_t Temp_correct[2];        // Коррекция нулевой точки термометра (смещение +- от текущего значения) дробная часть
 
-    char ADC_value_char[15];            // Значение АЦП в виде строки
-    char ADC_Volts_char[15];            // Напряжение на токовом шунте в виде строки
-    char ADC_Current_char[15];          // Ток на токовом шунте в виде строки
-    char ADC_SI_value_char[15];         // Выходное значение без коррекции в виде строки
-    char ADC_SI_value_correct_char[15]; // Выходное значение с коррекцией в виде строки
+    char ADC_value_char[3][15];            // Значение АЦП на канале 3 в виде строки
+    char ADC_Volts_char[3][15];            // Напряжение на токовом шунте в виде строки
+    char ADC_Current_char[3][15];          // Ток на токовом шунте в виде строки
+    char ADC_SI_value_char[3][15];         // Выходное значение без коррекции в виде строки
+    char ADC_SI_value_correct_char[3][15]; // Выходное значение с коррекцией в виде строки
 
-    double ADC_MS5193T_temp;        // Температура на аналоговом датчике
-    char ADC_MS5193T_temp_char[15]; // Температура на аналоговом датчике в виде строки
-
-    void (*update_value)(void); // Ссылка на функцию обновления (чтение данных с АЦП)
+    uint32_t (*update_value)(void); // Ссылка на функцию обновления (чтение данных с АЦП)
   } ADC_MS5193T_item;
 
   typedef struct Internal_ADC

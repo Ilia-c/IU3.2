@@ -23,6 +23,8 @@ extern "C"
 #include "Internal_ADC.h"
 #include "w25q128.h"
 #include "Settings_default.h"
+#include "qr2xbm.h"
+#include "Hard_fault.h"
 
 extern osThreadId_t  ADC_readHandle;
 extern osThreadId_t  ERROR_INDICATE_taskHandle;
@@ -133,8 +135,11 @@ void GSM_HTTP_SYNC();
 void colibrate_24v();
 void Update_programm();
 void Reset_time_work();
-static void DrawBack(uint8_t px, menuItem *m);
+void DrawBack(uint8_t px, menuItem *m);
 void State_update();
+void QR_status();
+void Add_units(void);
+void Calibrate();
 
 typedef void (*TopBarDrawFunc)(int *px, menuItem *m);
 typedef struct {

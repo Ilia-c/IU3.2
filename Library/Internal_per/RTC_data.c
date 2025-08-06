@@ -263,7 +263,6 @@ HAL_StatusTypeDef PowerUP_counter(void)
 	{
 		HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_TIME, now_secs);
 		HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_TIME_INIT, BKP_MAGIC);
-		sprintf(EEPROM.last_error_code, "ERR");
 		HAL_PWR_DisableBkUpAccess();
 		return HAL_ERROR; // RTC не инициализирован, выходим с ошибкой
 	}

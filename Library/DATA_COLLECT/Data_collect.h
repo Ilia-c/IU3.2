@@ -8,7 +8,7 @@
 #include "usbd_cdc_if.h"
 #include <ctype.h>
 
-extern EEPROM_Settings_item EEPROM;
+
 
 void base62_encode(uint64_t value, char *buffer, size_t bufferSize);
 void SD_write_log(char *string, char *path);

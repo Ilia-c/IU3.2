@@ -13,8 +13,8 @@ extern "C"
 
 #define ADC_3_BUF_LEN   3
 
-extern EEPROM_Settings_item EEPROM;
-extern Internal_ADC_item IntADC;
+
+//extern Internal_ADC_item IntADC;
 extern uint16_t adc1_buffer[ADC_3_BUF_LEN];
 void ADC_Voltage_Calculate(void);
 int Read_ADC_Colibrate_24V(void);

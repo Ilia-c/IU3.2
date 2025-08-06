@@ -18,6 +18,6 @@ void MS5193T_Reset(void);
 void MS5193T_Init(void);
 uint32_t Read_MS5193T_Data(void);
 void calculate_ADC_data_temp(int32_t adValue);
-void calculate_ADC_data_heigh(int32_t adValue);
+void calculate_ADC_data_heigh(int32_t adValue, uint8_t channel);
 
 

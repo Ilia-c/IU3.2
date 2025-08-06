@@ -5,7 +5,7 @@
 extern uint8_t UserRxBufferFS[RX_BUFFER_SIZE];
 extern uint16_t UserRxLength;
 extern UART_HandleTypeDef huart4;
-extern EEPROM_Settings_item EEPROM;
+
 
 void TrimCommand(char *command)
 {

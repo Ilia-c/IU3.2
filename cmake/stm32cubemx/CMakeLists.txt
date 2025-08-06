@@ -27,10 +27,12 @@ target_include_directories(stm32cubemx INTERFACE
     ../../Library/Settings
     ../../Library/Display_i2c/
     ../../Library/Display_i2c/hardware
+    ../../Library/Display_i2c/QR_code
     ../../Library/Keyboard/
     ../../Library/Internal_per
     ../../Library/w25q128
     ../../Library/ADC
+    ../../Library/RS485
     ../../Library/DATA_COLLECT
     ../../Middlewares/ST/STM32_USB_Host_Library/Core/Inc
     ../../Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Inc
@@ -48,6 +50,7 @@ target_include_directories(stm32cubemx INTERFACE
     ../../Library/Sleep_system
     ../../Library/EEPROM
     ../../Library/Diagnostics
+    ../../Library/Diagnostics/HARD_FAULT
     ../../Library/USB_FATFS_SAVE
     
 )
@@ -120,18 +123,21 @@ target_sources(stm32cubemx INTERFACE
     ../../Library/Display_i2c/hardware/OLED_Fonst.c
     ../../Library/Display_i2c/hardware/OLED_Icons.c
     ../../Library/Display_i2c/hardware/OLED.c
+    ../../Library/Display_i2c/QR_code/qr2xbm.c
+    ../../Library/Display_i2c/QR_code/qrcodegen.c
     ../../Library/Keyboard/Keyboard.c
     ../../Library/Settings/Settings.c
     ../../Library/Internal_per/RTC_data.c
+    ../../Library/Internal_per/Flash_colibrate_data.c
     ../../Library/w25q128/w25q128.c
     ../../Library/ADC/MS5193T.c
+    ../../Library/RS485/Driver_rs485.c
     ../../Library/ADC/Internal_ADC.c
     ../../Library/DATA_COLLECT/Data_collect.c
     ../../Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_core.c
     ../../Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ctlreq.c
     ../../Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ioreq.c
     ../../Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_pipes.c
-    #../../Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_conf_template.c
     ../../Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc.c
     ../../Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc_bot.c
     ../../Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Src/usbh_msc_scsi.c
@@ -152,6 +158,7 @@ target_sources(stm32cubemx INTERFACE
     ../../Library/Sleep_system/Sleep.c
     ../../Library/EEPROM/AT24C02.c
     ../../Library/Diagnostics/Diagnostics.c
+    ../../Library/Diagnostics/HARD_FAULT/HARD_FAULT.c
     ../../Library/USB_FATFS_SAVE/USB_FATFS_SAVE.c
 )
 

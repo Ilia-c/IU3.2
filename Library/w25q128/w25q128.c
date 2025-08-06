@@ -8,7 +8,7 @@ extern ApplicationTypeDef Appli_state;
 extern FATFS USBFatFs;    /* Файловая система для USB */
 extern FIL MyFile;        /* Объект файла */
 extern char USBHPath[4];  /* Логический путь USB диска */
-extern EEPROM_Settings_item EEPROM;
+
 extern RTC_HandleTypeDef hrtc;
 extern CRC_HandleTypeDef hcrc;
 
@@ -697,8 +697,6 @@ int Save_one_to_USB(void)
 // Функция копирования данных во внешнее хранилище (USB)
 int backup_records_to_external(void)
 {
-    // Пример вашего кода с минимальными правками
-
     FRESULT res;
     UINT bw;
     FATFS *fs;
@@ -731,7 +729,6 @@ int backup_records_to_external(void)
         return -1;
     }
     ERRCODE.STATUS &= ~STATUS_USB_LSEEK_ERROR;
-    // Допустим, flash_end_ptr не используется, тогда можно убрать всё с last_written / start_sector.
 
     // Сканируем все секторы
     record_t rec;
@@ -838,13 +835,70 @@ int backup_records_to_external(void)
     return 1;
 }
 
+
+// Копирование ошибки на USB
+int backup_fault_to_external(void) {
+    FRESULT res;
+    DWORD fre_clust;
+    FATFS *fs;
+    UINT bw;
+
+    // 1) Проверяем, что на USB есть место и диск смонтирован
+    res = f_getfree(USBHPath, &fre_clust, &fs);
+    if (res != FR_OK) {
+        ERRCODE.STATUS |= STATUS_USB_FULL_ERROR;
+        return -1;
+    }
+    ERRCODE.STATUS &= ~STATUS_USB_FULL_ERROR;
+
+    char filename[16];
+    createFilename(filename, sizeof(filename));
+    res = f_open(&MyFile, filename, FA_WRITE | FA_CREATE_ALWAYS);
+    if (res != FR_OK) {
+        ERRCODE.STATUS |= STATUS_USB_OPEN_ERROR;
+        return -1;
+    }
+    ERRCODE.STATUS &= ~STATUS_USB_OPEN_ERROR;
+
+    // 4) Берём указатель на дамп в Flash
+    FaultLog_t *log = FlashBackup_GetLog();
+    if (log->magic != FAULTLOG_MAGIC) {
+        // Нет валидного дампа — просто закрываем и выходим
+        f_close(&MyFile);
+        return 0;
+    }
+
+    // 5) Записываем «сырой» бинарный дамп структуры
+    res = f_write(&MyFile, log, sizeof(*log), &bw);
+    if (res != FR_OK || bw != sizeof(*log)) {
+        ERRCODE.STATUS |= STATUS_USB_FLASH_WRITE_ERROR;
+        f_close(&MyFile);
+        return -1;
+    }
+    ERRCODE.STATUS &= ~STATUS_USB_FLASH_WRITE_ERROR;
+
+    // 6) Синхронизируем и закрываем
+    res = f_sync(&MyFile);
+    if (res != FR_OK) {
+        ERRCODE.STATUS |= STATUS_USB_FLASH_SYNC_ERROR;
+        // продолжаем — файл всё равно закроем
+    } else {
+        ERRCODE.STATUS &= ~STATUS_USB_FLASH_SYNC_ERROR;
+    }
+    f_close(&MyFile);
+
+
+    return 1;
+}
+
+
 //------------------------------------------------------------------------------
 // Пример создания имени файла
 void createFilename(char *dest, size_t destSize)
 {
     // Предполагаем, что EEPROM.version.VERSION_PCB существует
     char Version[20] = {0};
-    strncpy(Version, EEPROM.version.VERSION_PCB, sizeof(Version)-1);
+    strncpy(Version, Main_data.version.VERSION_PCB, sizeof(Version)-1);
     remove_braces_inplace(Version);
 
     char tmp[32];
@@ -857,6 +911,25 @@ void createFilename(char *dest, size_t destSize)
     }
     tmp[j] = '\0';
     snprintf(dest, destSize, "%s%s.csv", USBHPath, tmp);
+}
+
+void createFilename_HARD_FAULT(char *dest, size_t destSize)
+{
+    // Предполагаем, что EEPROM.version.VERSION_PCB существует
+    char Version[20] = {0};
+    strncpy(Version, Main_data.version.VERSION_PCB, sizeof(Version)-1);
+    remove_braces_inplace(Version);
+
+    char tmp[32];
+    int j = 0;
+
+    for (int i = 0; Version[i] != '\0' && j < 8; i++) {
+        if (Version[i] != '.' && Version[i] != '-') {
+            tmp[j++] = Version[i];
+        }
+    }
+    tmp[j] = '\0';
+    snprintf(dest, destSize, "%s%s.err", USBHPath, tmp);
 }
 
 

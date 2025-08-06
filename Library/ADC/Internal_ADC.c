@@ -133,6 +133,9 @@ float voltageToSOC(float voltage) {
 float Convert_Temperature(uint16_t raw_ts)
 {
     uint16_t VREF = adc1_buffer[2];
+    if (VREF == 0) {
+        return 0.0f; 
+    }
     uint16_t vrefint_cal = *VREFINT_CAL_ADDR;
     float vdda = 3000.0f * ((float)vrefint_cal / (float)VREF);
     float raw_ts_corr = raw_ts * (vdda / 3000.0f);

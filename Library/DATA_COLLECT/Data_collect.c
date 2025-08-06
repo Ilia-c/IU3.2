@@ -58,7 +58,7 @@ void base62_encode(uint64_t value, char *buffer, size_t bufferSize)
 
 extern char save_data[CMD_BUFFER_SIZE];
 extern RTC_HandleTypeDef hrtc;
-extern EEPROM_Settings_item EEPROM;
+
 
 int containsRussian(const char *str)
 {
@@ -104,33 +104,33 @@ void Collect_DATA()
     base62_encode(ERRCODE.STATUS, ERRCODE.STATUSCHAR, sizeof(ERRCODE.STATUSCHAR));
 
     char Version[20] = {0};
-    strncpy(Version, EEPROM.version.VERSION_PCB, sizeof(Version)-1);
+    strncpy(Version, Main_data.version.VERSION_PCB, sizeof(Version)-1);
     remove_braces_inplace(Version);
     char Password[20] = {0};
-    strncpy(Password, EEPROM.version.password, sizeof(Password)-1);
+    strncpy(Password, Main_data.version.password, sizeof(Password)-1);
     remove_braces_inplace(Password);
-    // Если в ADC_data.ADC_SI_value_char или ADC_data.ADC_SI_value_correct_char содержатся русские символы,
+    // Если в ADC_data.ADC_SI_value_char или ADC_data.ADC_1_SI_value_correct_char содержатся русские символы,
     // заменяем их на "cable break"
-    if (containsRussian(ADC_data.ADC_SI_value_char) || containsRussian(ADC_data.ADC_SI_value_correct_char))
+    if (containsRussian(ADC_data.ADC_SI_value_char[0]) || containsRussian(ADC_data.ADC_SI_value_correct_char[0]))
     {
-        strcpy(ADC_data.ADC_SI_value_char, CableB);
-        strcpy(ADC_data.ADC_SI_value_correct_char, CableB);
+        strcpy(ADC_data.ADC_SI_value_char[0], CableB);
+        strcpy(ADC_data.ADC_SI_value_correct_char[0], CableB);
     }
 
     snprintf(save_data, CMD_BUFFER_SIZE,
              "[%s;%s;%s;%s;%s;%s;%s;%s;%02d:%02d%s%02d/%02d/%02d;%s;%s;%u;%u]",
              Version,         // строка
              Password,            // строка
-             ADC_data.ADC_value_char,            // строка
-             ADC_data.ADC_SI_value_char,         // строка (возможно заменённая)
-             ADC_data.ADC_SI_value_correct_char, // строка (возможно заменённая)
+             ADC_data.ADC_value_char[0],            // строка
+             ADC_data.ADC_SI_value_char[0],         // строка (возможно заменённая)
+             ADC_data.ADC_SI_value_correct_char[0], // строка (возможно заменённая)
              IntADC.ADC_AKB_volts_char,          // строка
              IntADC.ADC_AKB_Proc_char,           // строка
              ERRCODE.STATUSCHAR,                 // строка
              Time.Hours, Time.Minutes,           // время (часы, минуты, секунды)
              "-",
              Date.Date, Date.Month, Date.Year, // дата (день, месяц, год)
-             ADC_data.ADC_MS5193T_temp_char,   // time_sleep_mode всегда "0"
+             "0",   // time_sleep_mode всегда "0"
              VERSION_PROGRAMM,
              EEPROM.time_sleep_m,  // число
              EEPROM.time_sleep_h); // число
@@ -142,10 +142,10 @@ void SETTINGS_REQUEST_DATA()
     base62_encode(ERRCODE.STATUS, ERRCODE.STATUSCHAR, sizeof(ERRCODE.STATUSCHAR));
 
     char Version[20] = {0};
-    strncpy(Version, EEPROM.version.VERSION_PCB, sizeof(Version)-1);
+    strncpy(Version, Main_data.version.VERSION_PCB, sizeof(Version)-1);
     remove_braces_inplace(Version);
     char Password[20] = {0};
-    strncpy(Password, EEPROM.version.password, sizeof(Password)-1);
+    strncpy(Password, Main_data.version.password, sizeof(Password)-1);
     remove_braces_inplace(Password);
 
     snprintf(save_data, CMD_BUFFER_SIZE,

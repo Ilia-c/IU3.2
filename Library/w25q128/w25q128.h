@@ -11,6 +11,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "Data_collect.h"
+#include "Hard_fault.h"
 #include "stm32l4xx_hal_crc.h"
 
 extern uint32_t g_total_records_count;

@@ -72,8 +72,13 @@
 			"stm32l4xx_hal_crc.h": "c",
 			"parser.h": "c",
 			"xutility": "c",
-			"internal_adc.h": "c"
+			"internal_adc.h": "c",
+			"qrcodegen.h": "c",
+			"qr2xbm.h": "c",
+			"stdbool.h": "c",
+			"hard_fault.h": "c",
+			"settings_default.h": "c"
 		},
-		"cortex-debug.variableUseNaturalFormat": false
+		"cortex-debug.variableUseNaturalFormat": true
 	}
 }

@@ -61,6 +61,7 @@ extern TIM_HandleTypeDef htim5;
 extern TIM_HandleTypeDef htim6;
 extern TIM_HandleTypeDef htim8;
 extern UART_HandleTypeDef huart4;
+extern UART_HandleTypeDef huart5;
 extern ADC_HandleTypeDef hadc1;
 
 extern xSemaphoreHandle SLEEP_semaphore;
@@ -77,21 +78,26 @@ extern xSemaphoreHandle SLEEP_semaphore;
   */
 
 extern RTC_HandleTypeDef hrtc;
- void NMI_Handler(void)
- {
-   // Устанавливаем флаг в ERRCODE (не сохранится после reset, если не в backup SRAM)
-   ERRCODE.STATUS |= STATUS_NMI_OCCURRED;  
-   uint32_t errcode_low  = (uint32_t)(ERRCODE.STATUS & 0xFFFFFFFF);
-   uint32_t errcode_high = (uint32_t)(ERRCODE.STATUS >> 32);
-   HAL_PWR_EnableBkUpAccess();
-   HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_1, errcode_low);
-   HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_2, errcode_high);
-   NVIC_SystemReset();
- 
-   // Если по каким-то причинам сброс не произошёл, зацикливаемся
-   while (1) {}
- }
- 
+void NMI_Handler(void)
+{
+  // Устанавливаем флаг в ERRCODE (не сохранится после reset, если не в backup SRAM)
+  ERRCODE.STATUS |= STATUS_NMI_OCCURRED;
+  uint32_t errcode_low = (uint32_t)(ERRCODE.STATUS & 0xFFFFFFFF);
+  uint32_t errcode_high = (uint32_t)(ERRCODE.STATUS >> 32);
+  HAL_PWR_EnableBkUpAccess();
+  HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_1, errcode_low);
+  HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_2, errcode_high);
+  NVIC_SystemReset();
+
+  // Если по каким-то причинам сброс не произошёл, зацикливаемся
+  while (1)
+  {
+  }
+}
+
+
+// Перенесен в файл Hard_fault.c
+/* 
  void HardFault_Handler(void)
  {
    ERRCODE.STATUS |= STATUS_HARDFAULT_OCCURRED;
@@ -103,7 +109,8 @@ extern RTC_HandleTypeDef hrtc;
    NVIC_SystemReset();
    while (1) {}
  }
- 
+ */
+
  void MemManage_Handler(void)
  {
    ERRCODE.STATUS |= STATUS_MEMMANAGE_FAULT;
@@ -260,12 +267,21 @@ void UART4_IRQHandler(void)
 
   /* USER CODE END UART4_IRQn 1 */
 }
+void UART5_IRQHandler(void)
+{
+  /* USER CODE BEGIN UART5_IRQn 0 */
 
+  /* USER CODE END UART5_IRQn 0 */
+  HAL_UART_IRQHandler(&huart5);
+  /* USER CODE BEGIN UART5_IRQn 1 */
+
+  /* USER CODE END UART5_IRQn 1 */
+}
 /**
   * @brief This function handles DMA2 channel5 global interrupt.
   */
 
-extern EEPROM_Settings_item EEPROM;
+
 static uint8_t last_USB_state = 255;
 void OTG_FS_IRQHandler(void)
 {

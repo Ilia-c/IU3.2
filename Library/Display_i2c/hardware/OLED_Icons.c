@@ -53,6 +53,8 @@ const uint8_t CR_XMB[] = {
 	0xbe,0xc5,0xc5,0xc5,0xdd,0xc1,0xbe,0xbe
 };
 
+uint8_t QR_XBM[2 + DATA_BYTES] = {0};
+
 
 const uint8_t QR[] = {
     29, 29,

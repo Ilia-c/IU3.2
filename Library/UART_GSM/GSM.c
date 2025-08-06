@@ -4,7 +4,7 @@
 extern UART_HandleTypeDef huart4;
 extern xSemaphoreHandle UART_PARSER_semaphore;
 extern xSemaphoreHandle USB_COM_SEND_semaphore;
-extern EEPROM_Settings_item EEPROM;
+
 extern USBD_HandleTypeDef hUsbDeviceFS; 
 
 /* Однобайтовый приём */
@@ -106,6 +106,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
             portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
         }
         
+    }
+    if (huart->Instance == UART5) {
+        RS485_RxCpltCallback(rs485_rx_byte);
+        RS485_StartReceive_IT();
     }
 }
 

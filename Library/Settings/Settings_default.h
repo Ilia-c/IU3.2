@@ -2,11 +2,11 @@
 #define SETTINGS_DEFAULT_H
 
 // Компиляция
-#define Debug_mode 0                                // Включен или выключен режим отладки
+#define Debug_mode 1                                // Включен или выключен режим отладки
 
 #define Version3_75 0xFAEE                       // Версия 3.75
 #define Version3_80 0x0EA3                       // Версия 3.79
-#define BOARD_VERSION Version3_75                // Под какую версию собирать проект
+#define BOARD_VERSION Version3_80                // Под какую версию собирать проект
 
 #if BOARD_VERSION == Version3_80 
     #define i2cDisplay hi2c3
@@ -18,11 +18,14 @@
 #define DEFAULT_VERSION_PROGRAMM       "Ver0.82"    // Версия программы
 #define EEPROM_FORMAT_VERSION           0x00000010U //? Версия формата данных EEPROM
 
-#define DEFAULT_VERSION_PCB            "3.75-A000{" // Версия печатной платы
+#if BOARD_VERSION == Version3_80 
+    #define DEFAULT_VERSION_PCB            "3.80-A000{" // Версия печатной платы
+#elif BOARD_VERSION == Version3_75
+    #define DEFAULT_VERSION_PCB            "3.75-A000{" // Версия печатной платы
+#endif
+
 #define DEFAULT_PASSWORD               "Defau"
 #define DEFAULT_TIME_WORK_CHAR         "0"          // Время работы в виде строки
-
-#define DEFAULT_LAST_ERROR_CODE        {0x00, 0x00, 0x00, 0x00}
 #define DEFAULT_TIME_WORK_H            0
 
 #define DEFAULT_TIME_SLEEP_H           1  // Время сна (часы)
@@ -31,14 +34,27 @@
 #define DEFAULT_PHONE                  "+79653003557"
 
 // Параметры АЦП:
-#define DEFAULT_ADC_ION                1.17
+#define DEFAULT_ADC_ION                1.17f
 #define DEFAULT_ADC_RESISTOR           49.99
-#define DEFAULT_GVL_CORRECT            0
-#define DEFAULT_K_KOEFF                0
-#define DEFAULT_MAX_LVL                15
-#define DEFAULT_ZERO_LVL               0
 #define DEFAULT_GVL_CORRECT_4M         0.004
 #define DEFAULT_GVL_CORRECT_20M        0.02
+
+// Канал 1
+#define DEFAULT_GVL_CORRECT_1            0
+#define DEFAULT_K_KOEFF_1                0
+#define DEFAULT_MAX_LVL_1                15
+#define DEFAULT_ZERO_LVL_1               0
+// Канал 2
+#define DEFAULT_GVL_CORRECT_2            0
+#define DEFAULT_K_KOEFF_2                0
+#define DEFAULT_MAX_LVL_2                15
+#define DEFAULT_ZERO_LVL_2               0
+// Канал 3
+#define DEFAULT_GVL_CORRECT_3            0
+#define DEFAULT_K_KOEFF_3                0
+#define DEFAULT_MAX_LVL_3                15
+#define DEFAULT_ZERO_LVL_3               0
+
 
 // Коррекция температуры:
 #define DEFAULT_CRORRECT_TEMP_A        0

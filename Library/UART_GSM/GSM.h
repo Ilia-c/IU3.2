@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "Settings.h"
+#include "Driver_rs485.h"
 //#include "USB_COMPORT.h"
 
 

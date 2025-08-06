@@ -8,6 +8,17 @@
 // Используется для обновления и преобразования значений GSM
 ////////////////////////////////////////////////////////////////////////////////
 
+Main_data_settings_item Main_data = {
+    .version = {
+        // Текущая версия устройства
+        .VERSION_PCB = DEFAULT_VERSION_PCB,    // Версия печатной платы
+        .password = DEFAULT_PASSWORD,
+    },
+    .k_koeff = {DEFAULT_K_KOEFF_1, DEFAULT_K_KOEFF_2, DEFAULT_K_KOEFF_3}, // Коэффициэнт наклона линейной зависимости (по 2 точкам, 20мА и 4мА)
+    .Colibrate_koeff = DEFAULT_COLIBRATE_KOEFF, // Колибровочный коэффициэнт АКБ
+    .crc32 = 0x00             // CRC32 для проверки целостности
+};
+
 
 char save_data[CMD_BUFFER_SIZE] __attribute__((section(".ram2"))); // Переменная в которой собирается набор данных для сохранения и передачи на сайт
 ////////////////////////////////////////////////////////////////////////////////
@@ -15,12 +26,6 @@ char save_data[CMD_BUFFER_SIZE] __attribute__((section(".ram2"))); // Переменная
 ////////////////////////////////////////////////////////////////////////////////
 const char VERSION_PROGRAMM[20] = DEFAULT_VERSION_PROGRAMM;
 EEPROM_Settings_item EEPROM = {
-    .version = {
-        // Текущая версия устройства
-        .VERSION_PCB = DEFAULT_VERSION_PCB,    // Версия печатной платы
-        .password = DEFAULT_PASSWORD,
-    },
-    .last_error_code = DEFAULT_LAST_ERROR_CODE, // Последний код ошибки
     .DEBUG_CATEG = DEBUG_NONE,
     .DEBUG_LEVL = DEBUG_LEVL_1,
     .DEBUG_Mode = USB_SNIFFING,
@@ -32,17 +37,10 @@ EEPROM_Settings_item EEPROM = {
     .Phone = DEFAULT_PHONE,
     
     // Параметры АЦП:
-    .ADC_ION = DEFAULT_ADC_ION,                     // Напряжение ИОН АЦП
-    .ADC_RESISTOR = DEFAULT_ADC_RESISTOR,           // Сопротивление резистора
-    .GVL_correct = DEFAULT_GVL_CORRECT,             // Коррекция нулевой точки (смещение ± от текущего значения) УГВ
-    .k_koeff = DEFAULT_K_KOEFF,                     // Коэффициэнт наклона линейной зависимости (по 2 точкам, 20мА и 4мА)
-    .MAX_LVL = DEFAULT_MAX_LVL,                     // Максимальный уровень (например, 15 метров) ВПИ
-    .ZERO_LVL = DEFAULT_ZERO_LVL,                   // Нулевое значение (например, 0 метров) НПИ
-    .GVL_correct_4m = DEFAULT_GVL_CORRECT_4M,       // Реальные 4мА
-    .GVL_correct_20m = DEFAULT_GVL_CORRECT_20M,     // Реальные 20мА
-    // Коррекция температуры (смещение):
-    .Crorrect_TEMP_A = DEFAULT_CRORRECT_TEMP_A,     // Смещение датчика аналоговой температуры
-    .Colibrate_koeff = DEFAULT_COLIBRATE_KOEFF,     // Коэффициэнт калибровки 24 вольт
+    // Канал 1
+    .GVL_correct = {DEFAULT_GVL_CORRECT_1, DEFAULT_GVL_CORRECT_2, DEFAULT_GVL_CORRECT_3},             // Коррекция нулевой точки (смещение ± от текущего значения) УГВ
+    .MAX_LVL = {DEFAULT_MAX_LVL_1, DEFAULT_MAX_LVL_2, DEFAULT_MAX_LVL_3},                      // Максимальный уровень (например, 15 метров) ВПИ
+    .ZERO_LVL = {DEFAULT_ZERO_LVL_1, DEFAULT_ZERO_LVL_2, DEFAULT_ZERO_LVL_3},                    // Нулевое значение (например, 0 метров) НПИ
 
     // Параметры select_bar:
     .Mode = DEFAULT_MODE,                           // Текущий режим работы (0 - режим текущие показания, 1 - циклический режим, 2 - режим выставки)
@@ -53,7 +51,7 @@ EEPROM_Settings_item EEPROM = {
     .USB_mode = DEFAULT_USB_MODE,                   // Режим работы USB
     .Save_in = DEFAULT_SAVE_IN,                     // Куда сохранять данные: 0 - FLASH, 1 - SD, 2 - USB, 3 - Сайт
     .len = DEFAULT_LEN,                             // Язык меню
-    .mode_ADC = DEFAULT_MODE_ADC,                   // Режим работы АЦП, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
+    .mode_ADC = {DEFAULT_MODE_ADC, DEFAULT_MODE_ADC, DEFAULT_MODE_ADC},                  // Режим работы АЦП, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
     .block = DEFAULT_BLOCK                          // Блокировка устройства: 1 - заблокировано, 0 - разблокировано
 };
 ////////////////////////////////////////////////////////////////////////////////
@@ -70,38 +68,30 @@ ERRCODE_item ERRCODE = {
 ////////////////////////////////////////////////////////////////////////////////
 ADC_MS5193T_item ADC_data = {
     .ADC_status_char = "ND",   // Статус АЦП
-    .ADC_value = 0,            // Значение АЦП
-    .ADC_Volts = 0,            // Напряжение на токовом шунте
-    .ADC_Current = 0,          // Ток на токовом шунте
-    .ADC_SI_value = 0,         // Выходное значение без коррекции по уровню
-    .ADC_SI_value_correct = 0, // Выходное значение с корректировкой по уровню
+    .ADC_Volts = {0, 0, 0},            // Напряжение на токовом шунте
+    .ADC_Current = {0, 0, 0},          // Ток на токовом шунте
+    .ADC_SI_value = {0, 0, 0},         // Выходное значение без коррекции по уровню
+    .ADC_SI_value_correct = {0, 0, 0}, // Выходное значение с корректировкой по уровню
     .Status = 0,               // Статус работы АЦП: 0 - ERR, 1 - WAR, 2 - OK, 3 - выкл
 
-    .Temp_correct_A = &EEPROM.Crorrect_TEMP_A, // Коррекция температуры (смещение)
-    .ADC_ION = &EEPROM.ADC_ION,           // Указатель на напряжение ИОН АЦП
-    .ADC_RESISTOR = &EEPROM.ADC_RESISTOR, // Указатель на сопротивление резистора
-    .PPM = 10,                            // PPM (по умолчанию)
-    .mode = &EEPROM.mode_ADC,             // Режим работы АЦП: 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
-    .GVL_correct = &EEPROM.GVL_correct,   // Указатель на коррекцию нулевой точки (смещение ±)
-    .k_koeff = &EEPROM.k_koeff,           // Указатель на коэффициэнт наклона линейной зависимости
-    .MAX_LVL = &EEPROM.MAX_LVL,           // Указатель на максимальный уровень (ВПИ)
-    .ZERO_LVL = &EEPROM.ZERO_LVL,         // Указатель на нулевое значение (НПИ)
+    .ADC_ION = DEFAULT_ADC_ION,           // Указатель на напряжение ИОН АЦП
+    .ADC_RESISTOR = {DEFAULT_ADC_RESISTOR, DEFAULT_ADC_RESISTOR, DEFAULT_ADC_RESISTOR}, // Указатель на сопротивление резистора
+    .PPM = {10, 10, 10},                            // PPM (по умолчанию)
+    .mode = EEPROM.mode_ADC,             // Режим работы АЦП канал 1: 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
+    .GVL_correct = EEPROM.GVL_correct,   // Указатель на коррекцию нулевой точки (смещение ±)
+    .k_koeff = Main_data.k_koeff,           // Указатель на коэффициэнт наклона линейной зависимости
+    .MAX_LVL = EEPROM.MAX_LVL,           // Указатель на максимальный уровень (ВПИ)
+    .ZERO_LVL = EEPROM.ZERO_LVL,         // Указатель на нулевое значение (НПИ)
 
     .MAX_LVL_char = {-9999, -9999},            // Установка максимального уровня (целая и дробная части)
     .ZERO_LVL_char = {-9999, -9999},           // Установка минимального уровня (целая и дробная части)
     .GVL_correct_char = {-9999, -9999},        // Коррекция нулевой точки (смещение ±) – дробная часть
-    .Temp_correct = {-9999, -9999},        // Коррекция нулевой точки термометра (смещение ±) – дробная часть
 
-    
-    .ADC_value_char = "ND",            // Значение АЦП в виде строки
-    .ADC_Volts_char = "ND",            // Напряжение на токовом шунте в виде строки
-    .ADC_Current_char = "ND",          // Ток на токовом шунте в виде строки
-    .ADC_SI_value_char = "ND",         // Выходное значение без коррекции в виде строки
-    .ADC_SI_value_correct_char = "ND", // Выходное значение с корректировкой в виде строки
-
-    .ADC_MS5193T_temp = 0,         // Температура на аналоговом датчике
-    .ADC_MS5193T_temp_char = "ND", // Температура на аналоговом датчике в виде строки
-
+    .ADC_value_char = {"ND", "ND", "ND"},            // Значение АЦП в виде строки
+    .ADC_Volts_char = {"ND", "ND", "ND"},            // Напряжение на токовом шунте в виде строки
+    .ADC_Current_char = {"ND", "ND", "ND"},          // Ток на токовом шунте в виде строки
+    .ADC_SI_value_char = {"ND", "ND", "ND"},         // Выходное значение без коррекции в виде строки
+    .ADC_SI_value_correct_char = {"ND", "ND", "ND"}, // Выходное значение с корректировкой в виде строки
     .update_value = Read_MS5193T_Data // Ссылка на функцию обновления (чтение данных с АЦП)
 };
 
@@ -110,7 +100,7 @@ Internal_ADC_item IntADC =
 {
   .ADC_AKB_volts = 0, // Напряжение на АКБ
   .ADC_AKB_Proc = 0,    // Процент заряда на акб
-  .Colibrate_koeff = &EEPROM.Colibrate_koeff, // Колибровочный коэффициэнт
+  .Colibrate_koeff = &Main_data.Colibrate_koeff, // Колибровочный коэффициэнт АКБ
   .MK_VBAT = 0,          // Напряжение на CR2032
   .MK_temp= 0,             // Температура, измеренная МК
   .MK_temp_char = "ND",  // Температура МК в виде строки

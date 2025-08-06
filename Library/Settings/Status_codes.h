@@ -93,7 +93,7 @@
 #define STATUS_USAGEFAULT_OCCURRED_ACK (1ULL << 57) // Произошёл UsageFault подтверждение (2 подряд) (переполнение стека) +
 
 #define ERROR_RTC (1ULL << 58)             // Ошибка RTC, запуск от внутреннего генератора +
-#define STATUS_ADC_TEMP_ERROR (1ULL << 59) // Отсутствует аналоговый датчик температуры 
+#define STATUS_RESERVED_1 (1ULL << 59) // Резервная ошибка
 #define STATUS_VBAT_LOW (1ULL << 60) // Низкое напряжение на батарее RTC (CR2032) +
 
 /* ---------- 15. РЕЗЕРВ (биты 60..63) ---------- */

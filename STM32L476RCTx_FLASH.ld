@@ -12,7 +12,9 @@ MEMORY
 RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 96K
 RAM2 (xrw)      : ORIGIN = 0x10000000, LENGTH = 32K
 BOOTLOADER(rx)  : ORIGIN = 0x08000000, LENGTH = 64K    /* Bootloader area */
-APP  (rx)  : ORIGIN = 0x08010000, LENGTH = 448K   /* Main application */
+APP  (rx)  : ORIGIN = 0x08010000, LENGTH = 444K   /* Main application */
+BACKUP_HARD  (rx)  : ORIGIN = 0x0807F000, LENGTH = 2K   /* Main application */
+COLIBRATE_DATA  (rx)  : ORIGIN = 0x0807F800, LENGTH = 2K   /* Main application */
 }
 
 /* Define output sections */

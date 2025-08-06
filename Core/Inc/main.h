@@ -137,24 +137,27 @@ void Error_Handler(void);
 #define COL_B2_GPIO_Port GPIOB
 #define COL_B1_Pin GPIO_PIN_2
 #define COL_B1_GPIO_Port GPIOB
-#define SPI2_CS_ADC_Pin GPIO_PIN_6
-#define SPI2_CS_ADC_GPIO_Port GPIOC
-#define EN_3P8V_Pin GPIO_PIN_7
-#define EN_3P8V_GPIO_Port GPIOC
-#define EN_3P3V_Pin GPIO_PIN_8
+#define SPI2_CS_ADC_Pin GPIO_PIN_12
+#define SPI2_CS_ADC_GPIO_Port GPIOB
+#define ON_OWEN_1_Pin GPIO_PIN_6
+#define ON_OWEN_1_GPIO_Port GPIOC
+#define ON_OWEN_2_Pin GPIO_PIN_7
+#define ON_OWEN_2_GPIO_Port GPIOC
+#define ON_OWEN_3_Pin GPIO_PIN_8
+#define ON_OWEN_3_GPIO_Port GPIOC
+#define EN_3P3V_Pin GPIO_PIN_9
 #define EN_3P3V_GPIO_Port GPIOC
-#define EN_5V_Pin GPIO_PIN_9
-#define EN_5V_GPIO_Port GPIOC
-#define ON_OWEN_Pin GPIO_PIN_8
-#define ON_OWEN_GPIO_Port GPIOA
+#define EN_5V_Pin GPIO_PIN_8
+#define EN_5V_GPIO_Port GPIOA
 #define ON_DISP_Pin GPIO_PIN_9
 #define ON_DISP_GPIO_Port GPIOA
+#define EN_3P8V_Pin GPIO_PIN_10
+#define EN_3P8V_GPIO_Port GPIOA
 #define ON_RS_Pin GPIO_PIN_11
 #define ON_RS_GPIO_Port GPIOC
-#define UART5_DD_Pin GPIO_PIN_3
-#define UART5_DD_GPIO_Port GPIOB
 #define SPI2_CS_ROM_Pin GPIO_PIN_6
 #define SPI2_CS_ROM_GPIO_Port GPIOB
+
 
 #else
   #error "Неверная BOARD_VERSION"
