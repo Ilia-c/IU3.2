@@ -3,7 +3,7 @@
 #include "fatfs.h"
 #include "RTC_data.h"
 #include "OLED.h"
-#include "Display.h"
+#include "Menu_data.h"
 #include "OLED_Fonts.h"
 #include "OLED_Icons.h"
 #include "Keyboard.h"
@@ -228,7 +228,8 @@ int main(void)
 
 
   InitMenus();
-  
+  Boot_CopyVersion(&bootloader_data, sizeof(bootloader_data)); // Копируем версию загрузчика в переменную
+
   // Начальные состояния переферии - ВСЕ ОТКЛЮЧЕНО
   HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, 1);
   HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ADC_Pin, 1);
@@ -792,7 +793,7 @@ void RS485_data(void *argument)
     
     for (;;)
     {
-        osDelay(3000);
+        osDelay(500);
         ADC_Voltage_Calculate();
         
         uint8_t msg[] = "Hello RS-485";
@@ -808,6 +809,28 @@ void RS485_data(void *argument)
 uint32_t data_read_adc_in = 0;
 void Display_I2C(void *argument)
 {
+
+  if (Flash_IsCalibEmpty())
+  {
+    Initial_setup();
+  }
+  else
+  {
+    HAL_StatusTypeDef res = Flash_ReadCalib(&Main_data);
+
+  }
+  // Проверка на защиту калибровочных данных
+  if (!Flash_IsCalibProtected())
+  {
+        OLED_Clear(0);
+        FontSet(font);
+        Display_TopBar(selectedMenuItem);
+        const char Disable_protect[2][40] = {"Защита снята!", "Protect disable!"};
+        OLED_DrawCenteredString(Disable_protect, 30);
+        OLED_UpdateScreen();
+        osDelay(2000);
+  }
+
   UNUSED(argument);
   for (;;)
   {

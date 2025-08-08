@@ -28,6 +28,7 @@ target_include_directories(stm32cubemx INTERFACE
     ../../Library/Display_i2c/
     ../../Library/Display_i2c/hardware
     ../../Library/Display_i2c/QR_code
+    ../../Library/Display_i2c/Functions
     ../../Library/Keyboard/
     ../../Library/Internal_per
     ../../Library/w25q128
@@ -134,6 +135,7 @@ target_sources(stm32cubemx INTERFACE
     ../../Library/RS485/Driver_rs485.c
     ../../Library/ADC/Internal_ADC.c
     ../../Library/DATA_COLLECT/Data_collect.c
+    ../../Library/Display_i2c/Functions/Initial_setup.c
     ../../Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_core.c
     ../../Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ctlreq.c
     ../../Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_ioreq.c

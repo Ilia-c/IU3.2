@@ -1,25 +1,6 @@
-#include "Display.h"
+#include "Menu_data.h"
 // #include "RTC_data.h"
 
-#define winth_display 128
-#define height_display 64
-
-#define line_indentation 0                            // отступы верхней линии слева и справа
-#define end_line 125                                  // отступы верхней линии слева и справа
-#define line_ind_top 11                               // оттуп линии сверху
-#define back_pic_pos_x 0                              // начало иконки предыдущий пункт меню x
-#define back_pic_pos_y 4                              // начало иконки предыдущий пункт меню y
-#define size_back_pic_x 3                             // размер треугольника по x
-#define size_back_pic_y 3                             // размер треугольника по y
-#define top_pic_last_munu 1                           // отступ сверху до названия предыдущего пункта меню
-#define left_pic_last_munu 7                          // отступ слева до названия предыдущего пункта меню
-#define top_GSM_status 2                              // отступ сверху до статуса связи
-#define width_GSM_status 15                           // ширина одного значка статуса связи
-#define top_akb_status 1                              // отступ сверху до уровня заряда
-#define width_akb_status 7                            // ширина одного уровня заряда
-
-#define time_led_cursor 500      // Время обновления индикации курсоора при вводе данных
-#define time_updateDisplay 20000 // Время обновления экрана вне ввода данных
 
 /// |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 /// Редактирование данных
@@ -60,7 +41,7 @@ uint8_t Intermediate = 0;           // Промежуточная переменная, куда сохраняетс
 #define pos_x_menu 4                                                 // отступ от края для названий пунктов меню
 #define pos_x_menu_data 100                                          // отступ от края для вывода значений
 
-#define font my5x7fonts
+
 
 extern char ver_board[];
 extern char time_work_char[];
@@ -112,6 +93,8 @@ const char CYCLE[2][40] = {"Перейти в режим Цикл?",  "Format Flash?"};
 const char ALL_RESET[2][40] = {"Полный сброс?",  "All reset?"};
 const char RESET_ST[2][40] = {"Сбросить?",  "Reset?"};
 const char UPDATE[2][40] = {"Обновление..",  "Update.."};
+const char TEST_FLASH[2][40] = {"Тестировать FLASH?",  "Test FLASH?"};
+const char TEST_EEPROM[2][40] = {"Тестировать EEPROM?",  "Test EEPROM?"};
 
 // Выбираемые значения и статус
 menuSelect_item Communication_DATA = {
@@ -494,7 +477,7 @@ MAKE_MENU(Menu_2, "Настройки", "Settings", 0, UPTADE_OFF, NO_SIGNED, Menu_3, Men
 	MAKE_MENU(Menu_2_15, "Инж. меню", "Administration menu", 0, UPTADE_OFF, NO_SIGNED, Menu_2_16, Menu_2_14, Menu_2, Menu_2_15_1, PASSWORD, SELECT_BAR, DATA_IN, DATA_OUT); 
 		MAKE_MENU(Menu_2_15_1, "Заставка", "Startup screen", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_2, PREVISION_MENU, Menu_2_15, CHILD_MENU, ACTION_MENU, SCREENSAVER, DATA_IN, DATA_OUT);
 		MAKE_MENU(Menu_2_15_2, "Режим USB", "USB mode", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_3, Menu_2_15_1, Menu_2_15, CHILD_MENU, ACTION_MENU, USB_MODE_STRUCT, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_15_3, "Перв. настройка", "First set", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_4, Menu_2_15_2, Menu_2_15, CHILD_MENU, Calibrate, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_15_3, "Перв. настройка", "First set", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_4, Menu_2_15_2, Menu_2_15, CHILD_MENU, Initial_setup, SELECT_BAR, DATA_IN, DATA_OUT);
 		MAKE_MENU(Menu_2_15_4, "Напр. CR", "Plug", 0, UPTADE_ON, NO_SIGNED, Menu_2_15_6, Menu_2_15_3, Menu_2_15, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, IntADC.MK_vbat_char);
 		MAKE_MENU(Menu_2_15_5, "Темп. циф.", "Digital temp.", 0, UPTADE_ON, Unit_degree, Menu_2_15_6, Menu_2_15_4, Menu_2_15, CHILD_MENU, SELECT_BAR, SELECT_BAR, DATA_IN, IntADC.MK_temp_char);
 		MAKE_MENU(Menu_2_15_6, "Тест FLASH", "FLASH test", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_7, Menu_2_15_5, Menu_2_15, CHILD_MENU, flash_test, SELECT_BAR, DATA_IN, DATA_OUT);
@@ -507,7 +490,8 @@ MAKE_MENU(Menu_2, "Настройки", "Settings", 0, UPTADE_OFF, NO_SIGNED, Menu_3, Men
 MAKE_MENU(Menu_3, "Сведения", "Info", 0, UPTADE_OFF, NO_SIGNED, Menu_4, Menu_2, PARENT_MENU, Menu_3_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
 	MAKE_MENU(Menu_3_1, "Сер. ном.", "Ser. Number", 0, UPTADE_OFF, NO_SIGNED, Menu_3_2, PREVISION_MENU, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, Main_data.version.VERSION_PCB);
 	MAKE_MENU(Menu_3_2, "Вер. ПО", "Software version", 0, UPTADE_OFF, NO_SIGNED, Menu_3_3, Menu_3_1, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, VERSION_PROGRAMM);
-	MAKE_MENU(Menu_3_3, "Наработка", "Operating time", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_3_2, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, time_work_char);
+    MAKE_MENU(Menu_3_3, "Вер. загр.", "Boot version", 0, UPTADE_OFF, NO_SIGNED, Menu_3_4, Menu_3_2, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, bootloader_data.version);
+	MAKE_MENU(Menu_3_4, "Наработка", "Operating time", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_3_3, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, time_work_char);
 MAKE_MENU(Menu_4, "Инструкция", "Instruction", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_3, PARENT_MENU, CHILD_MENU, Instruction, SELECT_BAR, DATA_IN, DATA_OUT);
 
 void Add_units(void)
@@ -563,15 +547,7 @@ void State_update(){
 ////////////////////////////////////////////////////
 menuItem *selectedMenuItem = &Menu_1;
 
-////////////////////////////////////////////////////
-//                  Пункты меню                   //
-////////////////////////////////////////////////////
 
-#define SCROLLBAR_X      (winth_display - 7)  // Отступ от правого края экрана
-#define SCROLLBAR_Y      14                   // Y-координата верхнего угла области полосы
-#define SCROLLBAR_HEIGHT 45                   // Высота области полосы прокрутки
-#define SCROLLBAR_WIDTH  3                    // Ширина полосы прокрутки
-#define MIN_THUMB_HEIGHT 3                    // Минимальная высота ползунка
 
 void DrawScrollBarForSection(void) {
     // Определяем индекс текущего пункта (0, если это первый элемент)
@@ -627,6 +603,13 @@ void PROGRESS_BAR(uint8_t procent){
     OLED_DrawRectangle(first_point, Y+15, leight+first_point, Y+25);
     OLED_DrawRectangleFill(first_point, Y+15, procent_len+first_point, Y+25, 1);
 }
+
+void OLED_DrawCenteredString_OFFSETX(char strArray[40], uint16_t Y_pos, uint8_t width_display, uint8_t offset) {
+    uint8_t len = OLED_GetWidthStr(strArray);
+    uint16_t x = (width_display - len) / 2;
+    OLED_DrawStr(strArray, x+offset, Y_pos, 1);
+}
+
 void OLED_DrawCenteredString(const char strArray[][40], uint16_t Y_pos) {
     uint8_t len = OLED_GetWidthStr(strArray[EEPROM.len]);
     uint16_t x = (winth_display - len) / 2;
@@ -655,7 +638,11 @@ void flash_test(){
     __HAL_SPI_ENABLE(&hspi2);   // включить обратно
 
     Display_TopBar(selectedMenuItem);
-    if (YES_OR_NO("Тестировать FLASH?") == 0)
+    if (YES_OR_NO(TEST_FLASH) == 0)
+    {
+        mode_redact = 0;
+        return;
+    }
     {
         mode_redact = 0;
         return;
@@ -719,7 +706,7 @@ void EEPROM_test(){
     FontSet(font);
 
     Display_TopBar(selectedMenuItem);
-    if (YES_OR_NO("Тестировать EEPROM?") == 0)
+    if (YES_OR_NO(TEST_EEPROM) == 0)
     {
         mode_redact = 0;
         return;
@@ -906,112 +893,6 @@ void PASSWORD(){
     FontSet(font);
     Display_TopBar(selectedMenuItem);
     OLED_DrawCenteredString(PASSWORD_IN, 25);
-    OLED_UpdateScreen();
-    osDelay(200);
-}
-
-void Calibrate(void)
-{
-    mode_redact = 2;
-    OLED_Clear(0);
-    FontSet(font);
-    Display_TopBar(selectedMenuItem);
-    if (YES_OR_NO("Начать настройку?") == 0)
-    {
-        mode_redact = 0;
-        return;
-    }
-
-    OLED_DrawCenteredString("Серийный номер", 15);
-    OLED_UpdateScreen();
-
-    mode_redact = 5;
-    Keyboard_press_code = 0xFF;
-
-    uint8_t len = strlen(Main_data.version.VERSION_PCB);
-    uint8_t pos = 0;
-    bool redraw = true;
-
-    while (Keyboard_press_code != 'O')
-    {
-        char code = Keyboard_press_code;
-
-        if (code >= '0' && code <= '9')
-        {
-            // Прямой ввод цифры
-            Main_data.version.VERSION_PCB[pos] = code;
-            redraw = true;
-        }
-        else if (code == 'L')
-        {
-            // влево по экрану — уменьшаем индекс
-            do
-            {
-                pos = (pos == 0 ? len - 1 : pos - 1);
-            } while (Main_data.version.VERSION_PCB[pos] == '.');
-            redraw = true;
-        }
-        else if (code == 'R')
-        {
-            // вправо по экрану — увеличиваем индекс
-            do
-            {
-                pos = (pos + 1) % len;
-            } while (Main_data.version.VERSION_PCB[pos] == '.');
-            redraw = true;
-        }
-        else if (code == 'U')
-        {
-            // увеличить код символа
-            if (Main_data.version.VERSION_PCB[pos] < '~')
-                Main_data.version.VERSION_PCB[pos]++;
-            else
-                Main_data.version.VERSION_PCB[pos] = ' ';
-            redraw = true;
-        }
-        else if (code == 'D')
-        {
-            // уменьшить код символа
-            if (Main_data.version.VERSION_PCB[pos] > ' ')
-                Main_data.version.VERSION_PCB[pos]--;
-            else
-                Main_data.version.VERSION_PCB[pos] = '~';
-            redraw = true;
-        }
-
-        if (redraw)
-        {
-            redraw = false;
-            OLED_Clear(0);
-            Display_TopBar(selectedMenuItem);
-
-            // рисуем строку по центру
-            uint16_t totalW = OLED_GetWidthStr(Main_data.version.VERSION_PCB);
-            uint16_t x0 = (winth_display - totalW) / 2;
-            uint16_t y = 30;
-            OLED_DrawStr(Main_data.version.VERSION_PCB, x0, y, 1);
-
-            // вычисляем x-координату начала подчёркивания
-            char prefix[21];
-            memcpy(prefix, Main_data.version.VERSION_PCB, pos);
-            prefix[pos] = '\0';
-            uint16_t cursorX = x0 + OLED_GetWidthStr(prefix);
-
-            // фиксированная ширина подчёркивания = 5
-            OLED_DrawHLine(cursorX, y + 9, 5, 1);
-
-            OLED_UpdateScreen();
-        }
-
-        Keyboard_press_code = 0xFF;
-        osDelay(50);
-    }
-
-    // завершение ввода
-    mode_redact = 2;
-    Keyboard_press_code = 0xFF;
-    OLED_DrawRectangleFill(0, 15, winth_display, 60, 0);
-    OLED_DrawCenteredString(READY, 30);
     OLED_UpdateScreen();
     osDelay(200);
 }
@@ -1240,75 +1121,6 @@ void ALL_Reset_settings(){
 
 #define X_col 25
 #define Y_col 20
-// ! Нужна проверка на работоспособность
-void colibrate_4ma(){
-    mode_redact = 2;
-    OLED_Clear(0);
-    FontSet(font);
-    Display_TopBar(selectedMenuItem);
-    if ((ADC_data.ADC_Current[0] < 0.0035) || (ADC_data.ADC_Current[0] > 0.0045)){
-        // Ошибка
-        OLED_DrawCenteredString(DIAPASON_ERR, Y_col);
-        OLED_UpdateScreen();
-        return;
-    }
-    //EEPROM.GVL_correct_4m = ADC_data.ADC_Current;
-    OLED_DrawCenteredString(CALIBRATE_4ma_CORRECT, Y_col);
-
-    EEPROM_SaveSettings(&EEPROM);
-    if (EEPROM_CheckDataValidity() != HAL_OK){
-        ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
-        OLED_DrawCenteredString(ERROR_EEROM, Y_col+10);
-    }
-
-    OLED_DrawCenteredString(READY, Y_col+10);
-    OLED_UpdateScreen();
-    osDelay(200);
-}
-void colibrate_24v(){
-    mode_redact = 2;
-    OLED_Clear(0);
-    FontSet(font);
-    Display_TopBar(selectedMenuItem);
-    
-    int res = Read_ADC_Colibrate_24V();
-    if (res == -1){
-        // Ошибка
-        OLED_DrawCenteredString(ERROR_TEXT, Y_col);
-        OLED_UpdateScreen();
-        return;
-    }
-    OLED_DrawCenteredString(READY, Y_col);
-    OLED_UpdateScreen();
-    osDelay(500);
-    mode_redact = 0;
-}
-
-
-
-void colibrate_20ma(){
-    mode_redact = 2;
-    OLED_Clear(0);
-    FontSet(font);
-    Display_TopBar(selectedMenuItem);
-    if ((ADC_data.ADC_Current[0] < 0.019) || (ADC_data.ADC_Current[0] > 0.025)){
-        // Ошибка
-        OLED_DrawCenteredString(DIAPASON_ERR, Y_col);
-        OLED_UpdateScreen();
-        return;
-    }
-    //EEPROM.GVL_correct_20m = ADC_data.ADC_Current;
-    OLED_DrawCenteredString(CALIBRATE_20ma_CORRECT, Y_col);
-
-    EEPROM_SaveSettings(&EEPROM);
-    if (EEPROM_CheckDataValidity() != HAL_OK){
-        ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
-        OLED_DrawCenteredString(ERROR_EEROM, Y_col+10);
-    }
-    OLED_DrawCenteredString(READY, Y_col+20);
-    OLED_UpdateScreen();
-    osDelay(200);
-}
 
 // ! Нужна проверка на работоспособность
 void temperature_colibrate(){

@@ -1,11 +1,15 @@
-#ifndef DISOLAY_H
-#define DISOLAY_H
+#ifndef MENU_DATA_H
+#define MENU_DATA_H
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-
+/*.
+* Общий файл для всех объявлений меню
+*
+*
+*/
 #include "OLED.h"
 #include "OLED_Fonts.h"
 #include "OLED_Icons.h"
@@ -25,11 +29,41 @@ extern "C"
 #include "Settings_default.h"
 #include "qr2xbm.h"
 #include "Hard_fault.h"
+#include "Flash_colibrate_data.h"
 
 extern osThreadId_t  ADC_readHandle;
 extern osThreadId_t  ERROR_INDICATE_taskHandle;
 extern SPI_HandleTypeDef hspi2;
 
+
+#define font my5x7fonts
+#define winth_display 128
+#define height_display 64
+
+#define line_indentation 0                            // отступы верхней линии слева и справа
+#define end_line 125                                  // отступы верхней линии слева и справа
+#define line_ind_top 11                               // оттуп линии сверху
+#define back_pic_pos_x 0                              // начало иконки предыдущий пункт меню x
+#define back_pic_pos_y 4                              // начало иконки предыдущий пункт меню y
+#define size_back_pic_x 3                             // размер треугольника по x
+#define size_back_pic_y 3                             // размер треугольника по y
+#define top_pic_last_munu 1                           // отступ сверху до названия предыдущего пункта меню
+#define left_pic_last_munu 7                          // отступ слева до названия предыдущего пункта меню
+#define top_GSM_status 2                              // отступ сверху до статуса связи
+#define width_GSM_status 15                           // ширина одного значка статуса связи
+#define top_akb_status 1                              // отступ сверху до уровня заряда
+#define width_akb_status 7                            // ширина одного уровня заряда
+
+#define time_led_cursor 500      // Время обновления индикации курсоора при вводе данных
+#define time_updateDisplay 20000 // Время обновления экрана вне ввода данных
+////////////////////////////////////////////////////
+//                  Пункты меню                   //
+////////////////////////////////////////////////////
+#define SCROLLBAR_X      (winth_display - 7)  // Отступ от правого края экрана
+#define SCROLLBAR_Y      14                   // Y-координата верхнего угла области полосы
+#define SCROLLBAR_HEIGHT 45                   // Высота области полосы прокрутки
+#define SCROLLBAR_WIDTH  3                    // Ширина полосы прокрутки
+#define MIN_THUMB_HEIGHT 3                    // Минимальная высота ползунка
 
 typedef struct Menu_item
 {
@@ -140,14 +174,34 @@ void State_update();
 void QR_status();
 void Add_units(void);
 void Calibrate();
+void OLED_DrawCenteredString_OFFSETX(char strArray[40], uint16_t Y_pos, uint8_t width_display, uint8_t offset);
+void OLED_DrawCenteredString(const char strArray[][40], uint16_t Y_pos);
+int YES_OR_NO(const char strArray[][40]);
+bool Boot_CopyVersion(Bootloader_data_item* out, size_t out_sz);
+
 
 typedef void (*TopBarDrawFunc)(int *px, menuItem *m);
 typedef struct {
     TopBarDrawFunc  draw;
 } TopBarElement;
 
+#define PASSWORD_LEN 5
+
+
+extern int mode_redact;
+extern char Keyboard_press_code;
+extern menuItem *selectedMenuItem;
+
+
+
+void CalibrateTable(void);
+void Initial_setup(void);
+HAL_StatusTypeDef Collect_ADC_Data(uint8_t channel, int ref_mA);
+uint8_t InputString(char *buffer, uint8_t length, const char *title);
+
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif // SETTINGS_H
+#endif

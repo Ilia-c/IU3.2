@@ -5,7 +5,7 @@
 #define Debug_mode 1                                // Включен или выключен режим отладки
 
 #define Version3_75 0xFAEE                       // Версия 3.75
-#define Version3_80 0x0EA3                       // Версия 3.79
+#define Version3_80 0x0EA3                       // Версия 3.80
 #define BOARD_VERSION Version3_80                // Под какую версию собирать проект
 
 #if BOARD_VERSION == Version3_80 
@@ -16,6 +16,9 @@
 
 // Значения по умолчанию для EEPROM
 #define DEFAULT_VERSION_PROGRAMM       "Ver0.82"    // Версия программы
+#define DEFAULT_VERSION_PROGRAMM_UINT16_t  82       // Версия программы
+#define DEFAULT_VERSION_BOOTLOADER     "Uncnown"    // Версия программы
+#define BOOTLOADER_MAGIC                0xB00B1E00
 #define EEPROM_FORMAT_VERSION           0x00000010U //? Версия формата данных EEPROM
 
 #if BOARD_VERSION == Version3_80 
@@ -41,17 +44,26 @@
 
 // Канал 1
 #define DEFAULT_GVL_CORRECT_1            0
-#define DEFAULT_K_KOEFF_1                0
+#define DEFAULT_REAL_CURRENT_4MA_1      0.004
+#define DEFAULT_REAL_CURRENT_20MA_1     0.02
+#define DEFAULT_K_KOEFF_1                1
+#define DEFAULT_B_KOEFF_1                0.0f
 #define DEFAULT_MAX_LVL_1                15
 #define DEFAULT_ZERO_LVL_1               0
 // Канал 2
 #define DEFAULT_GVL_CORRECT_2            0
-#define DEFAULT_K_KOEFF_2                0
+#define DEFAULT_REAL_CURRENT_4MA_2      0.004
+#define DEFAULT_REAL_CURRENT_20MA_2     0.02
+#define DEFAULT_K_KOEFF_2                1
+#define DEFAULT_B_KOEFF_2                0.0f
 #define DEFAULT_MAX_LVL_2                15
 #define DEFAULT_ZERO_LVL_2               0
 // Канал 3
 #define DEFAULT_GVL_CORRECT_3            0
-#define DEFAULT_K_KOEFF_3                0
+#define DEFAULT_REAL_CURRENT_4MA_3      0.004
+#define DEFAULT_REAL_CURRENT_20MA_3     0.02
+#define DEFAULT_K_KOEFF_3                1
+#define DEFAULT_B_KOEFF_3                0.0f
 #define DEFAULT_MAX_LVL_3                15
 #define DEFAULT_ZERO_LVL_3               0
 

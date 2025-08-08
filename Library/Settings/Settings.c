@@ -14,17 +14,35 @@ Main_data_settings_item Main_data = {
         .VERSION_PCB = DEFAULT_VERSION_PCB,    // Версия печатной платы
         .password = DEFAULT_PASSWORD,
     },
+    .real_current = {
+        {DEFAULT_REAL_CURRENT_4MA_1, DEFAULT_REAL_CURRENT_4MA_2, DEFAULT_REAL_CURRENT_4MA_3}, // Реальное значение тока 4мА
+        {DEFAULT_REAL_CURRENT_20MA_1, DEFAULT_REAL_CURRENT_20MA_2, DEFAULT_REAL_CURRENT_20MA_3} // Реальное значение тока 20мА
+    },
     .k_koeff = {DEFAULT_K_KOEFF_1, DEFAULT_K_KOEFF_2, DEFAULT_K_KOEFF_3}, // Коэффициэнт наклона линейной зависимости (по 2 точкам, 20мА и 4мА)
+    .b_koeff = {DEFAULT_B_KOEFF_1, DEFAULT_B_KOEFF_2, DEFAULT_B_KOEFF_3}, // Коэффициэнт смещения (по 2 точкам, 20мА и 4мА)
     .Colibrate_koeff = DEFAULT_COLIBRATE_KOEFF, // Колибровочный коэффициэнт АКБ
-    .crc32 = 0x00             // CRC32 для проверки целостности
+    .crc32 = 0x00,             // CRC32 для проверки целостности
 };
 
+Factory_data_item Factory_data = {
+    .magic = FACTORY_SETTINGS_MAGIC,           // Магическое число для проверки наличия калибровочных данных
+    .version = 1,                              // Версия калибровочных данных
+    .data = {{0}, {0}, {0}}, // Текущая версия устройства
+    .crc32 = 0,                                // CRC32 для проверки целостности
+};
 
 char save_data[CMD_BUFFER_SIZE] __attribute__((section(".ram2"))); // Переменная в которой собирается набор данных для сохранения и передачи на сайт
 ////////////////////////////////////////////////////////////////////////////////
 // Глобальная структура настроек, сохраняемых в EEPROM
 ////////////////////////////////////////////////////////////////////////////////
 const char VERSION_PROGRAMM[20] = DEFAULT_VERSION_PROGRAMM;
+Bootloader_data_item bootloader_data = {
+    .magic = 0x00, // Магическое число для проверки загрузчика
+    .version = DEFAULT_VERSION_BOOTLOADER,
+    .version_board = 0x00
+};
+
+
 EEPROM_Settings_item EEPROM = {
     .DEBUG_CATEG = DEBUG_NONE,
     .DEBUG_LEVL = DEBUG_LEVL_1,
@@ -108,6 +126,7 @@ Internal_ADC_item IntADC =
   .ADC_AKB_volts_char = "ND", // Напряжение на АКБ строка
   .ADC_AKB_Proc_char = "ND"  // Процент заряда на акб строка
 };
+extern Internal_ADC_item IntADC; // Глобальная переменная для доступа к данным внутреннего АЦП
 ////////////////////////////////////////////////////////////////////////////////
 // Глобальная структура для данных GSM
 ////////////////////////////////////////////////////////////////////////////////

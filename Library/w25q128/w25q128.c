@@ -937,7 +937,7 @@ void createFilename_HARD_FAULT(char *dest, size_t destSize)
 //             ОБНОВЛЕНИЕ ПО             //
 //---------------------------------------//
 #define UPDATE_BUFFER_SIZE  256
-#define EXTERNAL_HEADER_SIZE 12U
+#define EXTERNAL_HEADER_SIZE 16U
 #define EXT_FW_AREA_SIZE TARGET_FLASH_SIZE
 #define EXTERNAL_FW_START FLASH_TOTAL_SIZE
 #define APP_SIZE (448U * 1024U)
@@ -1034,14 +1034,6 @@ void Update_PO(void)
     FRESULT res;
     char path[32];
 
-    // 1) Открываем UPDATE.bin
-    /*
-    snprintf(path, sizeof(path), "%sUPDATE.bin", USBHPath);
-    if ((res = f_open(&MyFile, path, FA_READ)) != FR_OK) {
-        OLED_DrawCenteredString("Файл не найден", 30);
-        OLED_UpdateScreen();
-        return;
-    }*/
     if ((res = FindAndOpenFirstBin(&MyFile, USBHPath)) != FR_OK) {
          OLED_DrawCenteredString("Файл не найден", 30);
          OLED_UpdateScreen();
@@ -1062,7 +1054,7 @@ void Update_PO(void)
     // 3) Читаем 8 байт размера + 4 байта CRC32
 
     UINT br;
-    uint8_t size_hdr[8], crc_hdr[4];
+    uint8_t size_hdr[8], crc_hdr[4], ver_hdr[4];
     // Читаем 8 байт размера прошивки
     if (f_read(&MyFile, size_hdr, 8, &br) != FR_OK || br != 8) { 
         OLED_Clear(0);
@@ -1079,6 +1071,15 @@ void Update_PO(void)
         f_close(&MyFile); 
         return -1;  
     }
+
+    if (f_read(&MyFile, ver_hdr, 4, &br) != FR_OK || br != 4) {
+        OLED_Clear(0);
+        OLED_DrawCenteredString("Ошибка формата", 10);
+        OLED_UpdateScreen();
+        f_close(&MyFile);
+        return;
+    }
+
     // Вычисляем размер прошивки из первых 8 байт (little endian)
     gFirmwareSize =  (uint64_t)size_hdr[0]
                    | ((uint64_t)size_hdr[1] <<  8)
@@ -1095,6 +1096,39 @@ void Update_PO(void)
                           | ((uint32_t)crc_hdr[2] << 16)
                           | ((uint32_t)crc_hdr[3] << 24);
 
+    uint16_t new_fw_ver   = (uint16_t)(ver_hdr[0] | (ver_hdr[1] << 8));
+    uint16_t new_boardver = (uint16_t)(ver_hdr[2] | (ver_hdr[3] << 8));
+
+    // sanity-check: длина из заголовка должна совпасть с длиной файла
+    if (gFirmwareSize == 0 || gFirmwareSize > EXTERNAL_MAX_FW_SIZE ||
+        (uint64_t)fullSize != (uint64_t)EXTERNAL_HEADER_SIZE + gFirmwareSize)
+    {
+        f_close(&MyFile);
+        OLED_Clear(0);
+        OLED_DrawCenteredString("Размер/заголовок", 10); // ! ПоПРАВИЬ
+        OLED_UpdateScreen();
+        osDelay(1000);
+        return;
+    }
+    if (new_boardver != BOARD_VERSION) {
+        f_close(&MyFile);
+        OLED_Clear(0);
+        OLED_DrawCenteredString("Неверная версия платы", 10);
+        OLED_UpdateScreen();
+        osDelay(1000);
+        return;
+    }
+
+    if (new_fw_ver < DEFAULT_VERSION_PROGRAMM_UINT16_t) {
+        f_close(&MyFile);
+        OLED_Clear(0);
+        OLED_DrawCenteredString("Нет обновления", 10);
+        OLED_UpdateScreen();
+        osDelay(1000);
+        return;
+    }
+
+
     // Очистка внешнего хранилища
     OLED_Clear(0);
     OLED_DrawCenteredString("Подготовка места", 10);
@@ -1109,7 +1143,7 @@ void Update_PO(void)
     }
 
 
-    // Записываем в W25Q128 все 12 байт заголовка
+    // Записываем в W25Q128 все 16 байт заголовка
     if (W25_Write_Data(EXTERNAL_FW_START,        size_hdr, 8) != 0) { 
         OLED_Clear(0);
         OLED_DrawCenteredString("Ошибка записи", 10);
@@ -1123,6 +1157,13 @@ void Update_PO(void)
         OLED_UpdateScreen();
         f_close(&MyFile); 
         return -1; 
+    }
+    if (W25_Write_Data(EXTERNAL_FW_START + 12, ver_hdr, 4) != 0) {
+        OLED_Clear(0);
+        OLED_DrawCenteredString("Ошибка записи", 10);
+        OLED_UpdateScreen();
+        f_close(&MyFile);
+        return;
     }
 
     // Копируем остальной бинарник с прогрессом и проверяем CRC на лету
