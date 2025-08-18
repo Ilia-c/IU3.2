@@ -104,10 +104,9 @@ void Initial_setup(void)
                 PASSWORD_LEN,
                 "Пароль устройства");
 
-    CalibrateVoltage();
-
-    // 4) Калибровка тока по каналам
-    CalibrateTable();
+    AES_GENERATE(); // Генерация ключа шифрования AES-128            
+    CalibrateVoltage(); // 1) Калибровка напряжения АКБ 24 В
+    CalibrateTable(); // 2) Калибровка тока по каналам + cохранение в структуру Main_data
 
     // Финал: успешное завершение
     mode_redact = 2;
@@ -324,4 +323,58 @@ void CalibrateTable(void)
         osDelay(20);
     }
     Keyboard_press_code = 0xFF;
+}
+
+HAL_StatusTypeDef Generate_AES128_Key(uint8_t out_key16[16]);
+static void bin_to_hex(const uint8_t *in, size_t n, char *out);
+// Калибровка тока по трём каналам на одной странице
+void AES_GENERATE(void)
+{
+    OLED_Clear(0);
+    Display_TopBar(selectedMenuItem);
+
+    MX_RNG_Init();
+    if (Generate_AES128_Key(Main_data.AES_KEY) == HAL_OK)
+    {
+        char key_hex[33]; // 16 байт * 2 + 1 для нуль-терминатора
+        bin_to_hex(Main_data.AES_KEY, 16, key_hex);
+        QR_create(key_hex);
+        OLED_DrawXBM(44, 15, QR_XBM);
+        OLED_UpdateScreen();
+        osDelay(20000);
+    }
+    else
+    {
+        OLED_DrawCenteredString("Ошибка генерации", 30);
+        OLED_UpdateScreen();
+        osDelay(2000);
+        return;
+    }
+}
+
+static void bin_to_hex(const uint8_t *in, size_t n, char *out /*>= 2*n+1*/)
+{
+    static const char H[] = "0123456789ABCDEF";
+    for (size_t i = 0; i < n; i++) {
+        out[2*i]     = H[in[i] >> 4];
+        out[2*i + 1] = H[in[i] & 0x0F];
+    }
+    out[2*n] = '\0';
+}
+
+HAL_StatusTypeDef Generate_AES128_Key(uint8_t out_key16[16]) {
+    uint32_t w;
+    for (int i = 0; i < 4; ++i) {
+        HAL_StatusTypeDef st = HAL_RNG_GenerateRandomNumber(&hrng, &w);
+        if (st != HAL_OK) return st;
+        memcpy(out_key16 + i*4, &w, 4);
+    }
+
+    // (необязательно) простая sanity-проверка на “плохие” ключи
+    uint32_t *p = (uint32_t*)out_key16;
+    if ((p[0] | p[1] | p[2] | p[3]) == 0u) {
+        // крайне маловероятно: все нули — перегенерим
+        return Generate_AES128_Key(out_key16);
+    }
+    return HAL_OK;
 }

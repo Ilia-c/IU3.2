@@ -54,7 +54,7 @@ UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart5;
 
-
+RNG_HandleTypeDef hrng;
 TIM_HandleTypeDef htim5;
 TIM_HandleTypeDef htim6;
 TIM_HandleTypeDef htim7;
@@ -82,6 +82,7 @@ void MX_TIM6_Init(void);
 void MX_IWDG_Init(void);
 void MX_TIM7_Init(void);
 void MX_TIM8_Init(void);
+void MX_RNG_Init(void);
 
 void HAL_TIM5_Callback(void);
 /* Definitions for Main */
@@ -364,6 +365,12 @@ int main(void)
     HAL_Delay(150);
 
     if (EEPROM.screen_sever_mode == 1) Start_video();
+    else
+    {
+      OLED_SendCommand(0xD9); //  Установка фаз на рабочий режим
+      OLED_SendCommand(0xF1); //  Установка фаз на рабочий режим
+      OLED_SetContrast(0xFF);
+    }
     HAL_GPIO_WritePin(COL_B1_GPIO_Port, COL_B1_Pin, 1);
     HAL_GPIO_WritePin(COL_B2_GPIO_Port, COL_B2_Pin, 1);
     HAL_GPIO_WritePin(COL_B3_GPIO_Port, COL_B3_Pin, 1);

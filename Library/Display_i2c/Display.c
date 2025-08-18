@@ -746,7 +746,6 @@ void Update_programm(){
     #define X 20
     #define Y 30
 
-
     osThreadSuspend(ADC_readHandle);
     osThreadSuspend(ERROR_INDICATE_taskHandle);
     OLED_Clear(0);

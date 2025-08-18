@@ -13,7 +13,7 @@
 #include "task.h"
 
 // Адрес резервной страницы (2 КБ) в конце 512 КБ Flash
-#define BACKUP_HARD_ADDRESS   ((uint32_t)0x0807F800U)
+#define BACKUP_HARD_ADDRESS   ((uint32_t)0x0807F000U) // 512 КБ Flash, 2 КБ резервной страницы
 #define FLASH_PAGE_SIZE_BYTES ((uint32_t)0x800U)    // 2 KB
 #define FAULTLOG_MAGIC        0xA5A5A5A5U           // Магическое число
 #define STACK_DUMP_WORDS      16                    // Размер дампа стека

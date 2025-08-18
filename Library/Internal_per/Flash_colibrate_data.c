@@ -54,8 +54,6 @@ bool Flash_IsCalibProtected(void)
     if ((start == 0xFFU && end == 0x00U) || (start == 0xFFU && end == 0xFFU))
         return false;
 
-    // Локальный номер страницы внутри Bank2 для 0x0807F800 — 127
-    // (лучше заведи макрос CALIB_BANK_PAGE = 127)
     const uint32_t page = 127U;
     if (start <= end) 
         return (page >= start) && (page <= end);
@@ -170,7 +168,6 @@ HAL_StatusTypeDef Flash_WriteCalib(const Main_data_settings_item *pData)
     }
     f.crc32 = CalcCRC_Factory(&f);
 
-    // Стереть одну страницу (Bank2 / page 127)
     FLASH_EraseInitTypeDef erase = {0};
     erase.TypeErase = FLASH_TYPEERASE_PAGES;
     erase.Banks     = FLASH_BANK_2;

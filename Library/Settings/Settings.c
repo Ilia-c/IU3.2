@@ -21,6 +21,7 @@ Main_data_settings_item Main_data = {
     .k_koeff = {DEFAULT_K_KOEFF_1, DEFAULT_K_KOEFF_2, DEFAULT_K_KOEFF_3}, // Коэффициэнт наклона линейной зависимости (по 2 точкам, 20мА и 4мА)
     .b_koeff = {DEFAULT_B_KOEFF_1, DEFAULT_B_KOEFF_2, DEFAULT_B_KOEFF_3}, // Коэффициэнт смещения (по 2 точкам, 20мА и 4мА)
     .Colibrate_koeff = DEFAULT_COLIBRATE_KOEFF, // Колибровочный коэффициэнт АКБ
+    .AES_KEY = {0}, // Ключ шифрования AES-256 (по умолчанию нулевой)
     .crc32 = 0x00,             // CRC32 для проверки целостности
 };
 

@@ -108,6 +108,8 @@ extern "C"
     double b_koeff[3];            // Коэффициэнт смещения. (По 2 точкам, 20мА и 4мА)
     double real_current[2][3];    // Реальное значение тока 4 и 20мА 1 - 4мА или 20мА. 2 - канал 1, 2 или 3
     double Colibrate_koeff;       // Колибровочный коэффициэнт АКБ
+    uint8_t AES_KEY[16];          // Ключ шифрования AES-128
+    uint8_t Rezerv[16];           // Зарезервировано для будущих расширений
     uint32_t crc32;               // CRC32 для проверки целостности
   } Main_data_settings_item;
   extern Main_data_settings_item Main_data;

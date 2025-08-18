@@ -3,6 +3,15 @@ cmake_minimum_required(VERSION 3.22)
 project(stm32cubemx)
 add_library(stm32cubemx INTERFACE)
 
+set(CRYPTO_DIR ${CMAKE_CURRENT_LIST_DIR}/../../Middlewares/ST/STM32_Cryptographic)
+target_link_directories(stm32cubemx INTERFACE ${CRYPTO_DIR}/lib)
+target_link_libraries(stm32cubemx INTERFACE STM32Cryptographic_CM4)
+target_compile_options(stm32cubemx INTERFACE
+  -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard
+)
+target_link_options(stm32cubemx INTERFACE
+  -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard -Wl,--gc-sections
+)
 # Enable CMake support for ASM and C languages
 enable_language(C ASM)
 
@@ -41,6 +50,9 @@ target_include_directories(stm32cubemx INTERFACE
     ../../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc
     ../../Middlewares/ST/STM32_USB_Host_Library/Class/MSC/Inc
     ../../Middlewares/ST/STM32_USB_Host_Library/Core/Inc
+    ../../Middlewares/ST/STM32_Cryptographic/include
+    ../../Middlewares/ST/STM32_Cryptographic/interface
+    ../../Middlewares/ST/STM32_Cryptographic/legacy_v3
     ../../USB_HOST/App
     ../../USB_HOST/Target
     ../../USB_DEVICE/App
@@ -91,6 +103,7 @@ target_sources(stm32cubemx INTERFACE
     ../../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_adc_ex.c
     ../../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rtc.c
     ../../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rtc_ex.c
+    ../../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c
     ../../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_sdmmc.c
     ../../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_sd.c
     ../../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_sd_ex.c
@@ -117,6 +130,8 @@ target_sources(stm32cubemx INTERFACE
     ../../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.c
     ../../Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c
     ../../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c
+    
+    
     ../../Core/Src/sysmem.c
     ../../Core/Src/syscalls.c
     ../../startup_stm32l476xx.s

@@ -852,7 +852,7 @@ int backup_fault_to_external(void) {
     ERRCODE.STATUS &= ~STATUS_USB_FULL_ERROR;
 
     char filename[16];
-    createFilename(filename, sizeof(filename));
+    createFilename_HARD_FAULT(filename, sizeof(filename));
     res = f_open(&MyFile, filename, FA_WRITE | FA_CREATE_ALWAYS);
     if (res != FR_OK) {
         ERRCODE.STATUS |= STATUS_USB_OPEN_ERROR;
@@ -940,7 +940,7 @@ void createFilename_HARD_FAULT(char *dest, size_t destSize)
 #define EXTERNAL_HEADER_SIZE 16U
 #define EXT_FW_AREA_SIZE TARGET_FLASH_SIZE
 #define EXTERNAL_FW_START FLASH_TOTAL_SIZE
-#define APP_SIZE (448U * 1024U)
+#define APP_SIZE (446U * 1024U)
 #define EXTERNAL_MAX_FW_SIZE (APP_SIZE)
 #define APP_ADDRESS 0x08010000U
 static uint32_t gFirmwareSize = 0;
@@ -1000,33 +1000,117 @@ static int EraseExternalFirmwareArea(void)
   return 0;
 }
 
-FRESULT FindAndOpenFirstBin(FIL *pFile, const char *USBHPath) {
-    DIR dir;
-    FILINFO fno;
-    FRESULT res;
-    char fullpath[64];
+FRESULT FindAndOpenFirstBin(FIL *pFile, const char *USBHPath)
+{
+  DIR dir;
+  FILINFO fno;
+  FRESULT res;
+  char fullpath[64];
 
-    // Ищем в корне USBHPath файл по маске *.BIN
-    res = f_findfirst(&dir, &fno, USBHPath, "*.BIN");
-    if (res != FR_OK) {
-        f_closedir(&dir);
-        return res;
-    }
-
-    if (fno.fname[0] == 0) {
-        // Ни один файл не найден
-        f_closedir(&dir);
-        return FR_NO_FILE;
-    }
-
-    // Собираем полный путь: USBHPath + SFN-имя
-    // USBHPath должен оканчиваться слэшем, например "0:/" или "0:/DIR/"
-    snprintf(fullpath, sizeof(fullpath), "%s%s", USBHPath, fno.fname);
-
-    // Пытаемся открыть
-    res = f_open(pFile, fullpath, FA_READ);
-    f_closedir(&dir);
+  // Откроем корень
+  res = f_opendir(&dir, USBHPath);
+  if (res != FR_OK)
     return res;
+
+  // Лучший кандидат
+  int found = 0;
+  uint16_t best_fw_ver = 0;
+  WORD best_date = 0; // FAT дата
+  WORD best_time = 0; // FAT время
+  char best_path[sizeof(fullpath)];
+
+  for (;;)
+  {
+    res = f_readdir(&dir, &fno);
+    if (res != FR_OK)
+    {
+      f_closedir(&dir);
+      return res;
+    }
+    if (fno.fname[0] == 0)
+      break; // конец списка
+    if (fno.fattrib & AM_DIR)
+      continue; // пропускаем папки
+
+    // Проверка расширения .BIN (без LFN у FatFs обычно уже верхний регистр)
+    const char *name = fno.fname;
+    size_t len = strlen(name);
+    if (len < 4 || name[len - 4] != '.')
+      continue;
+    char e0 = (char)toupper((unsigned char)name[len - 3]);
+    char e1 = (char)toupper((unsigned char)name[len - 2]);
+    char e2 = (char)toupper((unsigned char)name[len - 1]);
+    if (!(e0 == 'B' && e1 == 'I' && e2 == 'N'))
+      continue;
+
+    // Полный путь вида "0:/filename.BIN" — USBHPath ДОЛЖЕН оканчиваться '/'
+    snprintf(fullpath, sizeof(fullpath), "%s%s", USBHPath, name);
+
+    // Откроем кандидат
+    FIL f;
+    if (f_open(&f, fullpath, FA_READ) != FR_OK)
+      continue;
+
+    // Грубые проверки размеров
+    DWORD fsz = f_size(&f);
+    if (fsz < EXTERNAL_HEADER_SIZE || fsz > EXTERNAL_HEADER_SIZE + EXTERNAL_MAX_FW_SIZE)
+    {
+      f_close(&f);
+      continue;
+    }
+
+    // Чтение 16-байтного заголовка
+    uint8_t hdr[16];
+    UINT br = 0;
+    if (f_read(&f, hdr, sizeof(hdr), &br) != FR_OK || br != sizeof(hdr))
+    {
+      f_close(&f);
+      continue;
+    }
+
+    // Парсинг LE: [size8][crc4][fw_ver2][board_ver2]
+    uint64_t size = 0;
+    for (int i = 0; i < 8; ++i)
+      size |= ((uint64_t)hdr[i]) << (8 * i);
+
+    if (size == 0 || size > EXTERNAL_MAX_FW_SIZE || (EXTERNAL_HEADER_SIZE + size) != fsz)
+    {
+      f_close(&f);
+      continue;
+    }
+
+    uint16_t fw_ver = (uint16_t)(hdr[12] | (hdr[13] << 8));
+    uint16_t board_ver = (uint16_t)(hdr[14] | (hdr[15] << 8));
+
+    // Фильтр по плате
+    if (board_ver != (uint16_t)BOARD_VERSION)
+    {
+      f_close(&f);
+      continue;
+    }
+
+    // Кандидат подходит — выберем лучший (по fw_ver, затем по дате/времени)
+    if (!found ||
+        fw_ver > best_fw_ver ||
+        (fw_ver == best_fw_ver && (fno.fdate > best_date || (fno.fdate == best_date && fno.ftime > best_time))))
+    {
+      found = 1;
+      best_fw_ver = fw_ver;
+      best_date = fno.fdate;
+      best_time = fno.ftime;
+      strncpy(best_path, fullpath, sizeof(best_path));
+      best_path[sizeof(best_path) - 1] = '\0';
+    }
+
+    f_close(&f);
+  }
+
+  f_closedir(&dir);
+
+  if (!found)
+    return FR_NO_FILE;
+  // Открываем лучший найденный файл
+  return f_open(pFile, best_path, FA_READ);
 }
 
 void Update_PO(void)

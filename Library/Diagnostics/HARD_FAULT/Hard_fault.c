@@ -127,7 +127,7 @@ void HardFault_HandlerC(uint32_t *stk) {
 
     // 7. Снимок стека (расширенный)
     memcpy(faultLog.stack, stk, sizeof(faultLog.stack));
-
+    
     // 8. Проверка и запись дампа
     if (FlashBackup_IsEmpty()) {
         FlashBackup_Write();

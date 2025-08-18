@@ -191,6 +191,7 @@ typedef struct {
 extern int mode_redact;
 extern char Keyboard_press_code;
 extern menuItem *selectedMenuItem;
+extern RNG_HandleTypeDef hrng;
 
 
 
