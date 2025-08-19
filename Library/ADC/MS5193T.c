@@ -191,31 +191,31 @@ void calculate_ADC_data_heigh(int32_t adValue, uint8_t channel) {
     long double ADC_Current_ld = ADC_Volts_ld / (ADC_data.ADC_RESISTOR[channel]);
     ADC_data.ADC_Volts[channel] = (double)ADC_Volts_ld;
     // Применяем калибровочные коэффициенты
-    ADC_data.ADC_Current[channel] = (double)ADC_Current_ld * ADC_data.k_koeff[channel] +  Main_data.b_koeff[channel];
+    ADC_data.ADC_Current[channel] = (double)ADC_Current_ld * Main_data.k_koeff[channel] +  Main_data.b_koeff[channel];
 
     // Определяем Imin и Imax в зависимости от режима ADC
     long double Imin = (EEPROM.mode_ADC[channel] == 0) ? DEFAULT_GVL_CORRECT_4M : 0.0L;
     long double Imax = DEFAULT_GVL_CORRECT_20M;
     long double Imax_Imin = Imax - Imin;
-    long double VPI_NPI = ADC_data.MAX_LVL[channel] - ADC_data.ZERO_LVL[channel];
+    long double VPI_NPI = EEPROM.MAX_LVL[channel] - EEPROM.ZERO_LVL[channel];
 
     // Вычисляем относительный сигнал
     long double ADC_min = ADC_data.ADC_Current[channel] - Imin;
     long double ADC_d_Imm = ADC_min / Imax_Imin;
 
     // Получение знгачения с учетом диапазона значний
-    long double ADC_SI_value_ld = fmal(ADC_d_Imm, VPI_NPI, ADC_data.ZERO_LVL[channel]);
+    long double ADC_SI_value_ld = fmal(ADC_d_Imm, VPI_NPI, EEPROM.ZERO_LVL[channel]);
     ADC_data.ADC_SI_value[channel] = (double)ADC_SI_value_ld;
 
     // Применяем корректировку
-    ADC_data.ADC_SI_value_correct[channel] = ADC_data.ADC_SI_value[channel] + ADC_data.GVL_correct[channel];
+    ADC_data.ADC_SI_value_correct[channel] = ADC_data.ADC_SI_value[channel] + EEPROM.Correct[channel];
 
     // Отчищаем строки для хранения значений
     for (int i = 0; i<11; i++) ADC_data.ADC_SI_value_char[channel][i] = '\0';
     for (int i = 0; i<11; i++) ADC_data.ADC_SI_value_correct_char[channel][i] = '\0';
 
     // Проверяем диапазон значений и формируем строки для отображения
-    if (ADC_data.ADC_SI_value[channel] < ADC_data.ZERO_LVL[channel]-0.1) {
+    if (ADC_data.ADC_SI_value[channel] < EEPROM.ZERO_LVL[channel]-0.1) {
         ERRCODE.STATUS |= STATUS_ADC_RANGE_ERROR;
         if (EEPROM.len == 0){
             snprintf(ADC_data.ADC_SI_value_char[channel], sizeof(ADC_data.ADC_SI_value_char[channel]), "Обрыв");
@@ -229,8 +229,8 @@ void calculate_ADC_data_heigh(int32_t adValue, uint8_t channel) {
     }
     else{
         ERRCODE.STATUS &= ~STATUS_ADC_RANGE_ERROR;
-        if (ADC_data.ADC_SI_value[channel] < ADC_data.ZERO_LVL[channel]){
-            snprintf(ADC_data.ADC_SI_value_char[channel], sizeof(ADC_data.ADC_SI_value_char[channel]), "%4.2f", ADC_data.ZERO_LVL[channel]);
+        if (ADC_data.ADC_SI_value[channel] < EEPROM.ZERO_LVL[channel]){
+            snprintf(ADC_data.ADC_SI_value_char[channel], sizeof(ADC_data.ADC_SI_value_char[channel]), "%4.2f", EEPROM.ZERO_LVL[channel]);
             snprintf(ADC_data.ADC_SI_value_correct_char[channel], sizeof(ADC_data.ADC_SI_value_correct_char[channel]), "%4.2f", ADC_data.ADC_SI_value_correct[channel]);
         }
         else

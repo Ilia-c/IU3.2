@@ -636,7 +636,7 @@ HAL_StatusTypeDef parse_site_response(void) {
         EEPROM.time_sleep_h = (uint16_t)sleepTime;
         EEPROM.time_sleep_m = 0;
     }
-    EEPROM.GVL_correct[0] = correct; 
+    EEPROM.Correct[0] = correct; 
     EEPROM.MAX_LVL[0] = maxLvl;
     // Копируем номер телефона, гарантируя наличие завершающего нуля
     strncpy(EEPROM.Phone, phone, sizeof(EEPROM.Phone) - 1);

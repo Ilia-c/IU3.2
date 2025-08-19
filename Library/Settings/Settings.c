@@ -57,7 +57,7 @@ EEPROM_Settings_item EEPROM = {
     
     // Параметры АЦП:
     // Канал 1
-    .GVL_correct = {DEFAULT_GVL_CORRECT_1, DEFAULT_GVL_CORRECT_2, DEFAULT_GVL_CORRECT_3},             // Коррекция нулевой точки (смещение ± от текущего значения) УГВ
+    .Correct = {DEFAULT_GVL_CORRECT_1, DEFAULT_GVL_CORRECT_2, DEFAULT_GVL_CORRECT_3},             // Коррекция нулевой точки (смещение ± от текущего значения) УГВ
     .MAX_LVL = {DEFAULT_MAX_LVL_1, DEFAULT_MAX_LVL_2, DEFAULT_MAX_LVL_3},                      // Максимальный уровень (например, 15 метров) ВПИ
     .ZERO_LVL = {DEFAULT_ZERO_LVL_1, DEFAULT_ZERO_LVL_2, DEFAULT_ZERO_LVL_3},                    // Нулевое значение (например, 0 метров) НПИ
 
@@ -65,7 +65,7 @@ EEPROM_Settings_item EEPROM = {
     .Mode = DEFAULT_MODE,                           // Текущий режим работы (0 - режим текущие показания, 1 - циклический режим, 2 - режим выставки)
     .Communication = DEFAULT_COMMUNICATION,         // Включен GSM или нет
     .RS485_prot = DEFAULT_RS485_PROT,               // Протокол RS-485
-    .units_mes = DEFAULT_UNITS_MES,                 // Единицы измерения (по умолчанию метры)
+    .units_mes = {DEFAULT_UNITS_MES, DEFAULT_UNITS_MES, DEFAULT_UNITS_MES},                 // Единицы измерения (по умолчанию метры)
     .screen_sever_mode = DEFAULT_SCREEN_SEVER_MODE, // Включить или нет заставку при включении
     .USB_mode = DEFAULT_USB_MODE,                   // Режим работы USB
     .Save_in = DEFAULT_SAVE_IN,                     // Куда сохранять данные: 0 - FLASH, 1 - SD, 2 - USB, 3 - Сайт
@@ -96,11 +96,6 @@ ADC_MS5193T_item ADC_data = {
     .ADC_ION = DEFAULT_ADC_ION,           // Указатель на напряжение ИОН АЦП
     .ADC_RESISTOR = {DEFAULT_ADC_RESISTOR, DEFAULT_ADC_RESISTOR, DEFAULT_ADC_RESISTOR}, // Указатель на сопротивление резистора
     .PPM = {10, 10, 10},                            // PPM (по умолчанию)
-    .mode = EEPROM.mode_ADC,             // Режим работы АЦП канал 1: 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
-    .GVL_correct = EEPROM.GVL_correct,   // Указатель на коррекцию нулевой точки (смещение ±)
-    .k_koeff = Main_data.k_koeff,           // Указатель на коэффициэнт наклона линейной зависимости
-    .MAX_LVL = EEPROM.MAX_LVL,           // Указатель на максимальный уровень (ВПИ)
-    .ZERO_LVL = EEPROM.ZERO_LVL,         // Указатель на нулевое значение (НПИ)
 
     .MAX_LVL_char = {-9999, -9999},            // Установка максимального уровня (целая и дробная части)
     .ZERO_LVL_char = {-9999, -9999},           // Установка минимального уровня (целая и дробная части)

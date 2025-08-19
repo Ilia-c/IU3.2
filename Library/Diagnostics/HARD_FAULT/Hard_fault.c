@@ -113,7 +113,7 @@ void HardFault_HandlerC(uint32_t *stk) {
     faultLog.state  = ((uint64_t)(EEPROM.Mode               & 0x0F) <<  (4 * 0));
     faultLog.state |= ((uint64_t)(EEPROM.Communication      & 0x0F) <<  (4 * 1));
     faultLog.state |= ((uint64_t)(EEPROM.RS485_prot         & 0x0F) <<  (4 * 2));
-    faultLog.state |= ((uint64_t)(EEPROM.units_mes          & 0x0F) <<  (4 * 3));
+    faultLog.state |= ((uint64_t)(EEPROM.units_mes[0]       & 0x0F) <<  (4 * 3));
     faultLog.state |= ((uint64_t)(EEPROM.screen_sever_mode  & 0x0F) <<  (4 * 4));
     faultLog.state |= ((uint64_t)(EEPROM.USB_mode           & 0x0F) <<  (4 * 5));
     faultLog.state |= ((uint64_t)(EEPROM.Save_in            & 0x0F) <<  (4 * 6));

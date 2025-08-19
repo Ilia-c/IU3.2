@@ -121,14 +121,32 @@ menuSelect_item RS485_MODE_DATA = {
         {"Вкл.", "On"}
     }
 };
-menuSelect_item UNITS_MODE_DATA = {
-    (uint8_t *)&EEPROM.units_mes,
+menuSelect_item UNITS_MODE_DATA_1 = {
+    (uint8_t *)&EEPROM.units_mes[0],
     {
         {"мм", "mm"},
         {"м", "m"},
         {"Па", "Pa"}
     }
 };
+menuSelect_item UNITS_MODE_DATA_2 = {
+    (uint8_t *)&EEPROM.units_mes[1],
+    {
+        {"мм", "mm"},
+        {"м", "m"},
+        {"Па", "Pa"}
+    }
+};
+menuSelect_item UNITS_MODE_DATA_3 = {
+    (uint8_t *)&EEPROM.units_mes[2],
+    {
+        {"мм", "mm"},
+        {"м", "m"},
+        {"Па", "Pa"}
+    }
+};
+
+
 menuSelect_item SCREENSAVER = {
     (uint8_t *)&EEPROM.screen_sever_mode ,
     {
@@ -146,12 +164,32 @@ menuSelect_item LANGUAGE = {
 };
 
 
-menuSelect_item CURRENT_LOOP = {
+menuSelect_item CURRENT_LOOP_1 = {
     (uint8_t *)&EEPROM.mode_ADC,
     {
         {"4-20мА", "4-20mA"},
-        {"0-20мА", "0-20mA"}
-        //{"Выкл.", "Off"}
+        {"0-20мА", "0-20mA"},
+        {"Выкл.", "Off"}
+    }
+};
+menuSelect_item CURRENT_LOOP_2 = {
+    (uint8_t *)&EEPROM.mode_ADC,
+    {
+        #if BOARD_VERSION == Version3_80
+        {"4-20мА", "4-20mA"},
+        {"0-20мА", "0-20mA"},
+        #endif
+        {"Выкл.", "Off"}
+    }
+};
+menuSelect_item CURRENT_LOOP_3 = {
+    (uint8_t *)&EEPROM.mode_ADC,
+    {
+        #if BOARD_VERSION == Version3_80
+        {"4-20мА", "4-20mA"},
+        {"0-20мА", "0-20mA"},
+        #endif
+        {"Выкл.", "Off"}
     }
 };
 
@@ -315,11 +353,11 @@ menuSelect_item_char Time_sleep_redact = {
 
 
 // ВПИ, верхний предел измерений
-menuSelect_item_char Max_Level_Mesurment = {
+menuSelect_item_char Max_Level_Mesurment_1 = {
     {'.', '\0', '\0'},   // разделители, если нету, то '\0', последний может использоваться в качестве приписки
     2,                  // колтичество ячеек данных
     0,                  // завершение редактирования при нажатии вправо на краю данных 1-включено, 0-выключено
-    &ADC_data.MAX_LVL,
+    &EEPROM.MAX_LVL[0],
     //  ЯЧЕЙКИ
     {&ADC_data.MAX_LVL_char[0], &ADC_data.MAX_LVL_char[1], '\0'},  // исходные значения
     {2, 2, 0},                   // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов), 4 - float (знаковый)
@@ -334,11 +372,11 @@ menuSelect_item_char Max_Level_Mesurment = {
 }; // Промежуточная переменная, куда сохраняется настройка до сохранения (char)
 
 // НПИ, нижний предел измерений
-menuSelect_item_char Min_Level_Mesurment = {
+menuSelect_item_char Min_Level_Mesurment_1 = {
     {'.', '\0', '\0'},   // разделители, если нету, то '\0', последний может использоваться в качестве приписки
     2,                  // колтичество ячеек данных
     0,                  // завершение редактирования при нажатии вправо на краю данных 1-включено, 0-выключено
-    &ADC_data.ZERO_LVL,
+    &EEPROM.ZERO_LVL[0],
     //  ЯЧЕЙКИ
     {&ADC_data.ZERO_LVL_char[0], &ADC_data.ZERO_LVL_char[1], '\0'},  // исходные значения
     {2, 2, 0},                   // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов) 4 - int32 беззнаковый
@@ -352,6 +390,84 @@ menuSelect_item_char Min_Level_Mesurment = {
     SAVE_DOUBLE
 }; // Промежуточная переменная, куда сохраняется настройка до сохранения (char)
 
+
+// ВПИ, верхний предел измерений
+menuSelect_item_char Max_Level_Mesurment_2 = {
+    {'.', '\0', '\0'},   // разделители, если нету, то '\0', последний может использоваться в качестве приписки
+    2,                  // колтичество ячеек данных
+    0,                  // завершение редактирования при нажатии вправо на краю данных 1-включено, 0-выключено
+    &EEPROM.MAX_LVL[1],
+    //  ЯЧЕЙКИ
+    {&ADC_data.MAX_LVL_char[0], &ADC_data.MAX_LVL_char[1], '\0'},  // исходные значения
+    {2, 2, 0},                   // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов), 4 - float (знаковый)
+    {0, 0},                     // знак (автоматически)
+    {6, 2, 0},                   // ширина ячеек (001 - ширина 3, 23 - ширина 2)
+    {2, 2, 2},                   // ширина ячеек вне редактирования (001 - ширина 3, 23 - ширина 2)
+    {"\0", "\0", "\0"},          // промежуточное значение
+    {999999, 999, '\0'},              // максимальные значения
+    {-99999, 0, '\0'},                // минимальные значения
+    Save_general_format,                    // ссылка на функцию завершения работы
+    SAVE_DOUBLE
+}; // Промежуточная переменная, куда сохраняется настройка до сохранения (char)
+
+// НПИ, нижний предел измерений
+menuSelect_item_char Min_Level_Mesurment_2 = {
+    {'.', '\0', '\0'},   // разделители, если нету, то '\0', последний может использоваться в качестве приписки
+    2,                  // колтичество ячеек данных
+    0,                  // завершение редактирования при нажатии вправо на краю данных 1-включено, 0-выключено
+    &EEPROM.ZERO_LVL[1],
+    //  ЯЧЕЙКИ
+    {&ADC_data.ZERO_LVL_char[0], &ADC_data.ZERO_LVL_char[1], '\0'},  // исходные значения
+    {2, 2, 0},                   // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов) 4 - int32 беззнаковый
+    {0, 0},                   // знак (автоматически)
+    {6, 2, 0},                   // ширина ячеек (001 - ширина 3, 23 - ширина 2)
+    {2, 2, 2},                   // ширина ячеек вне редактирования (001 - ширина 3, 23 - ширина 2)
+    {"\0", "\0", "\0"},          // промежуточное значение
+    {99999, 999, '\0'},              // максимальные значения
+    {-99999, 0, '\0'},                // минимальные значения
+    Save_general_format,                    // ссылка на функцию завершения работы
+    SAVE_DOUBLE
+}; // Промежуточная переменная, куда сохраняется настройка до сохранения (char)
+
+// ВПИ, верхний предел измерений
+menuSelect_item_char Max_Level_Mesurment_3 = {
+    {'.', '\0', '\0'},   // разделители, если нету, то '\0', последний может использоваться в качестве приписки
+    2,                  // колтичество ячеек данных
+    0,                  // завершение редактирования при нажатии вправо на краю данных 1-включено, 0-выключено
+    &EEPROM.MAX_LVL[2],
+    //  ЯЧЕЙКИ
+    {&ADC_data.MAX_LVL_char[0], &ADC_data.MAX_LVL_char[1], '\0'},  // исходные значения
+    {2, 2, 0},                   // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов), 4 - float (знаковый)
+    {0, 0},                     // знак (автоматически)
+    {6, 2, 0},                   // ширина ячеек (001 - ширина 3, 23 - ширина 2)
+    {2, 2, 2},                   // ширина ячеек вне редактирования (001 - ширина 3, 23 - ширина 2)
+    {"\0", "\0", "\0"},          // промежуточное значение
+    {999999, 999, '\0'},              // максимальные значения
+    {-99999, 0, '\0'},                // минимальные значения
+    Save_general_format,                    // ссылка на функцию завершения работы
+    SAVE_DOUBLE
+}; // Промежуточная переменная, куда сохраняется настройка до сохранения (char)
+
+// НПИ, нижний предел измерений
+menuSelect_item_char Min_Level_Mesurment_3 = {
+    {'.', '\0', '\0'},   // разделители, если нету, то '\0', последний может использоваться в качестве приписки
+    2,                  // колтичество ячеек данных
+    0,                  // завершение редактирования при нажатии вправо на краю данных 1-включено, 0-выключено
+    &EEPROM.ZERO_LVL[2],
+    //  ЯЧЕЙКИ
+    {&ADC_data.ZERO_LVL_char[0], &ADC_data.ZERO_LVL_char[1], '\0'},  // исходные значения
+    {2, 2, 0},                   // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов) 4 - int32 беззнаковый
+    {0, 0},                   // знак (автоматически)
+    {6, 2, 0},                   // ширина ячеек (001 - ширина 3, 23 - ширина 2)
+    {2, 2, 2},                   // ширина ячеек вне редактирования (001 - ширина 3, 23 - ширина 2)
+    {"\0", "\0", "\0"},          // промежуточное значение
+    {99999, 999, '\0'},              // максимальные значения
+    {-99999, 0, '\0'},                // минимальные значения
+    Save_general_format,                    // ссылка на функцию завершения работы
+    SAVE_DOUBLE
+}; // Промежуточная переменная, куда сохраняется настройка до сохранения (char)
+
+
 // Калибровка ВПИ
 void SAVE_DOUBLE(double **save_data, int32_t *value_int, int32_t *value_float, int size_float, uint8_t _signed){
     **save_data = 0;
@@ -362,11 +478,47 @@ void SAVE_DOUBLE(double **save_data, int32_t *value_int, int32_t *value_float, i
     if (_signed == 1) **save_data*=-1;
 }
 
-menuSelect_item_char GVL_Correct = {
+menuSelect_item_char Correct_1 = {
     {'.', '\0', '\0'},   // разделители, если нету, то '\0', последний может использоваться в качестве приписки
     2,                  // колтичество ячеек данных
     0,                  // завершение редактирования при нажатии вправо на краю данных 1-включено, 0-выключено
-    &ADC_data.GVL_correct,
+    &EEPROM.Correct[0],
+    //  ЯЧЕЙКИ
+    {&ADC_data.GVL_correct_char[0], &ADC_data.GVL_correct_char[1], '\0'},  // исходные значения..
+    {2, 2, 0},                   // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов)
+    {0, 0},                      // знак (автоматически)
+    {5, 2, 0},                   // ширина ячеек (001 - ширина 3, 23 - ширина 2)
+    {2, 2, 2},                   // ширина ячеек вне редактирования (001 - ширина 3, 23 - ширина 2)
+    {"\0", "\0", "\0"},          // промежуточное значение
+    {99999, 999, '\0'},              // максимальные значения
+    {-99999, 0, '\0'},                // минимальные значения
+    Save_general_format,                    // ссылка на функцию завершения работы
+    SAVE_DOUBLE
+}; // Промежуточная переменная, куда сохраняется настройка до сохранения (char)
+
+menuSelect_item_char Correct_2 = {
+    {'.', '\0', '\0'},   // разделители, если нету, то '\0', последний может использоваться в качестве приписки
+    2,                  // колтичество ячеек данных
+    0,                  // завершение редактирования при нажатии вправо на краю данных 1-включено, 0-выключено
+    &EEPROM.Correct[1],
+    //  ЯЧЕЙКИ
+    {&ADC_data.GVL_correct_char[0], &ADC_data.GVL_correct_char[1], '\0'},  // исходные значения
+    {2, 2, 0},                   // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов)
+    {0, 0},                      // знак (автоматически)
+    {5, 2, 0},                   // ширина ячеек (001 - ширина 3, 23 - ширина 2)
+    {2, 2, 2},                   // ширина ячеек вне редактирования (001 - ширина 3, 23 - ширина 2)
+    {"\0", "\0", "\0"},          // промежуточное значение
+    {99999, 999, '\0'},              // максимальные значения
+    {-99999, 0, '\0'},                // минимальные значения
+    Save_general_format,                    // ссылка на функцию завершения работы
+    SAVE_DOUBLE
+}; // Промежуточная переменная, куда сохраняется настройка до сохранения (char)
+
+menuSelect_item_char Correct_3 = {
+    {'.', '\0', '\0'},   // разделители, если нету, то '\0', последний может использоваться в качестве приписки
+    2,                  // колтичество ячеек данных
+    0,                  // завершение редактирования при нажатии вправо на краю данных 1-включено, 0-выключено
+    &EEPROM.Correct[2],
     //  ЯЧЕЙКИ
     {&ADC_data.GVL_correct_char[0], &ADC_data.GVL_correct_char[1], '\0'},  // исходные значения
     {2, 2, 0},                   // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина ячеек вне редактировани, а ширина ячеек будет задавать максимум символов)
@@ -429,21 +581,21 @@ MAKE_MENU(Menu_1, "Режимы", "Modes", 0, UPTADE_OFF, NO_SIGNED, Menu_2, PREVISION
 	MAKE_MENU(Menu_1_1, "Цикл", "Cycle", 0, UPTADE_OFF, NO_SIGNED, Menu_1_2, PREVISION_MENU, Menu_1, CHILD_MENU, sleep, SELECT_BAR, DATA_IN, DATA_OUT);
 	MAKE_MENU(Menu_1_2, "Показания", "Sensor reading", 0, UPTADE_OFF, NO_SIGNED, Menu_1_3, Menu_1_1, Menu_1, Menu_1_2_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
 		#if BOARD_VERSION == Version3_75  
-        MAKE_MENU(Menu_1_2_1, "Глубина", "Metering", 0, UPTADE_ON, UNITS_MODE_DATA, Menu_1_2_2, PREVISION_MENU, Menu_1_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_1_SI_value_char);
-		MAKE_MENU(Menu_1_2_2, "УГВ", "GWL", 0, UPTADE_ON, UNITS_MODE_DATA, Menu_1_2_3, Menu_1_2_1, Menu_1_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_1_SI_value_correct_char);
+        MAKE_MENU(Menu_1_2_1, "Глубина", "Metering", 0, UPTADE_ON, UNITS_MODE_DATA_1, Menu_1_2_2, PREVISION_MENU, Menu_1_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_1_SI_value_char);
+		MAKE_MENU(Menu_1_2_2, "УГВ", "GWL", 0, UPTADE_ON, UNITS_MODE_DATA_1, Menu_1_2_3, Menu_1_2_1, Menu_1_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_1_SI_value_correct_char);
 		MAKE_MENU(Menu_1_2_3, "Сохранить", "Save", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_1_2_2, Menu_1_2, CHILD_MENU, SAVE_IZM, SELECT_BAR, DATA_IN, DATA_OUT); 
         #elif BOARD_VERSION == Version3_80
-        MAKE_MENU(Menu_1_2_1, "Канал 1", "Metering", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_2, PREVISION_MENU, Menu_1_2, Menu_1_2_1_1, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char[0]);
-            MAKE_MENU(Menu_1_2_1_1, "Глубина", "Metering", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_1_2, PREVISION_MENU, Menu_1_2_1, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char[0]);
-            MAKE_MENU(Menu_1_2_1_2, "УГВ", "Metering", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_1_3, Menu_1_2_1_1, Menu_1_2_1, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_correct_char[0]);
+        MAKE_MENU(Menu_1_2_1, "Канал 1", "Cnannel 1", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_2, PREVISION_MENU, Menu_1_2, Menu_1_2_1_1, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char[0]);
+            MAKE_MENU(Menu_1_2_1_1, "Показания", "Metering", 0, UPTADE_ON, UNITS_MODE_DATA_1, Menu_1_2_1_2, PREVISION_MENU, Menu_1_2_1, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char[0]);
+            MAKE_MENU(Menu_1_2_1_2, "С поправкой", "Metering", 0, UPTADE_ON, UNITS_MODE_DATA_1, Menu_1_2_1_3, Menu_1_2_1_1, Menu_1_2_1, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_correct_char[0]);
             MAKE_MENU(Menu_1_2_1_3, "Ток", "Metering", 0, UPTADE_ON, NO_SIGNED, NEXT_MENU, Menu_1_2_1_2, Menu_1_2_1, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_Current_char[0]);
-        MAKE_MENU(Menu_1_2_2, "Канал 2", "GWL", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_3, Menu_1_2_1, Menu_1_2, Menu_1_2_2_1, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char[1]);
-            MAKE_MENU(Menu_1_2_2_1, "Температура", "Metering", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_2_2, PREVISION_MENU, Menu_1_2_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char[1]);
-            MAKE_MENU(Menu_1_2_2_2, "С поправкой", "Metering", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_2_3, Menu_1_2_2_1, Menu_1_2_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_correct_char[1]);
+        MAKE_MENU(Menu_1_2_2, "Канал 2", "Cnannel 2", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_3, Menu_1_2_1, Menu_1_2, Menu_1_2_2_1, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char[1]);
+            MAKE_MENU(Menu_1_2_2_1, "Показания", "Metering", 0, UPTADE_ON, UNITS_MODE_DATA_2, Menu_1_2_2_2, PREVISION_MENU, Menu_1_2_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char[1]);
+            MAKE_MENU(Menu_1_2_2_2, "С поправкой", "Metering", 0, UPTADE_ON, UNITS_MODE_DATA_2, Menu_1_2_2_3, Menu_1_2_2_1, Menu_1_2_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_correct_char[1]);
             MAKE_MENU(Menu_1_2_2_3, "Ток", "Metering", 0, UPTADE_ON, NO_SIGNED, NEXT_MENU, Menu_1_2_2_2, Menu_1_2_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_Current_char[1]);
-        MAKE_MENU(Menu_1_2_3, "Канал 3", "GWL", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_4, Menu_1_2_2, Menu_1_2, Menu_1_2_3_1, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char[2]);
-            MAKE_MENU(Menu_1_2_3_1, "Соленость", "Metering", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_3_2, PREVISION_MENU, Menu_1_2_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char[2]);
-            MAKE_MENU(Menu_1_2_3_2, "С поправкой", "Metering", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_3_3, Menu_1_2_3_1, Menu_1_2_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_correct_char[2]);
+        MAKE_MENU(Menu_1_2_3, "Канал 3", "Cnannel 3", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_4, Menu_1_2_2, Menu_1_2, Menu_1_2_3_1, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char[2]);
+            MAKE_MENU(Menu_1_2_3_1, "Показания", "Metering", 0, UPTADE_ON, UNITS_MODE_DATA_3, Menu_1_2_3_2, PREVISION_MENU, Menu_1_2_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char[2]);
+            MAKE_MENU(Menu_1_2_3_2, "С поправкой", "Metering", 0, UPTADE_ON, UNITS_MODE_DATA_3, Menu_1_2_3_3, Menu_1_2_3_1, Menu_1_2_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_correct_char[2]);
             MAKE_MENU(Menu_1_2_3_3, "Ток", "Metering", 0, UPTADE_ON, NO_SIGNED, NEXT_MENU, Menu_1_2_3_2, Menu_1_2_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_Current_char[2]);
         MAKE_MENU(Menu_1_2_4, "Сохранить", "Save", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_1_2_3, Menu_1_2, CHILD_MENU, SAVE_IZM, SELECT_BAR, DATA_IN, DATA_OUT); 
         #endif
@@ -462,10 +614,15 @@ MAKE_MENU(Menu_1, "Режимы", "Modes", 0, UPTADE_OFF, NO_SIGNED, Menu_2, PREVISION
 			MAKE_MENU(Menu_1_3_4_8, "Уровень сигн.", "Signal level", 0, UPTADE_ON, NO_SIGNED, Menu_1_3_4_9, Menu_1_3_4_7, Menu_1_3_4, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
 			MAKE_MENU(Menu_1_3_4_9, "Потери", "Signal err", 0, UPTADE_ON, NO_SIGNED, NEXT_MENU, Menu_1_3_4_8, Menu_1_3_4, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
 		MAKE_MENU(Menu_1_3_5, "АЦП", "ADC", 0, UPTADE_ON, NO_SIGNED, Menu_1_3_6, Menu_1_3_4, Menu_1_3, Menu_1_3_5_1, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_status_char);
-			MAKE_MENU(Menu_1_3_5_1, "АЦП", "ADC", 0, UPTADE_ON, NO_SIGNED, Menu_1_3_5_2, PREVISION_MENU, Menu_1_3_5, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_value_char[0]);
-			MAKE_MENU(Menu_1_3_5_2, "Глубина", "Metering", 0, UPTADE_ON, UNITS_MODE_DATA, Menu_1_3_5_3, Menu_1_3_5_1, Menu_1_3_5, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char[0]);
-			MAKE_MENU(Menu_1_3_5_3, "УГВ", "GWL", 0, UPTADE_ON, UNITS_MODE_DATA, Menu_1_3_5_4, Menu_1_3_5_2, Menu_1_3_5, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_correct_char[0]);
-			MAKE_MENU(Menu_1_3_5_4, "Ток датчика", "Current", 0, UPTADE_ON, Unit_current, NEXT_MENU, Menu_1_3_5_3, Menu_1_3_5, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_Current_char[0]);
+			MAKE_MENU(Menu_1_3_5_1, "АЦП 1", "ADC", 0, UPTADE_ON, NO_SIGNED, Menu_1_3_5_2, PREVISION_MENU, Menu_1_3_5_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_value_char[0]);
+            MAKE_MENU(Menu_1_3_5_2, "Канал 1", "Metering", 0, UPTADE_ON, UNITS_MODE_DATA_1, Menu_1_3_5_3, Menu_1_3_5_1, Menu_1_3_5, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char[0]);
+            MAKE_MENU(Menu_1_3_5_3, "1+корр.", "Metering", 0, UPTADE_ON, UNITS_MODE_DATA_1, Menu_1_3_5_4, Menu_1_3_5_2, Menu_1_3_5, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_correct_char[0]);
+            MAKE_MENU(Menu_1_3_5_4, "АЦП 2", "ADC", 0, UPTADE_ON, NO_SIGNED, Menu_1_3_5_5, Menu_1_3_5_3, Menu_1_3_5, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_value_char[1]);
+            MAKE_MENU(Menu_1_3_5_5, "Канал 2", "GWL", 0, UPTADE_ON, UNITS_MODE_DATA_2, Menu_1_3_5_6, Menu_1_3_5_4, Menu_1_3_5, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char[0]);
+            MAKE_MENU(Menu_1_3_5_6, "2+корр.", "GWL", 0, UPTADE_ON, UNITS_MODE_DATA_2, Menu_1_3_5_7, Menu_1_3_5_5, Menu_1_3_5, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_correct_char[0]);
+            MAKE_MENU(Menu_1_3_5_7, "АЦП 3", "ADC", 0, UPTADE_ON, NO_SIGNED, Menu_1_3_5_8, Menu_1_3_5_6, Menu_1_3_5, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_value_char[2]);
+			MAKE_MENU(Menu_1_3_5_8, "Канал 3", "Current", 0, UPTADE_ON, UNITS_MODE_DATA_3, Menu_1_3_5_9, Menu_1_3_5_7, Menu_1_3_5, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char[0]);
+			MAKE_MENU(Menu_1_3_5_9, "3+корр.", "Current", 0, UPTADE_ON, UNITS_MODE_DATA_3, NEXT_MENU, Menu_1_3_5_8, Menu_1_3_5, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_correct_char[0]);
 		MAKE_MENU(Menu_1_3_6, "EEPROM", "EEPROM", 0, UPTADE_ON, NO_SIGNED, Menu_1_3_7, Menu_1_3_5, Menu_1_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, EEPROM_status_char); 
 		MAKE_MENU(Menu_1_3_7, "FLASH", "FLASH", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_1_3_6, Menu_1_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, FLASH_status_char); 
 MAKE_MENU(Menu_2, "Настройки", "Settings", 0, UPTADE_OFF, NO_SIGNED, Menu_3, Menu_1, PARENT_MENU, Menu_2_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
@@ -474,50 +631,42 @@ MAKE_MENU(Menu_2, "Настройки", "Settings", 0, UPTADE_OFF, NO_SIGNED, Menu_3, Men
     MAKE_MENU(Menu_2_3, "Дата", "Date", 0, UPTADE_OFF, NO_SIGNED, Menu_2_4, Menu_2_2, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Date_redact, DATA_OUT);
 	MAKE_MENU(Menu_2_4, "Время", "Time", 0, UPTADE_OFF, NO_SIGNED, Menu_2_5, Menu_2_3, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Time_redact, DATA_OUT);
 	MAKE_MENU(Menu_2_5, "Время сна", "Seep time", 0, UPTADE_OFF, NO_SIGNED, Menu_2_6, Menu_2_4, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Time_sleep_redact, DATA_OUT);
-//#if BOARD_VERSION == Version3_75  
-	MAKE_MENU(Menu_2_6, "Корр. УГВ", "GWL correction", 0, UPTADE_OFF, UNITS_MODE_DATA, Menu_2_7, Menu_2_5, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, GVL_Correct, DATA_OUT);
-	MAKE_MENU(Menu_2_7, "ВПИ", "U-range", 0, UPTADE_OFF, UNITS_MODE_DATA, Menu_2_8, Menu_2_6, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Max_Level_Mesurment, DATA_OUT);
-	MAKE_MENU(Menu_2_8, "НПИ", "L-range", 0, UPTADE_OFF, UNITS_MODE_DATA, Menu_2_9, Menu_2_7, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Min_Level_Mesurment, DATA_OUT);
-    MAKE_MENU(Menu_2_9, "Ед. изм.", "Unit measure", 0, UPTADE_OFF, NO_SIGNED, Menu_2_10, Menu_2_8, Menu_2, CHILD_MENU, ACTION_MENU, UNITS_MODE_DATA, DATA_IN, DATA_OUT);
-    MAKE_MENU(Menu_2_10, "Токовая петля", "Current loop ", 0, UPTADE_OFF, NO_SIGNED, Menu_2_11, Menu_2_9, Menu_2, CHILD_MENU, ACTION_MENU, CURRENT_LOOP, DATA_IN, DATA_OUT);
-/*#elif BOARD_VERSION == Version3_80
-    MAKE_MENU(Menu_1_2_1, "Канал 1", "Metering", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_2, PREVISION_MENU, Menu_1_2, Menu_1_2_1_1, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char[0]);
-	    MAKE_MENU(Menu_2_6, "Корр. УГВ", "GWL correction", 0, UPTADE_OFF, UNITS_MODE_DATA, Menu_2_7, Menu_2_5, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, GVL_Correct, DATA_OUT);
-	    MAKE_MENU(Menu_2_7, "ВПИ", "U-range", 0, UPTADE_OFF, UNITS_MODE_DATA, Menu_2_8, Menu_2_6, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Max_Level_Mesurment, DATA_OUT);
-	    MAKE_MENU(Menu_2_8, "НПИ", "L-range", 0, UPTADE_OFF, UNITS_MODE_DATA, Menu_2_9, Menu_2_7, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Min_Level_Mesurment, DATA_OUT);
-        MAKE_MENU(Menu_2_9, "Ед. изм.", "Unit measure", 0, UPTADE_OFF, NO_SIGNED, Menu_2_10, Menu_2_8, Menu_2, CHILD_MENU, ACTION_MENU, UNITS_MODE_DATA, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_10, "Токовая петля", "Current loop ", 0, UPTADE_OFF, NO_SIGNED, Menu_2_11, Menu_2_9, Menu_2, CHILD_MENU, ACTION_MENU, CURRENT_LOOP, DATA_IN, DATA_OUT);
-    MAKE_MENU(Menu_1_2_1, "Канал 1", "Metering", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_2, PREVISION_MENU, Menu_1_2, Menu_1_2_1_1, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char[0]);
-	    MAKE_MENU(Menu_2_6, "Корр. УГВ", "GWL correction", 0, UPTADE_OFF, UNITS_MODE_DATA, Menu_2_7, Menu_2_5, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, GVL_Correct, DATA_OUT);
-	    MAKE_MENU(Menu_2_7, "ВПИ", "U-range", 0, UPTADE_OFF, UNITS_MODE_DATA, Menu_2_8, Menu_2_6, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Max_Level_Mesurment, DATA_OUT);
-	    MAKE_MENU(Menu_2_8, "НПИ", "L-range", 0, UPTADE_OFF, UNITS_MODE_DATA, Menu_2_9, Menu_2_7, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Min_Level_Mesurment, DATA_OUT);
-        MAKE_MENU(Menu_2_9, "Ед. изм.", "Unit measure", 0, UPTADE_OFF, NO_SIGNED, Menu_2_10, Menu_2_8, Menu_2, CHILD_MENU, ACTION_MENU, UNITS_MODE_DATA, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_10, "Токовая петля", "Current loop ", 0, UPTADE_OFF, NO_SIGNED, Menu_2_11, Menu_2_9, Menu_2, CHILD_MENU, ACTION_MENU, CURRENT_LOOP, DATA_IN, DATA_OUT);
-    MAKE_MENU(Menu_1_2_1, "Канал 1", "Metering", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_2, PREVISION_MENU, Menu_1_2, Menu_1_2_1_1, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char[0]);
-	    MAKE_MENU(Menu_2_6, "Корр. УГВ", "GWL correction", 0, UPTADE_OFF, UNITS_MODE_DATA, Menu_2_7, Menu_2_5, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, GVL_Correct, DATA_OUT);
-	    MAKE_MENU(Menu_2_7, "ВПИ", "U-range", 0, UPTADE_OFF, UNITS_MODE_DATA, Menu_2_8, Menu_2_6, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Max_Level_Mesurment, DATA_OUT);
-	    MAKE_MENU(Menu_2_8, "НПИ", "L-range", 0, UPTADE_OFF, UNITS_MODE_DATA, Menu_2_9, Menu_2_7, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Min_Level_Mesurment, DATA_OUT);
-        MAKE_MENU(Menu_2_9, "Ед. изм.", "Unit measure", 0, UPTADE_OFF, NO_SIGNED, Menu_2_10, Menu_2_8, Menu_2, CHILD_MENU, ACTION_MENU, UNITS_MODE_DATA, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_10, "Токовая петля", "Current loop ", 0, UPTADE_OFF, NO_SIGNED, Menu_2_11, Menu_2_9, Menu_2, CHILD_MENU, ACTION_MENU, CURRENT_LOOP, DATA_IN, DATA_OUT);
-#endif*/
-    MAKE_MENU(Menu_2_11, "RS-485", "RS-485", 0, UPTADE_OFF, NO_SIGNED, Menu_2_12, Menu_2_10, Menu_2, CHILD_MENU, ACTION_MENU, RS485_MODE_DATA, DATA_IN, DATA_OUT);
-    MAKE_MENU(Menu_2_12, "Связь", "Network", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13, Menu_2_11, Menu_2, CHILD_MENU, ACTION_MENU, Communication_DATA, DATA_IN, DATA_OUT);
-	MAKE_MENU(Menu_2_13, "Сохранить в", "Save in", 0, UPTADE_OFF, NO_SIGNED, Menu_2_14, Menu_2_12, Menu_2, CHILD_MENU, ACTION_MENU, SAVE_IN_STRUCT, DATA_IN, DATA_OUT);
-	MAKE_MENU(Menu_2_14, "Язык", "Language", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15, Menu_2_13, Menu_2, CHILD_MENU, ACTION_MENU, LANGUAGE, DATA_IN, DATA_OUT);
-	MAKE_MENU(Menu_2_15, "Инж. меню", "Administration menu", 0, UPTADE_OFF, NO_SIGNED, Menu_2_16, Menu_2_14, Menu_2, Menu_2_15_1, PASSWORD, SELECT_BAR, DATA_IN, DATA_OUT); 
-		MAKE_MENU(Menu_2_15_1, "Заставка", "Startup screen", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_2, PREVISION_MENU, Menu_2_15, CHILD_MENU, ACTION_MENU, SCREENSAVER, DATA_IN, DATA_OUT);
-		MAKE_MENU(Menu_2_15_2, "Режим USB", "USB mode", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_3, Menu_2_15_1, Menu_2_15, CHILD_MENU, ACTION_MENU, USB_MODE_STRUCT, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_15_3, "Перв. настройка", "First set", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_4, Menu_2_15_2, Menu_2_15, CHILD_MENU, Initial_setup, SELECT_BAR, DATA_IN, DATA_OUT);
-		MAKE_MENU(Menu_2_15_4, "Напр. CR", "Plug", 0, UPTADE_ON, NO_SIGNED, Menu_2_15_6, Menu_2_15_3, Menu_2_15, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, IntADC.MK_vbat_char);
-		MAKE_MENU(Menu_2_15_5, "Темп. циф.", "Digital temp.", 0, UPTADE_ON, Unit_degree, Menu_2_15_6, Menu_2_15_4, Menu_2_15, CHILD_MENU, SELECT_BAR, SELECT_BAR, DATA_IN, IntADC.MK_temp_char);
-		MAKE_MENU(Menu_2_15_6, "Тест FLASH", "FLASH test", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_7, Menu_2_15_5, Menu_2_15, CHILD_MENU, flash_test, SELECT_BAR, DATA_IN, DATA_OUT);
-		MAKE_MENU(Menu_2_15_7, "Тест EEPROM", "EEPROM test", 0, 0, NO_SIGNED, Menu_2_15_8, Menu_2_15_6, Menu_2_15, CHILD_MENU, EEPROM_test, SELECT_BAR, DATA_IN, DATA_OUT);
-		MAKE_MENU(Menu_2_15_8, "Режим", "Mode", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_9, Menu_2_15_7, Menu_2_15, CHILD_MENU, SELECT_BAR, Block, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_15_9, "Сброс ошибок", "Reset errors", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_10, Menu_2_15_8, Menu_2_15, CHILD_MENU, Reset_errors, SELECT_BAR, DATA_IN, DATA_OUT);
-		MAKE_MENU(Menu_2_15_10, "Полный Сброс", "FULL RESET", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_15_9, Menu_2_15, CHILD_MENU, ALL_Reset_settings, SELECT_BAR, DATA_IN, DATA_OUT);
-    MAKE_MENU(Menu_2_16, "Обновление ПО", "Update", 0, UPTADE_OFF, NO_SIGNED, Menu_2_17, Menu_2_15, Menu_2, CHILD_MENU, Update_programm, SELECT_BAR, DATA_IN, DATA_OUT); 
-    MAKE_MENU(Menu_2_17, "Формат. память", "Format device", 0, UPTADE_OFF, NO_SIGNED, Menu_2_18, Menu_2_16, Menu_2, CHILD_MENU, Flash_Format, SELECT_BAR, DATA_IN, DATA_OUT); 
-	MAKE_MENU(Menu_2_18, "Сброс настроек", "Factory reset", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_17, Menu_2, CHILD_MENU, Reset_settings, SELECT_BAR, DATA_IN, DATA_OUT);
+    MAKE_MENU(Menu_2_6, "Канал 1", "Metering", 0, UPTADE_ON, NO_SIGNED, Menu_2_7, Menu_2_5, Menu_2, Menu_2_6_1, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char[0]);
+        MAKE_MENU(Menu_2_6_1, "Токовая петля", "Current loop ", 0, UPTADE_OFF, NO_SIGNED, Menu_2_6_2, PREVISION_MENU, Menu_2_6, CHILD_MENU, ACTION_MENU, CURRENT_LOOP_1, DATA_IN, DATA_OUT);
+	    MAKE_MENU(Menu_2_6_2, "Корректировка", "GWL correction", 0, UPTADE_OFF, UNITS_MODE_DATA_1, Menu_2_6_3, Menu_2_6_1, Menu_2_6, CHILD_MENU, ACTION_MENU, SELECT_BAR, Correct_1, DATA_OUT);
+	    MAKE_MENU(Menu_2_6_3, "ВПИ", "U-range", 0, UPTADE_OFF, UNITS_MODE_DATA_1, Menu_2_6_4, Menu_2_6_2, Menu_2_6, CHILD_MENU, ACTION_MENU, SELECT_BAR, Max_Level_Mesurment_1, DATA_OUT);
+	    MAKE_MENU(Menu_2_6_4, "НПИ", "L-range", 0, UPTADE_OFF, UNITS_MODE_DATA_1, Menu_2_6_5, Menu_2_6_3, Menu_2_6, CHILD_MENU, ACTION_MENU, SELECT_BAR, Min_Level_Mesurment_1, DATA_OUT);
+        MAKE_MENU(Menu_2_6_5, "Измерение", "Measure", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_6_4, Menu_2_6, CHILD_MENU, ACTION_MENU, UNITS_MODE_DATA_1, DATA_IN, DATA_OUT);
+    MAKE_MENU(Menu_2_7, "Канал 2", "Metering", 0, UPTADE_ON, NO_SIGNED, Menu_2_8, Menu_2_6, Menu_1_2, Menu_1_2_1_1, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char[0]);
+        MAKE_MENU(Menu_2_7_1, "Токовая петля", "Current loop ", 0, UPTADE_OFF, NO_SIGNED, Menu_2_7_2, PREVISION_MENU, Menu_2_7, CHILD_MENU, ACTION_MENU, CURRENT_LOOP_1, DATA_IN, DATA_OUT);
+	    MAKE_MENU(Menu_2_7_2, "Корректировка", "GWL correction", 0, UPTADE_OFF, UNITS_MODE_DATA_2, Menu_2_7_3, Menu_2_7_1, Menu_2_7, CHILD_MENU, ACTION_MENU, SELECT_BAR, Correct_2, DATA_OUT);
+	    MAKE_MENU(Menu_2_7_3, "ВПИ", "U-range", 0, UPTADE_OFF, UNITS_MODE_DATA_2, Menu_2_7_4, Menu_2_7_2, Menu_2_7, CHILD_MENU, ACTION_MENU, SELECT_BAR, Max_Level_Mesurment_2, DATA_OUT);
+	    MAKE_MENU(Menu_2_7_4, "НПИ", "L-range", 0, UPTADE_OFF, UNITS_MODE_DATA_2, Menu_2_7_5, Menu_2_7_3, Menu_2_7, CHILD_MENU, ACTION_MENU, SELECT_BAR, Min_Level_Mesurment_2, DATA_OUT);
+        MAKE_MENU(Menu_2_7_5, "Измерение", "Measure", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_7_4, Menu_2_7, CHILD_MENU, ACTION_MENU, UNITS_MODE_DATA_2, DATA_IN, DATA_OUT);
+    MAKE_MENU(Menu_2_8, "Канал 3", "Metering", 0, UPTADE_ON, NO_SIGNED, Menu_2_9, Menu_2_7, Menu_1_2, Menu_1_2_1_1, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char[0]);
+        MAKE_MENU(Menu_2_8_1, "Токовая петля", "Current loop ", 0, UPTADE_OFF, NO_SIGNED, Menu_2_8_2, PREVISION_MENU, Menu_2_8, CHILD_MENU, ACTION_MENU, CURRENT_LOOP_1, DATA_IN, DATA_OUT);
+	    MAKE_MENU(Menu_2_8_2, "Корректировка", "GWL correction", 0, UPTADE_OFF, UNITS_MODE_DATA_3, Menu_2_8_3, Menu_2_8_1, Menu_2_8, CHILD_MENU, ACTION_MENU, SELECT_BAR, Correct_3, DATA_OUT);
+	    MAKE_MENU(Menu_2_8_3, "ВПИ", "U-range", 0, UPTADE_OFF, UNITS_MODE_DATA_3, Menu_2_8_4, Menu_2_8_2, Menu_2_8, CHILD_MENU, ACTION_MENU, SELECT_BAR, Max_Level_Mesurment_3, DATA_OUT);
+	    MAKE_MENU(Menu_2_8_4, "НПИ", "L-range", 0, UPTADE_OFF, UNITS_MODE_DATA_3, Menu_2_8_5, Menu_2_8_3, Menu_2_8, CHILD_MENU, ACTION_MENU, SELECT_BAR, Min_Level_Mesurment_3, DATA_OUT);
+        MAKE_MENU(Menu_2_8_5, "Измерение", "Measure", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_8_4, Menu_2_8, CHILD_MENU, ACTION_MENU, UNITS_MODE_DATA_3, DATA_IN, DATA_OUT);
+    MAKE_MENU(Menu_2_9, "RS-485", "RS-485", 0, UPTADE_OFF, NO_SIGNED, Menu_2_10, Menu_2_8, Menu_2, CHILD_MENU, ACTION_MENU, RS485_MODE_DATA, DATA_IN, DATA_OUT);
+	MAKE_MENU(Menu_2_10, "Сохранить в", "Save in", 0, UPTADE_OFF, NO_SIGNED, Menu_2_11, Menu_2_9, Menu_2, CHILD_MENU, ACTION_MENU, SAVE_IN_STRUCT, DATA_IN, DATA_OUT);
+	MAKE_MENU(Menu_2_11, "Язык", "Language", 0, UPTADE_OFF, NO_SIGNED, Menu_2_12, Menu_2_10, Menu_2, CHILD_MENU, ACTION_MENU, LANGUAGE, DATA_IN, DATA_OUT);
+	MAKE_MENU(Menu_2_12, "Инж. меню", "Administration menu", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13, Menu_2_11, Menu_2, Menu_2_12_1, PASSWORD, SELECT_BAR, DATA_IN, DATA_OUT); 
+		MAKE_MENU(Menu_2_12_1, "Заставка", "Startup screen", 0, UPTADE_OFF, NO_SIGNED, Menu_2_12_2, PREVISION_MENU, Menu_2_12, CHILD_MENU, ACTION_MENU, SCREENSAVER, DATA_IN, DATA_OUT);
+		MAKE_MENU(Menu_2_12_2, "Режим USB", "USB mode", 0, UPTADE_OFF, NO_SIGNED, Menu_2_12_3, Menu_2_12_1, Menu_2_12, CHILD_MENU, ACTION_MENU, USB_MODE_STRUCT, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_12_3, "Связь", "Network", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13, Menu_2_11, Menu_2, CHILD_MENU, ACTION_MENU, Communication_DATA, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_12_4, "Перв. настройка", "First set", 0, UPTADE_OFF, NO_SIGNED, Menu_2_12_4, Menu_2_12_2, Menu_2_12, CHILD_MENU, Initial_setup, SELECT_BAR, DATA_IN, DATA_OUT);
+		MAKE_MENU(Menu_2_12_5, "Напр. CR", "Plug", 0, UPTADE_ON, NO_SIGNED, Menu_2_12_6, Menu_2_12_3, Menu_2_12, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, IntADC.MK_vbat_char);
+		MAKE_MENU(Menu_2_12_6, "Темп. циф.", "Digital temp.", 0, UPTADE_ON, Unit_degree, Menu_2_12_6, Menu_2_12_4, Menu_2_12, CHILD_MENU, SELECT_BAR, SELECT_BAR, DATA_IN, IntADC.MK_temp_char);
+		MAKE_MENU(Menu_2_12_7, "Тест FLASH", "FLASH test", 0, UPTADE_OFF, NO_SIGNED, Menu_2_12_7, Menu_2_12_5, Menu_2_12, CHILD_MENU, flash_test, SELECT_BAR, DATA_IN, DATA_OUT);
+		MAKE_MENU(Menu_2_12_8, "Тест EEPROM", "EEPROM test", 0, 0, NO_SIGNED, Menu_2_12_8, Menu_2_12_6, Menu_2_12, CHILD_MENU, EEPROM_test, SELECT_BAR, DATA_IN, DATA_OUT);
+		MAKE_MENU(Menu_2_12_9, "Режим", "Mode", 0, UPTADE_OFF, NO_SIGNED, Menu_2_12_9, Menu_2_12_7, Menu_2_12, CHILD_MENU, SELECT_BAR, Block, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_12_10, "Сброс ошибок", "Reset errors", 0, UPTADE_OFF, NO_SIGNED, Menu_2_12_10, Menu_2_12_8, Menu_2_12, CHILD_MENU, Reset_errors, SELECT_BAR, DATA_IN, DATA_OUT);
+		MAKE_MENU(Menu_2_12_11, "Полный Сброс", "FULL RESET", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_12_9, Menu_2_12, CHILD_MENU, ALL_Reset_settings, SELECT_BAR, DATA_IN, DATA_OUT);
+    MAKE_MENU(Menu_2_13, "Обновление ПО", "Update", 0, UPTADE_OFF, NO_SIGNED, Menu_2_14, Menu_2_12, Menu_2, CHILD_MENU, Update_programm, SELECT_BAR, DATA_IN, DATA_OUT); 
+    MAKE_MENU(Menu_2_14, "Формат. память", "Format device", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15, Menu_2_13, Menu_2, CHILD_MENU, Flash_Format, SELECT_BAR, DATA_IN, DATA_OUT); 
+	MAKE_MENU(Menu_2_15, "Сброс настроек", "Factory reset", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_14, Menu_2, CHILD_MENU, Reset_settings, SELECT_BAR, DATA_IN, DATA_OUT);
 MAKE_MENU(Menu_3, "Сведения", "Info", 0, UPTADE_OFF, NO_SIGNED, Menu_4, Menu_2, PARENT_MENU, Menu_3_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
 	MAKE_MENU(Menu_3_1, "Сер. ном.", "Ser. Number", 0, UPTADE_OFF, NO_SIGNED, Menu_3_2, PREVISION_MENU, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, Main_data.version.VERSION_PCB);
 	MAKE_MENU(Menu_3_2, "Вер. ПО", "Software version", 0, UPTADE_OFF, NO_SIGNED, Menu_3_3, Menu_3_1, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, VERSION_PROGRAMM);
@@ -528,10 +677,10 @@ MAKE_MENU(Menu_4, "Инструкция", "Instruction", 0, UPTADE_OFF, NO_SIGNED, NEXT_ME
 void Add_units(void)
 {
     // Теперь присваиваем указатели на строки, полученные из GSM_data
-    Menu_1_2_1.add_signat   = &UNITS_MODE_DATA;       // Вкладка связь
-    Menu_1_2_2.add_signat = &UNITS_MODE_DATA;
-    Menu_1_3_5_2.add_signat = &UNITS_MODE_DATA;
-    Menu_1_3_5_3.add_signat = &UNITS_MODE_DATA;
+    //Menu_1_2_1.add_signat   = &UNITS_MODE_DATA_1;       // Вкладка связь
+    //Menu_1_2_2.add_signat = &UNITS_MODE_DATA_1;
+    //Menu_1_3_5_2.add_signat = &UNITS_MODE_DATA_1;
+    //Menu_1_3_5_3.add_signat = &UNITS_MODE_DATA_1;
 }
 
 void Remove_units(void)
@@ -562,7 +711,7 @@ void State_update(){
     state =  (uint64_t)(EEPROM.Mode & 0x0F) << 4*0;
     state |= (uint64_t)(EEPROM.Communication & 0x0F) << 4*1;
     state |= (uint64_t)(EEPROM.RS485_prot & 0x0F) << 4*2;
-    state |= (uint64_t)(EEPROM.units_mes & 0x0F) << 4*3;
+    state |= (uint64_t)(EEPROM.units_mes[0] & 0x0F) << 4*3;
     state |= (uint64_t)(EEPROM.screen_sever_mode & 0x0F) << 4*4;
     state |= (uint64_t)(EEPROM.USB_mode & 0x0F) << 4*5;
     state |= (uint64_t)(EEPROM.Save_in & 0x0F) << 4*6;
@@ -1057,7 +1206,9 @@ void Reset_settings(){
     EEPROM.Mode = DEFAULT_MODE;                           // Текущий режим работы
     EEPROM.Communication = GSM_MODE;                      // Включен GSM или нет
     EEPROM.RS485_prot = DEFAULT_RS485_PROT;               // Протокол RS-485
-    EEPROM.units_mes = DEFAULT_UNITS_MES;                 // Единицы измерения (по умолчанию метры)
+    EEPROM.units_mes[0] = DEFAULT_UNITS_MES;                 // Единицы измерения (по умолчанию метры)
+    EEPROM.units_mes[1] = DEFAULT_UNITS_MES;                 // Единицы измерения (по умолчанию метры)
+    EEPROM.units_mes[2] = DEFAULT_UNITS_MES;                 // Единицы измерения (по умолчанию метры)
     //EEPROM.USB_mode = DEFAULT_USB_MODE;                   // Режим работы USB
     EEPROM.len = DEFAULT_LEN;                             // Язык меню
     EEPROM.mode_ADC[0] = DEFAULT_MODE_ADC;                   // Режим работы АЦП, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
@@ -1129,15 +1280,15 @@ void ALL_Reset_settings(){
         .Phone = DEFAULT_PHONE,
 
         // Параметры АЦП:
-        .GVL_correct[0] = DEFAULT_GVL_CORRECT_1,         // Коррекция нулевой точки (смещение ± от текущего значения) УГВ              // Коэффициэнт наклона линейной зависимости (по 2 точкам, 20мА и 4мА)
+        .Correct[0] = DEFAULT_GVL_CORRECT_1,         // Коррекция нулевой точки (смещение ± от текущего значения) УГВ              // Коэффициэнт наклона линейной зависимости (по 2 точкам, 20мА и 4мА)
         .MAX_LVL[0] = DEFAULT_MAX_LVL_1,                 // Максимальный уровень (например, 15 метров) ВПИ
         .ZERO_LVL[0] = DEFAULT_ZERO_LVL_1,               // Нулевое значение (например, 0 метров) НПИ
 
-        .GVL_correct[1] = DEFAULT_GVL_CORRECT_2,         // Коррекция нулевой точки (смещение ± от текущего значения) УГВ
+        .Correct[1] = DEFAULT_GVL_CORRECT_2,         // Коррекция нулевой точки (смещение ± от текущего значения) УГВ
         .MAX_LVL[1] = DEFAULT_MAX_LVL_2,                 // Максимальный уровень (например, 15 метров) ВПИ
         .ZERO_LVL[1] = DEFAULT_ZERO_LVL_2,               // Нулевое значение (например, 0 метров) НПИ
 
-        .GVL_correct[2] = DEFAULT_GVL_CORRECT_3,         // Коррекция нулевой точки (смещение ± от текущего значения) УГВ
+        .Correct[2] = DEFAULT_GVL_CORRECT_3,         // Коррекция нулевой точки (смещение ± от текущего значения) УГВ
         .MAX_LVL[2] = DEFAULT_MAX_LVL_3,                 // Максимальный уровень (например, 15 метров) ВПИ
         .ZERO_LVL[2] = DEFAULT_ZERO_LVL_3,               // Нулевое значение (например, 0 метров) НПИ
 
@@ -1145,7 +1296,7 @@ void ALL_Reset_settings(){
         .Mode = DEFAULT_MODE,                           // Текущий режим работы (0 - режим текущие показания, 1 - циклический режим, 2 - режим выставки)
         .Communication = DEFAULT_COMMUNICATION,         // Включен GSM или нет
         .RS485_prot = DEFAULT_RS485_PROT,               // Протокол RS-485
-        .units_mes = DEFAULT_UNITS_MES,                 // Единицы измерения (по умолчанию метры)
+        .units_mes = {DEFAULT_UNITS_MES, DEFAULT_UNITS_MES, DEFAULT_UNITS_MES},                 // Единицы измерения (по умолчанию метры)
         .screen_sever_mode = DEFAULT_SCREEN_SEVER_MODE, // Включить или нет заставку при включении
         .USB_mode = DEFAULT_USB_MODE,                   // Режим работы USB
         .Save_in = DEFAULT_SAVE_IN,                     // Куда сохранять данные: 0 - FLASH, 1 - SD, 2 - USB, 3 - Сайт

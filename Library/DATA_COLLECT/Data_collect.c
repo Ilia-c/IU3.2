@@ -118,7 +118,7 @@ void Collect_DATA()
     }
 
     snprintf(save_data, CMD_BUFFER_SIZE,
-             "[%s;%s;%s;%s;%s;%s;%s;%s;%02d:%02d%s%02d/%02d/%02d;%s;%s;%u;%u]",
+            "[%s;%s;%s;%s;%s;%s;%s;%s;%02d:%02d%s%02d/%02d/%02d;%s;%s;%u;%u]",
              Version,         // строка
              Password,            // строка
              ADC_data.ADC_value_char[0],            // строка
