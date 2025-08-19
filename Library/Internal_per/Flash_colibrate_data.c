@@ -132,8 +132,10 @@ HAL_StatusTypeDef Flash_UnprotectCalibPage(void)
     if (HAL_FLASHEx_OBProgram(&ob) != HAL_OK) goto error;
 
     OLED_Clear(0);
-    OLED_DrawCenteredString("Защита снята", 30);
-    OLED_DrawCenteredString("Перезагрузка", 40);
+    const char PROTECT_DISABLE[2][40] = {"Защита снята", "Protection removed"};
+    const char RESET[2][40] = {"Перезагрузка", "Rebooting..."};
+    OLED_DrawCenteredString(PROTECT_DISABLE, 30);
+    OLED_DrawCenteredString(RESET, 40);
     OLED_UpdateScreen();
     osDelay(1000);
     // Применяем Option Bytes -> будет аппаратный reset прямо здесь

@@ -9,6 +9,7 @@
 #include "stm32l4xx_hal_flash_ex.h"
 #include "stm32l4xx.h" 
 #include "stm32l4xx_hal.h"
+#include "Menu_data.h"
 
 // Адреса для работы с FLASH
 #define FLASH_BASE_ADDR 0x08000000U

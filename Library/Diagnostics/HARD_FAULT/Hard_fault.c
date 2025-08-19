@@ -57,6 +57,32 @@ static void FlashBackup_Write(void) {
     HAL_FLASH_Lock();
 }
 
+static inline int is_code_addr(uint32_t a)
+{
+    a &= ~1u; // Thumb bit
+    return (a >= FLASH_CODE_LO) && (a < FLASH_CODE_HI);
+}
+
+static size_t collect_bt_scan(uint32_t *sp, uint32_t *sp_limit, uint32_t *out, size_t max_out)
+{
+    size_t n = 0;
+
+    // 1) текущий PC/LR — первыми в списке, если выглядят правдоподобно
+    extern FaultLog_t faultLog;
+    if (faultLog.pc && is_code_addr(faultLog.pc) && n < max_out) out[n++] = (faultLog.pc & ~1u);
+    if (faultLog.lr && is_code_addr(faultLog.lr) && n < max_out) out[n++] = (faultLog.lr & ~1u);
+
+    // 2) «грубый» скан по сохранённому стеку
+    for (uint32_t *p = sp; p < sp_limit && n < max_out; ++p) {
+        uint32_t w = *p;
+        if (is_code_addr(w)) {
+            uint32_t addr = (w & ~1u);
+            if (n == 0 || out[n-1] != addr) out[n++] = addr; // чуть-чуть дедупликации
+        }
+    }
+    return n;
+}
+
 // Naked-обёртка для захвата стек-фрейма
 __attribute__((naked))
 void HardFault_Handler(void) {
@@ -68,6 +94,8 @@ void HardFault_Handler(void) {
         "B HardFault_HandlerC"
     );
 }
+
+
 
 // C-обработчик
 void HardFault_HandlerC(uint32_t *stk) {
@@ -90,7 +118,7 @@ void HardFault_HandlerC(uint32_t *stk) {
     faultLog.state |= ((uint64_t)(EEPROM.USB_mode           & 0x0F) <<  (4 * 5));
     faultLog.state |= ((uint64_t)(EEPROM.Save_in            & 0x0F) <<  (4 * 6));
     faultLog.state |= ((uint64_t)(EEPROM.len                & 0x0F) <<  (4 * 7));
-    faultLog.state |= ((uint64_t)(EEPROM.mode_ADC[0]           & 0x0F) <<  (4 * 8));
+    faultLog.state |= ((uint64_t)(EEPROM.mode_ADC[0]        & 0x0F) <<  (4 * 8));
     faultLog.state |= ((uint64_t)(EEPROM.block              & 0x0F) <<  (4 * 9));
 
     // 3. Системные регистры SCB
@@ -115,6 +143,12 @@ void HardFault_HandlerC(uint32_t *stk) {
     faultLog.pc   = stk[6];
     faultLog.psr  = stk[7];
 
+    faultLog.sp_at_fault = (uint32_t)stk;
+    faultLog.msp = __get_MSP();
+    faultLog.psp = __get_PSP();
+    faultLog.control = __get_CONTROL();
+    faultLog.ccr = SCB->CCR;
+
     // 5. Код возврата исключения
     uint32_t excRet;
     __asm volatile("MOV %0, LR" : "=r" (excRet));
@@ -127,7 +161,11 @@ void HardFault_HandlerC(uint32_t *stk) {
 
     // 7. Снимок стека (расширенный)
     memcpy(faultLog.stack, stk, sizeof(faultLog.stack));
-    
+
+    uint32_t *sp = (uint32_t *)stk;
+    uint32_t *sp_limit = sp + (sizeof(faultLog.stack) / sizeof(faultLog.stack[0]));
+    faultLog.bt_count = (uint32_t)collect_bt_scan(sp, sp_limit, faultLog.bt, BT_DEPTH);
+
     // 8. Проверка и запись дампа
     if (FlashBackup_IsEmpty()) {
         FlashBackup_Write();

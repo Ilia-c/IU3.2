@@ -177,6 +177,11 @@ double round_to_n(double value, int n) {
 
 
 void calculate_ADC_data_heigh(int32_t adValue, uint8_t channel) {
+
+    if (channel > 3) {
+        ERRCODE.STATUS |= STATUS_ADC_RANGE_ERROR;
+        return;
+    }
     snprintf(ADC_data.ADC_value_char[channel], sizeof(ADC_data.ADC_value_char[channel]), "%" PRId32, adValue);
     
     const long double koeff = 0.00000006973743438720703125;

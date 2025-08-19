@@ -178,6 +178,7 @@ void OLED_DrawCenteredString_OFFSETX(char strArray[40], uint16_t Y_pos, uint8_t 
 void OLED_DrawCenteredString(const char strArray[][40], uint16_t Y_pos);
 int YES_OR_NO(const char strArray[][40]);
 bool Boot_CopyVersion(Bootloader_data_item* out, size_t out_sz);
+void Reset_errors();
 
 
 typedef void (*TopBarDrawFunc)(int *px, menuItem *m);

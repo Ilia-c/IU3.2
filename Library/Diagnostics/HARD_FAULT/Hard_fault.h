@@ -18,37 +18,47 @@
 #define FAULTLOG_MAGIC        0xA5A5A5A5U           // Магическое число
 #define STACK_DUMP_WORDS      16                    // Размер дампа стека
 
+#define BT_DEPTH            32          // сколько адресов backtrace сохраняем
+#undef  STACK_DUMP_WORDS
+#define STACK_DUMP_WORDS    256         // 256 слов = 1 КБ
 
+#ifndef FLASH_CODE_LO
+  #define FLASH_CODE_LO     0x08000000U
+#endif
+#ifndef FLASH_CODE_HI
+  #define FLASH_CODE_HI     0x08080000U // конец 512КБ флеша (не включительно)
+#endif
 
 extern RTC_HandleTypeDef hrtc;
 
 // Структура дампа состояния
 typedef struct __attribute__((packed)) {
-    uint32_t magic;           // 0xA5A5A5A5
-    uint32_t err_lo, err_hi;  // ERRCODE.STATUS
-    uint32_t cfsr;            // Configurable Fault Status Register
-    uint32_t hfsr;            // HardFault Status Register
-    uint32_t dfsr;            // Debug Fault Status Register
-    uint32_t afsr;            // Auxiliary Fault Status Register
-    uint32_t shcsr;           // System Handler Control and State Register
-    uint32_t icsr;            // Interrupt Control and State Register
-    uint32_t mmfar;           // MemManage Fault Address Register
-    uint32_t bfar;            // BusFault Address Register
+    uint32_t magic;
+    uint32_t err_lo, err_hi;
+    uint32_t cfsr, hfsr, dfsr, afsr, shcsr, icsr, mmfar, bfar;
     uint64_t state;
-    // Сохраняем полный набор регистров
+
     uint32_t r0, r1, r2, r3;
-    uint32_t r12;
-    uint32_t lr;
-    uint32_t pc;
-    uint32_t psr;
+    uint32_t r12, lr, pc, psr;
 
-    uint32_t exc_return;      // код возврата исключения
+    uint32_t exc_return;
 
-    uint32_t timestamp;       // отметка времени
+    uint32_t timestamp;
 
-    // RTOS-контекст:
-    uint32_t task_id;         // идентификатор текущей задачи
-    uint32_t sys_tick;        // значение SysTick
+    // RTOS
+    uint32_t task_id;
+    uint32_t sys_tick;
+
+    // +++ НОВОЕ: системные регистры/указатели стеков
+    uint32_t sp_at_fault;   // адрес stk, переданный в хэндлер (PSP/MSP на входе)
+    uint32_t msp;
+    uint32_t psp;
+    uint32_t control;
+    uint32_t ccr;           // SCB->CCR на момент фолта
+
+    // +++ НОВОЕ: бэктрейс (сырые адреса возврата)
+    uint32_t bt_count;
+    uint32_t bt[BT_DEPTH];
 
     // Снимок стека
     uint32_t stack[STACK_DUMP_WORDS];

@@ -1,6 +1,14 @@
 #include "Menu_data.h"
 // Референсные токи
 static const int refs_mA[2] = {4, 20};
+const char ERRORS_PROTECT_DOWN[2][40] = {"Ошибка снятия защиты",  "Error removing protection"};
+const char SUCCESSFUL[2][40] = {"Успешно",  "Successful"};
+const char ERROR_TEXT_2[2][40] = {"Ошибка",  "Error"};
+const char CALIBRATE24[2][40] = {"Калибровка 24В",  "Calibrate 24V"};
+const char OK[2][40] = {"ОК",  "OK"};
+const char WRITE_SUCCESS[2][40] = {"Запись успешна", "Write successful"};
+const char WRITE_ERROR[2][40] = {"Ошибка записи", "Write error"};
+const char GENERATION_ERROR[2][40] = {"Ошибка генерации","Generation error"};
 
 // Чтение версии загрузчика из памяти
 bool Boot_CopyVersion(Bootloader_data_item* out, size_t out_sz)
@@ -79,7 +87,7 @@ void Initial_setup(void)
         {
             OLED_Clear(0);
             Display_TopBar(selectedMenuItem);
-            OLED_DrawCenteredString("Ошибка снятия защиты", 30);
+            OLED_DrawCenteredString(ERRORS_PROTECT_DOWN, 30);
             OLED_UpdateScreen();
             osDelay(1000);
             mode_redact = 0;
@@ -109,10 +117,14 @@ void Initial_setup(void)
     CalibrateTable(); // 2) Калибровка тока по каналам + cохранение в структуру Main_data
 
     // Финал: успешное завершение
+    
+    // Сьрос наработки EEPROM
+    EEPROM_clear_time_init();
+
     mode_redact = 2;
     OLED_Clear(0);
     Display_TopBar(selectedMenuItem);
-    OLED_DrawCenteredString("УСПЕШНО", 30);
+    OLED_DrawCenteredString(SUCCESSFUL, 30);
     OLED_UpdateScreen();
     osDelay(1000);
     Keyboard_press_code = 0xFF;
@@ -202,20 +214,20 @@ void CalibrateVoltage(void)
     {
         OLED_Clear(0);
         Display_TopBar(selectedMenuItem);
-        OLED_DrawCenteredString("Калибровка 24 В", 20);
+        OLED_DrawCenteredString(CALIBRATE24, 20);
         uint16_t w = OLED_GetWidthStr(IntADC.ADC_AKB_volts_char);
         OLED_DrawStr(IntADC.ADC_AKB_volts_char, (winth_display - w) / 2, 30, 1);
         if (Keyboard_press_code == 'R'){
             int res = Read_ADC_Colibrate_24V();
-            if (res == -1) OLED_DrawCenteredString("Ошибка", 40);
-            else{ OLED_DrawCenteredString("Успешно", 40); exit_code=1; }
+            if (res == -1) OLED_DrawCenteredString(ERROR_TEXT_2, 40);
+            else{ OLED_DrawCenteredString(SUCCESSFUL, 40); exit_code=1; }
             OLED_UpdateScreen();
             osDelay(500);
         }
         OLED_UpdateScreen();
         osDelay(50);
     }
-    OLED_DrawCenteredString("OK", 40);
+    OLED_DrawCenteredString(OK, 40);
     OLED_UpdateScreen();
     osDelay(1000);
     Keyboard_press_code = 0xFF;
@@ -298,8 +310,7 @@ void CalibrateTable(void)
                 Colibrate_current_channel(2);
                 OLED_Clear(0);
                 Display_TopBar(selectedMenuItem);
-                OLED_DrawCenteredString("Калибровка", 30);
-                OLED_DrawCenteredString("успешна", 40);
+                OLED_DrawCenteredString(SUCCESSFUL, 30);
                 OLED_UpdateScreen();
                 osDelay(1000);
 
@@ -307,9 +318,9 @@ void CalibrateTable(void)
                 Display_TopBar(selectedMenuItem);
                 HAL_StatusTypeDef res = Flash_WriteCalib(&Main_data);
                 if (res == HAL_OK) {
-                    OLED_DrawCenteredString("Запись успешна", 30);
+                    OLED_DrawCenteredString(WRITE_SUCCESS, 30);
                 } else {
-                    OLED_DrawCenteredString("Ошибка записи", 30);
+                    OLED_DrawCenteredString(WRITE_ERROR, 30);
                     OLED_UpdateScreen();
                     osDelay(5000);
                     NVIC_SystemReset(); // Значит повреждена флэш память, перезагружаем устройство
@@ -345,7 +356,7 @@ void AES_GENERATE(void)
     }
     else
     {
-        OLED_DrawCenteredString("Ошибка генерации", 30);
+        OLED_DrawCenteredString(GENERATION_ERROR, 30);
         OLED_UpdateScreen();
         osDelay(2000);
         return;

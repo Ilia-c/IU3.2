@@ -18,6 +18,24 @@ extern CRC_HandleTypeDef hcrc;
 
 uint32_t g_total_records_count = 0;
 
+const char W25_SECTORS_NOT_EMPTY[2][40]   = {"Не все сектора пустые",    "Not all sectors are empty"};
+const char W25_FILE_NOT_FOUND[2][40]      = {"Файл не найден",           "File not found"};
+const char W25_INVALID_SIZE[2][40]        = {"Неверный размер",          "Invalid size"};
+const char W25_FORMAT_ERROR[2][40]        = {"Ошибка формата",           "Format error"};
+const char W25_SIZE_HEADER_MISMATCH[2][40]= {"Размер/заголовок",         "Header/size mismatch"};
+const char W25_WRONG_BOARD_VERSION[2][40] = {"Неверная версия платы",    "Wrong board version"};
+const char W25_NO_UPDATE[2][40]           = {"Нет обновления",           "No update available"};
+const char W25_PREPARE_SPACE[2][40]       = {"Подготовка места",         "Preparing space"};
+const char W25_ERASE_ERROR[2][40]         = {"Ошибка стирания",          "Erase error"};
+const char W25_WRITE_ERROR[2][40]         = {"Ошибка записи",            "Write error"};
+const char W25_COPYING[2][40]             = {"Копирование",              "Copying"};
+const char W25_READ_ERROR[2][40]          = {"Ошибка чтения",            "Read error"};
+const char W25_WRITE_ERROR_2[2][40]       = {"Ошибка записи 2",          "Write error 2"};
+const char W25_COPY_ERROR[2][40]          = {"Ошибка копирования",       "Copy error"};
+const char W25_COPY_SUCCESS[2][40]        = {"Успешно скопировано",      "Copied successfully"};
+/* :contentReference[oaicite:0]{index=0} */
+
+
 // ------------------ Вспомогательные SPI-функции ------------------
 static int SPI2_Send(uint8_t *dt, uint16_t cnt)
 {
@@ -352,7 +370,7 @@ uint32_t W25_Chip_test()
     if (Counter_addr_error != 0)
     {
         OLED_Clear(0);
-        OLED_DrawCenteredString("Не все сектора пустые", 25);
+        OLED_DrawCenteredString(W25_SECTORS_NOT_EMPTY, 25);
         OLED_UpdateScreen();
         osDelay(10000);
         USB_DEBUG_MESSAGE("[ERROR FLASH] Ошибка: не все сектора пустые", DEBUG_FLASH, DEBUG_LEVL_2);
@@ -1119,7 +1137,7 @@ void Update_PO(void)
     char path[32];
 
     if ((res = FindAndOpenFirstBin(&MyFile, USBHPath)) != FR_OK) {
-         OLED_DrawCenteredString("Файл не найден", 30);
+         OLED_DrawCenteredString(W25_FILE_NOT_FOUND, 30);
          OLED_UpdateScreen();
          return;
      }
@@ -1129,7 +1147,7 @@ void Update_PO(void)
     if (fullSize <= EXTERNAL_HEADER_SIZE || fullSize > EXTERNAL_HEADER_SIZE + EXTERNAL_MAX_FW_SIZE) {
         f_close(&MyFile);
         OLED_Clear(0);
-        OLED_DrawCenteredString("Неверный размер", 10);
+        OLED_DrawCenteredString(W25_INVALID_SIZE, 10);
         OLED_UpdateScreen();
         osDelay(1000);
         return;
@@ -1142,7 +1160,7 @@ void Update_PO(void)
     // Читаем 8 байт размера прошивки
     if (f_read(&MyFile, size_hdr, 8, &br) != FR_OK || br != 8) { 
         OLED_Clear(0);
-        OLED_DrawCenteredString("Ошибка формата", 10);
+        OLED_DrawCenteredString(W25_FORMAT_ERROR, 10);
         OLED_UpdateScreen();
         f_close(&MyFile); 
         return -1; 
@@ -1150,7 +1168,7 @@ void Update_PO(void)
     // Читаем 4 байта CRC32
     if (f_read(&MyFile, crc_hdr, 4, &br) != FR_OK || br != 4) { 
         OLED_Clear(0);
-        OLED_DrawCenteredString("Ошибка формата", 10);
+        OLED_DrawCenteredString(W25_FORMAT_ERROR, 10);
         OLED_UpdateScreen();
         f_close(&MyFile); 
         return -1;  
@@ -1158,7 +1176,7 @@ void Update_PO(void)
 
     if (f_read(&MyFile, ver_hdr, 4, &br) != FR_OK || br != 4) {
         OLED_Clear(0);
-        OLED_DrawCenteredString("Ошибка формата", 10);
+        OLED_DrawCenteredString(W25_FORMAT_ERROR, 10);
         OLED_UpdateScreen();
         f_close(&MyFile);
         return;
@@ -1189,7 +1207,7 @@ void Update_PO(void)
     {
         f_close(&MyFile);
         OLED_Clear(0);
-        OLED_DrawCenteredString("Размер/заголовок", 10); // ! ПоПРАВИЬ
+        OLED_DrawCenteredString(W25_SIZE_HEADER_MISMATCH, 10); // ! ПоПРАВИЬ
         OLED_UpdateScreen();
         osDelay(1000);
         return;
@@ -1197,7 +1215,7 @@ void Update_PO(void)
     if (new_boardver != BOARD_VERSION) {
         f_close(&MyFile);
         OLED_Clear(0);
-        OLED_DrawCenteredString("Неверная версия платы", 10);
+        OLED_DrawCenteredString(W25_WRONG_BOARD_VERSION, 10);
         OLED_UpdateScreen();
         osDelay(1000);
         return;
@@ -1206,7 +1224,7 @@ void Update_PO(void)
     if (new_fw_ver < DEFAULT_VERSION_PROGRAMM_UINT16_t) {
         f_close(&MyFile);
         OLED_Clear(0);
-        OLED_DrawCenteredString("Нет обновления", 10);
+        OLED_DrawCenteredString(W25_NO_UPDATE, 10);
         OLED_UpdateScreen();
         osDelay(1000);
         return;
@@ -1215,12 +1233,12 @@ void Update_PO(void)
 
     // Очистка внешнего хранилища
     OLED_Clear(0);
-    OLED_DrawCenteredString("Подготовка места", 10);
+    OLED_DrawCenteredString(W25_PREPARE_SPACE, 10);
     PROGRESS_BAR(0);
     OLED_UpdateScreen();
     if (EraseExternalFirmwareArea() != 0) { 
         OLED_Clear(0);
-        OLED_DrawCenteredString("Ошибка стирания", 10);
+        OLED_DrawCenteredString(W25_ERASE_ERROR, 10);
         OLED_UpdateScreen();
         f_close(&MyFile); 
         return -1; 
@@ -1230,21 +1248,21 @@ void Update_PO(void)
     // Записываем в W25Q128 все 16 байт заголовка
     if (W25_Write_Data(EXTERNAL_FW_START,        size_hdr, 8) != 0) { 
         OLED_Clear(0);
-        OLED_DrawCenteredString("Ошибка записи", 10);
+        OLED_DrawCenteredString(W25_WRITE_ERROR, 10);
         OLED_UpdateScreen();
         f_close(&MyFile); 
         return -1; 
     }
     if (W25_Write_Data(EXTERNAL_FW_START + 8, crc_hdr, 4) != 0)      { 
         OLED_Clear(0);
-        OLED_DrawCenteredString("Ошибка записи", 10);
+        OLED_DrawCenteredString(W25_WRITE_ERROR, 10);
         OLED_UpdateScreen();
         f_close(&MyFile); 
         return -1; 
     }
     if (W25_Write_Data(EXTERNAL_FW_START + 12, ver_hdr, 4) != 0) {
         OLED_Clear(0);
-        OLED_DrawCenteredString("Ошибка записи", 10);
+        OLED_DrawCenteredString(W25_WRITE_ERROR, 10);
         OLED_UpdateScreen();
         f_close(&MyFile);
         return;
@@ -1252,7 +1270,7 @@ void Update_PO(void)
 
     // Копируем остальной бинарник с прогрессом и проверяем CRC на лету
     OLED_Clear(0);
-    OLED_DrawCenteredString("Копирование", 10);
+    OLED_DrawCenteredString(W25_COPYING, 10);
     PROGRESS_BAR(0);
     OLED_UpdateScreen();
 
@@ -1266,7 +1284,7 @@ void Update_PO(void)
         UINT need = (gFirmwareSize - total > sizeof(buf)) ? sizeof(buf) : (gFirmwareSize - total);
         if (f_read(&MyFile, buf, need, &br) != FR_OK || br == 0) { 
             OLED_Clear(0);
-            OLED_DrawCenteredString("Ошибка чтения", 10);
+            OLED_DrawCenteredString(W25_READ_ERROR, 10);
             OLED_UpdateScreen();
             f_close(&MyFile); 
             return -1; 
@@ -1275,7 +1293,7 @@ void Update_PO(void)
         for (UINT i = 0; i < br; ++i) crc = CRC32_Update(crc, buf[i]);
         if (W25_Write_PageAligned(addr, buf, br) != 0) { 
             OLED_Clear(0);
-            OLED_DrawCenteredString("Ошибка записи 2", 10);
+            OLED_DrawCenteredString(W25_WRITE_ERROR_2, 10);
             OLED_UpdateScreen();
             f_close(&MyFile); 
             return -1;  
@@ -1296,7 +1314,7 @@ void Update_PO(void)
     crc = ~crc;
     if (crc != expectedCRC) {
         OLED_Clear(0);
-        OLED_DrawCenteredString("Ошибка копирования", 10);
+        OLED_DrawCenteredString(W25_COPY_ERROR, 10);
         OLED_UpdateScreen();
         HAL_Delay(1000);
         EraseExternalFirmwareArea();
@@ -1304,7 +1322,7 @@ void Update_PO(void)
     }
 
     OLED_Clear(0);
-    OLED_DrawCenteredString("Успешно скопировано", 10);
+    OLED_DrawCenteredString(W25_COPY_SUCCESS, 10);
     OLED_UpdateScreen();
     HAL_Delay(1000);
 

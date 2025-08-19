@@ -110,7 +110,7 @@ const osThreadAttr_t Display_I2C_attributes = {
 osThreadId_t ADC_readHandle;
 const osThreadAttr_t ADC_read_attributes = {
     .name = "ADC_read",
-    .stack_size = 1024 * 4,
+    .stack_size = 1024 * 5,
     .priority = (osPriority_t)osPriorityLow3,
 };
 /* Definitions for RS485_data */

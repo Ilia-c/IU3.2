@@ -13,6 +13,8 @@
 #include "Data_collect.h"
 #include "Hard_fault.h"
 #include "stm32l4xx_hal_crc.h"
+#include "Menu_data.h"
+
 
 extern uint32_t g_total_records_count;
 // Команды флеш-памяти

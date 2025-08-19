@@ -8,7 +8,7 @@
 // Используется для обновления и преобразования значений GSM
 ////////////////////////////////////////////////////////////////////////////////
 
-Main_data_settings_item Main_data = {
+__attribute__((section(".ram2"), aligned(8))) Main_data_settings_item Main_data = {
     .version = {
         // Текущая версия устройства
         .VERSION_PCB = DEFAULT_VERSION_PCB,    // Версия печатной платы

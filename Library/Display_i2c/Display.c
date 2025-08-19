@@ -92,9 +92,18 @@ const char FORMAT[2][40] = {"Форматировать память?",  "Format memory?"};
 const char CYCLE[2][40] = {"Перейти в режим Цикл?",  "Format Flash?"};
 const char ALL_RESET[2][40] = {"Полный сброс?",  "All reset?"};
 const char RESET_ST[2][40] = {"Сбросить?",  "Reset?"};
+const char RESET_ERR[2][40] = {"Сбросить ошибки?",  "Reset errors?"};
 const char UPDATE[2][40] = {"Обновление..",  "Update.."};
 const char TEST_FLASH[2][40] = {"Тестировать FLASH?",  "Test FLASH?"};
 const char TEST_EEPROM[2][40] = {"Тестировать EEPROM?",  "Test EEPROM?"};
+const char TEST_ERROR[2][40] = {"Ошибка при проверке",  "Test error"};
+const char FLASH_VALID[2][40] = {"Память исправна",  "Flash OK"};
+const char TESTING[2][40] = {"Идет тестирование",  "Testing..."};
+const char ERROR_TESTING_EEPROM[2][40] = {"Ошибка при проверке",  "Error testing EEPROM"};
+const char OK_TESTING_EEPROM[2][40] = {"Память исправна",  "EEPROM OK"};
+
+
+
 
 // Выбираемые значения и статус
 menuSelect_item Communication_DATA = {
@@ -465,12 +474,33 @@ MAKE_MENU(Menu_2, "Настройки", "Settings", 0, UPTADE_OFF, NO_SIGNED, Menu_3, Men
     MAKE_MENU(Menu_2_3, "Дата", "Date", 0, UPTADE_OFF, NO_SIGNED, Menu_2_4, Menu_2_2, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Date_redact, DATA_OUT);
 	MAKE_MENU(Menu_2_4, "Время", "Time", 0, UPTADE_OFF, NO_SIGNED, Menu_2_5, Menu_2_3, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Time_redact, DATA_OUT);
 	MAKE_MENU(Menu_2_5, "Время сна", "Seep time", 0, UPTADE_OFF, NO_SIGNED, Menu_2_6, Menu_2_4, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Time_sleep_redact, DATA_OUT);
+//#if BOARD_VERSION == Version3_75  
 	MAKE_MENU(Menu_2_6, "Корр. УГВ", "GWL correction", 0, UPTADE_OFF, UNITS_MODE_DATA, Menu_2_7, Menu_2_5, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, GVL_Correct, DATA_OUT);
 	MAKE_MENU(Menu_2_7, "ВПИ", "U-range", 0, UPTADE_OFF, UNITS_MODE_DATA, Menu_2_8, Menu_2_6, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Max_Level_Mesurment, DATA_OUT);
 	MAKE_MENU(Menu_2_8, "НПИ", "L-range", 0, UPTADE_OFF, UNITS_MODE_DATA, Menu_2_9, Menu_2_7, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Min_Level_Mesurment, DATA_OUT);
-	MAKE_MENU(Menu_2_9, "Ед. изм.", "Unit measure", 0, UPTADE_OFF, NO_SIGNED, Menu_2_10, Menu_2_8, Menu_2, CHILD_MENU, ACTION_MENU, UNITS_MODE_DATA, DATA_IN, DATA_OUT);
+    MAKE_MENU(Menu_2_9, "Ед. изм.", "Unit measure", 0, UPTADE_OFF, NO_SIGNED, Menu_2_10, Menu_2_8, Menu_2, CHILD_MENU, ACTION_MENU, UNITS_MODE_DATA, DATA_IN, DATA_OUT);
     MAKE_MENU(Menu_2_10, "Токовая петля", "Current loop ", 0, UPTADE_OFF, NO_SIGNED, Menu_2_11, Menu_2_9, Menu_2, CHILD_MENU, ACTION_MENU, CURRENT_LOOP, DATA_IN, DATA_OUT);
-	MAKE_MENU(Menu_2_11, "RS-485", "RS-485", 0, UPTADE_OFF, NO_SIGNED, Menu_2_12, Menu_2_10, Menu_2, CHILD_MENU, ACTION_MENU, RS485_MODE_DATA, DATA_IN, DATA_OUT);
+/*#elif BOARD_VERSION == Version3_80
+    MAKE_MENU(Menu_1_2_1, "Канал 1", "Metering", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_2, PREVISION_MENU, Menu_1_2, Menu_1_2_1_1, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char[0]);
+	    MAKE_MENU(Menu_2_6, "Корр. УГВ", "GWL correction", 0, UPTADE_OFF, UNITS_MODE_DATA, Menu_2_7, Menu_2_5, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, GVL_Correct, DATA_OUT);
+	    MAKE_MENU(Menu_2_7, "ВПИ", "U-range", 0, UPTADE_OFF, UNITS_MODE_DATA, Menu_2_8, Menu_2_6, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Max_Level_Mesurment, DATA_OUT);
+	    MAKE_MENU(Menu_2_8, "НПИ", "L-range", 0, UPTADE_OFF, UNITS_MODE_DATA, Menu_2_9, Menu_2_7, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Min_Level_Mesurment, DATA_OUT);
+        MAKE_MENU(Menu_2_9, "Ед. изм.", "Unit measure", 0, UPTADE_OFF, NO_SIGNED, Menu_2_10, Menu_2_8, Menu_2, CHILD_MENU, ACTION_MENU, UNITS_MODE_DATA, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_10, "Токовая петля", "Current loop ", 0, UPTADE_OFF, NO_SIGNED, Menu_2_11, Menu_2_9, Menu_2, CHILD_MENU, ACTION_MENU, CURRENT_LOOP, DATA_IN, DATA_OUT);
+    MAKE_MENU(Menu_1_2_1, "Канал 1", "Metering", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_2, PREVISION_MENU, Menu_1_2, Menu_1_2_1_1, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char[0]);
+	    MAKE_MENU(Menu_2_6, "Корр. УГВ", "GWL correction", 0, UPTADE_OFF, UNITS_MODE_DATA, Menu_2_7, Menu_2_5, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, GVL_Correct, DATA_OUT);
+	    MAKE_MENU(Menu_2_7, "ВПИ", "U-range", 0, UPTADE_OFF, UNITS_MODE_DATA, Menu_2_8, Menu_2_6, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Max_Level_Mesurment, DATA_OUT);
+	    MAKE_MENU(Menu_2_8, "НПИ", "L-range", 0, UPTADE_OFF, UNITS_MODE_DATA, Menu_2_9, Menu_2_7, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Min_Level_Mesurment, DATA_OUT);
+        MAKE_MENU(Menu_2_9, "Ед. изм.", "Unit measure", 0, UPTADE_OFF, NO_SIGNED, Menu_2_10, Menu_2_8, Menu_2, CHILD_MENU, ACTION_MENU, UNITS_MODE_DATA, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_10, "Токовая петля", "Current loop ", 0, UPTADE_OFF, NO_SIGNED, Menu_2_11, Menu_2_9, Menu_2, CHILD_MENU, ACTION_MENU, CURRENT_LOOP, DATA_IN, DATA_OUT);
+    MAKE_MENU(Menu_1_2_1, "Канал 1", "Metering", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_2, PREVISION_MENU, Menu_1_2, Menu_1_2_1_1, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char[0]);
+	    MAKE_MENU(Menu_2_6, "Корр. УГВ", "GWL correction", 0, UPTADE_OFF, UNITS_MODE_DATA, Menu_2_7, Menu_2_5, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, GVL_Correct, DATA_OUT);
+	    MAKE_MENU(Menu_2_7, "ВПИ", "U-range", 0, UPTADE_OFF, UNITS_MODE_DATA, Menu_2_8, Menu_2_6, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Max_Level_Mesurment, DATA_OUT);
+	    MAKE_MENU(Menu_2_8, "НПИ", "L-range", 0, UPTADE_OFF, UNITS_MODE_DATA, Menu_2_9, Menu_2_7, Menu_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, Min_Level_Mesurment, DATA_OUT);
+        MAKE_MENU(Menu_2_9, "Ед. изм.", "Unit measure", 0, UPTADE_OFF, NO_SIGNED, Menu_2_10, Menu_2_8, Menu_2, CHILD_MENU, ACTION_MENU, UNITS_MODE_DATA, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_10, "Токовая петля", "Current loop ", 0, UPTADE_OFF, NO_SIGNED, Menu_2_11, Menu_2_9, Menu_2, CHILD_MENU, ACTION_MENU, CURRENT_LOOP, DATA_IN, DATA_OUT);
+#endif*/
+    MAKE_MENU(Menu_2_11, "RS-485", "RS-485", 0, UPTADE_OFF, NO_SIGNED, Menu_2_12, Menu_2_10, Menu_2, CHILD_MENU, ACTION_MENU, RS485_MODE_DATA, DATA_IN, DATA_OUT);
     MAKE_MENU(Menu_2_12, "Связь", "Network", 0, UPTADE_OFF, NO_SIGNED, Menu_2_13, Menu_2_11, Menu_2, CHILD_MENU, ACTION_MENU, Communication_DATA, DATA_IN, DATA_OUT);
 	MAKE_MENU(Menu_2_13, "Сохранить в", "Save in", 0, UPTADE_OFF, NO_SIGNED, Menu_2_14, Menu_2_12, Menu_2, CHILD_MENU, ACTION_MENU, SAVE_IN_STRUCT, DATA_IN, DATA_OUT);
 	MAKE_MENU(Menu_2_14, "Язык", "Language", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15, Menu_2_13, Menu_2, CHILD_MENU, ACTION_MENU, LANGUAGE, DATA_IN, DATA_OUT);
@@ -483,7 +513,8 @@ MAKE_MENU(Menu_2, "Настройки", "Settings", 0, UPTADE_OFF, NO_SIGNED, Menu_3, Men
 		MAKE_MENU(Menu_2_15_6, "Тест FLASH", "FLASH test", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_7, Menu_2_15_5, Menu_2_15, CHILD_MENU, flash_test, SELECT_BAR, DATA_IN, DATA_OUT);
 		MAKE_MENU(Menu_2_15_7, "Тест EEPROM", "EEPROM test", 0, 0, NO_SIGNED, Menu_2_15_8, Menu_2_15_6, Menu_2_15, CHILD_MENU, EEPROM_test, SELECT_BAR, DATA_IN, DATA_OUT);
 		MAKE_MENU(Menu_2_15_8, "Режим", "Mode", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_9, Menu_2_15_7, Menu_2_15, CHILD_MENU, SELECT_BAR, Block, DATA_IN, DATA_OUT);
-		MAKE_MENU(Menu_2_15_9, "Полный Сброс", "FULL RESET", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_15_8, Menu_2_15, CHILD_MENU, ALL_Reset_settings, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_15_9, "Сброс ошибок", "Reset errors", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15_10, Menu_2_15_8, Menu_2_15, CHILD_MENU, Reset_errors, SELECT_BAR, DATA_IN, DATA_OUT);
+		MAKE_MENU(Menu_2_15_10, "Полный Сброс", "FULL RESET", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_15_9, Menu_2_15, CHILD_MENU, ALL_Reset_settings, SELECT_BAR, DATA_IN, DATA_OUT);
     MAKE_MENU(Menu_2_16, "Обновление ПО", "Update", 0, UPTADE_OFF, NO_SIGNED, Menu_2_17, Menu_2_15, Menu_2, CHILD_MENU, Update_programm, SELECT_BAR, DATA_IN, DATA_OUT); 
     MAKE_MENU(Menu_2_17, "Формат. память", "Format device", 0, UPTADE_OFF, NO_SIGNED, Menu_2_18, Menu_2_16, Menu_2, CHILD_MENU, Flash_Format, SELECT_BAR, DATA_IN, DATA_OUT); 
 	MAKE_MENU(Menu_2_18, "Сброс настроек", "Factory reset", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_17, Menu_2, CHILD_MENU, Reset_settings, SELECT_BAR, DATA_IN, DATA_OUT);
@@ -656,7 +687,7 @@ void flash_test(){
     W25_Chip_Erase();
 
     OLED_Clear(0);
-    OLED_DrawCenteredString("Тестирование FLASH", 10);
+    OLED_DrawCenteredString(TESTING, 10);
     OLED_DrawCenteredString(POWER_NOT, Y);
     PROGRESS_BAR(0);
     OLED_UpdateScreen();
@@ -671,20 +702,22 @@ void flash_test(){
 
     if (errors == 0xFFFFFFFF){
         OLED_Clear(0);
-        OLED_DrawCenteredString("Ошибка при проверке", Y+10);
+
+        OLED_DrawCenteredString(TEST_ERROR, Y+10);
         OLED_UpdateScreen();
     }
     if (errors == 0)
     {
         OLED_Clear(0);
-        OLED_DrawCenteredString("Память исправна", Y+10);
+        OLED_DrawCenteredString(FLASH_VALID, Y+10);
         OLED_UpdateScreen();
     }
     if ((errors != 0) && (errors != 0xFFFFFFFF))
     {
         OLED_Clear(0);
-        char error_str[30] = {0};
-        snprintf(error_str, sizeof(error_str), "Ошибок: %lu", errors);
+        char error_str[2][30] = {{0}, {0}};
+        snprintf(error_str[0], sizeof(error_str), "Ошибок: %lu", errors);
+        snprintf(error_str[1], sizeof(error_str), "Errors: %lu", errors);
         OLED_DrawCenteredString(error_str, Y);
         OLED_UpdateScreen();
     }
@@ -712,18 +745,18 @@ void EEPROM_test(){
         return;
     }
     OLED_Clear(0);
-    OLED_DrawCenteredString("Идет тестирование", 10);
+    OLED_DrawCenteredString(TESTING, 10);
     OLED_UpdateScreen();
     uint32_t errors = EEPROM_Test();
     if (errors == 0xFFFFFFFF){
         OLED_Clear(0);
-        OLED_DrawCenteredString("Ошибка при проверке", Y+10);
+        OLED_DrawCenteredString(ERROR_TESTING_EEPROM, Y+10);
         OLED_UpdateScreen();
     }
     if (errors == 0)
     {
         OLED_Clear(0);
-        OLED_DrawCenteredString("Память исправна", Y+10);
+        OLED_DrawCenteredString(OK_TESTING_EEPROM, Y+10);
         OLED_UpdateScreen();
     }
     if ((errors != 0) && (errors != 0xFFFFFFFF))
@@ -1030,15 +1063,6 @@ void Reset_settings(){
     EEPROM.mode_ADC[0] = DEFAULT_MODE_ADC;                   // Режим работы АЦП, 0 - 4-20мА, 1 - 0-20мА, 2 - выкл
     EEPROM_SaveSettings(&EEPROM);
 
-    FaultLog_t *log = FlashBackup_GetLog();
-    if (log->magic != FAULTLOG_MAGIC) {
-        // Нет валидного дампа — просто закрываем и выходим
-    }
-    else {
-        // Если есть валидный дамп, очищаем его
-        FlashBackup_Clear();
-    }
-
     mode_redact = 2;
     OLED_Clear(0);
     FontSet(font);
@@ -1051,6 +1075,42 @@ void Reset_settings(){
     else OLED_DrawCenteredString(READY, Y);
     OLED_UpdateScreen();
     osDelay(200);
+}
+
+// Сброс ошибок
+void Reset_errors(){
+    OLED_Clear(0);
+    FontSet(font);
+    Display_TopBar(selectedMenuItem);
+    if (YES_OR_NO(RESET_ERR) == 0)
+    {
+        mode_redact = 0;
+        return;
+    }
+    ERRCODE.STATUS = 0;
+    HAL_PWR_EnableBkUpAccess();
+    HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_1, 0);
+    HAL_RTCEx_BKUPWrite(&hrtc, BKP_REG_INDEX_ERROR_CODE_2, 0);
+    HAL_PWR_DisableBkUpAccess();
+
+    mode_redact = 2;
+    OLED_Clear(0);
+    FontSet(font);
+    Display_TopBar(selectedMenuItem);
+    #define Y 33
+
+    FaultLog_t *log = FlashBackup_GetLog();
+    if (log->magic != FAULTLOG_MAGIC) {
+        // Нет валидного дампа — просто закрываем и выходим
+    }
+    else {
+        // Если есть валидный дамп, очищаем его
+        FlashBackup_Clear();
+    }
+    OLED_DrawCenteredString(READY, Y);
+    OLED_UpdateScreen();
+    osDelay(200);
+    Keyboard_press_code = 0xFF; // сброс кода клавиатуры
 }
 
 void ALL_Reset_settings(){
