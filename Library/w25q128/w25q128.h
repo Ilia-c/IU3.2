@@ -32,8 +32,9 @@ extern uint32_t g_total_records_count;
 #define TIMEOUT_CHIP_ERASE_MS 120000
 
 // ------------------ Параметры организации памяти ------------------
-#define SECTOR_SIZE         4096
-#define RECORD_SIZE         128
+#define SECTOR_SIZE         4096u
+#define PAGE_SIZE           256u
+#define RECORD_SIZE         256u
 #define RECORDS_PER_SECTOR  (SECTOR_SIZE / RECORD_SIZE)
 
 // Полный размер флеш
@@ -73,6 +74,7 @@ typedef struct {
     uint32_t CRC32_calc;         // [6-10]  : CRC32 для данных в поле data
     char data[RECORD_SIZE - 13]; // [10..127]
 } record_t;
+_Static_assert(sizeof(record_t) == RECORD_SIZE, "record_t != RECORD_SIZE");
 
 // Экспортируемые переменные (если нужны)
 extern uint32_t flash_end_ptr;

@@ -43,7 +43,7 @@ def build_update_file(in_file: str, out_name: str, fw_version_u16: int, ward_ver
     # Гарантируем .bin расширение
     if not out_name.lower().endswith(".bin"):
         out_name += ".bin"
-    out_file = os.path.join(out_dir, out_name)
+    out_file = os.path.join("", out_name)
 
     with open(out_file, "wb") as f:
         f.write(size_bytes)

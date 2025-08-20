@@ -80,7 +80,7 @@ typedef struct Menu_item_char
     uint8_t redact_right_end; // завершение редактировани€ при нажатии вправо на краю данных 1-включено, 0-выключено
 
     //  я„≈… »
-    double **data_double;
+    double *data_double;
     void *data[3];  // ссылки на исходные значени€ 
     uint8_t data_type[3]; // тип данных 0-uint8_t, 1 - uint16_t, 2 - int32_t, 3 - char[] (при таком режиме - ширина €чеек вне редактировани, а ширина €чеек будет задавать максимум символов) 4 - float
     uint8_t unsigned_signed[2]; // есть минус или нет 1-да, 0 - нет.  ѕервое - текущее, второе - промежуточное
@@ -140,9 +140,9 @@ void Save_time_format();
 void Save_date_format();
 void Programm_GVL_CORRECT();
 void split_double(double *number, int32_t *int_part, int32_t *frac_part, uint8_t precision);
-void SAVE_DOUBLE(double **save_data, int32_t *value_int, int32_t *value_float, int size_float, uint8_t _signed);
-void Add_units(void);
-void Remove_units(void);
+void SAVE_DOUBLE(double *save_data, int32_t *value_int, int32_t *value_float, int size_float, uint8_t _signed);
+void Add_units(uint8_t channel);
+void Remove_units(uint8_t channel);
 void Display_TopBar(menuItem *CurrentMenu);
 void full_test();
 void USB_FLASH_SAVE();
@@ -172,7 +172,6 @@ void Reset_time_work();
 void DrawBack(uint8_t px, menuItem *m);
 void State_update();
 void QR_status();
-void Add_units(void);
 void Calibrate();
 void OLED_DrawCenteredString_OFFSETX(char strArray[40], uint16_t Y_pos, uint8_t width_display, uint8_t offset);
 void OLED_DrawCenteredString(const char strArray[][40], uint16_t Y_pos);

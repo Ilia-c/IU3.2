@@ -178,7 +178,7 @@ double round_to_n(double value, int n) {
 
 void calculate_ADC_data_heigh(int32_t adValue, uint8_t channel) {
 
-    if (channel > 3) {
+    if (channel > 2) {
         ERRCODE.STATUS |= STATUS_ADC_RANGE_ERROR;
         return;
     }
@@ -215,7 +215,7 @@ void calculate_ADC_data_heigh(int32_t adValue, uint8_t channel) {
     for (int i = 0; i<11; i++) ADC_data.ADC_SI_value_correct_char[channel][i] = '\0';
 
     // Проверяем диапазон значений и формируем строки для отображения
-    if (ADC_data.ADC_SI_value[channel] < EEPROM.ZERO_LVL[channel]-0.1) {
+    if (ADC_data.ADC_Current[channel] < Imin-0.0001) {
         ERRCODE.STATUS |= STATUS_ADC_RANGE_ERROR;
         if (EEPROM.len == 0){
             snprintf(ADC_data.ADC_SI_value_char[channel], sizeof(ADC_data.ADC_SI_value_char[channel]), "Обрыв");
@@ -225,7 +225,7 @@ void calculate_ADC_data_heigh(int32_t adValue, uint8_t channel) {
             snprintf(ADC_data.ADC_SI_value_char[channel], sizeof(ADC_data.ADC_SI_value_char[channel]), "Break");
             snprintf(ADC_data.ADC_SI_value_correct_char[channel], sizeof(ADC_data.ADC_SI_value_correct_char[channel]), "Break");
         }
-        if (EEPROM.Mode == 0) Remove_units();
+        if (EEPROM.Mode == 0) Remove_units(channel);
     }
     else{
         ERRCODE.STATUS &= ~STATUS_ADC_RANGE_ERROR;
@@ -238,10 +238,10 @@ void calculate_ADC_data_heigh(int32_t adValue, uint8_t channel) {
             snprintf(ADC_data.ADC_SI_value_char[channel], sizeof(ADC_data.ADC_SI_value_char[channel]), "%4.2f", ADC_data.ADC_SI_value[channel]);
             snprintf(ADC_data.ADC_SI_value_correct_char[channel], sizeof(ADC_data.ADC_SI_value_correct_char[channel]), "%4.2f", ADC_data.ADC_SI_value_correct[channel]);
         }
-        if (EEPROM.Mode == 0) Add_units();
+        if (EEPROM.Mode == 0) Add_units(channel);
     }
     //snprintf(ADC_data.ADC_Volts_char[channel], sizeof(ADC_data.ADC_Volts_char[channel]), "%4.2f", ADC_data.ADC_Volts[channel]); // Форматируем значение напряжения
-    snprintf(ADC_data.ADC_Current_char[channel], sizeof(ADC_data.ADC_Current_char[channel]), "%4.3f", ADC_data.ADC_Current[channel]);
+    snprintf(ADC_data.ADC_Current_char[channel], sizeof(ADC_data.ADC_Current_char[channel]), "%4.3f", ADC_data.ADC_Current[channel]*1000);
 }
 
 

@@ -222,6 +222,8 @@ int W25_Write_Data(uint32_t addr, uint8_t *data, uint32_t sz)
     if (!data) 
     return -1;
 
+    if (((addr & 0xFFu) + sz) > 256u) return -1;
+
     // Предполагаем, что sz <= 256 и не пересекает границу страницы
     // (т.к. вы пишете ровно 128 байт за раз).
     if (W25_Write_Enable() != 0) {
@@ -387,7 +389,7 @@ uint32_t W25_Chip_test()
                 sector[i] = SET; // Заполняем сектор данными 0x00
             }
 
-            if (W25_Write_Data(addr, &sector, RECORD_SIZE) != 0)
+            if (W25_Write_Data(addr, sector, RECORD_SIZE) != 0)
             {
                 return 0xFFFFFFFF; // Ошибка
             }
@@ -489,8 +491,8 @@ int flash_append_record(const char *record_data, uint8_t sector_mark_send_flag)
 
     // Проверим длину данных, максимум (RECORD_SIZE - 6)
     size_t len = strlen(record_data);
-    if (len > (RECORD_SIZE - 6)) {
-        len = RECORD_SIZE - 6;
+    if (len > (RECORD_SIZE - 13)) {
+        len = RECORD_SIZE - 13;
     }
     
     record_t new_rec;
@@ -596,7 +598,7 @@ int mark_block_sent(int32_t addr_block)
     uint32_t sector_idx  = (uint32_t)addr_block / SECTOR_SIZE;
     uint32_t sector_addr = sector_idx * SECTOR_SIZE;
     uint8_t marker = 0;  // 0 => все блоки отправлены, 0xFF => есть неотправленные
-
+    
     for (uint32_t i = 0; i < RECORDS_PER_SECTOR; i++) {
         uint32_t cur_block_addr = sector_addr + BLOCK_MARK_DATA_SEND + i * RECORD_SIZE;
         uint8_t mark_val = 0xFF;
@@ -790,10 +792,10 @@ int backup_records_to_external(void)
                 continue;
             }
             size_t realLen = rec.length;
-            if (realLen > 110)
+            if (realLen > 240)
             {
-                rec.data[110] = '\n'; // обрезаем
-                rec.data[111] = '\0'; // обрезаем
+                rec.data[240] = '\n'; // обрезаем
+                rec.data[241] = '\0'; // обрезаем
             }
             else
             {

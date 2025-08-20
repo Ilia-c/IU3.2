@@ -962,10 +962,6 @@ void Erroe_indicate(void *argument)
   Collect_DATA();
   for (;;)
   {
-    //Collect_DATA();
-    //flash_append_record(save_data, 0);
-    //osDelay(1);
-    //continue;
     
     Diagnostics();
     BlinkLED(GPIOC, GPIO_PIN_13, 1, 2000, 2000, 0);
