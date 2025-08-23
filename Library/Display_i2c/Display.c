@@ -76,6 +76,7 @@ const char POWER_NOT[2][40] = {"НЕ ОТКЛЮЧАЙТЕ ПИТАНИЕ",  "DO NOT POWER OFF"};
 const char READY[2][40] = {"Готово",  "Ready"};
 const char PASSWORD_IN[2][40] = {"Введите пароль",  "Enter password"};
 const char ERROR_TEXT[2][40] = {"Ошибка",  "Error"};
+const char LOADING_TEXT[2][40] = {"Загрузка...",  "Loading..."};
 const char DIAPASON_ERR[2][40] = {"Вне диапазона",  "Out of range"};
 const char CALIBRATE_4ma_CORRECT[2][40] = {"Калиб. 4мА успешна",  "4m сalib. compl."};
 const char CALIBRATE_20ma_CORRECT[2][40] = {"Калиб. 20мА успешна",  "20mA calib. compl."};
@@ -97,11 +98,11 @@ const char UPDATE[2][40] = {"Обновление..",  "Update.."};
 const char TEST_FLASH[2][40] = {"Тестировать FLASH?",  "Test FLASH?"};
 const char TEST_EEPROM[2][40] = {"Тестировать EEPROM?",  "Test EEPROM?"};
 const char TEST_ERROR[2][40] = {"Ошибка при проверке",  "Test error"};
-const char FLASH_VALID[2][40] = {"Память исправна",  "Flash OK"};
+const char FLASH_VALID[2][40] = {"Flash исправна",  "Flash OK"};
 const char TESTING[2][40] = {"Идет тестирование",  "Testing..."};
 const char ERROR_TESTING_EEPROM[2][40] = {"Ошибка при проверке",  "Error testing EEPROM"};
-const char OK_TESTING_EEPROM[2][40] = {"Память исправна",  "EEPROM OK"};
-
+const char OK_TESTING_EEPROM[2][40] = {"EEPROM исправна",  "EEPROM OK"};
+const char NO_VALID_DUMP[2][40] = {"Нету дампа",  "No dump"};
 
 
 
@@ -114,6 +115,15 @@ menuSelect_item Communication_DATA = {
         {"NB-IoT", "NB-IoT"}
     },
 };
+
+menuSelect_item Communication_DATA_http_mqtt = {
+    .data = (uint8_t *)&EEPROM.Communication_http_mqtt,
+    .Name = {
+        {"HTTP.", "HTTP"},
+        {"MQTT", "MQTT"}
+    },
+};
+
 menuSelect_item RS485_MODE_DATA = {
     (uint8_t *)&EEPROM.RS485_prot,
     {
@@ -178,7 +188,6 @@ menuSelect_item CURRENT_LOOP_1 = {
     {
         {"4-20мА", "4-20mA"},
         {"0-20мА", "0-20mA"},
-        {"Выкл.", "Off"}
     }
 };
 menuSelect_item CURRENT_LOOP_2 = {
@@ -187,8 +196,9 @@ menuSelect_item CURRENT_LOOP_2 = {
         #if BOARD_VERSION == Version3_80
         {"4-20мА", "4-20mA"},
         {"0-20мА", "0-20mA"},
-        #endif
+        #elif BOARD_VERSION == Version3_75
         {"Выкл.", "Off"}
+        #endif
     }
 };
 menuSelect_item CURRENT_LOOP_3 = {
@@ -197,8 +207,9 @@ menuSelect_item CURRENT_LOOP_3 = {
         #if BOARD_VERSION == Version3_80
         {"4-20мА", "4-20mA"},
         {"0-20мА", "0-20mA"},
-        #endif
+        #elif BOARD_VERSION == Version3_75
         {"Выкл.", "Off"}
+        #endif
     }
 };
 
@@ -589,11 +600,6 @@ menuSelect_item NO_SIGNED = {
 MAKE_MENU(Menu_1, "Режимы", "Modes", 0, UPTADE_OFF, NO_SIGNED, Menu_2, PREVISION_MENU, PARENT_MENU, Menu_1_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
 	MAKE_MENU(Menu_1_1, "Цикл", "Cycle", 0, UPTADE_OFF, NO_SIGNED, Menu_1_2, PREVISION_MENU, Menu_1, CHILD_MENU, sleep, SELECT_BAR, DATA_IN, DATA_OUT);
 	MAKE_MENU(Menu_1_2, "Показания", "Sensor reading", 0, UPTADE_OFF, NO_SIGNED, Menu_1_3, Menu_1_1, Menu_1, Menu_1_2_1, ACTION_MENU, SELECT_BAR, DATA_IN, DATA_OUT);
-		#if BOARD_VERSION == Version3_75  
-        MAKE_MENU(Menu_1_2_1, "Глубина", "Metering", 0, UPTADE_ON, UNITS_MODE_DATA_1, Menu_1_2_2, PREVISION_MENU, Menu_1_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_1_SI_value_char);
-		MAKE_MENU(Menu_1_2_2, "УГВ", "GWL", 0, UPTADE_ON, UNITS_MODE_DATA_1, Menu_1_2_3, Menu_1_2_1, Menu_1_2, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_1_SI_value_correct_char);
-		MAKE_MENU(Menu_1_2_3, "Сохранить", "Save", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_1_2_2, Menu_1_2, CHILD_MENU, SAVE_IZM, SELECT_BAR, DATA_IN, DATA_OUT); 
-        #elif BOARD_VERSION == Version3_80
         MAKE_MENU(Menu_1_2_1, "Канал 1", "Cnannel 1", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_2, PREVISION_MENU, Menu_1_2, Menu_1_2_1_1, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char[0]);
             MAKE_MENU(Menu_1_2_1_1, "Показания", "Metering", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_1_2, PREVISION_MENU, Menu_1_2_1, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_char[0]);
             MAKE_MENU(Menu_1_2_1_2, "С поправкой", "Metering", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_1_3, Menu_1_2_1_1, Menu_1_2_1, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_correct_char[0]);
@@ -607,7 +613,6 @@ MAKE_MENU(Menu_1, "Режимы", "Modes", 0, UPTADE_OFF, NO_SIGNED, Menu_2, PREVISION
             MAKE_MENU(Menu_1_2_3_2, "С поправкой", "Metering", 0, UPTADE_ON, NO_SIGNED, Menu_1_2_3_3, Menu_1_2_3_1, Menu_1_2_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_SI_value_correct_char[2]);
             MAKE_MENU(Menu_1_2_3_3, "Ток", "Metering", 0, UPTADE_ON, Unit_current, NEXT_MENU, Menu_1_2_3_2, Menu_1_2_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ADC_data.ADC_Current_char[2]);
         MAKE_MENU(Menu_1_2_4, "Сохранить", "Save", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_1_2_3, Menu_1_2, CHILD_MENU, SAVE_IZM, SELECT_BAR, DATA_IN, DATA_OUT); 
-        #endif
     MAKE_MENU(Menu_1_3, "Диагностика", "Test check", 0, UPTADE_ON, NO_SIGNED, NEXT_MENU, Menu_1_2, Menu_1, Menu_1_3_1, ACTION_MENU, SELECT_BAR, DATA_IN, ERRCODE.Diagnostics_char); //! Добавить статус
 		MAKE_MENU(Menu_1_3_1, "Статус", "Status", 0, UPTADE_OFF, NO_SIGNED, Menu_1_3_2, PREVISION_MENU, Menu_1_3, CHILD_MENU, QR_status, SELECT_BAR, DATA_IN, ERRCODE.STATUSCHAR);
         MAKE_MENU(Menu_1_3_2, "Сост.", "State", 0, UPTADE_OFF, NO_SIGNED, Menu_1_3_3, Menu_1_3_1, Menu_1_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, ERRCODE.STATE_CAHAR); //! Добавить статус
@@ -665,14 +670,15 @@ MAKE_MENU(Menu_2, "Настройки", "Settings", 0, UPTADE_OFF, NO_SIGNED, Menu_3, Men
 		MAKE_MENU(Menu_2_12_1, "Заставка", "Startup screen", 0, UPTADE_OFF, NO_SIGNED, Menu_2_12_2, PREVISION_MENU, Menu_2_12, CHILD_MENU, ACTION_MENU, SCREENSAVER, DATA_IN, DATA_OUT);
 		MAKE_MENU(Menu_2_12_2, "Режим USB", "USB mode", 0, UPTADE_OFF, NO_SIGNED, Menu_2_12_3, Menu_2_12_1, Menu_2_12, CHILD_MENU, ACTION_MENU, USB_MODE_STRUCT, DATA_IN, DATA_OUT);
         MAKE_MENU(Menu_2_12_3, "Связь", "Network", 0, UPTADE_OFF, NO_SIGNED, Menu_2_12_4, Menu_2_12_2, Menu_2_12, CHILD_MENU, ACTION_MENU, Communication_DATA, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_12_4, "Перв. настройка", "First set", 0, UPTADE_OFF, NO_SIGNED, Menu_2_12_5, Menu_2_12_3, Menu_2_12, CHILD_MENU, Initial_setup, SELECT_BAR, DATA_IN, DATA_OUT);
-		MAKE_MENU(Menu_2_12_5, "Напр. CR", "Plug", 0, UPTADE_ON, NO_SIGNED, Menu_2_12_6, Menu_2_12_4, Menu_2_12, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, IntADC.MK_vbat_char);
-		MAKE_MENU(Menu_2_12_6, "Темп. циф.", "Digital temp.", 0, UPTADE_ON, Unit_degree, Menu_2_12_7, Menu_2_12_5, Menu_2_12, CHILD_MENU, SELECT_BAR, SELECT_BAR, DATA_IN, IntADC.MK_temp_char);
-		MAKE_MENU(Menu_2_12_7, "Тест FLASH", "FLASH test", 0, UPTADE_OFF, NO_SIGNED, Menu_2_12_8, Menu_2_12_6, Menu_2_12, CHILD_MENU, flash_test, SELECT_BAR, DATA_IN, DATA_OUT);
-		MAKE_MENU(Menu_2_12_8, "Тест EEPROM", "EEPROM test", 0, 0, NO_SIGNED, Menu_2_12_9, Menu_2_12_7, Menu_2_12, CHILD_MENU, EEPROM_test, SELECT_BAR, DATA_IN, DATA_OUT);
-		MAKE_MENU(Menu_2_12_9, "Режим", "Mode", 0, UPTADE_OFF, NO_SIGNED, Menu_2_12_10, Menu_2_12_8, Menu_2_12, CHILD_MENU, SELECT_BAR, Block, DATA_IN, DATA_OUT);
-        MAKE_MENU(Menu_2_12_10, "Сброс ошибок", "Reset errors", 0, UPTADE_OFF, NO_SIGNED, Menu_2_12_11, Menu_2_12_9, Menu_2_12, CHILD_MENU, Reset_errors, SELECT_BAR, DATA_IN, DATA_OUT);
-		MAKE_MENU(Menu_2_12_11, "Полный Сброс", "FULL RESET", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_12_10, Menu_2_12, CHILD_MENU, ALL_Reset_settings, SELECT_BAR, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_12_4, "Сообщение", "Message", 0, UPTADE_OFF, NO_SIGNED, Menu_2_12_5, Menu_2_12_3, Menu_2_12, CHILD_MENU, ACTION_MENU, Communication_DATA_http_mqtt, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_12_5, "Перв. настройка", "First set", 0, UPTADE_OFF, NO_SIGNED, Menu_2_12_6, Menu_2_12_4, Menu_2_12, CHILD_MENU, Initial_setup, SELECT_BAR, DATA_IN, DATA_OUT);
+		MAKE_MENU(Menu_2_12_6, "Напр. CR", "Plug", 0, UPTADE_ON, NO_SIGNED, Menu_2_12_7, Menu_2_12_5, Menu_2_12, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, IntADC.MK_vbat_char);
+		MAKE_MENU(Menu_2_12_7, "Темп. циф.", "Digital temp.", 0, UPTADE_ON, Unit_degree, Menu_2_12_8, Menu_2_12_6, Menu_2_12, CHILD_MENU, SELECT_BAR, SELECT_BAR, DATA_IN, IntADC.MK_temp_char);
+		MAKE_MENU(Menu_2_12_8, "Тест FLASH", "FLASH test", 0, UPTADE_OFF, NO_SIGNED, Menu_2_12_9, Menu_2_12_7, Menu_2_12, CHILD_MENU, flash_test, SELECT_BAR, DATA_IN, DATA_OUT);
+		MAKE_MENU(Menu_2_12_9, "Тест EEPROM", "EEPROM test", 0, 0, NO_SIGNED, Menu_2_12_10, Menu_2_12_8, Menu_2_12, CHILD_MENU, EEPROM_test, SELECT_BAR, DATA_IN, DATA_OUT);
+		MAKE_MENU(Menu_2_12_10, "Режим", "Mode", 0, UPTADE_OFF, NO_SIGNED, Menu_2_12_11, Menu_2_12_9, Menu_2_12, CHILD_MENU, SELECT_BAR, Block, DATA_IN, DATA_OUT);
+        MAKE_MENU(Menu_2_12_11, "Сброс ошибок", "Reset errors", 0, UPTADE_OFF, NO_SIGNED, Menu_2_12_12, Menu_2_12_10, Menu_2_12, CHILD_MENU, Reset_errors, SELECT_BAR, DATA_IN, DATA_OUT);
+		MAKE_MENU(Menu_2_12_12, "Полный Сброс", "FULL RESET", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_12_11, Menu_2_12, CHILD_MENU, ALL_Reset_settings, SELECT_BAR, DATA_IN, DATA_OUT);
     MAKE_MENU(Menu_2_13, "Обновление ПО", "Update", 0, UPTADE_OFF, NO_SIGNED, Menu_2_14, Menu_2_12, Menu_2, CHILD_MENU, Update_programm, SELECT_BAR, DATA_IN, DATA_OUT); 
     MAKE_MENU(Menu_2_14, "Формат. память", "Format device", 0, UPTADE_OFF, NO_SIGNED, Menu_2_15, Menu_2_13, Menu_2, CHILD_MENU, Flash_Format, SELECT_BAR, DATA_IN, DATA_OUT); 
 	MAKE_MENU(Menu_2_15, "Сброс настроек", "Factory reset", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_2_14, Menu_2, CHILD_MENU, Reset_settings, SELECT_BAR, DATA_IN, DATA_OUT);
@@ -770,12 +776,16 @@ void State_update(){
     state |= (uint64_t)(EEPROM.Communication & 0x0F) << 4*1;
     state |= (uint64_t)(EEPROM.RS485_prot & 0x0F) << 4*2;
     state |= (uint64_t)(EEPROM.units_mes[0] & 0x0F) << 4*3;
-    state |= (uint64_t)(EEPROM.screen_sever_mode & 0x0F) << 4*4;
-    state |= (uint64_t)(EEPROM.USB_mode & 0x0F) << 4*5;
-    state |= (uint64_t)(EEPROM.Save_in & 0x0F) << 4*6;
-    state |= (uint64_t)(EEPROM.len & 0x0F) << 4*7;
-    state |= (uint64_t)(EEPROM.mode_ADC[0] & 0x0F) << 4*8;
-    state |= (uint64_t)(EEPROM.block & 0x0F) << 4*9;
+    state |= (uint64_t)(EEPROM.units_mes[1] & 0x0F) << 4*4;
+    state |= (uint64_t)(EEPROM.units_mes[2] & 0x0F) << 4*5;
+    state |= (uint64_t)(EEPROM.screen_sever_mode & 0x0F) << 4*6;
+    state |= (uint64_t)(EEPROM.USB_mode & 0x0F) << 4*7;
+    state |= (uint64_t)(EEPROM.Save_in & 0x0F) << 4*8;
+    state |= (uint64_t)(EEPROM.len & 0x0F) << 4*9;
+    state |= (uint64_t)(EEPROM.mode_ADC[0] & 0x0F) << 4*10;
+    state |= (uint64_t)(EEPROM.mode_ADC[1] & 0x0F) << 4*11;
+    state |= (uint64_t)(EEPROM.mode_ADC[2] & 0x0F) << 4*12;
+    state |= (uint64_t)(EEPROM.block & 0x0F) << 4*13;
     base62_encode(state, ERRCODE.STATE_CAHAR, sizeof(ERRCODE.STATE_CAHAR));
     Menu_1_3_2.data_out = ERRCODE.STATE_CAHAR;        // Текущее состояние (режимы и т.д.)
 }
@@ -991,7 +1001,7 @@ void Update_programm(){
     OLED_Clear(0);
     Display_TopBar(selectedMenuItem);
     Update_PO();
-
+    OLED_DrawCenteredString("Ошибка", 10);
     osThreadResume(ADC_readHandle);
     osThreadResume(ERROR_INDICATE_taskHandle);
 
@@ -1308,15 +1318,23 @@ void Reset_errors(){
     Display_TopBar(selectedMenuItem);
     #define Y 33
 
-    FaultLog_t *log = FlashBackup_GetLog();
+
+
+
+    volatile FaultLog_t *log = FlashBackup_GetLog();
     if (log->magic != FAULTLOG_MAGIC) {
         // Нет валидного дампа — просто закрываем и выходим
+        OLED_DrawCenteredString(NO_VALID_DUMP, Y);
     }
     else {
         // Если есть валидный дамп, очищаем его
-        FlashBackup_Clear();
+        HAL_StatusTypeDef res = FlashBackup_Clear();
+        if (res != HAL_OK) {
+            OLED_DrawCenteredString(ERROR_TEXT, Y);
+        } else {
+            OLED_DrawCenteredString(READY, Y);
+        }
     }
-    OLED_DrawCenteredString(READY, Y);
     OLED_UpdateScreen();
     osDelay(200);
     Keyboard_press_code = 0xFF; // сброс кода клавиатуры
@@ -1353,6 +1371,7 @@ void ALL_Reset_settings(){
         // Параметры select_bar:
         .Mode = DEFAULT_MODE,                           // Текущий режим работы (0 - режим текущие показания, 1 - циклический режим, 2 - режим выставки)
         .Communication = DEFAULT_COMMUNICATION,         // Включен GSM или нет
+        .Communication_http_mqtt = DEFAULT_COMMUNICATION_HTTP_MQTT,         // Включен GSM или нет
         .RS485_prot = DEFAULT_RS485_PROT,               // Протокол RS-485
         .units_mes = {DEFAULT_UNITS_MES, DEFAULT_UNITS_MES, DEFAULT_UNITS_MES},                 // Единицы измерения (по умолчанию метры)
         .screen_sever_mode = DEFAULT_SCREEN_SEVER_MODE, // Включить или нет заставку при включении
@@ -1413,30 +1432,56 @@ void Instruction(){
 }
 
 // Отображение окна с QR кодом статуса
-void QR_status(){
+void QR_status()
+{
     mode_redact = 2;
-    
+    Keyboard_press_code = 0xFF; // сброс кода клавиатуры
+    uint8_t update = 100;
+    HAL_StatusTypeDef res;
+
     OLED_Clear(0);
-    menuItem *menu_s = (menuItem *)(selectedMenuItem);
     FontSet(font);
-    char Version[20] = {0};
-    strncpy(Version, Main_data.version.VERSION_PCB, sizeof(Version)-1);
-    remove_braces_inplace(Version);
-    char time_work_char_status[20] = {0};
-    snprintf(time_work_char_status, sizeof(time_work_char_status), "%lu", (unsigned long)time_work/3600);
-    snprintf(save_data, CMD_BUFFER_SIZE,
-             "%s;%s;%s;%s;%s",
-             Version,                    // строка
-             VERSION_PROGRAMM,           // строка
-             ERRCODE.STATUSCHAR,         // строка
-             ERRCODE.STATE_CAHAR,        // строка
-             time_work_char_status       // строка
-    );
-    QR_create(save_data);
-    Display_TopBar(menu_s);
-    OLED_DrawXBM(44, 15, QR_XBM);
+    Display_TopBar(selectedMenuItem);
+    OLED_DrawCenteredString(LOADING_TEXT, 30);
     OLED_UpdateScreen();
-    osDelay(200);
+
+    while (Keyboard_press_code == 0xFF)
+    {
+        OLED_Clear(0);
+        if (update >= 100)
+        {
+            update = 0;
+            char Version[20] = {0};
+            strncpy(Version, Main_data.version.VERSION_PCB, sizeof(Version) - 1);
+            remove_braces_inplace(Version);
+            char time_work_char_status[20] = {0};
+            snprintf(time_work_char_status, sizeof(time_work_char_status), "%lu", (unsigned long)time_work / 3600);
+            snprintf(save_data, CMD_BUFFER_SIZE,
+                     "%s;%s;%s;%s;%s",
+                     Version,              // строка
+                     VERSION_PROGRAMM,     // строка
+                     ERRCODE.STATUSCHAR,   // строка
+                     ERRCODE.STATE_CAHAR,  // строка
+                     time_work_char_status // строка
+            );
+            res = QR_create(save_data);
+        }
+        if (res != HAL_OK)
+        {
+            OLED_DrawCenteredString(ERROR_TEXT, 30);
+        }
+        if (res == HAL_OK)
+        {
+            OLED_DrawXBM(44, 15, QR_XBM);
+        }
+        
+        FontSet(font);
+        Display_TopBar(selectedMenuItem);
+        OLED_UpdateScreen();
+        osDelay(50);
+    }
+    mode_redact = 0;
+    Keyboard_press_code = 0xFF; // сброс кода клавиатуры
 }
 
 /// Возвращает длину строки без учета точек и двоеточий

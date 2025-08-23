@@ -13,17 +13,56 @@ uint8_t FlashBackup_IsEmpty(void) {
     return (*(volatile uint32_t*)BACKUP_HARD_ADDRESS == 0xFFFFFFFF);
 }
 
+
+// Реальный размер страницы по DBANK: 2 КБ (dual) или 4 КБ (single)
+static inline uint32_t Flash_PageSizeBytes(void) {
+#ifdef FLASH_OPTR_DBANK
+    return (READ_BIT(FLASH->OPTR, FLASH_OPTR_DBANK) ? 0x800u : 0x1000u);
+#else
+    return 0x800u; // фолбэк
+#endif
+}
+
+
+static uint32_t Flash_GetPage(uint32_t addr)
+{
+    const uint32_t psz = Flash_PageSizeBytes();
+#if defined(FLASH_BANK2) && defined(FLASH_BANK_SIZE)
+#ifdef FLASH_OPTR_DBANK
+    if (READ_BIT(FLASH->OPTR, FLASH_OPTR_DBANK)) {
+        // dual-bank: 2 банка по FLASH_BANK_SIZE
+        if (addr < (FLASH_BASE + FLASH_BANK_SIZE)) {
+            return (addr - FLASH_BASE) / psz;                   // банк 1
+        } else {
+            return (addr - (FLASH_BASE + FLASH_BANK_SIZE)) / psz; // банк 2
+        }
+    }
+#endif
+    // single-bank или без DBANK-макроса
+    return (addr - FLASH_BASE) / psz;
+#else
+    return (addr - FLASH_BASE) / psz;
+#endif
+}
+
+
 // Стирание резервной страницы
-void FlashBackup_Clear(void) {
+HAL_StatusTypeDef FlashBackup_Clear(void) {
     HAL_FLASH_Unlock();
-    
+    __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_OPERR | FLASH_FLAG_PROGERR | FLASH_FLAG_WRPERR |
+                           FLASH_FLAG_PGAERR | FLASH_FLAG_SIZERR | FLASH_FLAG_PGSERR |
+                           FLASH_FLAG_MISERR | FLASH_FLAG_FASTERR);  // очистить прошлые ошибки
+                           
     FLASH_EraseInitTypeDef eraseInfo = {0};
-    eraseInfo.TypeErase = FLASH_TYPEERASE_PAGES;
-    eraseInfo.Page = (BACKUP_HARD_ADDRESS - FLASH_BASE) / FLASH_PAGE_SIZE_BYTES;
-    eraseInfo.NbPages = 1;
     uint32_t pageErr = 0;
+    eraseInfo.TypeErase = FLASH_TYPEERASE_PAGES;
+    eraseInfo.Banks     = FLASH_BANK_2;         
+    eraseInfo.Page      = 0x7E;
+    eraseInfo.NbPages   = 1;
     HAL_StatusTypeDef status = HAL_FLASHEx_Erase(&eraseInfo, &pageErr);
+    volatile uint32_t first = *(volatile uint32_t*)BACKUP_HARD_ADDRESS;
     HAL_FLASH_Lock();
+    return status;
 }
 
 // Запись дампа в Flash

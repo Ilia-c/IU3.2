@@ -53,7 +53,7 @@ static int SPI2_Send(uint8_t *dt, uint16_t cnt)
 
     if (status == HAL_BUSY) {
         ERRCODE.STATUS |= STATUS_FLASH_READY_ERROR;
-        return 0;
+        return 2;
     }
     ERRCODE.STATUS &= ~STATUS_FLASH_READY_ERROR;
     return 0;
@@ -186,15 +186,21 @@ int W25_Write_Enable(void)
 // Ожидание готовности флеша (FreeRTOS)
 int W25_WaitForReady(uint32_t timeout_ms)
 {
-    TickType_t start_tick = xTaskGetTickCount();
-    while (((xTaskGetTickCount() - start_tick) * portTICK_PERIOD_MS) < timeout_ms) {
+    uint32_t start_time = HAL_GetTick();
+    
+    while ((HAL_GetTick() - start_time) < timeout_ms)
+    {
         uint8_t status = W25_Read_Status();
         if ((status & 0x01) == 0) {
-            return 0;
+            return 0; // Готово
         }
+        osDelay(1); // Подождём 10 мс
     }
+    
+    // Превышен таймаут
     return -1;
 }
+
 
 //------------------------------------------------------------------------------
 // Чтение статусного регистра
@@ -219,10 +225,7 @@ uint8_t W25_Read_Status(void)
 // Запись данных во флеш (Page Program)
 int W25_Write_Data(uint32_t addr, uint8_t *data, uint32_t sz)
 {
-    if (!data) 
-    return -1;
-
-    if (((addr & 0xFFu) + sz) > 256u) return -1;
+    if (!data) return -1;
 
     // Предполагаем, что sz <= 256 и не пересекает границу страницы
     // (т.к. вы пишете ровно 128 байт за раз).
@@ -248,11 +251,12 @@ int W25_Write_Data(uint32_t addr, uint8_t *data, uint32_t sz)
     }
     cs_reset();
 
-    if (W25_WaitForReady(500) != 0) {
+    if (W25_WaitForReady(200) != 0) {
         return -1;
     }
     return 0;
 }
+
 
 //------------------------------------------------------------------------------
 // Стирание сектора (4 КБ)
@@ -863,6 +867,15 @@ int backup_fault_to_external(void) {
     FATFS *fs;
     UINT bw;
 
+    // 4) Берём указатель на дамп в Flash
+    volatile FaultLog_t *log = FlashBackup_GetLog();
+    if (log->magic != FAULTLOG_MAGIC) {
+        // Нет валидного дампа — просто закрываем и выходим
+        f_close(&MyFile);
+        return 0;
+    }
+
+
     // 1) Проверяем, что на USB есть место и диск смонтирован
     res = f_getfree(USBHPath, &fre_clust, &fs);
     if (res != FR_OK) {
@@ -880,13 +893,7 @@ int backup_fault_to_external(void) {
     }
     ERRCODE.STATUS &= ~STATUS_USB_OPEN_ERROR;
 
-    // 4) Берём указатель на дамп в Flash
-    FaultLog_t *log = FlashBackup_GetLog();
-    if (log->magic != FAULTLOG_MAGIC) {
-        // Нет валидного дампа — просто закрываем и выходим
-        f_close(&MyFile);
-        return 0;
-    }
+
 
     // 5) Записываем «сырой» бинарный дамп структуры
     res = f_write(&MyFile, log, sizeof(*log), &bw);
@@ -957,7 +964,7 @@ void createFilename_HARD_FAULT(char *dest, size_t destSize)
 //             ОБНОВЛЕНИЕ ПО             //
 //---------------------------------------//
 #define UPDATE_BUFFER_SIZE  256
-#define EXTERNAL_HEADER_SIZE 16U
+#define EXTERNAL_HEADER_SIZE 36U
 #define EXT_FW_AREA_SIZE TARGET_FLASH_SIZE
 #define EXTERNAL_FW_START FLASH_TOTAL_SIZE
 #define APP_SIZE (446U * 1024U)
@@ -966,25 +973,25 @@ void createFilename_HARD_FAULT(char *dest, size_t destSize)
 static uint32_t gFirmwareSize = 0;
 
 
-static int W25_Write_PageAligned(uint32_t addr,
+int W25_Write_PageAligned(uint32_t addr,
                                  const uint8_t *src,
                                  uint32_t len)
 {
-    while (len)
-    {
-        uint32_t pageRest = 256U - (addr & 0xFFU); 
-        uint32_t chunk = (len < pageRest) ? len : pageRest; /* ? 256?page */
+  while (len)
+  {
+    uint32_t pageRest = 256U - (addr & 0xFFU);
+    uint32_t chunk = (len < pageRest) ? len : pageRest;
 
-        if (W25_Write_Data(addr, src, chunk) != 0) /* PP   */
-            return -1;
-        if (W25_WaitForReady(500U) != 0) /* busy */
-            return -1;
+    if (W25_Write_Data(addr, src, chunk) != 0)
+      return -1;
+    if (W25_WaitForReady(500U) != 0)
+      return -1;
 
-        addr += chunk;
-        src += chunk;
-        len -= chunk;
-    }
-    return 0;
+    addr += chunk;
+    src += chunk;
+    len -= chunk;
+  }
+  return 0;
 }
 static uint32_t CRC32_Update(uint32_t crc, uint8_t data)
 {
@@ -1158,14 +1165,14 @@ void Update_PO(void)
     // 3) Читаем 8 байт размера + 4 байта CRC32
 
     UINT br;
-    uint8_t size_hdr[8], crc_hdr[4], ver_hdr[4];
+    uint8_t size_hdr[8], crc_hdr[4], ver_hdr[4], iv_hdr[16], crc_enc[4];
     // Читаем 8 байт размера прошивки
     if (f_read(&MyFile, size_hdr, 8, &br) != FR_OK || br != 8) { 
         OLED_Clear(0);
         OLED_DrawCenteredString(W25_FORMAT_ERROR, 10);
         OLED_UpdateScreen();
         f_close(&MyFile); 
-        return -1; 
+        return; 
     }
     // Читаем 4 байта CRC32
     if (f_read(&MyFile, crc_hdr, 4, &br) != FR_OK || br != 4) { 
@@ -1173,9 +1180,10 @@ void Update_PO(void)
         OLED_DrawCenteredString(W25_FORMAT_ERROR, 10);
         OLED_UpdateScreen();
         f_close(&MyFile); 
-        return -1;  
+        return;  
     }
 
+    // Читаем 4 байта версии прошивки и версии платы
     if (f_read(&MyFile, ver_hdr, 4, &br) != FR_OK || br != 4) {
         OLED_Clear(0);
         OLED_DrawCenteredString(W25_FORMAT_ERROR, 10);
@@ -1184,32 +1192,46 @@ void Update_PO(void)
         return;
     }
 
+    // читаем 16 байт ключа шифрования
+    if (f_read(&MyFile, iv_hdr, 16, &br) != FR_OK || br != 16) { 
+        OLED_Clear(0);
+        OLED_DrawCenteredString(W25_FORMAT_ERROR, 10);
+        OLED_UpdateScreen();
+        f_close(&MyFile); 
+        return; 
+    }
+
+    // Запись 4 байт CRC32 зашифрованных для проверки расшифровки
+    if (f_read(&MyFile, crc_enc, 4, &br) != FR_OK || br != 4) { 
+        OLED_Clear(0);
+        OLED_DrawCenteredString(W25_FORMAT_ERROR, 10);
+        OLED_UpdateScreen();
+        f_close(&MyFile); 
+        return; 
+    }
+
     // Вычисляем размер прошивки из первых 8 байт (little endian)
-    gFirmwareSize =  (uint64_t)size_hdr[0]
-                   | ((uint64_t)size_hdr[1] <<  8)
-                   | ((uint64_t)size_hdr[2] << 16)
-                   | ((uint64_t)size_hdr[3] << 24)
-                   | ((uint64_t)size_hdr[4] << 32)
-                   | ((uint64_t)size_hdr[5] << 40)
-                   | ((uint64_t)size_hdr[6] << 48)
-                   | ((uint64_t)size_hdr[7] << 56);
-
+    gFirmwareSize = (uint64_t)size_hdr[0] | ((uint64_t)size_hdr[1] << 8) | ((uint64_t)size_hdr[2] << 16) | ((uint64_t)size_hdr[3] << 24) | ((uint64_t)size_hdr[4] << 32) | ((uint64_t)size_hdr[5] << 40) | ((uint64_t)size_hdr[6] << 48) | ((uint64_t)size_hdr[7] << 56);
     // Ожидаемый CRC32
-    uint32_t expectedCRC =  (uint32_t)crc_hdr[0]
-                          | ((uint32_t)crc_hdr[1] <<  8)
-                          | ((uint32_t)crc_hdr[2] << 16)
-                          | ((uint32_t)crc_hdr[3] << 24);
+    uint32_t expectedCRC = (uint32_t)crc_hdr[0] | ((uint32_t)crc_hdr[1] << 8) | ((uint32_t)crc_hdr[2] << 16) | ((uint32_t)crc_hdr[3] << 24);
+    uint32_t expectedCRC_enc =
+      (uint32_t)crc_enc[0] |
+      ((uint32_t)crc_enc[1] << 8) |
+      ((uint32_t)crc_enc[2] << 16) |
+      ((uint32_t)crc_enc[3] << 24);
 
-    uint16_t new_fw_ver   = (uint16_t)(ver_hdr[0] | (ver_hdr[1] << 8));
+    // Версия ПО (LE, 2 байта) и версия платы (LE, 2 байта)
+    uint16_t new_fw_ver = (uint16_t)(ver_hdr[0] | (ver_hdr[1] << 8));
     uint16_t new_boardver = (uint16_t)(ver_hdr[2] | (ver_hdr[3] << 8));
 
     // sanity-check: длина из заголовка должна совпасть с длиной файла
-    if (gFirmwareSize == 0 || gFirmwareSize > EXTERNAL_MAX_FW_SIZE ||
+    if (gFirmwareSize == 0 ||
+        gFirmwareSize > EXTERNAL_MAX_FW_SIZE ||
         (uint64_t)fullSize != (uint64_t)EXTERNAL_HEADER_SIZE + gFirmwareSize)
     {
         f_close(&MyFile);
         OLED_Clear(0);
-        OLED_DrawCenteredString(W25_SIZE_HEADER_MISMATCH, 10); // ! ПоПРАВИЬ
+        OLED_DrawCenteredString(W25_SIZE_HEADER_MISMATCH, 10);
         OLED_UpdateScreen();
         osDelay(1000);
         return;
@@ -1243,7 +1265,7 @@ void Update_PO(void)
         OLED_DrawCenteredString(W25_ERASE_ERROR, 10);
         OLED_UpdateScreen();
         f_close(&MyFile); 
-        return -1; 
+        return; 
     }
 
 
@@ -1253,14 +1275,14 @@ void Update_PO(void)
         OLED_DrawCenteredString(W25_WRITE_ERROR, 10);
         OLED_UpdateScreen();
         f_close(&MyFile); 
-        return -1; 
+        return; 
     }
     if (W25_Write_Data(EXTERNAL_FW_START + 8, crc_hdr, 4) != 0)      { 
         OLED_Clear(0);
         OLED_DrawCenteredString(W25_WRITE_ERROR, 10);
         OLED_UpdateScreen();
         f_close(&MyFile); 
-        return -1; 
+        return; 
     }
     if (W25_Write_Data(EXTERNAL_FW_START + 12, ver_hdr, 4) != 0) {
         OLED_Clear(0);
@@ -1269,7 +1291,22 @@ void Update_PO(void)
         f_close(&MyFile);
         return;
     }
-
+    if (W25_Write_Data(EXTERNAL_FW_START + 16, iv_hdr, 16) != 0) {
+        OLED_Clear(0);
+        OLED_DrawCenteredString(W25_WRITE_ERROR, 10);
+        OLED_UpdateScreen();
+        f_close(&MyFile);
+        return;
+    }
+    
+    if (W25_Write_Data(EXTERNAL_FW_START + 32, crc_enc, 4) != 0) {
+        OLED_Clear(0);
+        OLED_DrawCenteredString(W25_WRITE_ERROR, 10);
+        OLED_UpdateScreen();
+        f_close(&MyFile);
+        return;
+    }
+    
     // Копируем остальной бинарник с прогрессом и проверяем CRC на лету
     OLED_Clear(0);
     OLED_DrawCenteredString(W25_COPYING, 10);
@@ -1279,27 +1316,29 @@ void Update_PO(void)
     uint32_t total = 0;
     uint32_t addr  = EXTERNAL_FW_START + EXTERNAL_HEADER_SIZE;
     uint32_t crc   = 0xFFFFFFFFU;
-    uint8_t  buf[256];
+    uint8_t  buf[512];
     uint8_t  step  = 0;
 
     while (total < gFirmwareSize) {
         UINT need = (gFirmwareSize - total > sizeof(buf)) ? sizeof(buf) : (gFirmwareSize - total);
         if (f_read(&MyFile, buf, need, &br) != FR_OK || br == 0) { 
             OLED_Clear(0);
-            OLED_DrawCenteredString(W25_READ_ERROR, 10);
+            OLED_DrawCenteredString(W25_READ_ERROR, 30);
             OLED_UpdateScreen();
             f_close(&MyFile); 
-            return -1; 
+            return; 
         }
-
+        taskENTER_CRITICAL();
         for (UINT i = 0; i < br; ++i) crc = CRC32_Update(crc, buf[i]);
         if (W25_Write_PageAligned(addr, buf, br) != 0) { 
             OLED_Clear(0);
-            OLED_DrawCenteredString(W25_WRITE_ERROR_2, 10);
+            OLED_DrawCenteredString(W25_WRITE_ERROR_2, 30);
             OLED_UpdateScreen();
             f_close(&MyFile); 
-            return -1;  
+            taskEXIT_CRITICAL();
+            return;  
         }
+        taskEXIT_CRITICAL();
 
         addr  += br;
         total += br;
@@ -1314,13 +1353,13 @@ void Update_PO(void)
 
     f_close(&MyFile);
     crc = ~crc;
-    if (crc != expectedCRC) {
+    if (crc != expectedCRC_enc) {
         OLED_Clear(0);
         OLED_DrawCenteredString(W25_COPY_ERROR, 10);
         OLED_UpdateScreen();
         HAL_Delay(1000);
         EraseExternalFirmwareArea();
-        return -1;
+        return;
     }
 
     OLED_Clear(0);
@@ -1330,6 +1369,8 @@ void Update_PO(void)
 
     HAL_PWR_EnableBkUpAccess();
     __HAL_RCC_RTC_ENABLE();
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR3, (uint16_t)(gFirmwareSize >> 16));
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR4, (uint16_t)(gFirmwareSize & 0xFFFF));
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR5, BKP_UPDATE_FLAG);
     NVIC_SystemReset();
 }

@@ -12,11 +12,13 @@ extern "C" {
 #include "Settings.h"
 
 /* Параметры EEPROM */
+
 #define EEPROM_PAGE_SIZE        8U
-#define EEPROM_TOTAL_SIZE       250U
+#define EEPROM_TOTAL_SIZE       256U
 #define EEPROM_START_ADDR       0x0000
 #define EEPROM_SIGNATURE        0xDEADBEEF
 #define EEPROM_I2C_ADDRESS      (0x50 << 1)
+
 
 /* Структура, сохраняемая в EEPROM.
  * Использование __attribute__((packed)) позволяет избежать лишнего выравнивания,
@@ -31,20 +33,15 @@ typedef struct __attribute__((packed)) {
 } EepromRecord;
 
 // Проверка на размер структуры EepromRecord
-// Если размер структуры больше 170 байт, то будет ошибка компиляции
-// Доступно 250 байт в EEPROM, итого 64 байт свободно
-// Или 16 записей по 4 байта (uint32), что даст 76 лет при записи раз в 5 минут
-#define BUFFER_SIZE_BYTES     64U
-#define BUFFER_ENTRY_SIZE     (sizeof(uint32_t))
+#define STRUCT_SIZE             ((uint16_t)sizeof(EepromRecord))
+#define BUFFER_ENTRY_SIZE     ((uint16_t)sizeof(uint32_t))
 #define BUFFER_ENTRIES        (BUFFER_SIZE_BYTES / BUFFER_ENTRY_SIZE)
-#define BUFFER_START_ADDR     (EEPROM_TOTAL_SIZE - BUFFER_SIZE_BYTES)
+#define BUFFER_START_ADDR      ((uint16_t)STRUCT_SIZE)
+#define BUFFER_SIZE_BYTES     ((uint16_t)(EEPROM_TOTAL_SIZE - BUFFER_START_ADDR))
 typedef char array_check_eeprom_size[
-    (sizeof(EepromRecord) <= 176) ? 1 : -1 
+    (sizeof(EepromRecord) <= 140) ? 1 : -1 
 ];
-typedef char eeprom_size_time_check[
-    (BUFFER_START_ADDR > 176) ? 1 : -1 
-];
-/* Функции работы с EEPROM */
+
 
 /**
  * @brief Сохраняет настройки в EEPROM.

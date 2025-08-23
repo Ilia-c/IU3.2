@@ -8,7 +8,7 @@
 // Используется для обновления и преобразования значений GSM
 ////////////////////////////////////////////////////////////////////////////////
 
-__attribute__((section(".ram2"), aligned(8))) Main_data_settings_item Main_data = {
+Main_data_settings_item Main_data = {
     .version = {
         // Текущая версия устройства
         .VERSION_PCB = DEFAULT_VERSION_PCB,    // Версия печатной платы
@@ -43,6 +43,7 @@ Bootloader_data_item bootloader_data = {
     .version_board = 0x00
 };
 
+uint32_t time_counter = 0; // Счетчик времени, используется для отслеживания времени работы устройства для перехода в спящий режим
 
 EEPROM_Settings_item EEPROM = {
     .DEBUG_CATEG = DEBUG_NONE,
@@ -64,6 +65,7 @@ EEPROM_Settings_item EEPROM = {
     // Параметры select_bar:
     .Mode = DEFAULT_MODE,                           // Текущий режим работы (0 - режим текущие показания, 1 - циклический режим, 2 - режим выставки)
     .Communication = DEFAULT_COMMUNICATION,         // Включен GSM или нет
+    .Communication_http_mqtt = DEFAULT_COMMUNICATION_HTTP_MQTT, // Включен GSM или нет
     .RS485_prot = DEFAULT_RS485_PROT,               // Протокол RS-485
     .units_mes = {DEFAULT_UNITS_MES, DEFAULT_UNITS_MES, DEFAULT_UNITS_MES},                 // Единицы измерения (по умолчанию метры)
     .screen_sever_mode = DEFAULT_SCREEN_SEVER_MODE, // Включить или нет заставку при включении

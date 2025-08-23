@@ -24,16 +24,17 @@
 
 /* ---------- 3. ОШИБКИ ВНЕШНЕГО АЦП (биты 7..10) ---------- */
 #define STATUS_ADC_EXTERNAL_INIT_ERROR (1ULL << 7)  // Ошибка приема и передачи данных от внешнего АЦП +
-#define STATUS_ADC_RANGE_ERROR (1ULL << 8)          // Ошибка диапазона данных АЦП (обрыв) +
+#define STATUS_ADC_RANGE_ERROR_1 (1ULL << 8)           // Ошибка диапазона данных АЦП 1 (обрыв) +
+#define STATUS_ADC_RANGE_ERROR_2 (1ULL << 61)          // Ошибка диапазона данных АЦП 2 (обрыв) +
+#define STATUS_ADC_RANGE_ERROR_3 (1ULL << 62)          // Ошибка диапазона данных АЦП 3 (обрыв) +
 #define STATUS_ADC_TIMEOUT_ERROR (1ULL << 9)        // Таймаут ответа от АЦП +
 #define STATUS_ADC_READY_ERROR (1ULL << 10)         // SPI АЦП занят +
 #define STATUS_ADC_TIMEOUT_CYCLE_ERROR (1ULL << 11) // Ошибка таймаута АЦП в цикле (доп проверка)  +
 
 /* ---------- 5. ОШИБКИ RS-485 (биты 13..15) ---------- */
-#define STATUS_RS485_INIT_ERROR (1ULL << 12) // Ошибка инициализации RS-485 (UART) -
+#define STATUS_RS485_INIT_ERROR (1ULL << 12) // Ошибка инициализации RS-485 (UART) - Возможно исключить
 #define STATUS_RS485_RX_ERROR (1ULL << 13)   // Любая ошибка приема (parity/framing/overrun) -
-#define STATUS_RS485_TX_ERROR (1ULL << 14)   // Ошибка передачи данных RS-485 -
-#define STATUS_RS485_RESERVED_1 (1ULL << 15) // Резервная ошибка - 
+#define STATUS_RS485_TX_ERROR (1ULL << 14)   // Ошибка передачи данных RS-485 + 
 
 /* ---------- 6. ОШИБКИ USB (биты 16..19) ---------- */
 #define STATUS_USB_FLASH_MOUNT_ERROR (1ULL << 16) // Ошибка монтирования USB-Flash +
@@ -59,7 +60,8 @@
 #define STATUS_GSM_SIGNEL_ERROR (1ULL << 32)          // Ошибка слабый сигнал (меньше 5) +
 #define STATUS_GSM_REG_ERROR (1ULL << 33)             // Ошибка регистрации в сети GSM +
 #define STATUS_NBIOT_REG_ERROR (1ULL << 34)           // Ошибка регистрации в сети NB-IoT -
-#define STATUS_HTTP_SERVER_COMM_ERROR (1ULL << 35)    // Ошибка связи с сервером +
+#define STATUS_HTTP_SERVER_COMM_ERROR (1ULL << 35)    // Ошибка связи с сервером по HTTP +
+#define STATUS_MQTT_SERVER_COMM_ERROR (1ULL << 15)    // Ошибка связи с сервером по MQTT +
 #define STATUS_GSM_SMS_SEND_ERROR (1ULL << 36)        // Ошибка отправки SMS +
 #define STATUS_HTTP_WRONG_PASSWORD_ERROR (1ULL << 37) // Неверный пароль +
 #define STATUS_HTTP_NO_BINDING_ERROR (1ULL << 38)     // Устройство не привязано на сайте +
@@ -96,10 +98,8 @@
 #define STATUS_RESERVED_1 (1ULL << 59) // Резервная ошибка
 #define STATUS_VBAT_LOW (1ULL << 60) // Низкое напряжение на батарее RTC (CR2032) +
 
-/* ---------- 15. РЕЗЕРВ (биты 60..63) ---------- */
-#define STATUS_RESERVED_2 (1ULL << 61) // Резервная ошибка
-#define STATUS_RESERVED_3 (1ULL << 62) // Резервная ошибка
-#define STATUS_RESERVED_4 (1ULL << 63) // Резервная ошибка
+
+#define PROGRAMM_ERROR (1ULL << 63) // Ошибка логики программы (необработанное исключение, ошибка в коде) +
 /* ---------- Групповые маски ошибок ---------- */
 
 /* 1. Ошибки экрана SPI */
@@ -151,7 +151,7 @@
 #define STATUS_FAULTS (STATUS_STACK_OVERFLOW| STATUS_HARDFAULT_OCCURRED | STATUS_NMI_OCCURRED | \
    STATUS_MEMMANAGE_FAULT | STATUS_USAGEFAULT_OCCURRED | STATUS_USAGEFAULT_OCCURRED)
 #define STATUS_FAULTS_ACK (STATUS_STACK_OVERFLOW_ACK| STATUS_HARDFAULT_OCCURRED_ACK | STATUS_NMI_OCCURRED_ACK | \
-      STATUS_MEMMANAGE_FAULT_ACK | STATUS_USAGEFAULT_OCCURRED_ACK | STATUS_USAGEFAULT_OCCURRED_ACK)
+      STATUS_MEMMANAGE_FAULT_ACK | STATUS_USAGEFAULT_OCCURRED_ACK)
 
 
 #define FAULTS_MASK (STATUS_STACK_OVERFLOW |         \

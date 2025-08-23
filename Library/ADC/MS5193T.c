@@ -179,7 +179,7 @@ double round_to_n(double value, int n) {
 void calculate_ADC_data_heigh(int32_t adValue, uint8_t channel) {
 
     if (channel > 2) {
-        ERRCODE.STATUS |= STATUS_ADC_RANGE_ERROR;
+        ERRCODE.STATUS |= PROGRAMM_ERROR;
         return;
     }
     snprintf(ADC_data.ADC_value_char[channel], sizeof(ADC_data.ADC_value_char[channel]), "%" PRId32, adValue);
@@ -216,7 +216,9 @@ void calculate_ADC_data_heigh(int32_t adValue, uint8_t channel) {
 
     // Проверяем диапазон значений и формируем строки для отображения
     if (ADC_data.ADC_Current[channel] < Imin-0.0001) {
-        ERRCODE.STATUS |= STATUS_ADC_RANGE_ERROR;
+        if (channel == 0) ERRCODE.STATUS |= STATUS_ADC_RANGE_ERROR_1;
+        if (channel == 1) ERRCODE.STATUS |= STATUS_ADC_RANGE_ERROR_2;
+        if (channel == 2) ERRCODE.STATUS |= STATUS_ADC_RANGE_ERROR_3;
         if (EEPROM.len == 0){
             snprintf(ADC_data.ADC_SI_value_char[channel], sizeof(ADC_data.ADC_SI_value_char[channel]), "Обрыв");
             snprintf(ADC_data.ADC_SI_value_correct_char[channel], sizeof(ADC_data.ADC_SI_value_correct_char[channel]), "Обрыв");
@@ -228,7 +230,9 @@ void calculate_ADC_data_heigh(int32_t adValue, uint8_t channel) {
         if (EEPROM.Mode == 0) Remove_units(channel);
     }
     else{
-        ERRCODE.STATUS &= ~STATUS_ADC_RANGE_ERROR;
+        if (channel == 0) ERRCODE.STATUS &= ~STATUS_ADC_RANGE_ERROR_1;
+        if (channel == 1) ERRCODE.STATUS &= ~STATUS_ADC_RANGE_ERROR_2;
+        if (channel == 2) ERRCODE.STATUS &= ~STATUS_ADC_RANGE_ERROR_3;
         if (ADC_data.ADC_SI_value[channel] < EEPROM.ZERO_LVL[channel]){
             snprintf(ADC_data.ADC_SI_value_char[channel], sizeof(ADC_data.ADC_SI_value_char[channel]), "%4.2f", EEPROM.ZERO_LVL[channel]);
             snprintf(ADC_data.ADC_SI_value_correct_char[channel], sizeof(ADC_data.ADC_SI_value_correct_char[channel]), "%4.2f", ADC_data.ADC_SI_value_correct[channel]);

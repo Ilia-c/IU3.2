@@ -14,15 +14,15 @@ static int isAllowedChar(char c) {
 
 uint8_t qrcode[QR_BUFFER_LEN];
 uint8_t temp[QR_BUFFER_LEN];
-int QR_create(char *text)
+HAL_StatusTypeDef QR_create(char *text)
 {
     size_t len = strlen(text);
     if (len == 0 || len > MAX_TEXT) {
-        return 1;
+        return HAL_ERROR;
     }
     for (size_t i = 0; i < len; i++) {
         if (!isAllowedChar(text[i])) {
-            return 1;
+            return HAL_ERROR;
         }
     }
 
@@ -35,13 +35,13 @@ int QR_create(char *text)
         qrcodegen_Mask_AUTO, true  // хотя последний параметр — bool, результат мы сохраняем в int
     );
     if (!ok) {
-        return 2;
+        return HAL_ERROR;
     }
 
     // Проверяем размер
     int qrSize = qrcodegen_getSize(qrcode);  // должно быть 33
     if (qrSize != 4 * QR_VERSION + 17) {
-        return 3;
+        return HAL_ERROR;
     }
 
     // Заполняем заголовок XBM
@@ -67,5 +67,5 @@ int QR_create(char *text)
         }
     }
 
-    return 0;
+    return HAL_OK;
 }

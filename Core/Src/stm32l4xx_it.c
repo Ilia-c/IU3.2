@@ -208,7 +208,7 @@ void TIM6_DAC_IRQHandler(void)
   HAL_TIM6_Callback();
 }
 
-static uint32_t time_counter;
+
 void TIM8_UP_IRQHandler(void)
 {
   HAL_TIM_IRQHandler(&htim8);

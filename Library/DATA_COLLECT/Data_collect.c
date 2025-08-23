@@ -116,24 +116,69 @@ void Collect_DATA()
         strcpy(ADC_data.ADC_SI_value_char[0], CableB);
         strcpy(ADC_data.ADC_SI_value_correct_char[0], CableB);
     }
+    if (containsRussian(ADC_data.ADC_SI_value_char[1]) || containsRussian(ADC_data.ADC_SI_value_correct_char[1]))
+    {
+        strcpy(ADC_data.ADC_SI_value_char[1], CableB);
+        strcpy(ADC_data.ADC_SI_value_correct_char[1], CableB);
+    }
+    if (containsRussian(ADC_data.ADC_SI_value_char[2]) || containsRussian(ADC_data.ADC_SI_value_correct_char[2]))
+    {
+        strcpy(ADC_data.ADC_SI_value_char[2], CableB);
+        strcpy(ADC_data.ADC_SI_value_correct_char[2], CableB);
+    }
+    if (EEPROM.Communication_http_mqtt == HTTP)
+    {
 
-    snprintf(save_data, CMD_BUFFER_SIZE,
-            "[%s;%s;%s;%s;%s;%s;%s;%s;%02d:%02d%s%02d/%02d/%02d;%s;%s;%u;%u]",
-             Version,         // строка
-             Password,            // строка
-             ADC_data.ADC_value_char[0],            // строка
-             ADC_data.ADC_SI_value_char[0],         // строка (возможно заменённая)
-             ADC_data.ADC_SI_value_correct_char[0], // строка (возможно заменённая)
-             IntADC.ADC_AKB_volts_char,          // строка
-             IntADC.ADC_AKB_Proc_char,           // строка
-             ERRCODE.STATUSCHAR,                 // строка
-             Time.Hours, Time.Minutes,           // время (часы, минуты, секунды)
-             "-",
-             Date.Date, Date.Month, Date.Year, // дата (день, месяц, год)
-             "0",   // time_sleep_mode всегда "0"
-             VERSION_PROGRAMM,
-             EEPROM.time_sleep_m,  // число
-             EEPROM.time_sleep_h); // число
+        snprintf(save_data, CMD_BUFFER_SIZE,
+                 "[%s;%s;%s;%s;%s;%s;%s;%s;%02d:%02d%s%02d/%02d/%02d;%s;%s;%u;%u]",
+                 Version,                               // строка
+                 Password,                              // строка
+                 ADC_data.ADC_value_char[0],            // строка
+                 ADC_data.ADC_SI_value_char[0],         // строка (возможно заменённая)
+                 ADC_data.ADC_SI_value_correct_char[0], // строка (возможно заменённая)
+                 IntADC.ADC_AKB_volts_char,             // строка
+                 IntADC.ADC_AKB_Proc_char,              // строка
+                 ERRCODE.STATUSCHAR,                    // строка
+                 Time.Hours, Time.Minutes,              // время (часы, минуты, секунды)
+                 "-",
+                 Date.Date, Date.Month, Date.Year, // дата (день, месяц, год)
+                 "0",                              // time_sleep_mode всегда "0"
+                 VERSION_PROGRAMM,
+                 EEPROM.time_sleep_m,  // число
+                 EEPROM.time_sleep_h); // число
+                                       //
+    }
+    if (EEPROM.Communication_http_mqtt == MQTT)
+    {
+        snprintf(save_data, CMD_BUFFER_SIZE,
+                 "[%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%02u:%02u %02u/%02u/%02u;%s;%s;%s;%u;%s;%s]",
+                 ADC_data.ADC_value_char[0],            // 1  АЦП 1 строка
+                 ADC_data.ADC_SI_value_char[0],         // 2  Величина 1 строка
+                 ADC_data.ADC_SI_value_correct_char[0], // 3  Величина с поправкой 1 строка
+                 ADC_data.ADC_value_char[1],            // 4  АЦП 2 строка
+                 ADC_data.ADC_SI_value_char[1],         // 5  Величина 2 строка
+                 ADC_data.ADC_SI_value_correct_char[1], // 6  Величина с поправкой 2 строка
+                 ADC_data.ADC_value_char[2],            // 7  АЦП 3 строка
+                 ADC_data.ADC_SI_value_char[2],         // 8  Величина 3 строка
+                 ADC_data.ADC_SI_value_correct_char[2], // 9  Величина с поправкой 3 строка
+                 IntADC.ADC_AKB_volts_char,             // 10 напряжение АКБ строка
+                 IntADC.ADC_AKB_Proc_char,              // 11 процент АКБ строка
+                 ERRCODE.STATUSCHAR,                    // 12 код ошибки строка
+                 ERRCODE.STATE_CAHAR,                   // 13 код состояния строка
+                 (unsigned)Time.Hours,                  // 14 ч
+                 (unsigned)Time.Minutes,                // 15 мин
+                 (unsigned)Date.Date,                   // 17 день
+                 (unsigned)Date.Month,                  // 18 месяц
+                 (unsigned)Date.Year,                   // 19 год (2-значный)
+                 VERSION_PROGRAMM,                      // 20 версия ПО строка
+                 bootloader_data.version,               // 21 версия загрузчика строка
+                 IntADC.MK_temp_char,                   // 22 температура МК строка
+                 (unsigned)GSM_data.GSM_Signal_Level,   // 23 уровень сигнала (число)
+                 "0",                                   // 24 резерв строка
+                 "0"                                    // 25 резерв строка
+        );
+    }
+
     remove_whitespace(save_data);
 }
 

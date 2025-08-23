@@ -6,7 +6,7 @@
 
 #define Version3_75 0xFAEE                       // Версия 3.75
 #define Version3_80 0x0EA3                       // Версия 3.80
-#define BOARD_VERSION Version3_80                // Под какую версию собирать проект
+#define BOARD_VERSION Version3_75                // Под какую версию собирать проект
 
 #if BOARD_VERSION == Version3_80 
     #define i2cDisplay hi2c3
@@ -15,8 +15,8 @@
 #endif
 
 // Значения по умолчанию для EEPROM
-#define DEFAULT_VERSION_PROGRAMM       "Ver0.82"    // Версия программы
-#define DEFAULT_VERSION_PROGRAMM_UINT16_t  82       // Версия программы
+#define DEFAULT_VERSION_PROGRAMM       "Ver0.85"    // Версия программы
+#define DEFAULT_VERSION_PROGRAMM_UINT16_t  85       // Версия программы
 #define DEFAULT_VERSION_BOOTLOADER     "Uncnown"    // Версия программы
 #define BOOTLOADER_MAGIC                0xB00B1E00
 #define EEPROM_FORMAT_VERSION           0x00000010U //? Версия формата данных EEPROM
@@ -72,9 +72,13 @@
 #define DEFAULT_CRORRECT_TEMP_A        0
 #define DEFAULT_COLIBRATE_KOEFF        10.81
 
+#define MQTT 1  // MQTT или HTTP 1- MQTT, 0 - HTTP
+#define HTTP 0  // MQTT или HTTP 1- MQTT, 0 - HTTP
+
 // Параметры select_bar:
 #define DEFAULT_MODE                   0  // Режим работы: 0 - текущие показания, 1 - циклический, 2 - выставка
 #define DEFAULT_COMMUNICATION          1  // Включен GSM или нет
+#define DEFAULT_COMMUNICATION_HTTP_MQTT 1  // MQTT или HTTP 1- MQTT, 0 - HTTP
 #define DEFAULT_RS485_PROT             0  // Протокол RS-485
 #define DEFAULT_UNITS_MES              1  // Единицы измерения (метры)
 #define DEFAULT_SCREEN_SEVER_MODE      1  // Включить заставку при включении

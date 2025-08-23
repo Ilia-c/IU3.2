@@ -25,6 +25,7 @@
 #include "Diagnostics.h"
 #include "USB_FATFS_SAVE.h"
 #include "stm32l4xx_hal_crc.h"
+#include "MQTT.h"
 
 extern char Keyboard_press_code;
 extern uint16_t time_update_display;
@@ -89,13 +90,13 @@ void HAL_TIM5_Callback(void);
 osThreadId_t MainHandle;
 const osThreadAttr_t Main_attributes = {
     .name = "Main",
-    .stack_size = 512 * 4,
+    .stack_size = 1024 * 2,
     .priority = (osPriority_t)osPriorityHigh5,
 };
 osThreadId_t Main_Cycle_taskHandle;
 const osThreadAttr_t Main_Cycle_task_attributes = {
     .name = "Main_Cycle_task",
-    .stack_size = 1024 * 4,
+    .stack_size = 1024 * 5,
     .priority = (osPriority_t)osPriorityHigh5,
 };
 
@@ -103,14 +104,14 @@ const osThreadAttr_t Main_Cycle_task_attributes = {
 osThreadId_t Display_I2CHandle;
 const osThreadAttr_t Display_I2C_attributes = {
     .name = "Display_I2C",
-    .stack_size = 1024 * 7,
+    .stack_size = 1024 * 8,
     .priority = (osPriority_t)osPriorityHigh,
 };
 /* Definitions for ADC_read */
 osThreadId_t ADC_readHandle;
 const osThreadAttr_t ADC_read_attributes = {
     .name = "ADC_read",
-    .stack_size = 1024 * 5,
+    .stack_size = 1024 * 3,
     .priority = (osPriority_t)osPriorityLow3,
 };
 /* Definitions for RS485_data */
@@ -132,28 +133,28 @@ const osThreadAttr_t Keyboard_task_attributes = {
 osThreadId_t USB_COM_taskHandle;
 const osThreadAttr_t USB_COM_task_attributes = {
     .name = "USB_COM_task",
-    .stack_size = 512 * 4,
+    .stack_size = 1024 * 4,
     .priority = (osPriority_t)osPriorityLow2,
 };
 
 osThreadId_t  ERROR_INDICATE_taskHandle;
 const osThreadAttr_t Erroe_indicate_task_attributes = {
     .name = "Erroe_indicate_task",
-    .stack_size = 1024 * 2,
+    .stack_size = 512 * 4,
     .priority = (osPriority_t)osPriorityLow1,
 };
 
 osThreadId_t  UART_PARSER_taskHandle;
 const osThreadAttr_t UART_PARSER_task_attributes = {
     .name = "UART_PARSER_task",
-    .stack_size = 1024 * 5,
+    .stack_size = 1024 * 4,
     .priority = (osPriority_t)osPriorityHigh4,
 };
 
 osThreadId_t WATCDOG_taskHandle;
 const osThreadAttr_t WATCDOG_task_attributes = {
     .name = "Watch_dog_task",
-    .stack_size = 1024 * 2,
+    .stack_size = 1024 * 3,
     .priority = (osPriority_t)osPriorityHigh3,
 };
 
@@ -184,11 +185,44 @@ extern RTC_HandleTypeDef hrtc;
 uint8_t units = 0;
 uint8_t suspend = 0;
 
+
+int Enable_RDP1_FromApp(void) {
+#if (Debug_mode == 0)
+    FLASH_OBProgramInitTypeDef ob = {0};
+    HAL_FLASH_Unlock();
+    HAL_FLASH_OB_Unlock();
+
+    HAL_FLASHEx_OBGetConfig(&ob);
+    if (ob.RDPLevel != OB_RDP_LEVEL_1) {
+        FLASH_OBProgramInitTypeDef set = {0};
+        set.OptionType = OPTIONBYTE_RDP;
+        set.RDPLevel   = OB_RDP_LEVEL_1;
+        if (HAL_FLASHEx_OBProgram(&set) != HAL_OK) goto fail;
+        HAL_FLASH_OB_Launch(); // выполнит сброс
+    }
+
+    HAL_FLASH_OB_Lock();
+    HAL_FLASH_Lock();
+    return 0;
+fail:
+    HAL_FLASH_OB_Lock();
+    HAL_FLASH_Lock();
+    return -1;
+#else
+    return 0;
+#endif
+}
+
 int main(void)
 {
   SCB->VTOR = 0x08010000U;
   __HAL_RCC_PWR_CLK_ENABLE();
   HAL_Init();
+  #if (Debug_mode == 0)
+    if (Enable_RDP1_FromApp() != 0) {
+        while (1);
+    }
+  #endif
 
   SystemClock_Config();
   PeriphCommonClock_Config();
@@ -259,10 +293,6 @@ int main(void)
   #if BOARD_VERSION == Version3_75 
     HAL_GPIO_WritePin(ON_ROM_GPIO_Port, ON_ROM_Pin, 1);           // Включение Памяти на плате
     HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 1);
-  #elif BOARD_VERSION == Version3_80
-    HAL_GPIO_WritePin(ON_OWEN_1_GPIO_Port, ON_OWEN_1_Pin, 1);
-    HAL_GPIO_WritePin(ON_OWEN_2_GPIO_Port, ON_OWEN_2_Pin, 1);
-    HAL_GPIO_WritePin(ON_OWEN_3_GPIO_Port, ON_OWEN_3_Pin, 1);
   #endif
 
   HAL_Delay(20);
@@ -399,6 +429,9 @@ int main(void)
 
   HAL_IWDG_Refresh(&hiwdg);
   osKernelInitialize();
+
+
+  Flash_ReadCalib(&Main_data);
 
   if (EEPROM.block != 2)
   {
@@ -573,6 +606,11 @@ void Main_Cycle(void *argument)
         ERRCODE.STATUS |= STATUS_ADC_TIMEOUT_CYCLE_ERROR;
       }
     }
+    #if BOARD_VERSION == Version3_80
+    HAL_GPIO_WritePin(ON_OWEN_1_GPIO_Port, ON_OWEN_1_Pin, 0);
+    HAL_GPIO_WritePin(ON_OWEN_2_GPIO_Port, ON_OWEN_2_Pin, 0);
+    HAL_GPIO_WritePin(ON_OWEN_3_GPIO_Port, ON_OWEN_3_Pin, 0);
+    #endif
 
     //suspend = 0xFF;
     osThreadSuspend(ADC_readHandle);
@@ -613,6 +651,7 @@ void Main_Cycle(void *argument)
           status = HAL_ERROR;
           GSM_data.Status = 0;
         }
+        /*
         // Если прошло больше 22.5 секунд и сим карта не вставлена - перпезапускаем модуль
         if ((i == 45) && (!(GSM_data.Status & SIM_PRESENT)))
         {
@@ -627,9 +666,10 @@ void Main_Cycle(void *argument)
           osThreadResume(UART_PARSER_taskHandle);
           GSM_data.Status = 0;
         }
+          * */
         osDelay(500);
       }
-
+      /*
       if ((status == HAL_ERROR) && ((GSM_data.Status & SIM_PRESENT)))
       {
         // Если регистрация не прошла, но сим карта есть - перезагружаем модем
@@ -651,6 +691,8 @@ void Main_Cycle(void *argument)
           osDelay(500);
         }
       }
+        */
+
       if (status == HAL_ERROR)
       {
         // Связи нет и не предвидится - отключаем GSM модуль
@@ -713,6 +755,7 @@ void Main_Cycle(void *argument)
         ERRCODE.STATUS |= STATUS_GSM_REG_ERROR;
       }
     }
+
     osThreadSuspend(ADC_readHandle);
     osThreadSuspend(RS485_dataHandle);
     osThreadSuspend(UART_PARSER_taskHandle);
@@ -800,12 +843,21 @@ void RS485_data(void *argument)
     
     for (;;)
     {
-        osDelay(500);
-        ADC_Voltage_Calculate();
-        
-        uint8_t msg[] = "Hello RS-485";
-        RS485_Transmit_IT(msg, sizeof(msg)-1);
-        
+        osDelay(5000);
+        //ADC_Voltage_Calculate();
+        Collect_DATA();
+        //uint8_t msg[] = "Hello RS-485";
+        HAL_StatusTypeDef res = RS485_Transmit_IT(save_data, sizeof(save_data)-1);
+        if (res != HAL_OK)
+        {
+            USB_DEBUG_MESSAGE("[DEBUG RS485] Ошибка передачи данных", DEBUG_RS485, DEBUG_LEVL_2);
+            ERRCODE.STATUS |= STATUS_RS485_TX_ERROR;
+        }
+        else
+        {
+            ERRCODE.STATUS &= ~STATUS_RS485_TX_ERROR; // Сброс ошибки передачи
+            USB_DEBUG_MESSAGE("[DEBUG RS485] Данные успешно отправлены", DEBUG_RS485, DEBUG_LEVL_3);
+        }
         if (EEPROM.Mode == 1) {
             osThreadSuspend(RS485_dataHandle);
         }
@@ -820,11 +872,6 @@ void Display_I2C(void *argument)
   if (Flash_IsCalibEmpty())
   {
     Initial_setup();
-  }
-  else
-  {
-    HAL_StatusTypeDef res = Flash_ReadCalib(&Main_data);
-
   }
   // Проверка на защиту калибровочных данных
   if (!Flash_IsCalibProtected())
@@ -877,6 +924,7 @@ void Watch_dog_task(void *argument)
     osDelay(1000);
     if (xSemaphoreTake(SLEEP_semaphore, 10) == pdTRUE)
     {
+      time_counter = 0;
       __HAL_TIM_SET_COUNTER(&htim8, 0);
       if (ERRCODE.STATUS & STATUS_VOLTAGE_TOO_LOW) Enter_StandbyMode_NoWakeup();
       if (EEPROM.block == 2)
@@ -950,8 +998,6 @@ void BlinkLED(GPIO_TypeDef *LEDPort, uint16_t LEDPin, uint8_t blinkCount, uint32
 
 
 // Индикация ошибок
-
-
 void Erroe_indicate(void *argument)
 {
   UNUSED(argument);
@@ -1007,6 +1053,10 @@ void UART_PARSER_task(void *argument)
 {
   UNUSED(argument);
   GSM_Init();
+  if (EEPROM.Communication_http_mqtt == MQTT){
+    MQTT_InitGlobal();
+  }
+
   for (;;)
   {
     // Если GSM должен быть выключен
@@ -1032,6 +1082,11 @@ void UART_PARSER_task(void *argument)
         osDelay(1000);
       }
     }
+
+    if (EEPROM.Communication_http_mqtt == MQTT && GSM_data.Status & NETWORK_REGISTERED && GSM_data.Status & SIGNAL_PRESENT)
+    {
+      MQTT_Process(HAL_GetTick());
+    }
     osDelay(5000);
     if (EEPROM.Mode == 0)
     {
@@ -1048,6 +1103,8 @@ void UART_PARSER_task(void *argument)
         strcpy(GSM_data.GSM_site_status, "");
       }
     }
+
+
     // Если модуль связи не готов
     if ((!(GSM_data.Status & GSM_RDY)) && ((EEPROM.DEBUG_Mode != USB_AT_DEBUG) || (EEPROM.USB_mode != USB_DEBUG)))
     {
@@ -1088,6 +1145,7 @@ void UART_PARSER_task(void *argument)
       continue;
     }
 
+
     // Если модуль связи готов
     // ! перепроверить
     if (GSM_data.Status & NETWORK_REGISTERED_SET_HTTP){
@@ -1108,6 +1166,7 @@ void UART_PARSER_task(void *argument)
       if (EEPROM.Mode == 0) xSemaphoreGive(Display_semaphore);
     }
 
+    // Если нужно отправить СМС
     if (GSM_data.Status & SMS_SEND)
     {
       USB_DEBUG_MESSAGE("[DEBUG AT] Начата отправка СМС", DEBUG_GSM, DEBUG_LEVL_2);
@@ -1129,7 +1188,8 @@ void UART_PARSER_task(void *argument)
         ERRCODE.STATUS |= STATUS_GSM_SMS_SEND_ERROR;
       }
     }
-
+    
+    // Если нужно отправить HTTP
     if (GSM_data.Status & HTTP_SEND)
     {
       GSM_data.Status &= ~HTTP_SEND;

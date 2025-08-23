@@ -8,6 +8,9 @@
 #include "AT24C02.h"
 #include "Data_collect.h"
 #include "Settings.h"
+
+
+
 // Внешние переменные и объекты
 extern UART_HandleTypeDef huart4;
 extern xSemaphoreHandle UART_PARSER_semaphore;
@@ -31,3 +34,4 @@ HAL_StatusTypeDef waitAndParseSiteResponse(uint32_t timeout);
 HAL_StatusTypeDef sendHTTP(void);
 HAL_StatusTypeDef READ_Settings_sendHTTP(void);
 HAL_StatusTypeDef Send_data();
+

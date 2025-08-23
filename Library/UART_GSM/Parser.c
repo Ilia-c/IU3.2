@@ -7,10 +7,13 @@ char tempBuf[256]__attribute__((section(".ram2"))) = {0};
 
 HAL_StatusTypeDef SendCommandAndParse(const char *command_in, int (*parser)(), uint32_t timeout)
 {
-    memset(tempBuf, 0, sizeof(tempBuf));
-    snprintf(tempBuf, sizeof(tempBuf), "[DEBUG AT] Отправленная команда: %s", command_in);
-    //CDC_Transmit_FS((uint8_t *)tempBuf, strlen(tempBuf));
-    USB_DEBUG_MESSAGE(tempBuf, DEBUG_GSM, DEBUG_LEVL_4);
+    if (EEPROM.USB_mode == USB_DEBUG)
+    {
+        memset(tempBuf, 0, sizeof(tempBuf));
+        snprintf(tempBuf, sizeof(tempBuf), "[DEBUG AT] Отправленная команда: %s", command_in);
+        // CDC_Transmit_FS((uint8_t *)tempBuf, strlen(tempBuf));
+        USB_DEBUG_MESSAGE(tempBuf, DEBUG_GSM, DEBUG_LEVL_4);
+    }
 
     // Сброс текущего буфера перед отправкой
     SendSomeCommandAndSetFlag();  

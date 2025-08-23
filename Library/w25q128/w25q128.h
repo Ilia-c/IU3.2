@@ -14,6 +14,7 @@
 #include "Hard_fault.h"
 #include "stm32l4xx_hal_crc.h"
 #include "Menu_data.h"
+#include "stm32l4xx_hal_cryp.h"
 
 
 extern uint32_t g_total_records_count;
@@ -39,7 +40,8 @@ extern uint32_t g_total_records_count;
 
 // Полный размер флеш
 #define FLASH_SIZE_W25         (16 * 1024 * 1024) // 16 МБ
-#define FLASH_TOTAL_SIZE    ((15 * 1024 * 1024) + 512*1024) // 15 МБ + 512 КБ с учетом на USB
+#define EXT_FW_AREA_SIZE (512U * 1024U) 
+#define FLASH_TOTAL_SIZE    (16U * 1024U * 1024U - EXT_FW_AREA_SIZE) // 15 МБ + 512 КБ с учетом на USB
 #define TOTAL_SECTORS       (FLASH_TOTAL_SIZE / SECTOR_SIZE)
 #define TOTAL_RECORDS       (TOTAL_SECTORS * RECORDS_PER_SECTOR)
 #define TARGET_FLASH_SIZE   (512 * 1024)

@@ -1359,7 +1359,7 @@ static void USBH_Process_OS(void *argument)
     {
       USBH_Process((USBH_HandleTypeDef *)argument);
     }
-    osDelay(50);
+    osThreadYield();
   }
 }
 #endif /* (osCMSIS < 0x20000U) */

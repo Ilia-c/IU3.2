@@ -170,6 +170,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
         (GPIO_Pin == STR_B4_Pin))
     {
         __HAL_TIM_SET_COUNTER(&htim8, 0);
+        time_counter=0;
         static portBASE_TYPE xTaskWoken;
         xSemaphoreGiveFromISR(Keyboard_semapfore, &xTaskWoken);
     }

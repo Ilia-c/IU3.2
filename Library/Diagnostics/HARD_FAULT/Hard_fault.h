@@ -66,12 +66,12 @@ typedef struct __attribute__((packed)) {
 
 // API функций
 void FlashBackup_Save(void);
-void FlashBackup_Clear(void);
+HAL_StatusTypeDef FlashBackup_Clear(void);
 uint8_t FlashBackup_IsEmpty(void);
 
 // Получить указатель на дамп
-static inline FaultLog_t *FlashBackup_GetLog(void) {
-    return (FaultLog_t *)BACKUP_HARD_ADDRESS;
+static inline volatile FaultLog_t *FlashBackup_GetLog(void) {
+    return (volatile FaultLog_t *)BACKUP_HARD_ADDRESS;
 }
 
 #endif // HARD_FAULT_H

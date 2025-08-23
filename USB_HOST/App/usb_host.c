@@ -74,6 +74,7 @@ void MX_USB_HOST_Init(void)
   {
     Error_Handler();
   }
+  USBH_LL_DriverVBUS(&hUsbHostFS, 1);
   /* USER CODE BEGIN USB_HOST_Init_PostTreatment */
 
   /* USER CODE END USB_HOST_Init_PostTreatment */

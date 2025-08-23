@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include "FreeRTOS.h"
 
 #define CANVAS_SIZE      45    // фиксированный холст 41?41
 #define QR_VERSION        5    // версия QR: 4 ? 33?33 модулей
@@ -17,7 +18,7 @@
 #define QR_BUFFER_LEN    qrcodegen_BUFFER_LEN_FOR_VERSION(QR_VERSION)
 
 
-int QR_create(char *text);
+HAL_StatusTypeDef QR_create(char *text);
 
 
 #endif

@@ -96,7 +96,7 @@ void HAL_HCD_MspInit(HCD_HandleTypeDef* hcdHandle)
     }
 
     /* Peripheral interrupt init */
-    HAL_NVIC_SetPriority(OTG_FS_IRQn, 5, 0);
+    HAL_NVIC_SetPriority(OTG_FS_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY+1, 0);
     HAL_NVIC_EnableIRQ(OTG_FS_IRQn);
   /* USER CODE BEGIN USB_OTG_FS_MspInit 1 */
 
@@ -209,6 +209,33 @@ void HAL_HCD_PortDisabled_Callback(HCD_HandleTypeDef *hhcd)
 /*******************************************************************************
                        LL Driver Interface (USB Host Library --> HCD)
 *******************************************************************************/
+static inline void USB_DisableVbusSense(void)
+{
+    USB_OTG_GlobalTypeDef *USBx = USB_OTG_FS;
+
+    // Всегда включаем аналог PHY
+#ifdef USB_OTG_GCCFG_PWRDWN
+    USBx->GCCFG |= USB_OTG_GCCFG_PWRDWN;
+#else
+    USBx->GCCFG |= (1u << 16); // fallback для старых заголовков
+#endif
+
+    // Вариант 1: у HAL есть NOVBUSSENS
+#ifdef USB_OTG_GCCFG_NOVBUSSENS
+    USBx->GCCFG |= USB_OTG_GCCFG_NOVBUSSENS;
+#endif
+
+    // Выключаем детект по линиям A/B, если такие биты есть
+#if defined(USB_OTG_GCCFG_VBUSASEN) && defined(USB_OTG_GCCFG_VBUSBSEN)
+    USBx->GCCFG &= ~(USB_OTG_GCCFG_VBUSASEN | USB_OTG_GCCFG_VBUSBSEN);
+#endif
+
+    // Вариант 2: у некоторых HAL только VBDEN — просто снять
+#ifdef USB_OTG_GCCFG_VBDEN
+    USBx->GCCFG &= ~USB_OTG_GCCFG_VBDEN;
+#endif
+}
+
 
 /**
   * @brief  Initialize the low level portion of the host driver.
@@ -229,11 +256,12 @@ USBH_StatusTypeDef USBH_LL_Init(USBH_HandleTypeDef *phost)
   hhcd_USB_OTG_FS.Init.speed = HCD_SPEED_FULL;
   hhcd_USB_OTG_FS.Init.dma_enable = DISABLE;
   hhcd_USB_OTG_FS.Init.phy_itface = HCD_PHY_EMBEDDED;
-  hhcd_USB_OTG_FS.Init.Sof_enable = DISABLE;
+  hhcd_USB_OTG_FS.Init.Sof_enable = ENABLE;
   if (HAL_HCD_Init(&hhcd_USB_OTG_FS) != HAL_OK)
   {
     Error_Handler( );
   }
+  USB_DisableVbusSense();
 
   USBH_LL_SetTimer(phost, HAL_HCD_GetCurrentFrame(&hhcd_USB_OTG_FS));
   }

@@ -149,6 +149,7 @@ extern "C"
     /*-----------------*/
     uint8_t Mode;              // текущий режим работы
     uint8_t Communication;     // Включен GSM или нет
+    uint8_t Communication_http_mqtt;     // Включен GSM или нет
     uint8_t RS485_prot;        // Протокол RS-485
     uint8_t units_mes[3];         // по умолчанию метры, еденицы измерения - для каждого канала отдельно
     uint8_t screen_sever_mode; // Включить или нет заставку при включении
@@ -232,13 +233,16 @@ extern "C"
 #define GPRS_CONNECTED (1UL << 9)               // GPRS соединение установлено
 #define GPRS_DISCONNECTED (1UL << 10)           // GPRS соединение разорвано
 #define HTTP_SEND (1UL << 11)                   // отправить http запрос
-#define HTTP_READ (1UL << 12)                   // отправить http запрос (чтение данных)
-#define SMS_SEND (1UL << 13)                    // ОТПРАВИТЬ SMS
-#define HTTP_SEND_Successfully (1UL << 14)      //  http запрос успешен
-#define HTTP_READ_Successfully (1UL << 15)      // http запрос (чтение данных) успешен
-#define SMS_SEND_Successfully (1UL << 16)       //  SMS успешено отправлено
-#define NETWORK_REGISTERED_SET_HTTP (1UL << 17) // Устройство зарегистрировано в сети для регистрации HTTP при включении
-#define DATA_READ (1UL << 18)                   // Сброс активного состояния
+#define MQTT_SEND (1UL << 12)                   // отправить http запрос
+#define HTTP_READ (1UL << 13)                   // отправить http запрос (чтение данных)
+#define SMS_SEND (1UL << 14)                    // ОТПРАВИТЬ SMS
+#define HTTP_SEND_Successfully (1UL << 15)      //  http запрос успешен
+#define MQTT_SEND_Successfully (1UL << 16)      //  mqtt запрос на передачу успешен
+#define HTTP_READ_Successfully (1UL << 17)      // http запрос (чтение данных) успешен
+#define MQTT_READ_Successfully (1UL << 18)      // mqtt запрос (чтение данных) успешен
+#define SMS_SEND_Successfully (1UL << 19)       //  SMS успешено отправлено
+#define NETWORK_REGISTERED_SET_HTTP (1UL << 20) // Устройство зарегистрировано в сети для регистрации HTTP при включении
+#define DATA_READ (1UL << 21)                   // Сброс активного состояния
 
   typedef struct GSM_STATUS_item
   {
@@ -285,6 +289,7 @@ extern "C"
   extern GSM_STATUS_item GSM_data;
   extern ERRCODE_item ERRCODE;
 
+  
   ////////////////////////////////////////////////////////////////////////////////
   // Глобальные переменные РЕЖИМЫ
   ////////////////////////////////////////////////////////////////////////////////
@@ -295,6 +300,8 @@ extern "C"
   extern uint8_t screen_sever_mode;
   extern uint8_t USB_mode;
   extern uint8_t USB_TERMINAL_STATUS;
+
+  extern uint32_t time_counter;
 #define TERMINAL_DISABLE 0
 #define TERMINAL_CONNECTED 1
 
