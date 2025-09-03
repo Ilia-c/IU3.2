@@ -75,7 +75,18 @@ void GSM_TimerCallback(TimerHandle_t xTimer)
     memset(activeBuffer, 0, CMD_BUFFER_SIZE);
 }
 
+static uint8_t sig_idx = 0;
+static char sig[8]; // степень двойки — удобнее
 
+static inline uint8_t match5(const char *s){
+    // сравниваем 5 последних байт с "+MSUB"
+    uint8_t i = (sig_idx + 8 - 5) & 7;
+    return (sig[i]=='+' && sig[i+1]=='M' && sig[i+2]=='S' && sig[i+3]=='U' && sig[i+4]=='B');
+}
+static inline uint8_t match6_closed(void){
+    uint8_t i = (sig_idx + 8 - 6) & 7;
+    return (sig[i+0]=='C' && sig[i+1]=='L' && sig[i+2]=='O' && sig[i+3]=='S' && sig[i+4]=='E' && sig[i+5]=='D');
+}
 
 /* Колбэк, вызываемый по завершении приёма одного байта по UART4 */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
@@ -83,8 +94,24 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     if (huart->Instance == UART4)
     {
         HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
-
-        if ((!(GSM_data.Status & DATA_READ)) && (EEPROM.DEBUG_Mode != USB_AT_DEBUG)){
+        if (GSM_data.Status & DATA_READ)
+        {
+            sig[sig_idx] = gsmRxChar;
+            sig_idx++;
+            if (sig_idx >= 8) sig_idx = 0;
+            if (match5("+MSUB"))
+            {
+                // Найдена строка от топика MQTT, нужно дальше читать
+                GSM_data.Status |= MQTT_SEARCH;
+            }
+            if (match6_closed())
+            {
+                // Соединение пропало
+                GSM_data.Status &= ~MQTT_SEARCH;
+            }
+        }
+        if ((!(GSM_data.Status & DATA_READ)) && (EEPROM.DEBUG_Mode != USB_AT_DEBUG))
+        {
             return;
         }
         /* Если есть место в активном буфере – сохраняем принятый символ */

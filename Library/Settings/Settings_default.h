@@ -6,7 +6,7 @@
 
 #define Version3_75 0xFAEE                       // Версия 3.75
 #define Version3_80 0x0EA3                       // Версия 3.80
-#define BOARD_VERSION Version3_75                // Под какую версию собирать проект
+#define BOARD_VERSION Version3_80                // Под какую версию собирать проект
 
 #if BOARD_VERSION == Version3_80 
     #define i2cDisplay hi2c3
