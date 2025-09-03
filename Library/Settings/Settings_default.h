@@ -15,8 +15,8 @@
 #endif
 
 // Значения по умолчанию для EEPROM
-#define DEFAULT_VERSION_PROGRAMM       "Ver0.85"    // Версия программы
-#define DEFAULT_VERSION_PROGRAMM_UINT16_t  85       // Версия программы
+#define DEFAULT_VERSION_PROGRAMM       "Ver0.86"    // Версия программы
+#define DEFAULT_VERSION_PROGRAMM_UINT16_t  86       // Версия программы
 #define DEFAULT_VERSION_BOOTLOADER     "Uncnown"    // Версия программы
 #define BOOTLOADER_MAGIC                0xB00B1E00
 #define EEPROM_FORMAT_VERSION           0x00000010U //? Версия формата данных EEPROM

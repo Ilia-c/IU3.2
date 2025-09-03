@@ -151,7 +151,8 @@ void Collect_DATA()
     if (EEPROM.Communication_http_mqtt == MQTT)
     {
         snprintf(save_data, CMD_BUFFER_SIZE,
-                 "[%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%02u:%02u %02u/%02u/%02u;%s;%s;%s;%u;%s;%s]",
+                 "[%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%02u:%02u %02u/%02u/%02u;%s;%s;%s;%u;%s;%s]",
+                 Version,                               // строка
                  ADC_data.ADC_value_char[0],            // 1  АЦП 1 строка
                  ADC_data.ADC_SI_value_char[0],         // 2  Величина 1 строка
                  ADC_data.ADC_SI_value_correct_char[0], // 3  Величина с поправкой 1 строка

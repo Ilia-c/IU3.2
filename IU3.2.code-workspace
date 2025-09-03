@@ -80,7 +80,8 @@
 			"settings_default.h": "c",
 			"initial_setup.h": "c",
 			"menu_data.h": "c",
-			"stm32l4xx_ll_usb.h": "c"
+			"stm32l4xx_ll_usb.h": "c",
+			"data_collect.h": "c"
 		},
 		"cortex-debug.variableUseNaturalFormat": true
 	}
