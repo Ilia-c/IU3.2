@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include "Settings.h"
 #include "Driver_rs485.h"
+
 //#include "USB_COMPORT.h"
 
 
@@ -16,6 +17,7 @@
 #define CMD_BUFFER_SIZE 512
 
 extern uint8_t data_read;
+void collect_message(char message[]);
 
 void GSM_Init(void);
 void Update_Data(void);

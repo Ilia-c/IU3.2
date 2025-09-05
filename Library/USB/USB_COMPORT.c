@@ -7,6 +7,7 @@ extern uint16_t UserRxLength;
 extern UART_HandleTypeDef huart4;
 
 
+
 void TrimCommand(char *command)
 {
     // Удаляем только завершающий '\n' (если есть)
@@ -77,7 +78,8 @@ void DEBUG_USB(void)
             int len = snprintf(resp, sizeof(resp),
                                "------------ %s ------------\r\n",
                                is_set ? d->msg_off : d->msg_on);
-            while (CDC_Transmit_FS((uint8_t *)resp, len) == USBD_BUSY){}
+            collect_message(resp);                 
+            //while (CDC_Transmit_FS((uint8_t *)resp, len) == USBD_BUSY){}
             return;
         }
     }
@@ -89,7 +91,8 @@ void DEBUG_USB(void)
         EEPROM.DEBUG_LEVL = lvl - 1;
         char resp[64];
         int len = snprintf(resp, sizeof(resp), "------------ Новый уровень отладки: %u ------------\r\n", lvl);
-        while (CDC_Transmit_FS((uint8_t *)resp, strlen(resp)) == USBD_BUSY){}
+        //while (CDC_Transmit_FS((uint8_t *)resp, strlen(resp)) == USBD_BUSY){}
+        collect_message(resp); 
         command[0] = '\0';  // очистили команду
         return;
     }
@@ -107,7 +110,8 @@ void DEBUG_USB(void)
         }
 
         const char resp[] = "------------ СОХРАНЕНО ------------\r\n";
-        while (CDC_Transmit_FS((uint8_t *)resp, strlen(resp)) == USBD_BUSY){}
+        //while (CDC_Transmit_FS((uint8_t *)resp, strlen(resp)) == USBD_BUSY){}
+        collect_message(resp); 
         return;
     }
 
@@ -118,7 +122,8 @@ void DEBUG_USB(void)
         EEPROM.DEBUG_CATEG = 0xFF; // Включаем все категории отладки
 
         const char resp[] = "------------ Все ON ------------\r\n";
-       while (CDC_Transmit_FS((uint8_t *)resp, strlen(resp)) == USBD_BUSY){}
+        //while (CDC_Transmit_FS((uint8_t *)resp, strlen(resp)) == USBD_BUSY){}
+        collect_message(resp); 
         return;
     }
     if (strncmp(command, "ALL_OFF", 7) == 0)
@@ -128,7 +133,8 @@ void DEBUG_USB(void)
 
         EEPROM.DEBUG_CATEG = 0x00; // Выключаем все категории отладки
         const char resp[] = "------------ Все OFF ------------\r\n";
-        while (CDC_Transmit_FS((uint8_t *)resp, strlen(resp)) == USBD_BUSY){}
+        //while (CDC_Transmit_FS((uint8_t *)resp, strlen(resp)) == USBD_BUSY){}
+        collect_message(resp); 
         return;
     }
     if (strncmp(command, "Help", 4) == 0)
@@ -143,24 +149,39 @@ void DEBUG_USB(void)
         }
 
         const char resp[] = "------------ HELP ------------\r\n";
-        const char help[] =
+        const char help_1[] =
             "1. DEBUG_GSM\n"
-            "2. AT_COMMANDS - отладка AT-команд\n"
+            "2. AT_COMMANDS - отладка AT-команд\n";
+        const char help_2[] =
             "3. DEBUG_RS485 - отладка RS-485\n"
-            "4. DEBUG_ADC - отладка АЦП\n"
+            "4. DEBUG_ADC - отладка АЦП\n";
+        const char help_3[] =
             "5. DEBUG_ADC_IN - отладка АЦП мк\n"
-            "6. DEBUG_FLASH - отладка FLASH\n"
+            "6. DEBUG_FLASH - отладка FLASH\n";
+        const char help_4[] =
             "7. DEBUG_EEPROM - отладка EEPROM\n"
-            "8. DEBUG_OTHER - отладка других модулей\n"
+            "8. DEBUG_OTHER - отладка других модулей\n";
+        const char help_5[] =
             "9. SAVE - сохранить настройки\n"
-            "10. ALL_ON - включить все отладочные категории\n"
+            "10. ALL_ON - включить все отладочные категории\n";
+        const char help_6[] =
             "11. ALL_OFF - выключить все отладочные категории\n"
-            "12. AT_MANUAL_ON - работа напрямую с модулем связи включить\n"
+            "12. AT_MANUAL_ON - работа напрямую с модулем связи включить\n";
+        const char help_7[] =
             "13. AT_MANUAL_OFF - работа напрямую с модулем связи выключить\n"
             "14. Help - показать это сообщение\r\n";
-        while (CDC_Transmit_FS((uint8_t *)resp, strlen(resp)) == USBD_BUSY){}
-        while (CDC_Transmit_FS((uint8_t *)help, strlen(help)) == USBD_BUSY){}
-        while (CDC_Transmit_FS((uint8_t *)resp, strlen(resp)) == USBD_BUSY){}
+        //while (CDC_Transmit_FS((uint8_t *)resp, strlen(resp)) == USBD_BUSY){}
+        //while (CDC_Transmit_FS((uint8_t *)help, strlen(help)) == USBD_BUSY){}
+        //while (CDC_Transmit_FS((uint8_t *)resp, strlen(resp)) == USBD_BUSY){}
+        collect_message(resp); 
+        collect_message(help_1); 
+        collect_message(help_2); 
+        collect_message(help_3); 
+        collect_message(help_4); 
+        collect_message(help_5); 
+        collect_message(help_6); 
+        collect_message(help_7); 
+        collect_message(resp); 
         return;
     }
     if (strncmp(command, "AT_MANUAL_ON", 12) == 0)
@@ -170,7 +191,8 @@ void DEBUG_USB(void)
         EEPROM.DEBUG_Mode = USB_AT_DEBUG;
         
         const char resp[] = "------------ Режим AT Manual ON ------------\r\n";
-        while (CDC_Transmit_FS((uint8_t *)resp, strlen(resp)) == USBD_BUSY){}
+        //while (CDC_Transmit_FS((uint8_t *)resp, strlen(resp)) == USBD_BUSY){}
+        collect_message(resp); 
         return;
     }
     memset(command, 0, 512);
@@ -187,19 +209,127 @@ void AT_SEND()
         EEPROM.DEBUG_Mode = USB_SNIFFING;
         
         const char resp[] = "------------ Режим AT Manual OFF ------------\r\n";
-        while (CDC_Transmit_FS((uint8_t *)resp, strlen(resp)) == USBD_BUSY){}
+        //while (CDC_Transmit_FS((uint8_t *)resp, strlen(resp)) == USBD_BUSY){}
+        collect_message(resp); 
         return;
     }
     char response[512];
     // Отправляем ответ
     snprintf(response, sizeof(response), "Command L651: %s", command);
-    CDC_Transmit_FS((uint8_t *)response, strlen(response));
+    //CDC_Transmit_FS((uint8_t *)response, strlen(response));
+    collect_message(response); 
     // Передаем всю команду по UART4
     SendSomeCommandAndSetFlag();
     HAL_UART_Transmit(&huart4, (uint8_t *)command, strlen(command), HAL_MAX_DELAY);
     
-    memset(UserRxBufferFS, 0, RX_BUFFER_SIZE);
+    //memset(UserRxBufferFS, 0, RX_BUFFER_SIZE);
     memset(g_myRxBuffer, 0, RX_BUFFER_SIZE);
+}
+
+
+
+// Передача сообщений из кольцевого буфера
+// ----- кольцевой буфер -----
+uint8_t  s_usbLogRing[USB_LOG_RING_SZ];
+uint32_t s_head = 0;  // куда писать
+uint32_t s_tail = 0;  // откуда слать
+uint32_t s_dropped_bytes = 0; // сколько байт не записано из-за переполнения
+
+static inline uint32_t ring_used(void) {
+    return (uint32_t)(s_head - s_tail);
+}
+static inline uint32_t ring_free(void) {
+    return USB_LOG_RING_SZ - ring_used();
+}
+
+
+// запись в кольцо единым сообщением
+HAL_StatusTypeDef ring_write(const uint8_t *src, uint32_t len)
+{
+    // 1) Быстро резервируем место и двигаем head (КРАТЧАЙШИЙ крит. участок)
+    uint32_t pos;
+    taskENTER_CRITICAL();
+    if (len > ring_free()) {                 // ring_free() = SIZE - (head - tail)
+        s_dropped_bytes += len;
+        taskEXIT_CRITICAL();
+        return HAL_ERROR;
+    }
+    pos = s_head;                            // куда писать
+    s_head += len;                           // зарезервировали
+    taskEXIT_CRITICAL();
+
+    // 2) Спокойно копируем уже БЕЗ critical (USB IRQ не страдает)
+    uint32_t idx = pos & USB_LOG_RING_MASK;
+    uint32_t n1  = USB_LOG_RING_SZ - idx;
+    if (n1 > len) n1 = len;
+    memcpy(&s_usbLogRing[idx], src, n1);
+    if (len > n1) memcpy(&s_usbLogRing[0], src + n1, len - n1);
+
+    // 3) Разбудить TX-задачу: семафор «есть данные»
+    xSemaphoreGive(USB_COM_TX_semaphore);
+    return HAL_OK;
+}
+
+HAL_StatusTypeDef USB_LogService(TickType_t tx_done_timeout)
+{
+    // нет данных — нечего делать
+    if (ring_used() == 0) return HAL_ERROR;
+
+    // USB не сконфигурирован — не зависаем, просто выходим
+    if (hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED) return HAL_ERROR;
+
+    // Снять снимок head / посчитать линейный кусок
+    uint32_t head_snapshot;
+    uint32_t rd, linear, chunk;
+    uint8_t *ptr;
+
+    taskENTER_CRITICAL();
+    head_snapshot = s_head;
+    if (head_snapshot == s_tail) { taskEXIT_CRITICAL(); return HAL_ERROR; }
+
+    rd     = s_tail & USB_LOG_RING_MASK;
+    linear = USB_LOG_RING_SZ - rd;
+    uint32_t used = head_snapshot - s_tail;
+    if (linear > used) linear = used;
+
+    chunk = linear;
+    if (chunk > USB_TX_CHUNK_MAX) chunk = USB_TX_CHUNK_MAX;
+
+    // округлим вниз до 64, если больше 64; если меньше 64 — шлём как есть
+    if (chunk > USB_FS_MPS) {
+        chunk -= (chunk % USB_FS_MPS);
+        if (chunk == 0) chunk = USB_FS_MPS;
+    }
+    ptr = &s_usbLogRing[rd];
+    taskEXIT_CRITICAL();
+
+    // Запустить передачу (без спин-петель)
+    // Возможные ответы: USBD_OK, USBD_BUSY, USBD_FAIL
+    TickType_t t_start = xTaskGetTickCount();
+
+    for (;;) {
+        uint8_t rc = CDC_Transmit_FS(ptr, chunk);
+        if (rc == USBD_OK) break;                       // поехали
+        if (rc == USBD_FAIL || hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED)
+            return HAL_ERROR;                               // USB пропал/ошибка — выходим
+        // BUSY: ждём завершение предыдущего TX, но не бесконечно
+        if (xSemaphoreTake(USB_COM_TX_DONE_semaphore, pdMS_TO_TICKS(50)) != pdTRUE) {
+            if ((xTaskGetTickCount() - t_start) >= tx_done_timeout) return HAL_ERROR;
+        }
+    }
+
+    // Дождаться завершения нашей передачи
+    if (xSemaphoreTake(USB_COM_TX_DONE_semaphore, tx_done_timeout) != pdTRUE) {
+        // нет сигнала — не зависаем; повторите позже
+        return HAL_ERROR;
+    }
+
+    // Сдвинуть хвост на реально отправленное
+    taskENTER_CRITICAL();
+    s_tail += chunk;
+    taskEXIT_CRITICAL();
+
+    return HAL_OK; // отправили кусок
 }
 
 

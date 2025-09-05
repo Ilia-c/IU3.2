@@ -20,6 +20,7 @@ static int cmp_uint16(const void *p1, const void *p2)
     if (a > b) return  1;
     return 0;
 }
+
 float TruncatedMeanVoltage()
 {
     float discard_ratio = 0.1f; // Отбросить 10% крайних значений

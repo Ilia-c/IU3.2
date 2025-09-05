@@ -33,12 +33,14 @@ extern uint16_t time_update_display;
 xSemaphoreHandle Keyboard_semapfore;
 xSemaphoreHandle Display_semaphore;
 xSemaphoreHandle Display_cursor_semaphore;
-xSemaphoreHandle USB_COM_semaphore;
+xSemaphoreHandle USB_COM_RX_semaphore;
 xSemaphoreHandle Main_semaphore;
 xSemaphoreHandle UART_PARSER_semaphore;
 xSemaphoreHandle ADC_READY; // Окончания преобразования при работе в циклическом режиме
 xSemaphoreHandle SLEEP_semaphore;
 xSemaphoreHandle ADC_conv_end_semaphore;
+xSemaphoreHandle USB_COM_TX_semaphore;
+xSemaphoreHandle USB_COM_TX_DONE_semaphore;
 
 extern const uint16_t Timer_key_one_press;
 extern const uint16_t Timer_key_press_fast;
@@ -130,10 +132,17 @@ const osThreadAttr_t Keyboard_task_attributes = {
     .priority = (osPriority_t)osPriorityHigh1,
 };
 
-osThreadId_t USB_COM_taskHandle;
-const osThreadAttr_t USB_COM_task_attributes = {
-    .name = "USB_COM_task",
-    .stack_size = 1024 * 4,
+osThreadId_t USB_COM_RX_taskHandle;
+const osThreadAttr_t USB_COM_RX_task_attributes = {
+    .name = "USB_COM_RX_task",
+    .stack_size = 1024 * 2,
+    .priority = (osPriority_t)osPriorityLow2,
+};
+
+osThreadId_t USB_COM_TX_taskHandle;
+const osThreadAttr_t USB_COM_TX_task_attributes = {
+    .name = "USB_COM_TX_task",
+    .stack_size = 1024 * 2,
     .priority = (osPriority_t)osPriorityLow2,
 };
 
@@ -158,6 +167,7 @@ const osThreadAttr_t WATCDOG_task_attributes = {
     .priority = (osPriority_t)osPriorityHigh3,
 };
 
+
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 void PeriphCommonClock_Config(void);     
@@ -169,9 +179,9 @@ void RS485_data(void *argument);
 void Main(void *argument);
 void Main_Cycle(void *argument); // основной режим в циклическом режиме
 void Keyboard_task(void *argument);
-void USB_COM_task(void *argument);
+void USB_COM_RX_task(void *argument);
+void USB_COM_TX_task(void *argument);
 void UART_PARSER_task(void *argument);
-void SD_Task(void *argument);
 void Erroe_indicate(void *argument);
 void HAL_TIM6_Callback(void);
 void SetTimerPeriod(uint32_t period_ms);
@@ -269,9 +279,9 @@ int main(void)
   HAL_GPIO_WritePin(SPI2_CS_ROM_GPIO_Port, SPI2_CS_ROM_Pin, 1);
   HAL_GPIO_WritePin(SPI2_CS_ADC_GPIO_Port, SPI2_CS_ADC_Pin, 1);
   #if BOARD_VERSION == Version3_80
-    HAL_GPIO_WritePin(ON_OWEN_1_GPIO_Port, ON_OWEN_1_Pin, 0);
-    HAL_GPIO_WritePin(ON_OWEN_2_GPIO_Port, ON_OWEN_2_Pin, 0);
-    HAL_GPIO_WritePin(ON_OWEN_3_GPIO_Port, ON_OWEN_3_Pin, 0);
+    HAL_GPIO_WritePin(ON_OWEN_1_GPIO_Port, ON_OWEN_1_Pin, 1);
+    HAL_GPIO_WritePin(ON_OWEN_2_GPIO_Port, ON_OWEN_2_Pin, 1);
+    HAL_GPIO_WritePin(ON_OWEN_3_GPIO_Port, ON_OWEN_3_Pin, 1);
   #elif BOARD_VERSION == Version3_75
      HAL_GPIO_WritePin(ON_OWEN_GPIO_Port, ON_OWEN_Pin, 0);
   #endif
@@ -415,11 +425,6 @@ int main(void)
     HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
   }
 
-  if (EEPROM.USB_mode == USB_DEBUG){
-    MX_USB_DEVICE_Init_COMPORT();            // Режим работы в VirtualComPort
-    HAL_NVIC_SetPriority(OTG_FS_IRQn, 6, 0); // Приоритет прерывания
-    HAL_NVIC_EnableIRQ(OTG_FS_IRQn);         // Включение прерывания
-  }
   MX_FATFS_Init();
   w25_init();
 
@@ -433,6 +438,15 @@ int main(void)
 
   Flash_ReadCalib(&Main_data);
 
+  // Включение отладки по USB
+  if (EEPROM.USB_mode == USB_DEBUG){
+    MX_USB_DEVICE_Init_COMPORT();            // Режим работы в VirtualComPort
+    HAL_NVIC_SetPriority(OTG_FS_IRQn, 6, 0); // Приоритет прерывания
+    HAL_NVIC_EnableIRQ(OTG_FS_IRQn);         // Включение прерывания
+    USB_COM_RX_taskHandle = osThreadNew(USB_COM_RX_task, NULL, &USB_COM_RX_task_attributes);
+    USB_COM_TX_taskHandle = osThreadNew(USB_COM_TX_task, NULL, &USB_COM_TX_task_attributes);
+  }
+
   if (EEPROM.block != 2)
   {
     ADC_readHandle = osThreadNew(ADC_read, NULL, &ADC_read_attributes);
@@ -441,7 +455,6 @@ int main(void)
   }
 
   if (EEPROM.Mode == 0){
-    USB_COM_taskHandle = osThreadNew(USB_COM_task, NULL, &USB_COM_task_attributes);
     MainHandle = osThreadNew(Main, NULL, &Main_attributes); // Задача для настроечного режима
     Keyboard_taskHandle = osThreadNew(Keyboard_task, NULL, &Keyboard_task_attributes);
     Display_I2CHandle = osThreadNew(Display_I2C, NULL, &Display_I2C_attributes);
@@ -469,10 +482,36 @@ void USB_DEBUG_MESSAGE(const char message[], uint8_t category, uint8_t debugLVL)
     if (EEPROM.DEBUG_LEVL   < debugLVL)              return;
     if (USB_TERMINAL_STATUS == TERMINAL_DISABLE)     return;
 
+    /*
     size_t len = strlen(message);
     while (CDC_Transmit_FS((uint8_t *)"---",  3) == USBD_BUSY);
     while (CDC_Transmit_FS((uint8_t *)message, len) == USBD_BUSY);
     while ( CDC_Transmit_FS((uint8_t *)"\r\n", 2) == USBD_BUSY);
+    */
+
+    char line[USB_LOG_MAX_MSG];
+    size_t m = strlen(message);
+    const size_t overhead = 3 + 2; // '---' + "\r\n"
+    if (m > (USB_LOG_MAX_MSG - overhead))
+      m = (USB_LOG_MAX_MSG - overhead);
+
+    size_t n = 0;
+    line[n++] = '-';
+    line[n++] = '-';
+    line[n++] = '-';
+    memcpy(&line[n], message, m);
+    n += m;
+    line[n++] = '\r';
+    line[n++] = '\n';
+
+    (void)ring_write((const uint8_t *)line, (uint32_t)n);
+}
+void collect_message(char message[]){
+  
+    size_t m = strlen(message);
+    if (m > (USB_LOG_MAX_MSG))
+      m = (USB_LOG_MAX_MSG);
+    (void)ring_write((const uint8_t *)message, (uint32_t)m);
 }
 
 
@@ -530,11 +569,15 @@ void Main(void *argument)
   vSemaphoreCreateBinary(Keyboard_semapfore);
   vSemaphoreCreateBinary(Display_semaphore);
   vSemaphoreCreateBinary(Display_cursor_semaphore);
-  vSemaphoreCreateBinary(USB_COM_semaphore);
+  vSemaphoreCreateBinary(USB_COM_RX_semaphore);
   vSemaphoreCreateBinary(UART_PARSER_semaphore);
   vSemaphoreCreateBinary(Main_semaphore);
   vSemaphoreCreateBinary(SLEEP_semaphore);
+  vSemaphoreCreateBinary(USB_COM_RX_semaphore);
+  vSemaphoreCreateBinary(USB_COM_TX_semaphore);
+  vSemaphoreCreateBinary(USB_COM_TX_DONE_semaphore);
   xSemaphoreTake(SLEEP_semaphore, 0);
+
 
   HAL_NVIC_SetPriority(EXTI4_IRQn, 7, 0);
   HAL_NVIC_SetPriority(EXTI9_5_IRQn, 7, 0);
@@ -574,10 +617,12 @@ void Main_Cycle(void *argument)
   vSemaphoreCreateBinary(ADC_READY);
   vSemaphoreCreateBinary(Keyboard_semapfore);
   vSemaphoreCreateBinary(Display_cursor_semaphore);
-  vSemaphoreCreateBinary(USB_COM_semaphore);
   vSemaphoreCreateBinary(UART_PARSER_semaphore);
   vSemaphoreCreateBinary(Main_semaphore);
   vSemaphoreCreateBinary(ADC_conv_end_semaphore);
+  vSemaphoreCreateBinary(USB_COM_RX_semaphore);
+  vSemaphoreCreateBinary(USB_COM_TX_semaphore);
+  vSemaphoreCreateBinary(USB_COM_TX_DONE_semaphore);
 
   for (;;)
   {
@@ -844,7 +889,7 @@ void RS485_data(void *argument)
     for (;;)
     {
         osDelay(5000);
-        //ADC_Voltage_Calculate();
+        
         Collect_DATA();
         //uint8_t msg[] = "Hello RS-485";
         HAL_StatusTypeDef res = RS485_Transmit_IT(save_data, sizeof(save_data)-1);
@@ -967,15 +1012,24 @@ void Watch_dog_task(void *argument)
 }
 
 
-void USB_COM_task(void *argument)
+void USB_COM_RX_task(void *argument)
 {
   UNUSED(argument);
-  //EEPROM.DEBUG_CATEG = 0;
   for (;;)
   {
     // Ожидаем семафор (данные готовы к обработке)
-    xSemaphoreTake(USB_COM_semaphore, portMAX_DELAY);
+    xSemaphoreTake(USB_COM_RX_semaphore, portMAX_DELAY);
     USB_COM();
+  }
+}
+
+void USB_COM_TX_task(void *argument)
+{
+  UNUSED(argument);
+  for (;;)
+  {
+    xSemaphoreTake(USB_COM_TX_semaphore, portMAX_DELAY);
+    while (USB_LogService(pdMS_TO_TICKS(250)) == HAL_OK) {}
   }
 }
 
@@ -1008,7 +1062,7 @@ void Erroe_indicate(void *argument)
   Collect_DATA();
   for (;;)
   {
-    
+    ADC_Voltage_Calculate();
     Diagnostics();
     BlinkLED(GPIOC, GPIO_PIN_13, 1, 2000, 2000, 0);
     // Ошибка инициализации EEPROM

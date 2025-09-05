@@ -56,11 +56,14 @@ void GSM_TimerCallback(TimerHandle_t xTimer)
         {
             if (hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED) break;
             if (USB_TERMINAL_STATUS == TERMINAL_DISABLE) break;
+            
             if (EEPROM.DEBUG_Mode == USB_SNIFFING)
             {
-                if (EEPROM.DEBUG_CATEG & AT_COMMANDS) while (CDC_Transmit_FS((uint8_t *)parseBuffer, activeIndex) == USBD_BUSY);
+                if (EEPROM.DEBUG_CATEG & AT_COMMANDS) collect_message(parseBuffer);
             }
-            if (EEPROM.DEBUG_Mode == USB_AT_DEBUG) while (CDC_Transmit_FS((uint8_t *)parseBuffer, activeIndex) == USBD_BUSY);
+            if (EEPROM.DEBUG_Mode == USB_AT_DEBUG) collect_message(parseBuffer);
+            
+            
             break;
         }
                 

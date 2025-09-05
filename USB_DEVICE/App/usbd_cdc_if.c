@@ -188,7 +188,7 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 extern uint8_t g_myRxBuffer[];
 uint16_t g_myRxCount = 0;
 static volatile uint8_t g_messageReady = 0;
-extern xSemaphoreHandle USB_COM_semaphore;
+extern xSemaphoreHandle USB_COM_RX_semaphore;
 
 
 static int8_t CDC_Receive_FS(uint8_t *Buf, uint32_t *Len)
@@ -202,7 +202,7 @@ static int8_t CDC_Receive_FS(uint8_t *Buf, uint32_t *Len)
             g_messageReady = 1;
             g_myRxCount = 0;
             BaseType_t xTaskWoken = pdFALSE;
-            xSemaphoreGiveFromISR(USB_COM_semaphore, &xTaskWoken);
+            xSemaphoreGiveFromISR(USB_COM_RX_semaphore, &xTaskWoken);
             portYIELD_FROM_ISR(xTaskWoken);
         }
     }
@@ -254,6 +254,7 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
   * @param  Len: Number of data received (in bytes)
   * @retval Result of the operation: USBD_OK if all operations are OK else USBD_FAIL
   */
+extern xSemaphoreHandle USB_COM_TX_DONE_semaphore;
 static int8_t CDC_TransmitCplt_FS(uint8_t *Buf, uint32_t *Len, uint8_t epnum)
 {
   uint8_t result = USBD_OK;
@@ -261,6 +262,10 @@ static int8_t CDC_TransmitCplt_FS(uint8_t *Buf, uint32_t *Len, uint8_t epnum)
   UNUSED(Buf);
   UNUSED(Len);
   UNUSED(epnum);
+
+  BaseType_t hpw = pdFALSE;
+  if (USB_COM_TX_DONE_semaphore) xSemaphoreGiveFromISR(USB_COM_TX_DONE_semaphore, &hpw);
+  portYIELD_FROM_ISR(hpw);
   /* USER CODE END 13 */
   return result;
 }

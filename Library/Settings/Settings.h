@@ -243,7 +243,7 @@ extern "C"
 #define SMS_SEND_Successfully (1UL << 19)       //  SMS успешено отправлено
 #define NETWORK_REGISTERED_SET_HTTP (1UL << 20) // Устройство зарегистрировано в сети для регистрации HTTP при включении
 #define DATA_READ (1UL << 21)                   // Сброс активного состояния
-#define MQTT_SEARCH (1UL << 22)                   // Сброс активного состояния
+#define MQTT_SEARCH (1UL << 22)                   // Включение режима сохранения данных для анализа MQTT
 
   typedef struct GSM_STATUS_item
   {

@@ -16,8 +16,11 @@
 #define MQTT_RETAIN    0
 
 // Топики (2 публикации)
-#define TOPIC_PUB1_FMT "aus/%s/data/publish"
-#define TOPIC_PUB2_FMT "aus/%s/data/empty"   // сюда отправляем пустую строку
+#define TOPIC_PUB1_FMT "test"
+#define TOPIC_PUB2_FMT "test"   // сюда отправляем пустую строку
+
+// Топики для настроек
+#define TOPIC_SETTINGS "test"         // подписка на все команды
 
 // Внешние хелперы вашего проекта
 extern char *parseBuffer;   // общий буфер с последним ответом модема

@@ -199,7 +199,7 @@ static HAL_StatusTypeDef MQTT_SmStepConnect(MqttSm *sm)
         snprintf(cmd, sizeof(cmd), "AT+MCONNECT=\"%s\",%d,%d,%u\r",
                  sm->host, sm->port, sm->clean_session, (unsigned)sm->keepalive_s);
 
-        // ЖМЁМ ИМЕННО CONNECT OK / CONNECT FAIL
+        // ЖМЁМ CONNECT OK / CONNECT FAIL
         if (SendCommandAndParse(cmd, waitForConnectResult, 60000) != HAL_OK)
         {
             ERRCODE.STATUS |= STATUS_MQTT_CONN_ERROR;
@@ -208,8 +208,11 @@ static HAL_StatusTypeDef MQTT_SmStepConnect(MqttSm *sm)
         }
         sm->connected = 1;
         sm->st = MQTT_ST_CONNECTED;
+        // Нужно подписаться на топик с настройками
+
+        MQTT_Subscribe(TOPIC_SETTINGS, MQTT_QOS_SUB, 10000);
         MQTT_PublishSaveData(save_data, 60000); // в первый топик
-        MQTT_PublishEmptySecond(60000);         // пустая строка во второй топик
+        //MQTT_PublishEmptySecond(60000);         // пустая строка во второй топик
         return HAL_OK;
     }
 
@@ -284,11 +287,6 @@ HAL_StatusTypeDef MQTT_Publish(const char *topic,
         }
         return HAL_ERROR;
     }
-
-    // В некоторых прошивках в этом же ответе присутствуют строки PUBACK/PUBREC/PUBCOMP.
-    // Так как парсер "не живёт" вне SendCommandAndParse — ориентируемся на OK.
-    // (Если нужно строго подтверждение QoS1/2, потребуется расширить парсер внутри SendCommandAndParse.)
-
     // Best-effort: перепроверим статус
     uint8_t st = 0xFF;
     if (MQTT_QueryStatus(&st) != HAL_OK || st != 2) {
@@ -304,7 +302,7 @@ HAL_StatusTypeDef MQTT_PublishSaveData(const char *save_data, uint32_t timeout_m
     char topic[96];
     // Логин = username = Version (без скобок)
     snprintf(topic, sizeof(topic), TOPIC_PUB1_FMT, g_mqtt.cred.username);
-    return MQTT_Publish("test", save_data, MQTT_QOS_PUB, MQTT_RETAIN, timeout_ms);
+    return MQTT_Publish(TOPIC_PUB1_FMT, save_data, MQTT_QOS_PUB, MQTT_RETAIN, timeout_ms);
 }
 
 // ===== Публикация ПУСТОЙ строки во второй топик =====
