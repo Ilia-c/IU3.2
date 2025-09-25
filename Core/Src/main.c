@@ -234,16 +234,16 @@ int main(void)
         while (1);
     }
   #endif
-
+  
   SystemClock_Config();
   PeriphCommonClock_Config();
   RTC_Init();
 	HAL_RTC_GetTime(&hrtc, &Time_start, RTC_FORMAT_BIN);
 	HAL_RTC_GetDate(&hrtc, &Date_start, RTC_FORMAT_BIN);
-
+  
   RTC_read();
   MX_GPIO_Init();
-
+  
   HAL_GPIO_WritePin(RESERVED_GPIO_Port, RESERVED_Pin, GPIO_PIN_SET);
   HAL_Delay(100);
   HAL_GPIO_WritePin(RESERVED_GPIO_Port, RESERVED_Pin, GPIO_PIN_RESET);
@@ -507,6 +507,8 @@ void USB_DEBUG_MESSAGE(const char message[], uint8_t category, uint8_t debugLVL)
 
     (void)ring_write((const uint8_t *)line, (uint32_t)n);
 }
+
+// Запись сообщения для отправки по USB в кольцевой буфер
 void collect_message(char message[]){
   
     size_t m = strlen(message);
@@ -843,7 +845,7 @@ void Watch_dog_task(void *argument)
   }
 }
 
-
+// Задача для обработки принятых данных при отладке USB
 void USB_COM_RX_task(void *argument)
 {
   UNUSED(argument);
@@ -855,6 +857,8 @@ void USB_COM_RX_task(void *argument)
   }
 }
 
+
+// Задача для передачи данных при отладке USB
 void USB_COM_TX_task(void *argument)
 {
   UNUSED(argument);
@@ -877,7 +881,6 @@ void BlinkLED(GPIO_TypeDef *LEDPort, uint16_t LEDPin, uint8_t blinkCount, uint32
         HAL_GPIO_WritePin(LEDPort, LEDPin, GPIO_PIN_RESET);
         osDelay(offTime);
     }
-    
     // Задержка между циклами моргания
     osDelay(cycleDelay);
 }

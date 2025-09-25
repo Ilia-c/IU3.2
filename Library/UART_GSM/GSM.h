@@ -14,7 +14,6 @@
 
 #define RX_TIMEOUT_MS   300
 #define CMD_BUFFER_SIZE 512
-#define MQTT_SETTINGS_BUFFER_SIZE 128
 
 extern uint8_t data_read;
 void collect_message(char message[]);

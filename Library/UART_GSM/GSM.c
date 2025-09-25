@@ -13,8 +13,6 @@ uint8_t gsmRxChar;
 /* Двойное буферирование: буферы размещаются в области ОЗУ ".ram2" */
 static char buffer1[CMD_BUFFER_SIZE] __attribute__((section(".ram2"))) = {0};
 static char buffer2[CMD_BUFFER_SIZE] __attribute__((section(".ram2"))) = {0};
-static char MQTT_settings_buffer[MQTT_SETTINGS_BUFFER_SIZE] __attribute__((section(".ram2"))) = {0};
-static uint16_t activeIndex_MQTT = 0;
 
 /* Указатели на активный и обрабатываемый (парсера) буферы */
 static char *activeBuffer = buffer1;
@@ -61,8 +59,6 @@ void GSM_TimerCallback(TimerHandle_t xTimer)
                 if (EEPROM.DEBUG_CATEG & AT_COMMANDS) collect_message(parseBuffer);
             }
             if (EEPROM.DEBUG_Mode == USB_AT_DEBUG) collect_message(parseBuffer);
-            
-            
             break;
         }
                 
@@ -96,23 +92,36 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     if (huart->Instance == UART4)
     {
         HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
-        if (GSM_data.Status & DATA_READ)
+
+        // Если MQTT, то анализируем все строки и ищем разрыв соединения или данные с топика
+        if (EEPROM.Communication_http_mqtt == MQTT)
         {
             sig[sig_idx] = gsmRxChar;
             sig_idx++;
             if (sig_idx >= 8) sig_idx = 0;
             if (match5("+MSUB"))
             {
+                // Установить флаг обработки принятых данных по MQTT - в отдельную задачу
+                activeBuffer[activeIndex] = '+'; 
+                activeBuffer[activeIndex++] = 'M'; 
+                activeBuffer[activeIndex++] = 'S'; 
+                activeBuffer[activeIndex++] = 'U'; 
+                activeBuffer[activeIndex++] = 'B';
+
+                
+
                 // Найдена строка от топика MQTT, нужно дальше читать
                 GSM_data.Status |= MQTT_SEARCH;
             }
             if (match6_closed())
             {
                 // Соединение пропало
+                // ! Нужно сбросить машину состояний g_mqtt
                 GSM_data.Status &= ~MQTT_SEARCH;
             }
         }
-        if ((!(GSM_data.Status & DATA_READ)) && (EEPROM.DEBUG_Mode != USB_AT_DEBUG))
+
+        if ((!(GSM_data.Status & DATA_READ)) && (EEPROM.DEBUG_Mode != USB_AT_DEBUG) || (GSM_data.Status & MQTT_SEARCH))
         {
             return;
         }

@@ -26,8 +26,6 @@
 // Внешние хелперы вашего проекта
 extern char *parseBuffer;   // общий буфер с последним ответом модема
 
-
-
 extern Main_data_settings_item Main_data;
 // Логин/пароль/ClientID
 typedef struct {
