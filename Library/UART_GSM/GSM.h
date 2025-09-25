@@ -10,11 +10,11 @@
 #include "Settings.h"
 #include "Driver_rs485.h"
 
-//#include "USB_COMPORT.h"
 
 
 #define RX_TIMEOUT_MS   300
 #define CMD_BUFFER_SIZE 512
+#define MQTT_SETTINGS_BUFFER_SIZE 128
 
 extern uint8_t data_read;
 void collect_message(char message[]);
@@ -26,3 +26,4 @@ void SendSomeCommandAndSetFlag(void);
 void GSM_TimerCallback(TimerHandle_t xTimer);
 void USB_DEBUG_MESSAGE(const char message[], uint8_t category, uint8_t debugLVL);
 void USB_TransmitWithTimeout(uint8_t *buf, uint16_t len);
+

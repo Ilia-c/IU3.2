@@ -9,6 +9,8 @@
 #include "task.h"
 #include <math.h>
 
+extern osThreadId_t ADC_readHandle;
+
 extern uint8_t units;
 uint8_t SPI2_TransmitByte(uint8_t TxData);
 uint8_t SPI2_Read_OneByte(uint8_t reg);
@@ -19,5 +21,6 @@ void MS5193T_Init(void);
 uint32_t Read_MS5193T_Data(void);
 void calculate_ADC_data_temp(int32_t adValue);
 void calculate_ADC_data_heigh(int32_t adValue, uint8_t channel);
+void Data_ADC_Thread();
 
 

@@ -241,7 +241,7 @@ HAL_StatusTypeDef EEPROM_SaveSettings(EEPROM_Settings_item *src) {
 }
 
 //=============================================================================
-// Новая функция для проверки корректности сохранённых данных
+// Функция для проверки корректности сохранённых данных
 HAL_StatusTypeDef EEPROM_CheckDataValidity(void) {
     if (ERRCODE.STATUS & STATUS_EEPROM_INIT_ERROR) return HAL_ERROR;
 

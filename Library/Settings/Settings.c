@@ -61,7 +61,7 @@ EEPROM_Settings_item EEPROM = {
     .Correct = {DEFAULT_GVL_CORRECT_1, DEFAULT_GVL_CORRECT_2, DEFAULT_GVL_CORRECT_3},             // Коррекция нулевой точки (смещение ± от текущего значения) УГВ
     .MAX_LVL = {DEFAULT_MAX_LVL_1, DEFAULT_MAX_LVL_2, DEFAULT_MAX_LVL_3},                      // Максимальный уровень (например, 15 метров) ВПИ
     .ZERO_LVL = {DEFAULT_ZERO_LVL_1, DEFAULT_ZERO_LVL_2, DEFAULT_ZERO_LVL_3},                    // Нулевое значение (например, 0 метров) НПИ
-
+    .time_stablized = DEFAULT_TIME_STABLIZED,    // Время стабилизации сигнала (сек)
     // Параметры select_bar:
     .Mode = DEFAULT_MODE,                           // Текущий режим работы (0 - режим текущие показания, 1 - циклический режим, 2 - режим выставки)
     .Communication = DEFAULT_COMMUNICATION,         // Включен GSM или нет

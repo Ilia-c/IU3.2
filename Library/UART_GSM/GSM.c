@@ -13,7 +13,8 @@ uint8_t gsmRxChar;
 /* Двойное буферирование: буферы размещаются в области ОЗУ ".ram2" */
 static char buffer1[CMD_BUFFER_SIZE] __attribute__((section(".ram2"))) = {0};
 static char buffer2[CMD_BUFFER_SIZE] __attribute__((section(".ram2"))) = {0};
-
+static char MQTT_settings_buffer[MQTT_SETTINGS_BUFFER_SIZE] __attribute__((section(".ram2"))) = {0};
+static uint16_t activeIndex_MQTT = 0;
 
 /* Указатели на активный и обрабатываемый (парсера) буферы */
 static char *activeBuffer = buffer1;
@@ -50,8 +51,6 @@ void GSM_TimerCallback(TimerHandle_t xTimer)
         char *temp = activeBuffer;
         activeBuffer = parseBuffer;
         parseBuffer = temp;
-
-        
         while (EEPROM.USB_mode == USB_DEBUG)
         {
             if (hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED) break;
@@ -310,5 +309,7 @@ int determineRegionAndOperator(void)
     GSM_data.GSM_operator_char = (char *)operatorName;
     return 1;
 }
+
+
 
 
