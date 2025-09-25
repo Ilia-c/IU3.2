@@ -48,9 +48,6 @@ static HAL_StatusTypeDef waitForConnectResult(uint32_t timeout)
 
 // --- локальный разбор "+MQTTSTATU:<n>" после AT+MQTTSTATU ---
 static int  s_last_mqtt_status = -1;  // 0..4
-
-
-
 static HAL_StatusTypeDef waitForMQTTSTATU(uint32_t timeout)
 {
     TickType_t startTick    = xTaskGetTickCount();
@@ -116,30 +113,35 @@ static int mqtt_parse_status_from_buffer(uint8_t *st_out) {
     return -1;
 }
 
-// Опрос статуса соединения (поллинг, без URC)
+// Опрос статуса соединения
 static HAL_StatusTypeDef MQTT_QueryStatus(uint8_t *st)
 {
     s_last_mqtt_status = -1;
     if (SendCommandAndParse("AT+MQTTSTATU\r", waitForMQTTSTATU, 3000) != HAL_OK)
         return HAL_ERROR;
 
-    if (s_last_mqtt_status < 0) return HAL_ERROR;
-    if (st) *st = (uint8_t)s_last_mqtt_status;
+    if (s_last_mqtt_status < 0)
+        return HAL_ERROR;
+    if (st)
+        *st = (uint8_t)s_last_mqtt_status;
     return HAL_OK;
 }
 
 // Разбор результата подключения после AT+MCONNECT
 // Ожидаем, что в parseBuffer есть "CONNECT OK" (успех) или "CONNECT FAIL"/"ERROR"
-static HAL_StatusTypeDef mqtt_after_connect_check(void) {
-    if (!parseBuffer) return HAL_ERROR;
-    if (strstr(parseBuffer, "CONNECT OK"))   return HAL_OK;
-    if (strstr(parseBuffer, "CONNECT FAIL")) return HAL_ERROR;
-    if (strstr(parseBuffer, "ERROR"))        return HAL_ERROR;
-    // На некоторых прошивках только OK, тогда проверим статус следующей командой снаружи
+static HAL_StatusTypeDef mqtt_after_connect_check(void)
+{
+    if (!parseBuffer)
+        return HAL_ERROR;
+    if (strstr(parseBuffer, "CONNECT OK"))
+        return HAL_OK;
+    if (strstr(parseBuffer, "CONNECT FAIL"))
+        return HAL_ERROR;
+    if (strstr(parseBuffer, "ERROR"))
+        return HAL_ERROR;
     return HAL_OK;
 }
 
-// ===== Креды из ваших Main_data =====
 void MQTT_BuildCredentials(MqttCredentials *out)
 {
     memset(out, 0, sizeof(*out));
@@ -170,7 +172,7 @@ static HAL_StatusTypeDef MQTT_SmStepConnect(MqttSm *sm)
     switch (sm->st)
     {
     case MQTT_ST_IDLE: {
-        // Активировать PDP (или заменить на ваш ensurePDP)
+        // Активировать PDP (на всякий, он и так должен выполнится)
         if (SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 60000) != HAL_OK) {
             ERRCODE.STATUS |= STATUS_MQTT_CONN_ERROR;
             sm->st = MQTT_ST_ERROR; return HAL_ERROR;
@@ -208,16 +210,32 @@ static HAL_StatusTypeDef MQTT_SmStepConnect(MqttSm *sm)
         }
         sm->connected = 1;
         sm->st = MQTT_ST_CONNECTED;
-        MQTT_PublishSaveData(save_data, 60000); // в первый топик
-        MQTT_PublishEmptySecond(60000);         // пустая строка во второй топик
+        ERRCODE.STATUS |= STATUS_MQTT_CONN;
+
+        //MQTT_PublishSaveData(save_data, 60000); // в первый топик
+        //MQTT_PublishEmptySecond(60000);         // пустая строка во второй топик
+
         return HAL_OK;
     }
 
     case MQTT_ST_CONNECTED:
+        // Подключение к топику с настройками
+        if (MQTT_Subscribe(TOPIC_SETTINGS_FMT, MQTT_QOS_SUB, 5000) == HAL_OK)
+        {
+            ERRCODE.STATUS |= STATUS_MQTT_SUB_SETTINGS;
+            MQTT_PublishEmptySecond(10000); // сразу запросим настройки
+            osDelay(1000); // Пропуск что бы дать возможность получить настройки (для цикла)
+        }
+        else{
+            sm->st = MQTT_ST_ERROR;
+            ERRCODE.STATUS &= ~STATUS_MQTT_SUB_SETTINGS;
+            return HAL_ERROR;
+        }
         return HAL_OK;
 
     default:
     case MQTT_ST_ERROR:
+        ERRCODE.STATUS &= ~STATUS_MQTT_CONN;
         return HAL_ERROR;
     }
 }
@@ -295,19 +313,28 @@ HAL_StatusTypeDef MQTT_Publish(const char *topic,
         g_mqtt.connected = 0;
         g_mqtt.st = MQTT_ST_IDLE;
     }
+
     return HAL_OK;
 }
 
-// ===== Публикация в ваш первый топик (save_data) =====
+// ===== Публикация в топик =====
 HAL_StatusTypeDef MQTT_PublishSaveData(const char *save_data, uint32_t timeout_ms)
 {
     char topic[96];
     // Логин = username = Version (без скобок)
     snprintf(topic, sizeof(topic), TOPIC_PUB1_FMT, g_mqtt.cred.username);
-    return MQTT_Publish("test", save_data, MQTT_QOS_PUB, MQTT_RETAIN, timeout_ms);
+    HAL_StatusTypeDef status = MQTT_Publish(topic, save_data, MQTT_QOS_PUB, MQTT_RETAIN, timeout_ms);
+    if (status != HAL_OK) {
+        ERRCODE.STATUS |= STATUS_MQTT_PUB_ERROR;
+    }
+    else{
+        ERRCODE.STATUS &= ~STATUS_MQTT_PUB_ERROR;
+    }
+
+    return status;
 }
 
-// ===== Публикация ПУСТОЙ строки во второй топик =====
+// ===== Публикация ПУСТОЙ строки в топик настроек =====
 HAL_StatusTypeDef MQTT_PublishEmptySecond(uint32_t timeout_ms)
 {
     char topic[96];
@@ -315,7 +342,7 @@ HAL_StatusTypeDef MQTT_PublishEmptySecond(uint32_t timeout_ms)
     return MQTT_Publish(topic, "", MQTT_QOS_PUB, MQTT_RETAIN, timeout_ms);
 }
 
-// ===== Подписка (на будущее) =====
+// ===== Подписка =====
 HAL_StatusTypeDef MQTT_Subscribe(const char *topic, int qos, uint32_t timeout_ms)
 {
     if (!g_mqtt.connected) { ERRCODE.STATUS |= STATUS_MQTT_CONN_ERROR; return HAL_ERROR; }

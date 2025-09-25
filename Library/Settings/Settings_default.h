@@ -6,7 +6,7 @@
 
 #define Version3_75 0xFAEE                       // Версия 3.75
 #define Version3_80 0x0EA3                       // Версия 3.80
-#define BOARD_VERSION Version3_75                // Под какую версию собирать проект
+#define BOARD_VERSION Version3_80                // Под какую версию собирать проект
 
 #if BOARD_VERSION == Version3_80 
     #define i2cDisplay hi2c3
@@ -67,6 +67,8 @@
 #define DEFAULT_MAX_LVL_3                15
 #define DEFAULT_ZERO_LVL_3               0
 
+#define DEFAULT_TIME_STABLIZED         10  // Время стабилизации сигнала (сек)
+
 
 // Коррекция температуры:
 #define DEFAULT_CRORRECT_TEMP_A        0
@@ -74,6 +76,10 @@
 
 #define MQTT 1  // MQTT или HTTP 1- MQTT, 0 - HTTP
 #define HTTP 0  // MQTT или HTTP 1- MQTT, 0 - HTTP
+
+// протокол rs-485
+#define RS485_OFF 0
+#define RS485_ONLY 1
 
 // Параметры select_bar:
 #define DEFAULT_MODE                   0  // Режим работы: 0 - текущие показания, 1 - циклический, 2 - выставка

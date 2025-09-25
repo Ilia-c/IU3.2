@@ -143,7 +143,7 @@ extern "C"
     double MAX_LVL[3];     // Максимальный уровень (например 15 метров) ВПИ
     double ZERO_LVL[3];    // Нулевое значение     (например 0 метров)  НПИ
     // коррекция температуры (смещение) //
-
+    uint32_t time_stablized; // Время стабилизации токового сигнала (сек)
     /*-----------------*/
     // select_bar      //
     /*-----------------*/
@@ -243,6 +243,13 @@ extern "C"
 #define SMS_SEND_Successfully (1UL << 19)       //  SMS успешено отправлено
 #define NETWORK_REGISTERED_SET_HTTP (1UL << 20) // Устройство зарегистрировано в сети для регистрации HTTP при включении
 #define DATA_READ (1UL << 21)                   // Сброс активного состояния
+#define STATUS_MQTT_CONN_ERROR        (1u<<22)
+#define STATUS_MQTT_PUB_ERROR         (1u<<23)
+#define STATUS_MQTT_SUB_ERROR         (1u<<24)
+#define STATUS_MQTT_SERVER_COMM_ERROR (1u<<25)
+#define STATUS_MQTT_AUTH_ERROR        (1u<<26)
+#define STATUS_MQTT_CONN              (1u<<27)
+#define STATUS_MQTT_SUB_SETTINGS      (1u<<28)
 
   typedef struct GSM_STATUS_item
   {

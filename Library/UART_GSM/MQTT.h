@@ -15,18 +15,18 @@
 #define MQTT_QOS_SUB   1
 #define MQTT_RETAIN    0
 
-// Топики (2 публикации)
+// Топик для передачи кпоказаний
 #define TOPIC_PUB1_FMT "aus/%s/data/publish"
-#define TOPIC_PUB2_FMT "aus/%s/data/empty"   // сюда отправляем пустую строку
 
+// Топик для запроса настроек
+#define TOPIC_PUB2_FMT "aus/%s/settings/get" 
+
+// Топик для чтения настроек
+#define TOPIC_SETTINGS_FMT "aus/%s/settings/get/responseh"
 // Внешние хелперы вашего проекта
 extern char *parseBuffer;   // общий буфер с последним ответом модема
 
-#define STATUS_MQTT_CONN_ERROR        (1u<<20)
-#define STATUS_MQTT_PUB_ERROR         (1u<<21)
-#define STATUS_MQTT_SUB_ERROR         (1u<<22)
-#define STATUS_MQTT_SERVER_COMM_ERROR (1u<<23)
-#define STATUS_MQTT_AUTH_ERROR        (1u<<24)
+
 
 extern Main_data_settings_item Main_data;
 // Логин/пароль/ClientID

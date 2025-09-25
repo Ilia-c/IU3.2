@@ -146,6 +146,7 @@ target_sources(stm32cubemx INTERFACE
     ../../Library/w25q128/w25q128.c
     ../../Library/ADC/MS5193T.c
     ../../Library/RS485/Driver_rs485.c
+    ../../Library/RS485/RS_Data.c
     ../../Library/ADC/Internal_ADC.c
     ../../Library/DATA_COLLECT/Data_collect.c
     ../../Library/Display_i2c/Functions/Initial_setup.c
@@ -169,6 +170,7 @@ target_sources(stm32cubemx INTERFACE
     ../../Library/USB/USB_FLASH.c
     ../../Library/USB/USB_COMPORT.c
     ../../Library/UART_GSM/GSM.c
+    ../../Library/UART_GSM/HTTP_SMS.c
     ../../Library/UART_GSM/MQTT.c
     ../../Library/UART_GSM/Parser.c
     ../../Library/Sleep_system/Sleep.c

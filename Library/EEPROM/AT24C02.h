@@ -39,7 +39,7 @@ typedef struct __attribute__((packed)) {
 #define BUFFER_START_ADDR      ((uint16_t)STRUCT_SIZE)
 #define BUFFER_SIZE_BYTES     ((uint16_t)(EEPROM_TOTAL_SIZE - BUFFER_START_ADDR))
 typedef char array_check_eeprom_size[
-    (sizeof(EepromRecord) <= 140) ? 1 : -1 
+    (sizeof(EepromRecord) <= 144) ? 1 : -1 
 ];
 
 

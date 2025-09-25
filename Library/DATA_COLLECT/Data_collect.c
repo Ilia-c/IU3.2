@@ -97,6 +97,7 @@ void remove_braces_inplace(char *str) {
 }
 
 const char CableB[] = "cable_break";
+// Формирование строки данных для отправки по RS485, HTTP или MQTT
 void Collect_DATA()
 {
     HAL_RTC_GetDate(&hrtc, &Date, RTC_FORMAT_BIN);
@@ -128,7 +129,6 @@ void Collect_DATA()
     }
     if (EEPROM.Communication_http_mqtt == HTTP)
     {
-
         snprintf(save_data, CMD_BUFFER_SIZE,
                  "[%s;%s;%s;%s;%s;%s;%s;%s;%02d:%02d%s%02d/%02d/%02d;%s;%s;%u;%u]",
                  Version,                               // строка
@@ -146,7 +146,6 @@ void Collect_DATA()
                  VERSION_PROGRAMM,
                  EEPROM.time_sleep_m,  // число
                  EEPROM.time_sleep_h); // число
-                                       //
     }
     if (EEPROM.Communication_http_mqtt == MQTT)
     {
@@ -199,3 +198,8 @@ void SETTINGS_REQUEST_DATA()
              Version, // строка
              Password);   // число
 }
+
+
+
+
+

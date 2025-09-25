@@ -13,7 +13,8 @@ uint8_t gsmRxChar;
 /* Двойное буферирование: буферы размещаются в области ОЗУ ".ram2" */
 static char buffer1[CMD_BUFFER_SIZE] __attribute__((section(".ram2"))) = {0};
 static char buffer2[CMD_BUFFER_SIZE] __attribute__((section(".ram2"))) = {0};
-
+static char MQTT_settings_buffer[MQTT_SETTINGS_BUFFER_SIZE] __attribute__((section(".ram2"))) = {0};
+static uint16_t activeIndex_MQTT = 0;
 
 /* Указатели на активный и обрабатываемый (парсера) буферы */
 static char *activeBuffer = buffer1;
@@ -50,8 +51,6 @@ void GSM_TimerCallback(TimerHandle_t xTimer)
         char *temp = activeBuffer;
         activeBuffer = parseBuffer;
         parseBuffer = temp;
-
-        
         while (EEPROM.USB_mode == USB_DEBUG)
         {
             if (hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED) break;
@@ -75,14 +74,17 @@ void GSM_TimerCallback(TimerHandle_t xTimer)
     memset(activeBuffer, 0, CMD_BUFFER_SIZE);
 }
 
-
-
 /* Колбэк, вызываемый по завершении приёма одного байта по UART4 */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     if (huart->Instance == UART4)
     {
         HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
+        if (EEPROM.Communication_http_mqtt == MQTT) {
+            // Тут функция посика комманды настроек MQTT
+            MQTT_settings_buffer[activeIndex_MQTT] = gsmRxChar;
+            activeIndex_MQTT++;
+        }
 
         if ((!(GSM_data.Status & DATA_READ)) && (EEPROM.DEBUG_Mode != USB_AT_DEBUG)){
             return;
@@ -280,5 +282,7 @@ int determineRegionAndOperator(void)
     GSM_data.GSM_operator_char = (char *)operatorName;
     return 1;
 }
+
+
 
 
