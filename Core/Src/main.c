@@ -37,6 +37,7 @@ xSemaphoreHandle Display_cursor_semaphore;
 xSemaphoreHandle USB_COM_RX_semaphore;
 xSemaphoreHandle Main_semaphore;
 xSemaphoreHandle UART_PARSER_semaphore;
+xSemaphoreHandle UART_PARSER_MQTT_semaphore;
 xSemaphoreHandle ADC_READY; // Окончания преобразования при работе в циклическом режиме
 xSemaphoreHandle SLEEP_semaphore;
 xSemaphoreHandle ADC_conv_end_semaphore;
@@ -110,6 +111,7 @@ const osThreadAttr_t Display_I2C_attributes = {
     .stack_size = 1024 * 8,
     .priority = (osPriority_t)osPriorityHigh,
 };
+
 /* Definitions for ADC_read */
 osThreadId_t ADC_readHandle;
 const osThreadAttr_t ADC_read_attributes = {
@@ -117,6 +119,7 @@ const osThreadAttr_t ADC_read_attributes = {
     .stack_size = 1024 * 3,
     .priority = (osPriority_t)osPriorityLow3,
 };
+
 /* Definitions for RS485_data */
 osThreadId_t RS485_dataHandle;
 const osThreadAttr_t RS485_data_attributes = {
@@ -195,8 +198,6 @@ unsigned int id = 0x00;
 extern RTC_HandleTypeDef hrtc;
 uint8_t units = 0;
 
-
-
 int Enable_RDP1_FromApp(void) {
 #if (Debug_mode == 0)
     FLASH_OBProgramInitTypeDef ob = {0};
@@ -243,7 +244,7 @@ int main(void)
   
   RTC_read();
   MX_GPIO_Init();
-  
+
   HAL_GPIO_WritePin(RESERVED_GPIO_Port, RESERVED_Pin, GPIO_PIN_SET);
   HAL_Delay(100);
   HAL_GPIO_WritePin(RESERVED_GPIO_Port, RESERVED_Pin, GPIO_PIN_RESET);
@@ -336,7 +337,8 @@ int main(void)
   HAL_PWR_EnableBkUpAccess();
   uint32_t value = HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_INDEX_RESET_PROG);
   HAL_PWR_DisableBkUpAccess();
-  if (value == DATA_RESET_PROG){  
+  if (value == DATA_RESET_PROG)
+  {  
     // Если сброс из перехода в цикл
     EEPROM.Mode = 1;
   }
@@ -580,8 +582,7 @@ void Main(void *argument)
   vSemaphoreCreateBinary(USB_COM_TX_semaphore);
   vSemaphoreCreateBinary(USB_COM_TX_DONE_semaphore);
   xSemaphoreTake(SLEEP_semaphore, 0);
-
-
+  
   HAL_NVIC_SetPriority(EXTI4_IRQn, 7, 0);
   HAL_NVIC_SetPriority(EXTI9_5_IRQn, 7, 0);
   HAL_NVIC_EnableIRQ(EXTI4_IRQn);

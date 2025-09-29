@@ -109,7 +109,6 @@ void OLED_SetContrast(uint8_t contrast)
 /**********************************************************************************/
 /*                            D R A W    S C R E E N                               */
 /**********************************************************************************/
-
 void OLED_DrawBitmap(const uint8_t *progmem_bitmap, uint8_t height, uint8_t width, uint8_t pos_x, uint8_t pos_y)
 {
 	uint8_t current_byte;
@@ -169,7 +168,6 @@ void OLED_DrawBuffer(const uint8_t *progmem_buffer)
 void OLED_DrawPixelStatus(uint8_t pos_x, uint8_t pos_y, uint8_t mode)
 {
 	if (pos_x >= OLED_WIDTH || pos_y >= OLED_HEIGHT) return;
-	
 	if (mode)	oled_buffer[pos_x + (pos_y / 8) * OLED_WIDTH] |= (1 << (pos_y & 7));
 	else		oled_buffer[pos_x + (pos_y / 8) * OLED_WIDTH] &= ~(1 << (pos_y & 7));
 }

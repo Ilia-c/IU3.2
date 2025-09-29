@@ -24,7 +24,7 @@ static HAL_StatusTypeDef waitForConnectResult(uint32_t timeout)
                 USB_DEBUG_MESSAGE("[DEBUG AT] CONNECT OK", DEBUG_GSM, DEBUG_LEVL_4);
                 return HAL_OK;
             }
-
+            
             // явный провал
             if (strstr(parseBuffer, "CONNECT FAIL") != NULL) {
                 USB_DEBUG_MESSAGE("[ERROR AT] CONNECT FAIL", DEBUG_GSM, DEBUG_LEVL_4);

@@ -3,6 +3,7 @@
 
 extern UART_HandleTypeDef huart4;
 extern xSemaphoreHandle UART_PARSER_semaphore;
+extern xSemaphoreHandle UART_PARSER_MQTT_semaphore;
 extern xSemaphoreHandle USB_COM_SEND_semaphore;
 
 extern USBD_HandleTypeDef hUsbDeviceFS; 
@@ -61,7 +62,16 @@ void GSM_TimerCallback(TimerHandle_t xTimer)
             if (EEPROM.DEBUG_Mode == USB_AT_DEBUG) collect_message(parseBuffer);
             break;
         }
-                
+        if (GSM_data.Status & MQTT_SEARCH)
+        {
+            // Если в режиме MQTT, то данные уже помечены в колбэке приёма
+            // просто сигнализируем задаче парсера о готовности данных
+            GSM_data.Status &= ~MQTT_SEARCH;
+            BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+            xSemaphoreGiveFromISR(UART_PARSER_MQTT_semaphore, &xHigherPriorityTaskWoken);
+            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+        }
+
         /* Сигнализируем задаче парсера о готовности данных */
         BaseType_t xHigherPriorityTaskWoken = pdFALSE;
         xSemaphoreGiveFromISR(UART_PARSER_semaphore, &xHigherPriorityTaskWoken);
@@ -92,7 +102,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     if (huart->Instance == UART4)
     {
         HAL_UART_Receive_IT(&huart4, &gsmRxChar, 1);
-
         // Если MQTT, то анализируем все строки и ищем разрыв соединения или данные с топика
         if (EEPROM.Communication_http_mqtt == MQTT)
         {
@@ -102,15 +111,13 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
             if (match5("+MSUB"))
             {
                 // Установить флаг обработки принятых данных по MQTT - в отдельную задачу
-                activeBuffer[activeIndex] = '+'; 
-                activeBuffer[activeIndex++] = 'M'; 
-                activeBuffer[activeIndex++] = 'S'; 
-                activeBuffer[activeIndex++] = 'U'; 
+                activeBuffer[activeIndex] = '+';
+                activeBuffer[activeIndex++] = 'M';
+                activeBuffer[activeIndex++] = 'S';
+                activeBuffer[activeIndex++] = 'U';
                 activeBuffer[activeIndex++] = 'B';
 
-                
-
-                // Найдена строка от топика MQTT, нужно дальше читать
+                GSM_data.Status |= DATA_READ;
                 GSM_data.Status |= MQTT_SEARCH;
             }
             if (match6_closed())

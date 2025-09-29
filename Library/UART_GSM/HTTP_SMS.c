@@ -123,27 +123,32 @@ void M2M_status_Update()
 }
 
 // Отправка СМС, если установлен флаг на отправку
-void SMS_send(){
+void SMS_send()
+{
     // Если нужно отправить СМС
     if (GSM_data.Status & SMS_SEND)
     {
-      USB_DEBUG_MESSAGE("[DEBUG AT] Начата отправка СМС", DEBUG_GSM, DEBUG_LEVL_2);
-      GSM_data.Status &= ~SMS_SEND;
-      Collect_DATA();
-      if (sendSMS() == HAL_OK)
-      {
-        USB_DEBUG_MESSAGE("[DEBUG AT] СМС отправлена", DEBUG_GSM, DEBUG_LEVL_2);
-        if (EEPROM.Mode == 0) strcpy(GSM_data.GSM_sms_status, "OK");
-        if (EEPROM.Mode == 0) xSemaphoreGive(Display_semaphore);
-        GSM_data.Status |= SMS_SEND_Successfully;
-      }
-      else
-      {
-        USB_DEBUG_MESSAGE("[ERROR AT] СМС не отправлена", DEBUG_GSM, DEBUG_LEVL_1);
-        if (EEPROM.Mode == 0) strcpy(GSM_data.GSM_sms_status, "ERR");
-        if (EEPROM.Mode == 0) xSemaphoreGive(Display_semaphore);
-        ERRCODE.STATUS |= STATUS_GSM_SMS_SEND_ERROR;
-      }
+        USB_DEBUG_MESSAGE("[DEBUG AT] Начата отправка СМС", DEBUG_GSM, DEBUG_LEVL_2);
+        GSM_data.Status &= ~SMS_SEND;
+        Collect_DATA();
+        if (sendSMS() == HAL_OK)
+        {
+            USB_DEBUG_MESSAGE("[DEBUG AT] СМС отправлена", DEBUG_GSM, DEBUG_LEVL_2);
+            if (EEPROM.Mode == 0)
+                strcpy(GSM_data.GSM_sms_status, "OK");
+            if (EEPROM.Mode == 0)
+                xSemaphoreGive(Display_semaphore);
+            GSM_data.Status |= SMS_SEND_Successfully;
+        }
+        else
+        {
+            USB_DEBUG_MESSAGE("[ERROR AT] СМС не отправлена", DEBUG_GSM, DEBUG_LEVL_1);
+            if (EEPROM.Mode == 0)
+                strcpy(GSM_data.GSM_sms_status, "ERR");
+            if (EEPROM.Mode == 0)
+                xSemaphoreGive(Display_semaphore);
+            ERRCODE.STATUS |= STATUS_GSM_SMS_SEND_ERROR;
+        }
     }
 }
 

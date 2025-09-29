@@ -123,7 +123,7 @@ float voltageToSOC(float voltage) {
     return soc;
 }
 
-/* Адреса калибровочных значений в системной памяти STM32L476 */
+// Адреса калибровочных значений в системной памяти
 #define TS_CAL1_ADDR    ((uint16_t*)0x1FFF75A8)  // значение при +30 °C
 #define TS_CAL2_ADDR    ((uint16_t*)0x1FFF75CA)  // значение при +110 °C
  #define VREFINT_CAL_ADDR ((uint16_t *)0x1FFF75AAU)

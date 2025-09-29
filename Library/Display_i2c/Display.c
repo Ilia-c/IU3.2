@@ -1833,7 +1833,6 @@ void Display_all_menu()
     OLED_UpdateScreen();
     if ((speed_update == 1) || (mode_redact == 1)) SetTimerPeriod(time_led_cursor);
     else SetTimerPeriod(time_updateDisplay);
-    
 }
 
 // вход в режим редактирования, если есть соответствующее поле
