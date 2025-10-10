@@ -46,7 +46,8 @@ static const DebugCmd_t debugCmds[] = {
     { "DEBUG_ADC_IN",       DEBUG_ADC_IN,       "DEBUG_ADC_IN ON",       "DEBUG_ADC_IN OFF"       },
     { "DEBUG_FLASH",        DEBUG_FLASH,        "DEBUG_FLASH ON",        "DEBUG_FLASH OFF"        },
     { "DEBUG_EEPROM",       DEBUG_EEPROM,       "DEBUG_EEPROM ON",       "DEBUG_EEPROM OFF"       },
-    { "DEBUG_OTHER",        DEBUG_OTHER,        "DEBUG_OTHER ON",        "DEBUG_OTHER OFF"        }
+    { "DEBUG_OTHER",        DEBUG_OTHER,        "DEBUG_OTHER ON",        "DEBUG_OTHER OFF"        },
+    { "DEBUG_MQTT",         DEBUG_MQTT,         "DEBUG_MQTT ON",        "DEBUG_MQTT OFF"          }
 };
 #define DEBUG_CMD_COUNT  (sizeof(debugCmds) / sizeof(debugCmds[0]))
 

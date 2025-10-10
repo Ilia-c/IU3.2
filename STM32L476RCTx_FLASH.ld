@@ -20,9 +20,6 @@ COLIBRATE_DATA  (rx)  : ORIGIN = 0x0807F800, LENGTH = 2K
 /* Define output sections */
 SECTIONS
 {
-
-
-
   .ram2 (NOLOAD) :
   {
     . = ALIGN(4);

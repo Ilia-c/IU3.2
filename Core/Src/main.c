@@ -334,6 +334,7 @@ int main(void)
     }
   }
 
+
   HAL_PWR_EnableBkUpAccess();
   uint32_t value = HAL_RTCEx_BKUPRead(&hrtc, BKP_REG_INDEX_RESET_PROG);
   HAL_PWR_DisableBkUpAccess();
@@ -945,7 +946,8 @@ void UART_PARSER_task(void *argument)
   UNUSED(argument);
   GSM_Init();
   MQTT_InitGlobal(); // Глобальная инициализация MQTT, всегда на случай если переключат на MQTT
-  
+  vSemaphoreCreateBinary(UART_PARSER_MQTT_semaphore);
+
   uint32_t startTick = HAL_GetTick(); // Момент включения задачи
 
   for (;;)
@@ -954,16 +956,19 @@ void UART_PARSER_task(void *argument)
     if (EEPROM.Communication_http_mqtt == MQTT && GSM_data.Status & NETWORK_REGISTERED && GSM_data.Status & SIGNAL_PRESENT)
     {
       MQTT_Process(HAL_GetTick());
-      osDelay(500);
-      // Для MQTT более частое обновление
+      if (xSemaphoreTake(UART_PARSER_MQTT_semaphore, 500) == pdTRUE){
+        if (parse_mqtt_settings() != HAL_OK) ERRCODE.STATUS |= STATUS_MQTT_RESPONSE_ERROR;
+        else ERRCODE.STATUS &= ~STATUS_MQTT_RESPONSE_ERROR;
+      }
     }
     else{
       osDelay(3000);
     }
     
+
     M2M_init(startTick);
     M2M_status_Update();
-    
+
     // Отправка данных или их запрос с проверкой флага на действие
     SMS_send();
     HTTP_send();

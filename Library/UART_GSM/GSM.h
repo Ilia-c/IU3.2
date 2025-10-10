@@ -9,7 +9,8 @@
 #include <stdio.h>
 #include "Settings.h"
 #include "Driver_rs485.h"
-
+#include <stdint.h>
+#include <stdbool.h>
 
 
 #define RX_TIMEOUT_MS   300

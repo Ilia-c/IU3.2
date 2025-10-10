@@ -145,8 +145,16 @@ static HAL_StatusTypeDef mqtt_after_connect_check(void)
 void MQTT_BuildCredentials(MqttCredentials *out)
 {
     memset(out, 0, sizeof(*out));
+    Main_data.version.password[0] = '1';
+    Main_data.version.password[1] = '2';
+    Main_data.version.password[2] = '3';
+    Main_data.version.password[3] = '4';
+    Main_data.version.password[4] = 0x00;
+
+
     strncpy(out->clientId, Main_data.version.VERSION_PCB, sizeof(out->clientId)-1);
-    strncpy(out->username, Main_data.version.VERSION_PCB, sizeof(out->username)-1);
+    //strncpy(out->username, Main_data.version.VERSION_PCB, sizeof(out->username)-1);
+    strncpy(out->username, "3.75-A027", sizeof("3.75-A027")-1);
     strncpy(out->password, Main_data.version.password,   sizeof(out->password)-1);
     remove_braces_inplace(out->clientId);
     remove_braces_inplace(out->username);
@@ -157,7 +165,7 @@ void MQTT_BuildCredentials(MqttCredentials *out)
 void MQTT_InitGlobal(void)
 {
     memset(&g_mqtt, 0, sizeof(g_mqtt));
-    g_mqtt.st            = MQTT_ST_IDLE;
+    g_mqtt.st            = MQTT_ST_START;
     g_mqtt.port          = MQTT_BROKER_PORT;
     g_mqtt.keepalive_s   = MQTT_KEEPALIVE_S;
     g_mqtt.clean_session = MQTT_CLEAN_SESSION;
@@ -171,7 +179,7 @@ static HAL_StatusTypeDef MQTT_SmStepConnect(MqttSm *sm)
 {
     switch (sm->st)
     {
-    case MQTT_ST_IDLE: {
+    case MQTT_ST_START: {
         // Активировать PDP (на всякий, он и так должен выполнится)
         if (SendCommandAndParse("AT+CGACT=1,1\r", waitForOKResponse, 60000) != HAL_OK) {
             ERRCODE.STATUS |= STATUS_MQTT_CONN_ERROR;
@@ -220,9 +228,10 @@ static HAL_StatusTypeDef MQTT_SmStepConnect(MqttSm *sm)
 
     case MQTT_ST_CONNECTED:
         // Подключение к топику с настройками
-        if (MQTT_Subscribe(TOPIC_SETTINGS_FMT, MQTT_QOS_SUB, 5000) == HAL_OK)
+        if (MQTT_Subscribe(MQTT_QOS_SUB, 5000) == HAL_OK)
         {
             ERRCODE.STATUS |= STATUS_MQTT_SUB_SETTINGS;
+            sm->st = MQTT_ST_IDLE;
             MQTT_PublishEmptySecond(10000); // сразу запросим настройки
             osDelay(1000); // Пропуск что бы дать возможность получить настройки (для цикла)
         }
@@ -232,7 +241,8 @@ static HAL_StatusTypeDef MQTT_SmStepConnect(MqttSm *sm)
             return HAL_ERROR;
         }
         return HAL_OK;
-
+    case MQTT_ST_IDLE:
+        return HAL_OK;
     default:
     case MQTT_ST_ERROR:
         ERRCODE.STATUS &= ~STATUS_MQTT_CONN;
@@ -244,10 +254,7 @@ static HAL_StatusTypeDef MQTT_SmStepConnect(MqttSm *sm)
 void MQTT_Process(uint32_t now_ms)
 {
     // Если не подключены — делаем следующий шаг подключения
-    if (!g_mqtt.connected) {
-        (void)MQTT_SmStepConnect(&g_mqtt);
-        return;
-    }
+    MQTT_SmStepConnect(&g_mqtt);
 
     // Периодический поллинг статуса
     if (now_ms - g_mqtt.t_last_stat_ms > 15000u) {
@@ -256,7 +263,7 @@ void MQTT_Process(uint32_t now_ms)
         if (MQTT_QueryStatus(&st) == HAL_OK) {
             if (st != 2) { // not connected
                 g_mqtt.connected = 0;
-                g_mqtt.st = MQTT_ST_IDLE;
+                g_mqtt.st = MQTT_ST_START;
             }
         }
     }
@@ -306,7 +313,7 @@ HAL_StatusTypeDef MQTT_Publish(const char *topic,
     uint8_t st = 0xFF;
     if (MQTT_QueryStatus(&st) != HAL_OK || st != 2) {
         g_mqtt.connected = 0;
-        g_mqtt.st = MQTT_ST_IDLE;
+        g_mqtt.st = MQTT_ST_START;
     }
 
     return HAL_OK;
@@ -337,12 +344,21 @@ HAL_StatusTypeDef MQTT_PublishEmptySecond(uint32_t timeout_ms)
     return MQTT_Publish(topic, "", MQTT_QOS_PUB, MQTT_RETAIN, timeout_ms);
 }
 
+extern char tempBuf[256];
 // ===== Подписка =====
-HAL_StatusTypeDef MQTT_Subscribe(const char *topic, int qos, uint32_t timeout_ms)
+HAL_StatusTypeDef MQTT_Subscribe(int qos, uint32_t timeout_ms)
 {
+    char topic[96];
+    snprintf(topic, sizeof(topic), TOPIC_SETTINGS_FMT, g_mqtt.cred.username);
     if (!g_mqtt.connected) { ERRCODE.STATUS |= STATUS_MQTT_CONN_ERROR; return HAL_ERROR; }
     char cmd[256];
     snprintf(cmd, sizeof(cmd), "AT+MSUB=\"%s\",%d\r", topic, qos);
+    USB_DEBUG_MESSAGE("[DEBUG MQTT] Подписка на топик:", DEBUG_MQTT, DEBUG_LEVL_4);
+
+    memset(tempBuf, 0, sizeof(tempBuf));
+    snprintf(tempBuf, sizeof(tempBuf), "[DEBUG MQTT] Отправленная команда: %s", cmd);
+    USB_DEBUG_MESSAGE(tempBuf, DEBUG_MQTT, DEBUG_LEVL_4);
+
     if (SendCommandAndParse(cmd, waitForOKResponse, timeout_ms) != HAL_OK) {
         ERRCODE.STATUS |= STATUS_MQTT_SUB_ERROR;
         return HAL_ERROR;
@@ -358,6 +374,6 @@ HAL_StatusTypeDef MQTT_Disconnect(uint32_t timeout_ms)
         return HAL_ERROR;
     }
     g_mqtt.connected = 0;
-    g_mqtt.st = MQTT_ST_IDLE;
+    g_mqtt.st = MQTT_ST_START;
     return HAL_OK;
 }

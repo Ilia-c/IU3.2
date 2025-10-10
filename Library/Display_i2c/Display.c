@@ -689,6 +689,7 @@ MAKE_MENU(Menu_3, "Сведения", "Info", 0, UPTADE_OFF, NO_SIGNED, Menu_4, Menu_2, 
 	MAKE_MENU(Menu_3_4, "Наработка", "Operating time", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_3_3, Menu_3, CHILD_MENU, ACTION_MENU, SELECT_BAR, DATA_IN, time_work_char);
 MAKE_MENU(Menu_4, "Инструкция", "Instruction", 0, UPTADE_OFF, NO_SIGNED, NEXT_MENU, Menu_3, PARENT_MENU, CHILD_MENU, Instruction, SELECT_BAR, DATA_IN, DATA_OUT);
 
+
 void Add_units(uint8_t channel)
 {
     if (channel == 0)

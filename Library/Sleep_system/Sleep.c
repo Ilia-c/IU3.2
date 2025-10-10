@@ -220,31 +220,18 @@ void RTC_SetAlarm_HoursMinutes(uint8_t hours, uint8_t minutes)
 }
 
 
-void GPIO_AnalogConfig(void)
+
+static void Hold_EN_Pins_Low_InStandby(void)
 {
-    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    __HAL_RCC_PWR_CLK_ENABLE();
+    HAL_PWREx_EnablePullUpPullDownConfig(); 
 
-    __HAL_RCC_GPIOA_CLK_ENABLE();
-    __HAL_RCC_GPIOB_CLK_ENABLE();
-    __HAL_RCC_GPIOC_CLK_ENABLE();
+    HAL_PWREx_DisableGPIOPullUp (PWR_GPIO_A, PWR_GPIO_BIT_8);
+    HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_A, PWR_GPIO_BIT_8);
 
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-
-    GPIO_InitStruct.Pin = GPIO_PIN_All;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-    GPIO_InitStruct.Pin = GPIO_PIN_All;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-    GPIO_InitStruct.Pin = GPIO_PIN_All;
-    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
-    __HAL_RCC_GPIOA_CLK_DISABLE();
-    __HAL_RCC_GPIOB_CLK_DISABLE();
-    __HAL_RCC_GPIOC_CLK_DISABLE();
+    HAL_PWREx_DisableGPIOPullUp (PWR_GPIO_C, PWR_GPIO_BIT_9);
+    HAL_PWREx_EnableGPIOPullDown(PWR_GPIO_C, PWR_GPIO_BIT_9);
 }
-
 
 
 extern ADC_HandleTypeDef hadc2;
@@ -258,6 +245,10 @@ extern HCD_HandleTypeDef hhcd_USB_OTG_FS; // дл€ режима Host
 void Enter_StandbyMode(uint8_t hours, uint8_t minutes)
 {
     vTaskSuspendAll();
+    HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 0);
+    HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 0);
+    HAL_Delay(2000); // ∆дЄм, пока питание упадЄт
+
 
     ERRCODE.STATUS = 0;
     uint32_t errcode_low  = (uint32_t)(ERRCODE.STATUS & 0xFFFFFFFF);
@@ -279,12 +270,19 @@ void Enter_StandbyMode(uint8_t hours, uint8_t minutes)
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-    __HAL_RCC_GPIOA_CLK_DISABLE();
     DBGMCU->CR = 0x0;
+    
+    //GPIO_AnalogConfig();
+
+    Hold_EN_Pins_Low_InStandby();
+    HAL_Delay(10);
 
     HAL_RCC_DeInit();
     HAL_SuspendTick();
-    GPIO_AnalogConfig();
+
+    __HAL_RCC_GPIOA_CLK_DISABLE();
+    __HAL_RCC_GPIOB_CLK_DISABLE();
+    __HAL_RCC_GPIOC_CLK_DISABLE();
     __HAL_RCC_PWR_CLK_ENABLE();
     HAL_PWR_EnableBkUpAccess();
 
@@ -292,18 +290,13 @@ void Enter_StandbyMode(uint8_t hours, uint8_t minutes)
     __HAL_RTC_ALARM_CLEAR_FLAG(&hrtc, RTC_FLAG_ALRAF);
     __HAL_RTC_ALARM_CLEAR_FLAG(&hrtc, RTC_FLAG_ALRAF);
 
-    // 2) ƒеактивируем аппаратные Ђwake-upї пины, если они раньше не используютс€
     HAL_PWR_DisableWakeUpPin(PWR_WAKEUP_PIN1);
     HAL_PWR_DisableWakeUpPin(PWR_WAKEUP_PIN2);
     HAL_PWR_DisableWakeUpPin(PWR_WAKEUP_PIN3);
 
-    // 3) —брасываем EXTI-линии, св€занные с RTC
     __HAL_RTC_ALARM_EXTI_CLEAR_FLAG();
     __HAL_RTC_WAKEUPTIMER_EXTI_CLEAR_FLAG();
-
-    // 4) —брасываем все флаги пробуждени€ PWR
     __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
-    // (или эквивалент PWR->SCR |= Е)
 
     RTC_SetAlarm_HoursMinutes(hours, minutes);
     HAL_PWR_EnterSTANDBYMode();
@@ -311,6 +304,10 @@ void Enter_StandbyMode(uint8_t hours, uint8_t minutes)
 
 void Enter_StandbyMode_NoWakeup(void)
 {
+    HAL_GPIO_WritePin(EN_5V_GPIO_Port, EN_5V_Pin, 0);
+    HAL_GPIO_WritePin(EN_3P3V_GPIO_Port, EN_3P3V_Pin, 0);
+    HAL_Delay(2000); // ∆дЄм, пока питание упадЄт
+
     // ѕриостановка всех задач (если используетс€ FreeRTOS)
     vTaskSuspendAll();
     uint32_t errcode_low  = (uint32_t)(ERRCODE.STATUS & 0xFFFFFFFF);
@@ -339,7 +336,8 @@ void Enter_StandbyMode_NoWakeup(void)
     DBGMCU->CR = 0x0;
     HAL_RCC_DeInit();
     HAL_SuspendTick();
-    GPIO_AnalogConfig();
+    //GPIO_AnalogConfig();
+    Hold_EN_Pins_Low_InStandby();
 
     __HAL_RCC_PWR_CLK_ENABLE();
     // Ч Hardware WakeUp pins

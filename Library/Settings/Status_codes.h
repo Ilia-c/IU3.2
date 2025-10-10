@@ -65,7 +65,7 @@
 #define STATUS_GSM_SMS_SEND_ERROR (1ULL << 36)        // Ошибка отправки SMS +
 #define STATUS_HTTP_WRONG_PASSWORD_ERROR (1ULL << 37) // Неверный пароль +
 #define STATUS_HTTP_NO_BINDING_ERROR (1ULL << 38)     // Устройство не привязано на сайте +
-#define STATUS_HTTP_RESERVED (1ULL << 39)             // Резервная ошибка -
+#define STATUS_MQTT_RESPONSE_ERROR (1ULL << 39)             // Ошибка парсера ответа от сайта по MQTT
 
 /* ---------- 10. ОШИБКИ ПРОШИВКИ (биты 41..43) ---------- */
 #define STATUS_FIRMWARE_UPDATE_ERROR (1ULL << 40) // Ошибка обновления (нарушена целостность прошивки) -

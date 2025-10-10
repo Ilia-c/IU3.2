@@ -64,18 +64,19 @@ void GSM_TimerCallback(TimerHandle_t xTimer)
         }
         if (GSM_data.Status & MQTT_SEARCH)
         {
-            // Если в режиме MQTT, то данные уже помечены в колбэке приёма
-            // просто сигнализируем задаче парсера о готовности данных
+            GSM_data.Status &= ~DATA_READ;
             GSM_data.Status &= ~MQTT_SEARCH;
-            BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-            xSemaphoreGiveFromISR(UART_PARSER_MQTT_semaphore, &xHigherPriorityTaskWoken);
-            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+            activeIndex = 0;
+            memset(activeBuffer, 0, CMD_BUFFER_SIZE);
+            xSemaphoreGive(UART_PARSER_MQTT_semaphore);
+            return;
         }
 
         /* Сигнализируем задаче парсера о готовности данных */
-        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-        xSemaphoreGiveFromISR(UART_PARSER_semaphore, &xHigherPriorityTaskWoken);
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+        //BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        //xSemaphoreGiveFromISR(UART_PARSER_semaphore, &xHigherPriorityTaskWoken);
+        //portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+        xSemaphoreGive(UART_PARSER_semaphore);
     }
     
     /* Сбрасываем накопление в активном буфере для нового приёма */
@@ -83,17 +84,23 @@ void GSM_TimerCallback(TimerHandle_t xTimer)
     memset(activeBuffer, 0, CMD_BUFFER_SIZE);
 }
 
-static uint8_t sig_idx = 0;
-static char sig[8]; // степень двойки — удобнее
+#define SIG_SIZE 8                  // степень двойки
+#define SIG_MASK (SIG_SIZE - 1)
 
-static inline uint8_t match5(const char *s){
-    // сравниваем 5 последних байт с "+MSUB"
-    uint8_t i = (sig_idx + 8 - 5) & 7;
-    return (sig[i]=='+' && sig[i+1]=='M' && sig[i+2]=='S' && sig[i+3]=='U' && sig[i+4]=='B');
+static volatile uint8_t sig_idx = 0;
+static volatile char sig[SIG_SIZE];
+
+static inline void sig_push(char c) {
+    sig[sig_idx] = c;
+    sig_idx = (sig_idx + 1) & SIG_MASK;
 }
-static inline uint8_t match6_closed(void){
-    uint8_t i = (sig_idx + 8 - 6) & 7;
-    return (sig[i+0]=='C' && sig[i+1]=='L' && sig[i+2]=='O' && sig[i+3]=='S' && sig[i+4]=='E' && sig[i+5]=='D');
+
+static inline bool ring_tail_eq(const char *pat, uint8_t n) {
+    uint8_t start = (sig_idx - n) & SIG_MASK;            
+    for (uint8_t k = 0; k < n; ++k) {
+        if (sig[(start + k) & SIG_MASK] != pat[k]) return false;
+    }
+    return true;
 }
 
 /* Колбэк, вызываемый по завершении приёма одного байта по UART4 */
@@ -108,19 +115,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
             sig[sig_idx] = gsmRxChar;
             sig_idx++;
             if (sig_idx >= 8) sig_idx = 0;
-            if (match5("+MSUB"))
+            if (ring_tail_eq("+MSUB:", 6))
             {
-                // Установить флаг обработки принятых данных по MQTT - в отдельную задачу
-                activeBuffer[activeIndex] = '+';
-                activeBuffer[activeIndex++] = 'M';
-                activeBuffer[activeIndex++] = 'S';
-                activeBuffer[activeIndex++] = 'U';
-                activeBuffer[activeIndex++] = 'B';
-
                 GSM_data.Status |= DATA_READ;
                 GSM_data.Status |= MQTT_SEARCH;
             }
-            if (match6_closed())
+            if (ring_tail_eq("CLOSED", 6))
             {
                 // Соединение пропало
                 // ! Нужно сбросить машину состояний g_mqtt
@@ -128,7 +128,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
             }
         }
 
-        if ((!(GSM_data.Status & DATA_READ)) && (EEPROM.DEBUG_Mode != USB_AT_DEBUG) || (GSM_data.Status & MQTT_SEARCH))
+        if ((!(GSM_data.Status & DATA_READ)) && (EEPROM.DEBUG_Mode != USB_AT_DEBUG))
         {
             return;
         }

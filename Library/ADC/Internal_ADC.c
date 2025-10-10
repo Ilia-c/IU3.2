@@ -91,7 +91,8 @@ int Read_ADC_Colibrate_24V(void)
     uint16_t tmp[ADC_BUFFER_LEN] = {0};
     memcpy(adc_buffer, tmp, ADC_BUFFER_LEN * sizeof(uint16_t));
     EEPROM_SaveSettings(&EEPROM);
-    if (EEPROM_CheckDataValidity() != HAL_OK){
+    if (EEPROM_CheckDataValidity() != HAL_OK)
+    {
         ERRCODE.STATUS |= STATUS_EEPROM_WRITE_ERROR;
         return -1;
     }

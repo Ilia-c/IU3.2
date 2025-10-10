@@ -5,25 +5,25 @@
 #include <stdio.h>
 
 // ====== Адрес брокера (без "http://") ======
-#define MQTT_BROKER_ADDR   "5.35.102.166"
+#define MQTT_BROKER_ADDR   "83.222.17.96"
 #define MQTT_BROKER_PORT   1883
 #define MQTT_KEEPALIVE_S   120
 #define MQTT_CLEAN_SESSION 1
 
 // ====== Параметры обмена ======
-#define MQTT_QOS_PUB   1     // QoS=1 — практичный выбор для сотовых
+#define MQTT_QOS_PUB   1    
 #define MQTT_QOS_SUB   1
 #define MQTT_RETAIN    0
 
 // Топик для передачи кпоказаний
 #define TOPIC_PUB1_FMT "aus/%s/data/publish"
-
 // Топик для запроса настроек
 #define TOPIC_PUB2_FMT "aus/%s/settings/get" 
-
 // Топик для чтения настроек
-#define TOPIC_SETTINGS_FMT "aus/%s/settings/get/responseh"
+#define TOPIC_SETTINGS_FMT "aus/%s/settings/get/response"
+// aus/3.75-A027/settings/get/response
 // Внешние хелперы вашего проекта
+
 extern char *parseBuffer;   // общий буфер с последним ответом модема
 
 extern Main_data_settings_item Main_data;
@@ -35,12 +35,13 @@ typedef struct {
 } MqttCredentials;
 
 typedef enum {
-  MQTT_ST_IDLE = 0,
+  MQTT_ST_START = 0,
   MQTT_ST_PDP_UP,
-  MQTT_ST_CFG,              // AT+MCONFIG
-  MQTT_ST_CONNECT,          // AT+MCONNECT (и разбор CONNECT OK)
+  MQTT_ST_CFG,             
+  MQTT_ST_CONNECT,          
   MQTT_ST_CONNECTED,
-  MQTT_ST_ERROR
+  MQTT_ST_ERROR,
+  MQTT_ST_IDLE
 } MqttConnState;
 
 typedef struct {
@@ -67,8 +68,7 @@ HAL_StatusTypeDef MQTT_Publish(const char *topic,
 HAL_StatusTypeDef MQTT_PublishSaveData(const char *save_data, uint32_t timeout_ms);
 HAL_StatusTypeDef MQTT_PublishEmptySecond(uint32_t timeout_ms);
 
-HAL_StatusTypeDef MQTT_Subscribe(const char *topic,
-                                 int qos,
+HAL_StatusTypeDef MQTT_Subscribe(int qos,
                                  uint32_t timeout_ms);
 
 HAL_StatusTypeDef MQTT_Disconnect(uint32_t timeout_ms);
